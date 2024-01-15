@@ -22,6 +22,7 @@ static_library("watchdog") {
     "//base",
     "//cobalt/browser:browser_switches",
     "//cobalt/persistent_storage:persistent_settings",
+    "//cobalt/script",
     "//starboard/common",
   ]
 }

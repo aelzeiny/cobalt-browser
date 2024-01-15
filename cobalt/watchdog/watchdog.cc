@@ -436,7 +436,9 @@ void Watchdog::MaybeTriggerCrash(void* context) {
 bool Watchdog::Register(std::string name, std::string description,
                         base::ApplicationState monitor_state,
                         int64_t time_interval_microseconds,
-                        int64_t time_wait_microseconds, Replace replace) {
+                        int64_t time_wait_microseconds, Replace replace,
+                        script::EnvironmentSettings* environment_settings,
+                        uint32_t profiler_num_samples_per_violation) {
   if (is_disabled_) return true;
 
   starboard::ScopedLock scoped_lock(mutex_);

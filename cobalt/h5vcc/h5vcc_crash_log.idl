@@ -46,6 +46,11 @@ interface H5vccCrashLog {
                    WatchdogState watchdog_state, long long time_interval_milliseconds,
                    long long time_wait_milliseconds, WatchdogReplace watchdog_replace);
 
+  [CallWith=EnvironmentSettings] boolean registerWithProfiler(DOMString name, DOMString description,
+                   WatchdogState watchdog_state, long long time_interval_milliseconds,
+                   long long time_wait_milliseconds, WatchdogReplace watchdog_replace,
+                   unsigned long profilerNumSamplesPerViolation);
+
   // Returns true if Watchdog client was unregistered. Name determines the
   // Watchdog client to unregister.
   boolean unregister(DOMString name);

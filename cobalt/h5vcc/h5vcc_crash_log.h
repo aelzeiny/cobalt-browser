@@ -22,6 +22,7 @@
 #include "cobalt/h5vcc/h5vcc_crash_type.h"
 #include "cobalt/h5vcc/watchdog_replace.h"
 #include "cobalt/h5vcc/watchdog_state.h"
+#include "cobalt/script/environment_settings.h"
 #include "cobalt/script/wrappable.h"
 #include "cobalt/watchdog/watchdog.h"
 
@@ -74,6 +75,15 @@ class H5vccCrashLog : public script::Wrappable {
                 int64_t time_wait_milliseconds,
                 WatchdogReplace watchdog_replace);
 
+  bool RegisterWithProfiler(script::EnvironmentSettings* settings,
+                            const std::string& name,
+                            const std::string& description,
+                            WatchdogState watchdog_state,
+                            int64_t time_interval_milliseconds,
+                            int64_t time_wait_milliseconds,
+                            WatchdogReplace watchdog_replace,
+                            uint64_t profiler_num_samples_per_violation);
+
   bool Unregister(const std::string& name);
 
   bool Ping(const std::string& name, const std::string& ping_info);
@@ -94,6 +104,9 @@ class H5vccCrashLog : public script::Wrappable {
   DEFINE_WRAPPABLE_TYPE(H5vccCrashLog);
 
  private:
+  watchdog::Replace WatchdogReplaceToEnum(WatchdogReplace watchdog_replace);
+  base::ApplicationState WatchdogStateToApplicationState(
+      WatchdogState watchdog_state);
   DISALLOW_COPY_AND_ASSIGN(H5vccCrashLog);
 };
 

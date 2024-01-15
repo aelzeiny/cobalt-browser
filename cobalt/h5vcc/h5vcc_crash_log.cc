@@ -115,6 +115,34 @@ void H5vccCrashLog::TriggerCrash(H5vccCrashType intent) {
   }
 }
 
+base::ApplicationState H5vccCrashLog::WatchdogStateToApplicationState(
+    WatchdogState watchdog_state) {
+  switch (watchdog_state) {
+    case kWatchdogStateStarted:
+      return base::kApplicationStateStarted;
+    case kWatchdogStateBlurred:
+      return base::kApplicationStateBlurred;
+    case kWatchdogStateConcealed:
+      return base::kApplicationStateConcealed;
+    case kWatchdogStateFrozen:
+      return base::kApplicationStateFrozen;
+  }
+  return base::kApplicationStateStarted;
+}
+
+watchdog::Replace H5vccCrashLog::WatchdogReplaceToEnum(
+    WatchdogReplace watchdog_replace) {
+  switch (watchdog_replace) {
+    case kWatchdogReplaceNone:
+      return watchdog::NONE;
+    case kWatchdogReplacePing:
+      return watchdog::PING;
+    case kWatchdogReplaceAll:
+      return watchdog::ALL;
+  }
+  return watchdog::NONE;
+}
+
 bool H5vccCrashLog::Register(const std::string& name,
                              const std::string& description,
                              WatchdogState watchdog_state,
@@ -123,40 +151,30 @@ bool H5vccCrashLog::Register(const std::string& name,
                              WatchdogReplace watchdog_replace) {
   watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
   if (watchdog) {
-    base::ApplicationState monitor_state;
-    switch (watchdog_state) {
-      case kWatchdogStateStarted:
-        monitor_state = base::kApplicationStateStarted;
-        break;
-      case kWatchdogStateBlurred:
-        monitor_state = base::kApplicationStateBlurred;
-        break;
-      case kWatchdogStateConcealed:
-        monitor_state = base::kApplicationStateConcealed;
-        break;
-      case kWatchdogStateFrozen:
-        monitor_state = base::kApplicationStateFrozen;
-        break;
-      default:
-        monitor_state = base::kApplicationStateStarted;
-    }
-    watchdog::Replace replace;
-    switch (watchdog_replace) {
-      case kWatchdogReplaceNone:
-        replace = watchdog::NONE;
-        break;
-      case kWatchdogReplacePing:
-        replace = watchdog::PING;
-        break;
-      case kWatchdogReplaceAll:
-        replace = watchdog::ALL;
-        break;
-      default:
-        replace = watchdog::NONE;
-    }
+    base::ApplicationState monitor_state =
+        WatchdogStateToApplicationState(watchdog_state);
+    watchdog::Replace replace = WatchdogReplaceToEnum(watchdog_replace);
     return watchdog->Register(name, description, monitor_state,
                               time_interval_milliseconds * 1000,
                               time_wait_milliseconds * 1000, replace);
+  }
+  return false;
+}
+
+bool H5vccCrashLog::RegisterWithProfiler(
+    script::EnvironmentSettings* settings, const std::string& name,
+    const std::string& description, WatchdogState watchdog_state,
+    int64_t time_interval_milliseconds, int64_t time_wait_milliseconds,
+    WatchdogReplace watchdog_replace,
+    uint64_t profiler_num_samples_per_violation) {
+  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  if (watchdog) {
+    base::ApplicationState monitor_state =
+        WatchdogStateToApplicationState(watchdog_state);
+    watchdog::Replace replace = WatchdogReplaceToEnum(watchdog_replace);
+    return watchdog->Register(
+        name, description, monitor_state, time_interval_milliseconds * 1000,
+        time_wait_milliseconds * 1000, replace, nullptr, 0);
   }
   return false;
 }

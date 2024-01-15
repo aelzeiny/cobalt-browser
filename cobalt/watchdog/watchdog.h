@@ -23,6 +23,7 @@
 #include "base/values.h"
 #include "cobalt/base/application_state.h"
 #include "cobalt/persistent_storage/persistent_settings.h"
+#include "cobalt/script/environment_settings.h"
 #include "cobalt/watchdog/singleton.h"
 #include "starboard/common/atomic.h"
 #include "starboard/common/condition_variable.h"
@@ -86,7 +87,9 @@ class Watchdog : public Singleton<Watchdog> {
   bool Register(std::string name, std::string description,
                 base::ApplicationState monitor_state,
                 int64_t time_interval_microseconds,
-                int64_t time_wait_microseconds = 0, Replace replace = NONE);
+                int64_t time_wait_microseconds = 0, Replace replace = NONE,
+                script::EnvironmentSettings* environment_settings = nullptr,
+                uint32_t profiler_num_samples_per_violation = 0);
   std::shared_ptr<Client> RegisterByClient(std::string name,
                                            std::string description,
                                            base::ApplicationState monitor_state,
