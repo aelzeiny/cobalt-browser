@@ -433,12 +433,12 @@ void Watchdog::MaybeTriggerCrash(void* context) {
   }
 }
 
-bool Watchdog::Register(std::string name, std::string description,
-                        base::ApplicationState monitor_state,
-                        int64_t time_interval_microseconds,
-                        int64_t time_wait_microseconds, Replace replace,
-                        script::EnvironmentSettings* environment_settings,
-                        uint32_t profiler_num_samples_per_violation) {
+bool Watchdog::Register(
+    std::string name, std::string description,
+    base::ApplicationState monitor_state, int64_t time_interval_microseconds,
+    int64_t time_wait_microseconds, Replace replace,
+    script::EnvironmentSettings* profiler_environment_settings,
+    uint32_t profiler_num_samples_per_violation) {
   if (is_disabled_) return true;
 
   starboard::ScopedLock scoped_lock(mutex_);
@@ -465,7 +465,8 @@ bool Watchdog::Register(std::string name, std::string description,
   // Creates new client.
   std::unique_ptr<Client> client = CreateClient(
       name, description, monitor_state, time_interval_microseconds,
-      time_wait_microseconds, current_time, current_monotonic_time);
+      time_wait_microseconds, current_time, current_monotonic_time,
+      profiler_environment_settings, profiler_num_samples_per_violation);
   if (client == nullptr) return false;
 
   // Registers.
@@ -507,7 +508,9 @@ std::unique_ptr<Client> Watchdog::CreateClient(
     std::string name, std::string description,
     base::ApplicationState monitor_state, int64_t time_interval_microseconds,
     int64_t time_wait_microseconds, int64_t current_time,
-    int64_t current_monotonic_time) {
+    int64_t current_monotonic_time,
+    script::EnvironmentSettings* profiler_environment_settings,
+    uint32_t profiler_num_samples_per_violation) {
   // Validates parameters.
   if (time_interval_microseconds < watchdog_monitor_frequency_ ||
       time_wait_microseconds < 0) {
@@ -533,6 +536,11 @@ std::unique_ptr<Client> Watchdog::CreateClient(
   client->time_registered_monotonic_microseconds = current_monotonic_time;
   client->time_last_pinged_microseconds = current_time;
   client->time_last_updated_monotonic_microseconds = current_monotonic_time;
+  if (profiler_environment_settings && profiler_num_samples_per_violation) {
+    client->profiler_environment_settings = profiler_environment_settings;
+    client->profiler_num_samples_per_violation =
+        profiler_num_samples_per_violation;
+  }
 
   return std::move(client);
 }

@@ -63,6 +63,11 @@ typedef struct Client {
   // time_interval_microseconds apart rather than on each monitor loop. Used as
   // the start value for time interval calculations.
   int64_t time_last_updated_monotonic_microseconds;
+  // EnvironmentSettings that will be sampled for stack-traces when a
+  // violation occurs.
+  script::EnvironmentSettings* profiler_environment_settings;
+  // Number of stack-trace samples taken when a violation occurs.
+  uint64_t profiler_num_samples_per_violation;
 } Client;
 
 // Register behavior with previously registered clients of the same name.
@@ -84,12 +89,12 @@ class Watchdog : public Singleton<Watchdog> {
   std::string GetWatchdogFilePath();
   std::vector<std::string> GetWatchdogViolationClientNames();
   void UpdateState(base::ApplicationState state);
-  bool Register(std::string name, std::string description,
-                base::ApplicationState monitor_state,
-                int64_t time_interval_microseconds,
-                int64_t time_wait_microseconds = 0, Replace replace = NONE,
-                script::EnvironmentSettings* environment_settings = nullptr,
-                uint32_t profiler_num_samples_per_violation = 0);
+  bool Register(
+      std::string name, std::string description,
+      base::ApplicationState monitor_state, int64_t time_interval_microseconds,
+      int64_t time_wait_microseconds = 0, Replace replace = NONE,
+      script::EnvironmentSettings* profiler_environment_settings = nullptr,
+      uint32_t profiler_num_samples_per_violation = 0);
   std::shared_ptr<Client> RegisterByClient(std::string name,
                                            std::string description,
                                            base::ApplicationState monitor_state,
@@ -119,13 +124,13 @@ class Watchdog : public Singleton<Watchdog> {
   std::shared_ptr<base::Value> GetViolationsMap();
   void WriteWatchdogViolations();
   void EvictOldWatchdogViolations();
-  std::unique_ptr<Client> CreateClient(std::string name,
-                                       std::string description,
-                                       base::ApplicationState monitor_state,
-                                       int64_t time_interval_microseconds,
-                                       int64_t time_wait_microseconds,
-                                       int64_t current_time,
-                                       int64_t current_monotonic_time);
+  std::unique_ptr<Client> CreateClient(
+      std::string name, std::string description,
+      base::ApplicationState monitor_state, int64_t time_interval_microseconds,
+      int64_t time_wait_microseconds, int64_t current_time,
+      int64_t current_monotonic_time,
+      script::EnvironmentSettings* profiler_environment_settings,
+      uint32_t profiler_num_samples_per_violation);
   static void* Monitor(void* context);
   static bool MonitorClient(void* context, Client* client,
                             int64_t current_monotonic_time);
