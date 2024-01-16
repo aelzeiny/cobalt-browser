@@ -494,7 +494,7 @@ std::shared_ptr<Client> Watchdog::RegisterByClient(
   // Creates new client.
   std::shared_ptr<Client> client = CreateClient(
       name, description, monitor_state, time_interval_microseconds,
-      time_wait_microseconds, current_time, current_monotonic_time);
+      time_wait_microseconds, current_time, current_monotonic_time, nullptr, 0);
   if (client == nullptr) return nullptr;
 
   // Registers.

@@ -12,16 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+static_library("js_profiler_trace_builder") {
+  sources = [
+    "profiler_trace_builder.cc",
+    "profiler_trace_builder.h",
+  ]
+
+  deps = [
+    "//cobalt/browser:generated_types",
+    "//cobalt/dom",
+    "//cobalt/script",
+    "//third_party/chromium/media:media",
+  ]
+}
+
 static_library("js_profiler") {
   sources = [
     "profiler.cc",
     "profiler.h",
-    "profiler_trace_builder.cc",
-    "profiler_trace_builder.h",
     "profiler_trace_wrapper.h",
   ]
 
   deps = [
+    ":js_profiler_trace_builder",
     "//cobalt/base",
     "//cobalt/browser:generated_bindings",
     "//cobalt/browser:generated_types",
