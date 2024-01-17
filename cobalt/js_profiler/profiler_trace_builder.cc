@@ -15,12 +15,35 @@
 #include "cobalt/js_profiler/profiler_trace_builder.h"
 
 #include "base/time/time.h"
-#include "cobalt/dom/performance.h"
 #include "cobalt/js_profiler/profiler_frame.h"
 #include "cobalt/js_profiler/profiler_sample.h"
 #include "cobalt/js_profiler/profiler_stack.h"
 #include "cobalt/js_profiler/profiler_trace.h"
 #include "v8/include/v8.h"
+
+namespace {
+static constexpr int64_t kPerformanceTimerMinResolutionInMicroseconds = 20;
+
+inline double ClampTimeStampMinimumResolution(
+    base::TimeTicks ticks, int64_t min_resolution_in_microseconds) {
+  int64_t microseconds = ticks.since_origin().InMicroseconds();
+  return base::TimeDelta::FromMicroseconds(
+             microseconds - (microseconds % min_resolution_in_microseconds))
+      .InMillisecondsF();
+}
+
+double MonotonicTimeToDOMHighResTimeStamp(base::TimeTicks time_origin,
+                                          base::TimeTicks monotonic_time) {
+  if (monotonic_time.is_null() || time_origin.is_null()) return 0.0;
+  double clamped_time =
+      ClampTimeStampMinimumResolution(
+          monotonic_time, kPerformanceTimerMinResolutionInMicroseconds) -
+      ClampTimeStampMinimumResolution(
+          time_origin, kPerformanceTimerMinResolutionInMicroseconds);
+
+  return clamped_time;
+}
+}  // namespace
 
 namespace cobalt {
 namespace js_profiler {
@@ -47,8 +70,7 @@ void ProfilerTraceBuilder::AddSample(const v8::CpuProfileNode* node,
   ProfilerSample sample;
 
   auto relative_timestamp =
-      dom::Performance::MonotonicTimeToDOMHighResTimeStamp(time_origin_,
-                                                           timestamp);
+      MonotonicTimeToDOMHighResTimeStamp(time_origin_, timestamp);
 
   sample.set_timestamp(relative_timestamp);
   absl::optional<uint64_t> stack_id = GetOrInsertStackId(node);

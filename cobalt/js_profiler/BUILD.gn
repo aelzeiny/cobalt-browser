@@ -20,7 +20,6 @@ static_library("js_profiler_trace_builder") {
 
   deps = [
     "//cobalt/browser:generated_types",
-    "//cobalt/dom",
     "//cobalt/script",
     "//third_party/chromium/media:media",
   ]
