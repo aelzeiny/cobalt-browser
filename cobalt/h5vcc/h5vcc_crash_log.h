@@ -76,6 +76,8 @@ class H5vccCrashLog : public script::Wrappable {
 
   bool Unregister(const std::string& name);
 
+  script::Sequence<std::string> AddTrace(const std::string& name);
+
   bool Ping(const std::string& name, const std::string& ping_info);
 
   std::string GetWatchdogViolations(

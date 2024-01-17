@@ -311,6 +311,7 @@ void Watchdog::UpdateViolationsMap(void* context, Client* client,
     violation.SetKey("timestampLastPingedMilliseconds",
                      base::Value(std::to_string(
                          client->time_last_pinged_microseconds / 1000)));
+    // violation.SetKey("breadcrumbs", base::Value(traces_));
     int64_t current_timestamp_millis = starboard::CurrentPosixTime() / 1000;
     violation.SetKey("timestampViolationMilliseconds",
                      base::Value(std::to_string(current_timestamp_millis)));
@@ -549,6 +550,11 @@ bool Watchdog::Unregister(const std::string& name, bool lock) {
     SB_DLOG(ERROR) << "[Watchdog] Unable to Unregister: " << name;
   }
   return result;
+}
+
+std::vector<std::string> Watchdog::AddTrace(const std::string& name) {
+  traces_.emplace_back(name);
+  return traces_;
 }
 
 bool Watchdog::UnregisterByClient(std::shared_ptr<Client> client) {

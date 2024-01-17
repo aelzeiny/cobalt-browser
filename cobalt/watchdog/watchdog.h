@@ -93,6 +93,7 @@ class Watchdog : public Singleton<Watchdog> {
                                            int64_t time_interval_microseconds,
                                            int64_t time_wait_microseconds = 0);
   bool Unregister(const std::string& name, bool lock = true);
+  std::vector<std::string> AddTrace(const std::string& name);
   bool UnregisterByClient(std::shared_ptr<Client> client);
   bool Ping(const std::string& name);
   bool Ping(const std::string& name, const std::string& info);
@@ -162,6 +163,8 @@ class Watchdog : public Singleton<Watchdog> {
   // List of client registered Watchdog clients, parallel data structure to
   // client_map_.
   std::vector<std::shared_ptr<Client>> client_list_;
+
+  std::vector<std::string> traces_;
   // Dictionary of lists of Watchdog violations represented as dictionaries.
   std::shared_ptr<base::Value> violations_map_;
   // Monitor thread.

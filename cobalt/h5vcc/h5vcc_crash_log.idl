@@ -50,6 +50,8 @@ interface H5vccCrashLog {
   // Watchdog client to unregister.
   boolean unregister(DOMString name);
 
+  sequence<DOMString> addTrace(DOMString name);
+
   // Returns true if Watchdog client was pinged. Name determines the Watchdog
   // client to ping with ping_info which can either be empty or contain relevant
   // metadata. ping_info has a max length of 128.

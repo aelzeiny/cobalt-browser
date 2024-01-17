@@ -167,6 +167,19 @@ bool H5vccCrashLog::Unregister(const std::string& name) {
   return false;
 }
 
+script::Sequence<std::string> H5vccCrashLog::AddTrace(const std::string& name) {
+  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  script::Sequence<std::string> traces;
+  if (watchdog) {
+    std::vector<std::string> watchdog_traces = watchdog->AddTrace(name);
+
+    for (std::size_t i = 0; i < watchdog_traces.size(); ++i) {
+      traces.push_back(watchdog_traces[i]);
+    }
+  }
+  return traces;
+}
+
 bool H5vccCrashLog::Ping(const std::string& name,
                          const std::string& ping_info) {
   watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
