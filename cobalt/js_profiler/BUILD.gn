@@ -16,9 +16,11 @@ static_library("js_profiler_trace_builder") {
   sources = [
     "profiler_trace_builder.cc",
     "profiler_trace_builder.h",
+    "profiler_trace_wrapper.h",
   ]
 
   deps = [
+    "//cobalt/browser:generated_bindings",
     "//cobalt/browser:generated_types",
     "//cobalt/script",
     "//third_party/chromium/media:media",
@@ -29,7 +31,6 @@ static_library("js_profiler") {
   sources = [
     "profiler.cc",
     "profiler.h",
-    "profiler_trace_wrapper.h",
   ]
 
   deps = [
@@ -53,6 +54,7 @@ target(gtest_target_type, "js_profiler_test") {
 
   deps = [
     ":js_profiler",
+    ":js_profiler_trace_builder",
     "//cobalt/dom",
     "//cobalt/dom/testing:dom_testing",
     "//cobalt/dom/testing:dom_testing",

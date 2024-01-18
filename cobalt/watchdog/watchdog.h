@@ -28,7 +28,7 @@
 #include "starboard/common/condition_variable.h"
 #include "starboard/common/mutex.h"
 #include "starboard/thread.h"
-#include "third_party/v8/include/v8.h"
+#include "third_party/v8/include/v8-profiler.h"
 
 namespace cobalt {
 namespace watchdog {
@@ -193,6 +193,27 @@ class Watchdog : public Singleton<Watchdog> {
   // Number of microseconds to delay.
   int64_t delay_sleep_time_microseconds_ = 0;
 #endif
+};
+
+class WatchdogProfilerDelegate : public v8::DiscardedSamplesDelegate {
+ public:
+  explicit WatchdogProfilerDelegate(Client* client,
+                                    v8::CpuProfiler* cpu_profiler,
+                                    v8::Local<v8::String> name,
+                                    base::TimeTicks time_origin, int32_t index)
+      : client_(client),
+        cpu_profiler_(cpu_profiler),
+        name_(name),
+        time_origin_(time_origin),
+        index_(index) {}
+  void Notify() override;
+
+ private:
+  Client* client_;
+  v8::CpuProfiler* cpu_profiler_;
+  v8::Local<v8::String> name_;
+  base::TimeTicks time_origin_;
+  int32_t index_;
 };
 
 }  // namespace watchdog

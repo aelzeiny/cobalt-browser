@@ -296,6 +296,36 @@ void Watchdog::UpdateViolationsMap(void* context, Client* client,
   if (new_violation) {
     // New unique violation, creates violation in violations map.
     base::Value violation(base::Value::Type::DICTIONARY);
+
+    // Start Profiling.
+    if (client->profiler_isolate &&
+        client->profiler_num_samples_per_violation) {
+      // v8::CpuProfiler* cpu_profiler =
+      //     v8::CpuProfiler::New(client->profiler_isolate);
+      // cpu_profiler->SetSamplingInterval(
+      //     10 * base::Time::kMicrosecondsPerMillisecond);
+
+      // const base::TimeDelta sample_interval = base::Milliseconds(10);
+      // auto options = v8::CpuProfilingOptions(
+      //     v8::kLeafNodeLineNumbers,
+      //     client->profiler_num_samples_per_violation, sample_interval);
+      // std::string& client_name = client->name;
+      // auto name = v8::String::NewFromUtf8(
+      //                 client->profiler_isolate, client->name.c_str(),
+      //                 v8::NewStringType::kNormal, client->name.length())
+      //                 .ToLocalChecked();
+
+      // explicit WatchdogProfilerDelegate(Client* client,
+      //                                   v8::CpuProfiler* cpu_profiler,
+      //                                   v8::Local<v8::String> name,
+      //                                   base::TimeTicks time_origin,
+      //                                   int32_t index)
+      // auto delegate =
+      //     std::make_unique<WatchdogProfilerDelegate>(client, cpu_profiler, );
+      // cpu_profiler->StartProfiling(, options, );
+      SB_LOG(INFO) << "[Watchdog] Profiling Started.";
+    }
+
     violation.SetKey("pingInfos", client->ping_infos.Clone());
     violation.SetKey("monitorState",
                      base::Value(std::string(
@@ -790,6 +820,17 @@ void Watchdog::MaybeInjectDebugDelay(const std::string& name) {
   }
 }
 #endif  // defined(_DEBUG)
+
+void WatchdogProfilerDelegate::Notify() {
+  if (client_) {
+    auto profile = cpu_profiler_->StopProfiling(name_);
+    cobalt::js_profiler::ProfilerTraceBuilder::FromProfile(profile,
+                                                           time_origin_);
+    // auto* watchdog = Watchdog::GetInstance();
+    // watchdog->UpdateViolationWithProfile(client_, index_, trace);
+    SB_LOG(INFO) << "[Watchdog] Profiling Complete.";
+  }
+}
 
 }  // namespace watchdog
 }  // namespace cobalt

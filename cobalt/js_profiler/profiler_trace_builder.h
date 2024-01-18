@@ -19,17 +19,16 @@
 #include <string>
 
 #include "base/time/time.h"
+#include "cobalt/js_profiler/profiler_frame.h"
+#include "cobalt/js_profiler/profiler_sample.h"
+#include "cobalt/js_profiler/profiler_stack.h"
+#include "cobalt/js_profiler/profiler_trace.h"
 #include "cobalt/script/sequence.h"
 #include "third_party/chromium/media/cobalt/third_party/abseil-cpp/absl/types/optional.h"
 #include "v8/include/v8-profiler.h"
 
 namespace cobalt {
 namespace js_profiler {
-
-class ProfilerFrame;
-class ProfilerSample;
-class ProfilerStack;
-class ProfilerTrace;
 
 class ProfilerTraceBuilder {
  public:
