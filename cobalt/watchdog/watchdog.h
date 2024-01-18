@@ -22,6 +22,7 @@
 
 #include "base/values.h"
 #include "cobalt/base/application_state.h"
+#include "cobalt/js_profiler/profiler_trace.h"
 #include "cobalt/persistent_storage/persistent_settings.h"
 #include "cobalt/watchdog/singleton.h"
 #include "starboard/common/atomic.h"
@@ -114,6 +115,8 @@ class Watchdog : public Singleton<Watchdog> {
   void SetPersistentSettingWatchdogEnable(bool enable_watchdog);
   bool GetPersistentSettingWatchdogCrash();
   void SetPersistentSettingWatchdogCrash(bool can_trigger_crash);
+  void UpdateViolationsMapProfiler(Client* client, int32_t index,
+                                   cobalt::js_profiler::ProfilerTrace);
 
 #if defined(_DEBUG)
   // Sleeps threads based off of environment variables for Watchdog debugging.

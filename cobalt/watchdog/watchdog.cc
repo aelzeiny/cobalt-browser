@@ -300,29 +300,28 @@ void Watchdog::UpdateViolationsMap(void* context, Client* client,
     // Start Profiling.
     if (client->profiler_isolate &&
         client->profiler_num_samples_per_violation) {
-      // v8::CpuProfiler* cpu_profiler =
-      //     v8::CpuProfiler::New(client->profiler_isolate);
-      // cpu_profiler->SetSamplingInterval(
-      //     10 * base::Time::kMicrosecondsPerMillisecond);
+      v8::CpuProfiler* cpu_profiler =
+          v8::CpuProfiler::New(client->profiler_isolate);
+      cpu_profiler->SetSamplingInterval(
+          10 * base::Time::kMicrosecondsPerMillisecond);
 
-      // const base::TimeDelta sample_interval = base::Milliseconds(10);
-      // auto options = v8::CpuProfilingOptions(
-      //     v8::kLeafNodeLineNumbers,
-      //     client->profiler_num_samples_per_violation, sample_interval);
-      // std::string& client_name = client->name;
-      // auto name = v8::String::NewFromUtf8(
-      //                 client->profiler_isolate, client->name.c_str(),
-      //                 v8::NewStringType::kNormal, client->name.length())
-      //                 .ToLocalChecked();
+      const base::TimeDelta sample_interval = base::Milliseconds(10);
+      auto options = v8::CpuProfilingOptions(
+          v8::kLeafNodeLineNumbers, client->profiler_num_samples_per_violation,
+          base::Milliseconds(10).InMicroseconds());
+      std::string& client_name = client->name;
+      v8::Local<v8::String> name =
+          v8::String::NewFromUtf8(
+              client->profiler_isolate, client->name.c_str(),
+              v8::NewStringType::kNormal, client->name.length())
+              .ToLocalChecked();
+      int32_t index = 0;
+      if (violation_dict == nullptr)
+        index = violation_dict->FindKey("violations")->GetList().size() - 1;
 
-      // explicit WatchdogProfilerDelegate(Client* client,
-      //                                   v8::CpuProfiler* cpu_profiler,
-      //                                   v8::Local<v8::String> name,
-      //                                   base::TimeTicks time_origin,
-      //                                   int32_t index)
-      // auto delegate =
-      //     std::make_unique<WatchdogProfilerDelegate>(client, cpu_profiler, );
-      // cpu_profiler->StartProfiling(, options, );
+      auto time_origin = base::TimeTicks::Now();
+      auto delegate = std::make_unique<WatchdogProfilerDelegate>(
+          client, cpu_profiler, name, time_origin, index);
       SB_LOG(INFO) << "[Watchdog] Profiling Started.";
     }
 
@@ -395,6 +394,15 @@ void Watchdog::UpdateViolationsMap(void* context, Client* client,
   if (violations_count > kWatchdogMaxViolations) {
     EvictWatchdogViolation(context);
   }
+}
+
+void Watchdog::UpdateViolationsMapProfiler(
+    Client* client, int32_t index, cobalt::js_profiler::ProfilerTrace trace) {
+  base::Value* violation_dict = this->GetViolationsMap()->FindKey(client->name);
+
+  base::Value* violations = violation_dict->FindKey("violations");
+  base::Value* violation = violations->GetList()[index];
+  // violation->SetKey("profiler", trace)
 }
 
 void Watchdog::EvictWatchdogViolation(void* context) {
@@ -824,10 +832,10 @@ void Watchdog::MaybeInjectDebugDelay(const std::string& name) {
 void WatchdogProfilerDelegate::Notify() {
   if (client_) {
     auto profile = cpu_profiler_->StopProfiling(name_);
-    cobalt::js_profiler::ProfilerTraceBuilder::FromProfile(profile,
-                                                           time_origin_);
-    // auto* watchdog = Watchdog::GetInstance();
-    // watchdog->UpdateViolationWithProfile(client_, index_, trace);
+    auto trace = cobalt::js_profiler::ProfilerTraceBuilder::FromProfile(
+        profile, time_origin_);
+    auto* watchdog = Watchdog::GetInstance();
+    watchdog->UpdateViolationsMapProfiler(client_, index_, trace);
     SB_LOG(INFO) << "[Watchdog] Profiling Complete.";
   }
 }
