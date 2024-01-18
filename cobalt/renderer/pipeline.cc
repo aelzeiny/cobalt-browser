@@ -28,7 +28,7 @@
 #include "cobalt/render_tree/clear_rect_node.h"
 #include "cobalt/render_tree/composition_node.h"
 #include "cobalt/render_tree/dump_render_tree_to_string.h"
-#include "cobalt/watchdog/watchdog.h"
+// #include "cobalt/watchdog/watchdog.h"
 #include "starboard/extension/graphics.h"
 #include "starboard/system.h"
 
@@ -209,8 +209,8 @@ Pipeline::Pipeline(const CreateRasterizerFunction& create_rasterizer_function,
 
 Pipeline::~Pipeline() {
   // Unregisters Pipeline as a watchdog client.
-  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
-  if (watchdog) watchdog->Unregister(kWatchdogName);
+  // watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  // if (watchdog) watchdog->Unregister(kWatchdogName);
 
   TRACE_EVENT0("cobalt::renderer", "Pipeline::~Pipeline()");
 
@@ -332,11 +332,11 @@ void Pipeline::SetNewRenderTree(const Submission& render_tree_submission) {
   TRACE_EVENT0("cobalt::renderer", "Pipeline::SetNewRenderTree()");
 
   // Registers Pipeline as a watchdog client.
-  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
-  if (watchdog)
-    watchdog->Register(kWatchdogName, kWatchdogName,
-                       base::kApplicationStateStarted, kWatchdogTimeInterval,
-                       kWatchdogTimeWait, watchdog::PING);
+  // watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  // if (watchdog)
+  //   watchdog->Register(kWatchdogName, kWatchdogName,
+  //                      base::kApplicationStateStarted, kWatchdogTimeInterval,
+  //                      kWatchdogTimeWait, watchdog::PING);
 
   // If a time fence is active, save the submission to be queued only after
   // we pass the time fence.  Overwrite any existing waiting submission in this
@@ -386,8 +386,8 @@ void Pipeline::ClearCurrentRenderTree() {
   TRACE_EVENT0("cobalt::renderer", "Pipeline::ClearCurrentRenderTree()");
 
   // Unregisters Pipeline as a watchdog client.
-  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
-  if (watchdog) watchdog->Unregister(kWatchdogName);
+  // watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  // if (watchdog) watchdog->Unregister(kWatchdogName);
 
   ResetSubmissionQueue();
   rasterize_timer_ = base::nullopt;
@@ -398,14 +398,14 @@ void Pipeline::RasterizeCurrentTree() {
   TRACE_EVENT0("cobalt::renderer", "Pipeline::RasterizeCurrentTree()");
 
   // Pings watchdog.
-  watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
-  if (watchdog) {
-#if defined(_DEBUG)
-    // Injects delay for watchdog debugging.
-    watchdog->MaybeInjectDebugDelay(kWatchdogName);
-#endif  // defined(_DEBUG)
-    watchdog->Ping(kWatchdogName);
-  }
+  //   watchdog::Watchdog* watchdog = watchdog::Watchdog::GetInstance();
+  //   if (watchdog) {
+  // #if defined(_DEBUG)
+  //     // Injects delay for watchdog debugging.
+  //     watchdog->MaybeInjectDebugDelay(kWatchdogName);
+  // #endif  // defined(_DEBUG)
+  //     watchdog->Ping(kWatchdogName);
+  //   }
 
   base::TimeTicks start_rasterize_time = base::TimeTicks::Now();
   Submission submission =

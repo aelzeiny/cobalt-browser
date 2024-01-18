@@ -21,6 +21,8 @@ static_library("watchdog") {
   deps = [
     "//base",
     "//cobalt/browser:browser_switches",
+    "//cobalt/browser:generated_types",
+    "//cobalt/js_profiler:js_profiler_trace_builder",
     "//cobalt/persistent_storage:persistent_settings",
     "//cobalt/script",
     "//starboard/common",

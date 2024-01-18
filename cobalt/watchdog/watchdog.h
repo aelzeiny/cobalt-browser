@@ -23,12 +23,12 @@
 #include "base/values.h"
 #include "cobalt/base/application_state.h"
 #include "cobalt/persistent_storage/persistent_settings.h"
-#include "cobalt/script/environment_settings.h"
 #include "cobalt/watchdog/singleton.h"
 #include "starboard/common/atomic.h"
 #include "starboard/common/condition_variable.h"
 #include "starboard/common/mutex.h"
 #include "starboard/thread.h"
+#include "third_party/v8/include/v8.h"
 
 namespace cobalt {
 namespace watchdog {
@@ -65,7 +65,7 @@ typedef struct Client {
   int64_t time_last_updated_monotonic_microseconds;
   // EnvironmentSettings that will be sampled for stack-traces when a
   // violation occurs.
-  script::EnvironmentSettings* profiler_environment_settings;
+  v8::Isolate* profiler_isolate;
   // Number of stack-trace samples taken when a violation occurs.
   uint64_t profiler_num_samples_per_violation;
 } Client;
@@ -89,12 +89,12 @@ class Watchdog : public Singleton<Watchdog> {
   std::string GetWatchdogFilePath();
   std::vector<std::string> GetWatchdogViolationClientNames();
   void UpdateState(base::ApplicationState state);
-  bool Register(
-      std::string name, std::string description,
-      base::ApplicationState monitor_state, int64_t time_interval_microseconds,
-      int64_t time_wait_microseconds = 0, Replace replace = NONE,
-      script::EnvironmentSettings* profiler_environment_settings = nullptr,
-      uint32_t profiler_num_samples_per_violation = 0);
+  bool Register(std::string name, std::string description,
+                base::ApplicationState monitor_state,
+                int64_t time_interval_microseconds,
+                int64_t time_wait_microseconds = 0, Replace replace = NONE,
+                v8::Isolate* profiler_isolate = nullptr,
+                uint32_t profiler_num_samples_per_violation = 0);
   std::shared_ptr<Client> RegisterByClient(std::string name,
                                            std::string description,
                                            base::ApplicationState monitor_state,
@@ -128,8 +128,7 @@ class Watchdog : public Singleton<Watchdog> {
       std::string name, std::string description,
       base::ApplicationState monitor_state, int64_t time_interval_microseconds,
       int64_t time_wait_microseconds, int64_t current_time,
-      int64_t current_monotonic_time,
-      script::EnvironmentSettings* profiler_environment_settings,
+      int64_t current_monotonic_time, v8::Isolate* profiler_isolate,
       uint32_t profiler_num_samples_per_violation);
   static void* Monitor(void* context);
   static bool MonitorClient(void* context, Client* client,
