@@ -75,6 +75,7 @@ Profiler::Profiler(script::EnvironmentSettings* settings,
   sample_interval_ = effective_sample_interval_ms;
 
   auto isolate = web::get_isolate(settings);
+  name_ = toV8String(isolate, profiler_id_);
 
   auto status = ImplProfilingStart(
       profiler_id_,
@@ -93,6 +94,7 @@ Profiler::Profiler(script::EnvironmentSettings* settings,
 
 Profiler::~Profiler() {
   if (cpu_profiler_) {
+    cpu_profiler_->StopProfiling(name_);
     cpu_profiler_->Dispose();
     cpu_profiler_ = nullptr;
   }
@@ -106,8 +108,7 @@ v8::CpuProfilingStatus Profiler::ImplProfilingStart(
   cpu_profiler_->SetSamplingInterval(kBaseSampleIntervalMs *
                                      base::Time::kMicrosecondsPerMillisecond);
   return cpu_profiler_->StartProfiling(
-      toV8String(isolate, profiler_id), options,
-      std::make_unique<ProfilerMaxSamplesDelegate>(this));
+      name_, options, std::make_unique<ProfilerMaxSamplesDelegate>(this));
 }
 
 std::string Profiler::nextProfileId() {
@@ -118,10 +119,9 @@ std::string Profiler::nextProfileId() {
 void Profiler::PerformStop(
     script::EnvironmentSettings* environment_settings,
     std::unique_ptr<script::ValuePromiseWrappable::Reference> promise_reference,
-    base::TimeTicks time_origin, std::string profiler_id) {
+    base::TimeTicks time_origin, v8::Local<v8::String> profiler_name) {
   auto isolate = web::get_isolate(environment_settings);
-  auto profile =
-      cpu_profiler_->StopProfiling(toV8String(isolate, profiler_id_));
+  auto profile = cpu_profiler_->StopProfiling(profiler_name);
   auto trace = ProfilerTraceBuilder::FromProfile(profile, time_origin_);
   scoped_refptr<ProfilerTraceWrapper> result(new ProfilerTraceWrapper(trace));
   cpu_profiler_->Dispose();
@@ -146,7 +146,7 @@ Profiler::ProfilerTracePromise Profiler::Stop(
         FROM_HERE,
         base::BindOnce(&Profiler::PerformStop, base::Unretained(this),
                        environment_settings, std::move(promise_reference),
-                       std::move(time_origin_), std::move(profiler_id_)));
+                       std::move(time_origin_), std::move(name_)));
   } else {
     promise->Reject(new web::DOMException(web::DOMException::kInvalidStateErr,
                                           "Profiler already stopped."));

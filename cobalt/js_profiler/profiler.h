@@ -55,7 +55,8 @@ class Profiler : public cobalt::web::EventTarget {
   void PerformStop(script::EnvironmentSettings* environment_settings,
                    std::unique_ptr<script::ValuePromiseWrappable::Reference>
                        promise_reference,
-                   base::TimeTicks time_origin, std::string profiler_id);
+                   base::TimeTicks time_origin,
+                   v8::Local<v8::String> profiler_name);
 
   std::string nextProfileId();
 
@@ -64,6 +65,7 @@ class Profiler : public cobalt::web::EventTarget {
   v8::CpuProfiler* cpu_profiler_ = nullptr;
   base::TimeTicks time_origin_;
   std::string profiler_id_;
+  v8::Local<v8::String> name_;
 };
 
 class ProfilerMaxSamplesDelegate : public v8::DiscardedSamplesDelegate {
