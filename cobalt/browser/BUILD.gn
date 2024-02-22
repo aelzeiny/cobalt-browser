@@ -167,6 +167,7 @@ static_library("browser") {
     "//cobalt/cssom",
     "//cobalt/dom_parser",
     "//cobalt/encoding:text_encoding",
+    "//cobalt/event_target_bug",
     "//cobalt/fetch",
     "//cobalt/h5vcc",
     "//cobalt/input",

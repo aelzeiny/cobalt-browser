@@ -257,6 +257,7 @@ source_idl_files = [
 
   "//cobalt/js_profiler/profiler.idl",
   "//cobalt/js_profiler/profiler_trace_wrapper.idl",
+  "//cobalt/event_target_bug/event_target_bug.idl",
 ]
 
 if (!is_gold) {
