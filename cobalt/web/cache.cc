@@ -438,14 +438,36 @@ void Cache::OnFetchCompletedMainThread(uint32_t key, bool success) {
         kResourceType, key, fetcher->BufferToVector(), std::move(metadata));
   }
   if (fetcher->mime_type() == "text/javascript") {
-    auto* environment_settings = fetch_contexts_[key].second;
-    auto* global_environment = get_global_environment(environment_settings);
-    auto* isolate = global_environment->isolate();
-    script::v8c::EntryScope entry_scope(isolate);
-    // TODO: compile async or maybe don't cache if compile fails.
-    global_environment->Compile(script::SourceCode::CreateSourceCode(
-        fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+    // TODO: Maybe don't cache if compile fails.
+    base::ThreadTaskRunnerHandle::Get()->PostTask(
+        FROM_HERE,
+        base::Bind(&Cache::CompileAndCacheScript, base::Unretained(this), key));
+  } else {
+    // Resolve all promises associated with this fetch and clean up immediately.
+    while (promises->size() > 0) {
+      promises->back()->value().Resolve();
+      promises->pop_back();
+    }
+    fetchers_.erase(key);
+    fetch_contexts_.erase(key);
   }
+}
+
+void Cache::CompileAndCacheScript(uint32_t key) {
+  base::AutoLock auto_lock(fetcher_lock_);
+
+  auto* fetcher = fetchers_[key].get();
+  auto* promises = &(fetch_contexts_[key].first);
+
+  auto* environment_settings = fetch_contexts_[key].second;
+  auto* global_environment = get_global_environment(environment_settings);
+  auto* isolate = global_environment->isolate();
+  script::v8c::EntryScope entry_scope(isolate);
+
+  global_environment->Compile(script::SourceCode::CreateSourceCode(
+      fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+
+  // Resolve all promises associated with this fetch and clean up.
   while (promises->size() > 0) {
     promises->back()->value().Resolve();
     promises->pop_back();
