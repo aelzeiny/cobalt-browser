@@ -20,8 +20,10 @@
 #include <vector>
 
 #include "base/json/string_escape.h"
+#include "base/logging.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_util.h"
+#include "base/task/post_task.h"
 #include "base/time/time.h"
 #include "cobalt/base/source_location.h"
 #include "cobalt/cache/cache.h"
@@ -439,9 +441,8 @@ void Cache::OnFetchCompletedMainThread(uint32_t key, bool success) {
   }
   if (fetcher->mime_type() == "text/javascript") {
     // TODO: Maybe don't cache if compile fails.
-    base::ThreadTaskRunnerHandle::Get()->PostTask(
-        FROM_HERE,
-        base::Bind(&Cache::CompileAndCacheScript, base::Unretained(this), key));
+    base::PostTask(FROM_HERE, base::Bind(&Cache::CompileAndCacheScript,
+                                         base::Unretained(this), key));
   } else {
     // Resolve all promises associated with this fetch and clean up immediately.
     while (promises->size() > 0) {
@@ -464,8 +465,10 @@ void Cache::CompileAndCacheScript(uint32_t key) {
   auto* isolate = global_environment->isolate();
   script::v8c::EntryScope entry_scope(isolate);
 
+  SB_LOG(INFO) << "[CACHE] COMPILING START.";
   global_environment->Compile(script::SourceCode::CreateSourceCode(
       fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+  SB_LOG(INFO) << "[CACHE] COMPILING END.";
 
   // Resolve all promises associated with this fetch and clean up.
   while (promises->size() > 0) {

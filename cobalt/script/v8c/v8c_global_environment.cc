@@ -496,6 +496,7 @@ v8::MaybeLocal<v8::Script> V8cGlobalEnvironment::Compile(
   uint32_t javascript_cache_key = CreateJavaScriptCacheKey(
       javascript_engine_version, v8::ScriptCompiler::CachedDataVersionTag(),
       v8c_source_code->source_utf8(), source_location.file_path);
+  SB_LOG(INFO) << "[CACHE] RETRIEVING.";
   auto retrieved_cached_data = cobalt::cache::Cache::GetInstance()->Retrieve(
       network::disk_cache::ResourceType::kCompiledScript, javascript_cache_key,
       [&]() -> std::pair<std::unique_ptr<std::vector<uint8_t>>,
@@ -503,6 +504,7 @@ v8::MaybeLocal<v8::Script> V8cGlobalEnvironment::Compile(
         v8::Local<v8::Script> script;
         {
           TRACE_EVENT0("cobalt::script", "v8::Script::Compile()");
+          SB_LOG(INFO) << "[CACHE] GENERATING.";
           if (!v8::Script::Compile(context, source, &script_origin)
                    .ToLocal(&script)) {
             return std::make_pair(/*data=*/nullptr, /*metadata=*/base::nullopt);

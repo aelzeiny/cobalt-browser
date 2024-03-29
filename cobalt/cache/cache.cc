@@ -176,6 +176,7 @@ std::unique_ptr<std::vector<uint8_t>> Cache::Retrieve(
       return data;
     }
   }
+  SB_LOG(INFO) << "[CACHE] BIG GEN.";
   auto data = generate();
   if (data.first) {
     Store(resource_type, key, /*data=*/*(data.first), /*metadata=*/data.second);
