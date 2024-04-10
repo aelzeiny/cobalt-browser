@@ -102,6 +102,7 @@ class Cache : public script::Wrappable {
       std::unique_ptr<script::ValuePromiseVoid::Reference> promise_reference);
   void OnFetchCompleted(uint32_t key, bool success);
   void OnFetchCompletedMainThread(uint32_t key, bool success);
+  void CompileAndCacheScript(uint32_t key);
 
   std::map<uint32_t, std::unique_ptr<Fetcher>> fetchers_;
   mutable base::Lock fetcher_lock_;

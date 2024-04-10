@@ -22,6 +22,7 @@
 #include "base/json/string_escape.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_util.h"
+#include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "cobalt/base/source_location.h"
 #include "cobalt/cache/cache.h"
@@ -441,14 +442,38 @@ void Cache::OnFetchCompletedMainThread(uint32_t key, bool success) {
                                        base::Value(std::move(metadata)));
   }
   if (fetcher->mime_type() == "text/javascript") {
-    auto* environment_settings = fetch_contexts_[key].second;
-    auto* global_environment = get_global_environment(environment_settings);
-    auto* isolate = global_environment->isolate();
-    script::v8c::EntryScope entry_scope(isolate);
-    // TODO: compile async or maybe don't cache if compile fails.
-    global_environment->Compile(script::SourceCode::CreateSourceCode(
-        fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+    // TODO: Maybe don't cache if compile fails.
+    base::ThreadPool::PostTask(
+        FROM_HERE,
+        base::Bind(&Cache::CompileAndCacheScript, base::Unretained(this), key));
+  } else {
+    // Resolve all promises associated with this fetch and clean up immediately.
+    while (promises->size() > 0) {
+      promises->back()->value().Resolve();
+      promises->pop_back();
+    }
+    fetchers_.erase(key);
+    fetch_contexts_.erase(key);
   }
+}
+
+void Cache::CompileAndCacheScript(uint32_t key) {
+  base::AutoLock auto_lock(fetcher_lock_);
+
+  auto* fetcher = fetchers_[key].get();
+  auto* promises = &(fetch_contexts_[key].first);
+
+  auto* environment_settings = fetch_contexts_[key].second;
+  auto* global_environment = get_global_environment(environment_settings);
+  auto* isolate = global_environment->isolate();
+  script::v8c::EntryScope entry_scope(isolate);
+
+  SB_LOG(INFO) << "[CACHE] COMPILING START.";
+  global_environment->Compile(script::SourceCode::CreateSourceCode(
+      fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+  SB_LOG(INFO) << "[CACHE] COMPILING END.";
+
+  // Resolve all promises associated with this fetch and clean up.
   while (promises->size() > 0) {
     promises->back()->value().Resolve();
     promises->pop_back();
