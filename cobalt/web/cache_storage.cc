@@ -110,6 +110,7 @@ CacheStorage::Keys(script::EnvironmentSettings* environment_settings) {
 }
 
 scoped_refptr<Cache> CacheStorage::GetOrCreateCache() {
+  DLOG(INFO) << "[CACHE] GET OR CREATE";
   if (!cache_) {
     cache_ = new Cache();
   }

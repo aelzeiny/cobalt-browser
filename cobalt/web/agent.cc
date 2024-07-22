@@ -587,6 +587,7 @@ void Agent::Run(const Options& options, InitializeCallback initialize_callback,
   // object on that thread.
   if (!thread_.StartWithOptions(base::Thread::Options(options.thread_priority)))
     return;
+  DLOG(INFO) << "IDK BRO [AGENT]";
   DCHECK(task_runner());
 
   // Registers service worker thread as a watchdog client.

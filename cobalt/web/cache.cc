@@ -441,6 +441,8 @@ void Cache::OnFetchCompletedMainThread(uint32_t key, bool success) {
                                        fetcher->BufferToVector(),
                                        base::Value(std::move(metadata)));
   }
+
+  DLOG(INFO) << "[CACHE] COMPILING " << fetcher->url().spec();
   if (fetcher->mime_type() == "text/javascript") {
     // TODO: Maybe don't cache if compile fails.
     base::ThreadPool::PostTask(
@@ -468,10 +470,10 @@ void Cache::CompileAndCacheScript(uint32_t key) {
   auto* isolate = global_environment->isolate();
   script::v8c::EntryScope entry_scope(isolate);
 
-  SB_LOG(INFO) << "[CACHE] COMPILING START.";
-  global_environment->Compile(script::SourceCode::CreateSourceCode(
-      fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
-  SB_LOG(INFO) << "[CACHE] COMPILING END.";
+  DLOG(INFO) << "[CACHE] COMPILING START.";
+  // global_environment->Compile(script::SourceCode::CreateSourceCode(
+  //     fetcher->BufferToString(), base::SourceLocation(__FILE__, 1, 1)));
+  DLOG(INFO) << "[CACHE] COMPILING END.";
 
   // Resolve all promises associated with this fetch and clean up.
   while (promises->size() > 0) {

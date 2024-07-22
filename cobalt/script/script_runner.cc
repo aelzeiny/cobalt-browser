@@ -17,6 +17,8 @@
 #include <memory>
 
 #include "base/logging.h"
+#include "base/task/thread_pool.h"
+#include "cobalt/base/source_location.h"
 #include "cobalt/script/global_environment.h"
 #include "cobalt/script/source_code.h"
 #if defined(STARBOARD)
@@ -37,11 +39,17 @@ class ScriptRunnerImpl : public ScriptRunner {
   std::string Execute(const std::string& script_utf8,
                       const base::SourceLocation& script_location,
                       bool mute_errors, bool* out_succeeded) override;
+  void ExecuteAsync(const std::string& script_utf8,
+                    const base::SourceLocation& script_location,
+                    bool mute_errors) override;
   GlobalEnvironment* GetGlobalEnvironment() const override {
     return global_environment_.get();
   }
 
  private:
+  void PerformExecuteAsync(const std::string& script_utf8,
+                           const base::SourceLocation& script_location,
+                           bool mute_errors);
   scoped_refptr<GlobalEnvironment> global_environment_;
 };
 
@@ -66,6 +74,22 @@ std::string ScriptRunnerImpl::Execute(
     *out_succeeded = true;
   }
   return result;
+}
+
+void ScriptRunnerImpl::ExecuteAsync(const std::string& script_utf8,
+                                    const base::SourceLocation& script_location,
+                                    bool mute_errors) {
+  base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE,
+      base::Bind(&ScriptRunnerImpl::PerformExecuteAsync, base::Unretained(this),
+                 script_utf8, script_location, mute_errors));
+  // Execute(script_utf8, script_location, mute_errors, NULL /*out_succeeded*/);
+}
+
+void ScriptRunnerImpl::PerformExecuteAsync(
+    const std::string& script_utf8, const base::SourceLocation& script_location,
+    bool mute_errors) {
+  Execute(script_utf8, script_location, mute_errors, NULL /*out_succeeded*/);
 }
 
 }  // namespace
