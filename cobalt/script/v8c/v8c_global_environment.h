@@ -70,6 +70,7 @@ class V8cGlobalEnvironment : public GlobalEnvironment,
 
   bool EvaluateScript(const scoped_refptr<SourceCode>& script,
                       std::string* out_result_utf8) override;
+  void EvaluateScriptAsync(const scoped_refptr<SourceCode>& script) override;
 
   bool EvaluateScript(
       const scoped_refptr<SourceCode>& script_utf8,
@@ -162,8 +163,20 @@ class V8cGlobalEnvironment : public GlobalEnvironment,
   v8::MaybeLocal<v8::Value> EvaluateScriptInternal(
       const scoped_refptr<SourceCode>& source_code);
 
+  void EvaluateScriptInternalAsync(
+      const scoped_refptr<SourceCode>& source_code);
+
+  void CompileAsync(
+      const scoped_refptr<SourceCode>& source_code);
+  
+  v8::MaybeLocal<v8::Value> RunScriptOnCallback(
+      const scoped_refptr<SourceCode>& source_code);
+
+
   void EvaluateEmbeddedScript(const unsigned char* data, size_t size,
                               const char* filename);
+  
+  void OnCompileReply(const v8::MaybeLocal<v8::Script>& nonlocal_script);
 
   // Evaluates any automatically included Javascript for the environment.
   void EvaluateAutomatics();

@@ -672,8 +672,8 @@ void HTMLScriptElement::Execute(const std::string& content,
   bool mute_errors =
       request_mode_ == loader::kNoCORSMode &&
       fetched_last_url_origin_ != document_->location()->GetOriginAsObject();
-  html_element_context()->script_runner()->Execute(
-      content, script_location, mute_errors, NULL /*out_succeeded*/);
+  html_element_context()->script_runner()->ExecuteAsync(
+      content, script_location, mute_errors);
 
   // 5. 6. Not needed by Cobalt.
 

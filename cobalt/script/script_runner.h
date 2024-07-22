@@ -38,6 +38,9 @@ class ScriptRunner {
   virtual std::string Execute(const std::string& script_utf8,
                               const base::SourceLocation& script_location,
                               bool mute_errors, bool* out_succeeded) = 0;
+  virtual void ExecuteAsync(const std::string& script_utf8,
+                            const base::SourceLocation& script_location,
+                            bool mute_errors) = 0;
   virtual GlobalEnvironment* GetGlobalEnvironment() const { return NULL; }
   virtual ~ScriptRunner() {}
 };

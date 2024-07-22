@@ -71,6 +71,9 @@ class GlobalEnvironment : public base::RefCounted<GlobalEnvironment>,
   virtual bool EvaluateScript(const scoped_refptr<SourceCode>& script_utf8,
                               std::string* out_result_utf8) = 0;
 
+  
+  virtual void EvaluateScriptAsync(const scoped_refptr<SourceCode>& script_utf8) = 0;
+
   // Evaluate the JavaScript source code. Returns true on success,
   // false if there is an exception.
   // Set |out_value_handle| to be a reference to the result of the evaluation
