@@ -18,6 +18,10 @@ blink_modules_sources("h5vcc_idom") {
   sources = [
     "assertions.cc",
     "assertions.h",
+    "changes.cc",
+    "changes.h",
+    "context.cc",
+    "context.h",
     "global.cc",
     "global.h",
     "h_5_vcc_idom.cc",
@@ -26,6 +30,8 @@ blink_modules_sources("h5vcc_idom") {
     "i_dom_symbols.h",
     "node_data.cc",
     "node_data.h",
+    "nodes.cc",
+    "nodes.h",
     "notification.cc",
     "symbols.cc",
   ]
