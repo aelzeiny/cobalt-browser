@@ -28,6 +28,7 @@ class CrashLog;
 class LocalDOMWindow;
 class H5vccAccessibility;
 class H5vccExperiments;
+class H5vccIdom;
 class H5vccMetrics;
 class H5vccSystem;
 class H5vccRuntime;
@@ -52,6 +53,8 @@ class MODULES_EXPORT H5vcc final : public ScriptWrappable,
   H5vccAccessibility* accessibility() { return accessibility_; }
   H5vccExperiments* experiments() { return experiments_; }
 
+  H5vccIdom* idom() { return idom_; }
+
   H5vccMetrics* metrics() { return metrics_; }
 
   H5vccSystem* system() { return system_; }
@@ -64,6 +67,7 @@ class MODULES_EXPORT H5vcc final : public ScriptWrappable,
   Member<CrashLog> crash_log_;
   Member<H5vccAccessibility> accessibility_;
   Member<H5vccExperiments> experiments_;
+  Member<H5vccIdom> idom_;
   Member<H5vccMetrics> metrics_;
   Member<H5vccSystem> system_;
   Member<H5vccRuntime> runtime_;
