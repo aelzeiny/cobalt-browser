@@ -19,6 +19,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 
 namespace blink {
@@ -42,12 +43,17 @@ class H5vccIdom final : public ScriptWrappable,
   IDomNotification* notifications();
   void setKeyAttributeName(const String& name);
   IDomSymbols* symbols();
+  void clearCache(Node* node);
+  String getKey(Node* node);
+  void importNode(Node* node);
+  bool isDataInitialized(Node* node);
 
   void Trace(Visitor*) const override;
 
  private:
   Member<IDomNotification> notifications_;
   Member<IDomSymbols> symbols_;
+  cobalt::h5vcc::idom::NodeDataMap node_data_map_;
 };
 
 }  // namespace blink

@@ -48,4 +48,16 @@ interface H5vccIdom {
 
     // An object that provides symbols for various internal purposes.
     readonly attribute IDomSymbols? symbols;
+
+    // Clears all caches from a node and all of its children.
+    void clearCache(Node node);
+
+    // Gets the key for a Node.
+    DOMString? getKey(Node node);
+
+    // Imports node and its subtree, initializing caches.
+    void importNode(Node node);
+
+    // Checks if the NodeData already exists.
+    boolean isDataInitialized(Node node);
 };

@@ -22,6 +22,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 
 namespace blink {
 
@@ -59,9 +60,26 @@ IDomSymbols* H5vccIdom::symbols() {
   return symbols_;
 }
 
+void H5vccIdom::clearCache(Node* node) {
+  cobalt::h5vcc::idom::ClearCache(node_data_map_, node);
+}
+
+String H5vccIdom::getKey(Node* node) {
+  return cobalt::h5vcc::idom::GetKey(node_data_map_, node);
+}
+
+void H5vccIdom::importNode(Node* node) {
+  cobalt::h5vcc::idom::ImportNode(node_data_map_, node);
+}
+
+bool H5vccIdom::isDataInitialized(Node* node) {
+  return cobalt::h5vcc::idom::IsDataInitialized(node_data_map_, node);
+}
+
 void H5vccIdom::Trace(Visitor* visitor) const {
   visitor->Trace(notifications_);
   visitor->Trace(symbols_);
+  visitor->Trace(node_data_map_);
   ExecutionContextLifecycleObserver::Trace(visitor);
   ScriptWrappable::Trace(visitor);
 }
