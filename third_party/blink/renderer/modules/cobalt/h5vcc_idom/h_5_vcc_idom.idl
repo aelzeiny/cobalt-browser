@@ -12,6 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+callback NodeFunction = void (sequence<Node> nodes);
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomNotification {
+    attribute NodeFunction? nodesCreated;
+    attribute NodeFunction? nodesDeleted;
+};
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomSymbols {
+    readonly attribute DOMString defaultValue;
+};
+
 // Incremental DOM interface for efficient DOM updates.
 [
     Exposed=Window,
@@ -20,4 +39,13 @@
 interface H5vccIdom {
     // Patches a DOM element using incremental DOM approach.
     void patch(Element element, VoidCallback function);
+
+    // Notifications for when nodes are created or deleted.
+    readonly attribute IDomNotification? notifications;
+
+    // Sets the name of the HTML attribute that holds the element key.
+    void setKeyAttributeName(DOMString? name);
+
+    // An object that provides symbols for various internal purposes.
+    readonly attribute IDomSymbols? symbols;
 };

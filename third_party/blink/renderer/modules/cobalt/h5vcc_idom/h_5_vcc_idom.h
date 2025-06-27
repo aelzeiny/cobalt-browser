@@ -16,6 +16,9 @@
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_H_5_VCC_IDOM_H_
 
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 
 namespace blink {
@@ -36,8 +39,15 @@ class H5vccIdom final : public ScriptWrappable,
 
   // Web-exposed interface:
   void patch(Element* element, V8VoidCallback* function);
+  IDomNotification* notifications();
+  void setKeyAttributeName(const String& name);
+  IDomSymbols* symbols();
 
   void Trace(Visitor*) const override;
+
+ private:
+  Member<IDomNotification> notifications_;
+  Member<IDomSymbols> symbols_;
 };
 
 }  // namespace blink

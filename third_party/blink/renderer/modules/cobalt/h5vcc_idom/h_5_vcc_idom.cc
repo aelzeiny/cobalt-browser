@@ -19,11 +19,16 @@
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 
 namespace blink {
 
 H5vccIdom::H5vccIdom(LocalDOMWindow& window)
-    : ExecutionContextLifecycleObserver(window.GetExecutionContext()) {}
+    : ExecutionContextLifecycleObserver(window.GetExecutionContext()),
+      notifications_(MakeGarbageCollected<IDomNotification>()),
+      symbols_(MakeGarbageCollected<IDomSymbols>()) {}
 
 void H5vccIdom::ContextDestroyed() {}
 
@@ -42,7 +47,21 @@ void H5vccIdom::patch(Element* element, V8VoidCallback* function) {
   DLOG(INFO) << "H5vccIdom::patch - Callback invoked";
 }
 
+IDomNotification* H5vccIdom::notifications() {
+  return notifications_;
+}
+
+void H5vccIdom::setKeyAttributeName(const String& name) {
+  cobalt::h5vcc::idom::SetKeyAttributeName(name);
+}
+
+IDomSymbols* H5vccIdom::symbols() {
+  return symbols_;
+}
+
 void H5vccIdom::Trace(Visitor* visitor) const {
+  visitor->Trace(notifications_);
+  visitor->Trace(symbols_);
   ExecutionContextLifecycleObserver::Trace(visitor);
   ScriptWrappable::Trace(visitor);
 }
