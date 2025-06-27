@@ -22,9 +22,9 @@ blink_modules_sources("h5vcc_idom") {
     "global.h",
     "h_5_vcc_idom.cc",
     "h_5_vcc_idom.h",
-    "i_dom_notification.cc",
     "i_dom_notification.h",
-    "i_dom_symbols.cc",
     "i_dom_symbols.h",
+    "notification.cc",
+    "symbols.cc",
   ]
 }

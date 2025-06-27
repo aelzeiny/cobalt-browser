@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_node_function.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 
 namespace blink {
 
