@@ -19,7 +19,9 @@
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
@@ -29,7 +31,8 @@ namespace blink {
 H5vccIdom::H5vccIdom(LocalDOMWindow& window)
     : ExecutionContextLifecycleObserver(window.GetExecutionContext()),
       notifications_(MakeGarbageCollected<IDomNotification>()),
-      symbols_(MakeGarbageCollected<IDomSymbols>()) {}
+      symbols_(MakeGarbageCollected<IDomSymbols>()),
+      attributes_(MakeGarbageCollected<IDomAttributeMap>()) {}
 
 void H5vccIdom::ContextDestroyed() {}
 
@@ -76,10 +79,31 @@ bool H5vccIdom::isDataInitialized(Node* node) {
   return cobalt::h5vcc::idom::IsDataInitialized(node_data_map_, node);
 }
 
+void H5vccIdom::applyAttr(Element* el,
+                          const String& name,
+                          const String& value) {
+  cobalt::h5vcc::idom::ApplyAttr(el, name, value);
+}
+
+void H5vccIdom::applyProp(Element* el,
+                          const String& name,
+                          const String& value) {
+  cobalt::h5vcc::idom::ApplyProp(el, name, value);
+}
+
+IDomAttributeMap* H5vccIdom::attributes() {
+  return attributes_;
+}
+
+IDomAttributeMap* H5vccIdom::createAttributeMap() {
+  return MakeGarbageCollected<IDomAttributeMap>();
+}
+
 void H5vccIdom::Trace(Visitor* visitor) const {
   visitor->Trace(notifications_);
   visitor->Trace(symbols_);
   visitor->Trace(node_data_map_);
+  visitor->Trace(attributes_);
   ExecutionContextLifecycleObserver::Trace(visitor);
   ScriptWrappable::Trace(visitor);
 }

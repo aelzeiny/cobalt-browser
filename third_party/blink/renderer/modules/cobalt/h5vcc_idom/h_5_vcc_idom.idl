@@ -60,4 +60,25 @@ interface H5vccIdom {
 
     // Checks if the NodeData already exists.
     boolean isDataInitialized(Node node);
+
+    // Applies an attribute or property to a given Element.
+    void applyAttr(Element el, DOMString name, DOMString? value);
+    void applyProp(Element el, DOMString name, DOMString? value);
+
+    // A publicly mutable object to provide custom mutators for attributes.
+    [SameObject] readonly attribute IDomAttributeMap attributes;
+    IDomAttributeMap createAttributeMap();
 };
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomAttributeMap {
+    // Special generic mutator that's called for any attribute that does not
+    // have a specific mutator.
+    attribute AttrMutator? defaultValue;
+    attribute AttrMutator? style;
+};
+
+callback AttrMutator = void(Element el, DOMString name, DOMString? value);

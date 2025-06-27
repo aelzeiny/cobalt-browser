@@ -81,6 +81,8 @@ generated_callback_function_sources_in_modules = [
 
 if (is_cobalt) {
   generated_callback_function_sources_in_modules += [
+    "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_attr_mutator.cc",
+    "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_attr_mutator.h",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_node_function.cc",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_node_function.h",
   ]
@@ -2820,6 +2822,8 @@ if (is_cobalt) {
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_h_5_vcc_system.h",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_h_5_vcc_runtime.cc",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_h_5_vcc_runtime.h",
+    "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_i_dom_attribute_map.cc",
+    "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_i_dom_attribute_map.h",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_i_dom_notification.cc",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_i_dom_notification.h",
     "$root_gen_dir/third_party/blink/renderer/bindings/modules/v8/v8_i_dom_symbols.cc",
