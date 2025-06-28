@@ -15,26 +15,37 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_context.h"
 
 #include "third_party/blink/renderer/core/dom/node.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 
 namespace blink {
 
-IDomContext::IDomContext() = default;
+IDomContext::IDomContext() : context_(nullptr) {}
+
+IDomContext::IDomContext(cobalt::h5vcc::idom::Context* context)
+    : context_(context) {}
 
 void IDomContext::markCreated(Node* node) {
-  // TODO: Implement
+  if (context_) {
+    context_->MarkCreated(node);
+  }
 }
 
 void IDomContext::markDeleted(Node* node) {
-  // TODO: Implement
+  if (context_) {
+    context_->MarkDeleted(node);
+  }
 }
 
 void IDomContext::notifyChanges(IDomNotification* notifications) {
-  // TODO: Implement
+  if (context_) {
+    context_->NotifyChanges(notifications);
+  }
 }
 
 void IDomContext::Trace(Visitor* visitor) const {
   ScriptWrappable::Trace(visitor);
+  // Note: context_ is not traced as it's managed by the cobalt namespace
 }
 
 }  // namespace blink

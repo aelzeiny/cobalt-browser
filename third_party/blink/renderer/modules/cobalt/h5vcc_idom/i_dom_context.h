@@ -18,6 +18,14 @@
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 
+namespace cobalt {
+namespace h5vcc {
+namespace idom {
+class Context;
+}
+}  // namespace h5vcc
+}  // namespace cobalt
+
 namespace blink {
 
 class Node;
@@ -28,6 +36,7 @@ class IDomContext final : public ScriptWrappable {
 
  public:
   IDomContext();
+  explicit IDomContext(cobalt::h5vcc::idom::Context* context);
 
   // IDL interface methods
   void markCreated(Node* node);
@@ -37,7 +46,8 @@ class IDomContext final : public ScriptWrappable {
   void Trace(Visitor*) const override;
 
  private:
-  // Implementation details
+  // Wrapped context
+  cobalt::h5vcc::idom::Context* context_;
 };
 
 }  // namespace blink

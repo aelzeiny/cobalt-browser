@@ -117,10 +117,12 @@ IDomPatcher* H5vccIdom::createPatchOuter(const PatchConfig* config) {
 }
 
 IDomContext* H5vccIdom::currentContext() {
-  // TODO: Create and return proper IDomContext wrapper for
-  // cobalt::h5vcc::idom::Context For now return nullptr as the underlying
-  // context may not exist
-  return nullptr;
+  cobalt::h5vcc::idom::Context* ctx = cobalt::h5vcc::idom::CurrentContext();
+  if (!ctx) {
+    return nullptr;
+  }
+  // Create IDomContext wrapper for the cobalt context
+  return MakeGarbageCollected<IDomContext>(ctx);
 }
 
 Element* H5vccIdom::currentElement() {
