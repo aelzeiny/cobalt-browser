@@ -24,6 +24,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
@@ -66,6 +67,15 @@ void H5vccIdom::clearCache(Node* node) {
 
 String H5vccIdom::getKey(Node* node) {
   return cobalt::h5vcc::idom::GetKey(node_data_map_, node);
+}
+
+IDomNodeData* H5vccIdom::getData(Node* node, const String& fallback_key) {
+  cobalt::h5vcc::idom::NodeData* internal_data =
+      cobalt::h5vcc::idom::GetData(node_data_map_, node, fallback_key);
+  if (!internal_data) {
+    return nullptr;
+  }
+  return MakeGarbageCollected<IDomNodeData>(internal_data);
 }
 
 void H5vccIdom::importNode(Node* node) {

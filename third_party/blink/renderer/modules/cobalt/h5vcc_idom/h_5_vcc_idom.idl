@@ -32,6 +32,18 @@ interface IDomSymbols {
     [ImplementedAs=defaultValue] readonly attribute DOMString default;
 };
 
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomNodeData {
+    readonly attribute DOMString nameOrCtor;
+    readonly attribute DOMString key;
+    readonly attribute DOMString text;
+    readonly attribute boolean staticsApplied;
+    readonly attribute boolean alwaysDiffAttributes;
+};
+
 // Incremental DOM interface for efficient DOM updates.
 [
     Exposed=Window,
@@ -58,6 +70,9 @@ interface H5vccIdom {
 
     // Gets the key for a Node.
     DOMString? getKey(Node node);
+
+    // Gets the NodeData for a Node, creating it if necessary.
+    IDomNodeData? getData(Node node, optional DOMString fallbackKey);
 
     // Imports node and its subtree, initializing caches.
     void importNode(Node node);

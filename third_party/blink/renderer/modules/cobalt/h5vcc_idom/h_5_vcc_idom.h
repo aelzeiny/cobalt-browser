@@ -21,6 +21,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_context.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
@@ -53,6 +54,7 @@ class H5vccIdom final : public ScriptWrappable,
   IDomSymbols* symbols();
   void clearCache(Node* node);
   String getKey(Node* node);
+  IDomNodeData* getData(Node* node, const String& fallback_key = String());
   void importNode(Node* node);
   bool isDataInitialized(Node* node);
   void applyAttr(Element* el, const String& name, const String& value);

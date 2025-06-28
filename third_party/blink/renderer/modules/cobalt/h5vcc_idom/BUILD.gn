@@ -36,6 +36,8 @@ blink_modules_sources("h5vcc_idom") {
     "i_dom_attribute_map.h",
     "i_dom_context.cc",
     "i_dom_context.h",
+    "i_dom_node_data.cc",
+    "i_dom_node_data.h",
     "i_dom_notification.h",
     "i_dom_patcher.cc",
     "i_dom_patcher.h",
