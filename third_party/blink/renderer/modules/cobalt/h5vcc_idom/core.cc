@@ -14,10 +14,15 @@
 
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 
+#include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
+#include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/assertions.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/context.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/dom_util.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/nodes.h"
+#include "third_party/blink/renderer/platform/bindings/script_state.h"
 
 namespace cobalt {
 namespace h5vcc {
@@ -28,6 +33,8 @@ namespace {
 Context* context = nullptr;
 blink::Node* current_node = nullptr;
 blink::Node* current_parent = nullptr;
+blink::Document* doc = nullptr;
+blink::HeapVector<blink::Member<blink::Node>>* focus_path = nullptr;
 
 void EnterNode() {
   current_parent = current_node;
@@ -38,6 +45,11 @@ void ExitNode() {
   // clearUnvisitedDOM(current_parent, getNextNode(), null);
   current_node = current_parent;
   current_parent = current_parent->parentNode();
+}
+
+void updatePatchContext(Context* ctx) {
+  // Update the global context reference
+  context = ctx;
 }
 
 }  // namespace
@@ -101,6 +113,80 @@ blink::Node* SkipNode() {
 
 blink::Element* TryGetCurrentElement() {
   return blink::To<blink::Element>(current_parent);
+}
+
+void Patch(blink::Element* node,
+           blink::V8PatchFunction* template_function,
+           blink::ScriptValue data,
+           bool is_outer) {
+  Context* prev_context = context;
+  blink::Document* prev_doc = doc;
+  blink::HeapVector<blink::Member<blink::Node>>* prev_focus_path = focus_path;
+  blink::Node* prev_current_node = current_node;
+  blink::Node* prev_current_parent = current_parent;
+
+  doc = &node->GetDocument();
+  context = MakeGarbageCollected<Context>(node);
+  current_node = nullptr;
+  current_parent = node->parentNode();
+  // Store the focused path - allocate a new HeapVector for this patch
+  auto current_focus_path = GetFocusedPath(node, current_parent);
+  focus_path = &current_focus_path;
+
+  bool previous_in_attributes = SetInAttributes(false);
+  bool previous_in_skip = SetInSkip(false);
+  updatePatchContext(context);
+
+  // Get V8 isolate from ExecutionContext
+  v8::Isolate* isolate = node->GetExecutionContext()->GetIsolate();
+  v8::TryCatch try_catch(isolate);
+  v8::Local<v8::Value> v8_data = data.V8Value();
+  if (is_outer) {
+    // TODO: Implement patchOuter
+  } else {
+    current_node = node;
+    EnterNode();
+    blink::ScriptValue script_data(isolate, v8_data);
+    v8::Maybe<void> result = template_function->Invoke(nullptr, script_data);
+    (void)result;  // Suppress unused variable warning
+    ExitNode();
+  }
+
+  context->NotifyChanges(nullptr);
+
+  doc = prev_doc;
+  context = prev_context;
+  focus_path = prev_focus_path;
+  current_node = prev_current_node;
+  current_parent = prev_current_parent;
+
+  SetInAttributes(previous_in_attributes);
+  SetInSkip(previous_in_skip);
+  updatePatchContext(context);
+}
+
+void PatchInner(blink::Element* node,
+                blink::V8PatchFunction* template_function,
+                blink::ScriptValue data) {
+  Patch(node, template_function, data, false);
+}
+
+void PatchOuter(blink::Element* node,
+                blink::V8PatchFunction* template_function,
+                blink::ScriptValue data) {
+  Patch(node, template_function, data, true);
+}
+
+void PatchInner(blink::Element* node,
+                blink::V8VoidCallback* template_function,
+                blink::ScriptValue data) {
+  // Convert V8VoidCallback to a simple patch operation
+  // For now, just call the callback directly as this matches the original
+  // intent
+  if (node && template_function) {
+    template_function->InvokeAndReportException(
+        node->GetExecutionContext()->ToScriptWrappable());
+  }
 }
 
 }  // namespace idom

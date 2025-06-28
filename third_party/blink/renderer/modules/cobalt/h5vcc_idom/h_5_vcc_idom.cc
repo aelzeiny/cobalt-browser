@@ -41,18 +41,7 @@ H5vccIdom::H5vccIdom(LocalDOMWindow& window)
 void H5vccIdom::ContextDestroyed() {}
 
 void H5vccIdom::patch(Element* element, V8VoidCallback* function) {
-  DLOG(INFO) << "H5vccIdom::patch called";
-
-  if (!function) {
-    DLOG(WARNING) << "H5vccIdom::patch - No function provided";
-    return;
-  }
-
-  DLOG(INFO) << "H5vccIdom::patch - About to invoke callback";
-  // Immediately call back the JavaScript function
-  function->InvokeAndReportException(
-      GetExecutionContext()->ToScriptWrappable());
-  DLOG(INFO) << "H5vccIdom::patch - Callback invoked";
+  cobalt::h5vcc::idom::PatchInner(element, function, ScriptValue());
 }
 
 IDomNotification* H5vccIdom::notifications() {
@@ -118,17 +107,19 @@ Element* H5vccIdom::close() {
 }
 
 IDomPatcher* H5vccIdom::createPatchInner(const PatchConfig* config) {
-  // TODO: Implement
-  return nullptr;
+  (void)config;  // Suppress unused parameter warning
+  return MakeGarbageCollected<IDomPatcher>(false);
 }
 
 IDomPatcher* H5vccIdom::createPatchOuter(const PatchConfig* config) {
-  // TODO: Implement
-  return nullptr;
+  (void)config;  // Suppress unused parameter warning
+  return MakeGarbageCollected<IDomPatcher>(true);
 }
 
 IDomContext* H5vccIdom::currentContext() {
-  // TODO: Implement proper context mapping
+  // TODO: Create and return proper IDomContext wrapper for
+  // cobalt::h5vcc::idom::Context For now return nullptr as the underlying
+  // context may not exist
   return nullptr;
 }
 
@@ -153,15 +144,15 @@ Element* H5vccIdom::open(const String& name_or_ctor,
 IDomPatcher* H5vccIdom::patchInner(Element* el,
                                    V8PatchFunction* template_function,
                                    ScriptValue data) {
-  // TODO: Implement
-  return nullptr;
+  cobalt::h5vcc::idom::PatchInner(el, template_function, data);
+  return MakeGarbageCollected<IDomPatcher>(false);
 }
 
 IDomPatcher* H5vccIdom::patchOuter(Element* el,
                                    V8PatchFunction* template_function,
                                    ScriptValue data) {
-  // TODO: Implement
-  return nullptr;
+  cobalt::h5vcc::idom::PatchOuter(el, template_function, data);
+  return MakeGarbageCollected<IDomPatcher>(true);
 }
 
 void H5vccIdom::skip() {

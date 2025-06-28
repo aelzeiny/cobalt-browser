@@ -15,11 +15,17 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_CORE_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_CORE_H_
 
+#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/dom/node.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+
+namespace blink {
+class V8VoidCallback;
+}
 
 namespace cobalt {
 namespace h5vcc {
@@ -42,6 +48,18 @@ blink::Element* Open(NodeDataMap& data_map,
 void Skip();
 blink::Node* SkipNode();
 blink::Element* TryGetCurrentElement();
+
+void PatchInner(blink::Element* node,
+                blink::V8PatchFunction* template_function,
+                blink::ScriptValue data);
+void PatchOuter(blink::Element* node,
+                blink::V8PatchFunction* template_function,
+                blink::ScriptValue data);
+
+// Overload for V8VoidCallback
+void PatchInner(blink::Element* node,
+                blink::V8VoidCallback* template_function,
+                blink::ScriptValue data);
 
 }  // namespace idom
 }  // namespace h5vcc

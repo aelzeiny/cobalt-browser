@@ -28,11 +28,14 @@ class IDomPatcher final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  IDomPatcher();
+  explicit IDomPatcher(bool is_outer);
 
   void patch(Element* el, V8PatchFunction* template_function, ScriptValue data);
 
   void Trace(Visitor* visitor) const override;
+
+ private:
+  bool is_outer_;
 };
 
 }  // namespace blink

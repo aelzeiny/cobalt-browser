@@ -63,8 +63,8 @@ class H5vccIdom final : public ScriptWrappable,
                     const String& nonce);
   void alwaysDiffAttributes(Element* el);
   Element* close();
-  IDomPatcher* createPatchInner(const PatchConfig* config);
-  IDomPatcher* createPatchOuter(const PatchConfig* config);
+  IDomPatcher* createPatchInner(const PatchConfig* config = nullptr);
+  IDomPatcher* createPatchOuter(const PatchConfig* config = nullptr);
   IDomContext* currentContext();
   Element* currentElement();
   Node* currentPointer();

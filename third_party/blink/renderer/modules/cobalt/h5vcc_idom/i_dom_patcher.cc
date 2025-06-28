@@ -17,15 +17,20 @@
 #include "third_party/blink/renderer/bindings/core/v8/script_value.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
 #include "third_party/blink/renderer/core/dom/element.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 
 namespace blink {
 
-IDomPatcher::IDomPatcher() = default;
+IDomPatcher::IDomPatcher(bool is_outer) : is_outer_(is_outer) {}
 
 void IDomPatcher::patch(Element* el,
                         V8PatchFunction* template_function,
                         ScriptValue data) {
-  // TODO: Implement
+  if (is_outer_) {
+    cobalt::h5vcc::idom::PatchOuter(el, template_function, data);
+  } else {
+    cobalt::h5vcc::idom::PatchInner(el, template_function, data);
+  }
 }
 
 void IDomPatcher::Trace(Visitor* visitor) const {
