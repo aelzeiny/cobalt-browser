@@ -49,6 +49,7 @@ class H5vccIdom final : public ScriptWrappable,
   void patch(Element* element, V8VoidCallback* function);
   IDomNotification* notifications();
   void setKeyAttributeName(const String& name);
+  String getKeyAttributeName();
   IDomSymbols* symbols();
   void clearCache(Node* node);
   String getKey(Node* node);

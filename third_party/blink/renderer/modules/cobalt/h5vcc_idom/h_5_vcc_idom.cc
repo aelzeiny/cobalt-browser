@@ -52,6 +52,10 @@ void H5vccIdom::setKeyAttributeName(const String& name) {
   cobalt::h5vcc::idom::SetKeyAttributeName(name);
 }
 
+String H5vccIdom::getKeyAttributeName() {
+  return cobalt::h5vcc::idom::KeyAttributeName();
+}
+
 IDomSymbols* H5vccIdom::symbols() {
   return symbols_;
 }

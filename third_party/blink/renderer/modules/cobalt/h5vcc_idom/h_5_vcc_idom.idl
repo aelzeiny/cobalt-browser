@@ -29,7 +29,7 @@ interface IDomNotification {
     SecureContext
 ]
 interface IDomSymbols {
-    readonly attribute DOMString defaultValue;
+    [ImplementedAs=defaultValue] readonly attribute DOMString default;
 };
 
 // Incremental DOM interface for efficient DOM updates.
@@ -46,6 +46,9 @@ interface H5vccIdom {
 
     // Sets the name of the HTML attribute that holds the element key.
     void setKeyAttributeName(DOMString? name);
+
+    // Gets the name of the HTML attribute that holds the element key.
+    DOMString getKeyAttributeName();
 
     // An object that provides symbols for various internal purposes.
     readonly attribute IDomSymbols? symbols;
