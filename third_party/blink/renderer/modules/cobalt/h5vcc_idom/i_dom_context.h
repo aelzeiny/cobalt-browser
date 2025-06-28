@@ -12,36 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_ATTRIBUTE_MAP_H_
-#define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_ATTRIBUTE_MAP_H_
+#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_CONTEXT_H_
+#define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_CONTEXT_H_
 
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 
 namespace blink {
 
-class V8AttrMutator;
+class Node;
+class IDomNotification;
 
-class IDomAttributeMap final : public ScriptWrappable {
+class IDomContext final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  IDomAttributeMap();
+  IDomContext();
 
-  V8AttrMutator* defaultValue() const;
-  void setDefaultValue(V8AttrMutator* value);
+  // IDL interface methods
+  void markCreated(Node* node);
+  void markDeleted(Node* node);
+  void notifyChanges(IDomNotification* notifications);
 
-  V8AttrMutator* style() const;
-  void setStyle(V8AttrMutator* value);
-
-  void Trace(Visitor* visitor) const override;
+  void Trace(Visitor*) const override;
 
  private:
-  Member<V8AttrMutator> default_value_;
-  Member<V8AttrMutator> style_;
+  // Implementation details
 };
 
 }  // namespace blink
 
-#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_ATTRIBUTE_MAP_H_
+#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_I_DOM_CONTEXT_H_

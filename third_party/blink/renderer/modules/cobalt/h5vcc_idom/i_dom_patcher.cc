@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 
-#include "third_party/blink/renderer/bindings/modules/v8/v8_attr_mutator.h"
+#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
+#include "third_party/blink/renderer/core/dom/element.h"
 
 namespace blink {
 
-IDomAttributeMap::IDomAttributeMap() = default;
+IDomPatcher::IDomPatcher() = default;
 
-V8AttrMutator* IDomAttributeMap::defaultValue() const {
-  return default_value_;
+void IDomPatcher::patch(Element* el,
+                        V8PatchFunction* template_function,
+                        ScriptValue data) {
+  // TODO: Implement
 }
 
-void IDomAttributeMap::setDefaultValue(V8AttrMutator* value) {
-  default_value_ = value;
-}
-
-V8AttrMutator* IDomAttributeMap::style() const {
-  return style_;
-}
-
-void IDomAttributeMap::setStyle(V8AttrMutator* value) {
-  style_ = value;
-}
-
-void IDomAttributeMap::Trace(Visitor* visitor) const {
-  visitor->Trace(default_value_);
-  visitor->Trace(style_);
+void IDomPatcher::Trace(Visitor* visitor) const {
   ScriptWrappable::Trace(visitor);
 }
 

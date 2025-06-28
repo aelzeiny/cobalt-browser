@@ -13,6 +13,7 @@
 // limitations under the License.
 
 callback NodeFunction = void (sequence<Node> nodes);
+callback PatchFunction = void (any data);
 
 [
     Exposed=Window,
@@ -68,6 +69,22 @@ interface H5vccIdom {
     // A publicly mutable object to provide custom mutators for attributes.
     [SameObject] readonly attribute IDomAttributeMap attributes;
     IDomAttributeMap createAttributeMap();
+
+    void alignWithDOM(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
+    void alwaysDiffAttributes(Element el);
+    Element close();
+    IDomPatcher createPatchInner(optional PatchConfig config);
+    IDomPatcher createPatchOuter(optional PatchConfig config);
+    IDomContext? currentContext();
+    Element currentElement();
+    Node currentPointer();
+    Node? getNextNode();
+    Element open(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
+    IDomPatcher patchInner(Element el, PatchFunction template, any data);
+    IDomPatcher patchOuter(Element el, PatchFunction template, any data);
+    void skip();
+    Node? skipNode();
+    Element? tryGetCurrentElement();
 };
 
 [
@@ -82,3 +99,27 @@ interface IDomAttributeMap {
 };
 
 callback AttrMutator = void(Element el, DOMString name, DOMString? value);
+
+dictionary PatchConfig {
+    MatchFn? matches;
+};
+
+callback MatchFn = boolean (Node matchNode, DOMString nameOrCtor, DOMString expectedNameOrCtor, DOMString? key, DOMString? expectedKey);
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomPatcher {
+    void patch(Element el, PatchFunction template, any data);
+};
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomContext {
+    void markCreated(Node node);
+    void markDeleted(Node node);
+    void notifyChanges(IDomNotification? notifications);
+};

@@ -15,11 +15,14 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_H_5_VCC_IDOM_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_H_5_VCC_IDOM_H_
 
+#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
@@ -30,6 +33,8 @@ class ExecutionContext;
 class LocalDOMWindow;
 class Element;
 class V8VoidCallback;
+class V8PatchFunction;
+class PatchConfig;
 
 class H5vccIdom final : public ScriptWrappable,
                         public ExecutionContextLifecycleObserver {
@@ -53,6 +58,29 @@ class H5vccIdom final : public ScriptWrappable,
   void applyProp(Element* el, const String& name, const String& value);
   IDomAttributeMap* attributes();
   IDomAttributeMap* createAttributeMap();
+  void alignWithDOM(const String& name_or_ctor,
+                    const String& key,
+                    const String& nonce);
+  void alwaysDiffAttributes(Element* el);
+  Element* close();
+  IDomPatcher* createPatchInner(const PatchConfig* config);
+  IDomPatcher* createPatchOuter(const PatchConfig* config);
+  IDomContext* currentContext();
+  Element* currentElement();
+  Node* currentPointer();
+  Node* getNextNode();
+  Element* open(const String& name_or_ctor,
+                const String& key,
+                const String& nonce);
+  IDomPatcher* patchInner(Element* el,
+                          V8PatchFunction* template_function,
+                          ScriptValue data);
+  IDomPatcher* patchOuter(Element* el,
+                          V8PatchFunction* template_function,
+                          ScriptValue data);
+  void skip();
+  Node* skipNode();
+  Element* tryGetCurrentElement();
 
   void Trace(Visitor*) const override;
 

@@ -16,15 +16,19 @@
 
 #include "base/logging.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/platform/bindings/script_state.h"
 
 namespace blink {
 
@@ -97,6 +101,79 @@ IDomAttributeMap* H5vccIdom::attributes() {
 
 IDomAttributeMap* H5vccIdom::createAttributeMap() {
   return MakeGarbageCollected<IDomAttributeMap>();
+}
+
+void H5vccIdom::alignWithDOM(const String& name_or_ctor,
+                             const String& key,
+                             const String& nonce) {
+  cobalt::h5vcc::idom::AlignWithDOM(node_data_map_, name_or_ctor, key, nonce);
+}
+
+void H5vccIdom::alwaysDiffAttributes(Element* el) {
+  cobalt::h5vcc::idom::AlwaysDiffAttributes(el);
+}
+
+Element* H5vccIdom::close() {
+  return cobalt::h5vcc::idom::Close();
+}
+
+IDomPatcher* H5vccIdom::createPatchInner(const PatchConfig* config) {
+  // TODO: Implement
+  return nullptr;
+}
+
+IDomPatcher* H5vccIdom::createPatchOuter(const PatchConfig* config) {
+  // TODO: Implement
+  return nullptr;
+}
+
+IDomContext* H5vccIdom::currentContext() {
+  // TODO: Implement proper context mapping
+  return nullptr;
+}
+
+Element* H5vccIdom::currentElement() {
+  return cobalt::h5vcc::idom::CurrentElement();
+}
+
+Node* H5vccIdom::currentPointer() {
+  return cobalt::h5vcc::idom::CurrentPointer();
+}
+
+Node* H5vccIdom::getNextNode() {
+  return cobalt::h5vcc::idom::GetNextNode();
+}
+
+Element* H5vccIdom::open(const String& name_or_ctor,
+                         const String& key,
+                         const String& nonce) {
+  return cobalt::h5vcc::idom::Open(node_data_map_, name_or_ctor, key, nonce);
+}
+
+IDomPatcher* H5vccIdom::patchInner(Element* el,
+                                   V8PatchFunction* template_function,
+                                   ScriptValue data) {
+  // TODO: Implement
+  return nullptr;
+}
+
+IDomPatcher* H5vccIdom::patchOuter(Element* el,
+                                   V8PatchFunction* template_function,
+                                   ScriptValue data) {
+  // TODO: Implement
+  return nullptr;
+}
+
+void H5vccIdom::skip() {
+  cobalt::h5vcc::idom::Skip();
+}
+
+Node* H5vccIdom::skipNode() {
+  return cobalt::h5vcc::idom::SkipNode();
+}
+
+Element* H5vccIdom::tryGetCurrentElement() {
+  return cobalt::h5vcc::idom::TryGetCurrentElement();
 }
 
 void H5vccIdom::Trace(Visitor* visitor) const {

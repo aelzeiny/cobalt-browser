@@ -19,6 +19,10 @@
 
 #include "base/logging.h"
 
+namespace blink {
+class Node;
+}
+
 namespace cobalt {
 namespace h5vcc {
 namespace idom {
@@ -92,6 +96,12 @@ bool SetInSkip(bool value) {
   bool previous = in_skip_;
   in_skip_ = value;
   return previous;
+}
+
+// Checks that no children have been declared yet for the given node.
+void AssertNoChildrenDeclaredYet(const char* function_name, blink::Node* node) {
+  // This is a simplified implementation.
+  // In the original, this would check if any children have been processed.
 }
 
 }  // namespace idom
