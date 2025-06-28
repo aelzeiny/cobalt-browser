@@ -33,8 +33,8 @@ blink::HeapVector<blink::Member<blink::Node>> GetAncestry(blink::Node* node,
     cur = cur->parentNode();
     if (!cur && root) {
       if (auto* shadow_root =
-              DynamicTo<blink::ShadowRoot>(node->GetRootNode())) {
-        cur = shadow_root->host();
+              DynamicTo<blink::ShadowRoot>(node->getRootNode(nullptr))) {
+        cur = &shadow_root->host();
       }
     }
   }

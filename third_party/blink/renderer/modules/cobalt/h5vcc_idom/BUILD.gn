@@ -26,6 +26,8 @@ blink_modules_sources("h5vcc_idom") {
     "context.h",
     "core.cc",
     "core.h",
+    "dom_util.cc",
+    "dom_util.h",
     "global.cc",
     "global.h",
     "h_5_vcc_idom.cc",
