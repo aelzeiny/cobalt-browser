@@ -14,6 +14,7 @@
 
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 
+#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
 #include "third_party/blink/renderer/core/css/css_style_declaration.h"
@@ -61,7 +62,7 @@ void ApplyAttr(blink::Element* el,
 
 void ApplyProp(blink::Element* el,
                const WTF::String& name,
-               const WTF::String& value) {
+               const blink::ScriptValue& value) {
   blink::LocalFrame* frame = el->GetDocument().GetFrame();
   if (!frame) {
     return;
@@ -84,13 +85,8 @@ void ApplyProp(blink::Element* el,
   }
   v8::Local<v8::Object> v8_object = v8_element_value.As<v8::Object>();
 
-  v8::Local<v8::Value> v8_value;
-  if (value.IsNull()) {
-    v8_value = v8::Null(isolate);
-  } else {
-    v8_value =
-        v8::String::NewFromUtf8(isolate, value.Utf8().c_str()).ToLocalChecked();
-  }
+  // Use the ScriptValue directly - it already contains the V8 value
+  v8::Local<v8::Value> v8_value = value.V8Value();
   v8::Local<v8::String> v8_name =
       v8::String::NewFromUtf8(isolate, name.Utf8().c_str()).ToLocalChecked();
 

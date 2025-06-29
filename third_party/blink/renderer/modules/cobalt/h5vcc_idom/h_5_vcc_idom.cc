@@ -100,7 +100,7 @@ void H5vccIdom::applyAttr(Element* el,
 
 void H5vccIdom::applyProp(Element* el,
                           const String& name,
-                          const String& value) {
+                          const ScriptValue& value) {
   cobalt::h5vcc::idom::ApplyProp(el, name, value);
 }
 

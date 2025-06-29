@@ -94,10 +94,10 @@ ScriptValue IDomAttributeMap::CreateJavaScriptAttributeMap(
     }
 
     v8::String::Utf8Value name_utf8(info.GetIsolate(), info[1]);
-    v8::String::Utf8Value value_utf8(info.GetIsolate(), info[2]);
-
     String name(*name_utf8);
-    String value(*value_utf8);
+
+    // Create ScriptValue from the V8 value
+    ScriptValue value(info.GetIsolate(), info[2]);
 
     // For style, we should apply it as a property rather than attribute
     cobalt::h5vcc::idom::ApplyProp(element, name, value);

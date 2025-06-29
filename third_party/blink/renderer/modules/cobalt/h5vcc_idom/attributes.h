@@ -18,6 +18,10 @@
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+namespace blink {
+class ScriptValue;
+}
+
 namespace cobalt {
 namespace h5vcc {
 namespace idom {
@@ -31,7 +35,7 @@ void ApplyAttr(blink::Element* el,
                const WTF::String& value);
 void ApplyProp(blink::Element* el,
                const WTF::String& name,
-               const WTF::String& value);
+               const blink::ScriptValue& value);
 
 }  // namespace idom
 }  // namespace h5vcc

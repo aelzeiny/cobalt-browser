@@ -58,7 +58,7 @@ class H5vccIdom final : public ScriptWrappable,
   void importNode(Node* node);
   bool isDataInitialized(Node* node);
   void applyAttr(Element* el, const String& name, const String& value);
-  void applyProp(Element* el, const String& name, const String& value);
+  void applyProp(Element* el, const String& name, const ScriptValue& value);
   IDomAttributeMap* attributes();
   ScriptValue createAttributeMap(ScriptState*);
   void alignWithDOM(const String& name_or_ctor,
