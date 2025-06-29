@@ -18,6 +18,8 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/wtf/hash_map.h"
+#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 namespace blink {
 
@@ -34,17 +36,32 @@ class IDomAttributeMap final : public ScriptWrappable {
   // Static factory method to create a JavaScript object with attribute mutators
   static ScriptValue CreateJavaScriptAttributeMap(ScriptState* script_state);
 
-  V8AttrMutator* defaultValue() const;
-  void setDefaultValue(V8AttrMutator* value);
+  // Static methods to create the default mutator functions
+  static V8AttrMutator* CreateDefaultMutator(ScriptState* script_state);
+  static V8AttrMutator* CreateStyleMutator(ScriptState* script_state);
 
-  V8AttrMutator* style() const;
-  void setStyle(V8AttrMutator* value);
+  V8AttrMutator* defaultValue(ScriptState* script_state) const;
+  void setDefaultValue(ScriptState* script_state, V8AttrMutator* value);
+
+  V8AttrMutator* style(ScriptState* script_state) const;
+  void setStyle(ScriptState* script_state, V8AttrMutator* value);
+
+  // Map-like operations for custom attribute mutators
+  V8AttrMutator* AnonymousNamedGetter(ScriptState* script_state,
+                                      const String& name);
+  void AnonymousNamedSetter(const String& name, V8AttrMutator* mutator);
+  bool AnonymousNamedDeleter(const String& name);
+
+  // Internal method to get mutator with fallback to default
+  V8AttrMutator* GetMutator(ScriptState* script_state,
+                            const String& name) const;
 
   void Trace(Visitor* visitor) const override;
 
  private:
   Member<V8AttrMutator> default_value_;
   Member<V8AttrMutator> style_;
+  HeapHashMap<String, Member<V8AttrMutator>> custom_mutators_;
 };
 
 }  // namespace blink

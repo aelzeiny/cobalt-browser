@@ -19,7 +19,6 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
@@ -59,7 +58,8 @@ class H5vccIdom final : public ScriptWrappable,
   bool isDataInitialized(Node* node);
   void applyAttr(Element* el, const String& name, const String& value);
   void applyProp(Element* el, const String& name, const ScriptValue& value);
-  IDomAttributeMap* attributes();
+  ScriptValue attributes(ScriptState* script_state);
+  void setAttributes(ScriptState* script_state, const ScriptValue& attributes);
   ScriptValue createAttributeMap(ScriptState*);
   void alignWithDOM(const String& name_or_ctor,
                     const String& key,
@@ -91,7 +91,7 @@ class H5vccIdom final : public ScriptWrappable,
   Member<IDomNotification> notifications_;
   Member<IDomSymbols> symbols_;
   cobalt::h5vcc::idom::NodeDataMap node_data_map_;
-  Member<IDomAttributeMap> attributes_;
+  ScriptValue attributes_;
 };
 
 }  // namespace blink

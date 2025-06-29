@@ -15,6 +15,8 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/h_5_vcc_idom.h"
 
 #include "base/logging.h"
+#include "third_party/blink/renderer/bindings/core/v8/to_v8_for_core.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_element.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
 #include "third_party/blink/renderer/core/dom/element.h"
@@ -23,7 +25,6 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
-#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
@@ -37,8 +38,9 @@ namespace blink {
 H5vccIdom::H5vccIdom(LocalDOMWindow& window)
     : ExecutionContextLifecycleObserver(window.GetExecutionContext()),
       notifications_(MakeGarbageCollected<IDomNotification>()),
-      symbols_(MakeGarbageCollected<IDomSymbols>()),
-      attributes_(MakeGarbageCollected<IDomAttributeMap>()) {}
+      symbols_(MakeGarbageCollected<IDomSymbols>()) {
+  // attributes_ will be initialized lazily when first accessed
+}
 
 void H5vccIdom::ContextDestroyed() {}
 
@@ -104,12 +106,104 @@ void H5vccIdom::applyProp(Element* el,
   cobalt::h5vcc::idom::ApplyProp(el, name, value);
 }
 
-IDomAttributeMap* H5vccIdom::attributes() {
+ScriptValue H5vccIdom::attributes(ScriptState* script_state) {
+  // Lazy-initialize attributes if not set
+  if (attributes_.IsEmpty()) {
+    attributes_ = createAttributeMap(script_state);
+  }
   return attributes_;
 }
 
+void H5vccIdom::setAttributes(ScriptState* script_state,
+                              const ScriptValue& attributes) {
+  attributes_ = attributes;
+}
+
 ScriptValue H5vccIdom::createAttributeMap(ScriptState* script_state) {
-  return IDomAttributeMap::CreateJavaScriptAttributeMap(script_state);
+  ScriptState::Scope scope(script_state);
+  v8::Isolate* isolate = script_state->GetIsolate();
+  v8::Local<v8::Context> context = script_state->GetContext();
+
+  // Create a plain JavaScript object
+  v8::Local<v8::Object> map = v8::Object::New(isolate);
+
+  // Create the default mutator function
+  auto default_callback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+    if (info.Length() < 3) {
+      return;
+    }
+
+    v8::HandleScope handle_scope(info.GetIsolate());
+
+    // Extract arguments: element, name, value
+    if (!info[0]->IsObject()) {
+      return;
+    }
+    v8::Local<v8::Object> element_obj = info[0].As<v8::Object>();
+
+    // Get the native Element from the V8 object
+    Element* element = V8Element::ToWrappable(info.GetIsolate(), element_obj);
+    if (!element) {
+      return;
+    }
+
+    v8::String::Utf8Value name_utf8(info.GetIsolate(), info[1]);
+    String name(*name_utf8);
+
+    // Create ScriptValue from the V8 value for type-aware handling
+    ScriptValue value(info.GetIsolate(), info[2]);
+
+    cobalt::h5vcc::idom::ApplyAttributeTyped(element, name, value);
+  };
+
+  v8::Local<v8::Function> default_function =
+      v8::Function::New(context, default_callback).ToLocalChecked();
+
+  // Set the __default property to the function
+  map->Set(context,
+           v8::String::NewFromUtf8(isolate, "__default").ToLocalChecked(),
+           default_function)
+      .ToChecked();
+
+  // Create the style mutator function
+  auto style_callback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+    if (info.Length() < 3) {
+      return;
+    }
+
+    v8::HandleScope handle_scope(info.GetIsolate());
+
+    // Extract arguments: element, name, value
+    if (!info[0]->IsObject()) {
+      return;
+    }
+    v8::Local<v8::Object> element_obj = info[0].As<v8::Object>();
+
+    // Get the native Element from the V8 object
+    Element* element = V8Element::ToWrappable(info.GetIsolate(), element_obj);
+    if (!element) {
+      return;
+    }
+
+    v8::String::Utf8Value name_utf8(info.GetIsolate(), info[1]);
+    String name(*name_utf8);
+
+    // Create ScriptValue from the V8 value
+    ScriptValue value(info.GetIsolate(), info[2]);
+
+    // For style, use the comprehensive style handler
+    cobalt::h5vcc::idom::ApplyStyle(element, name, value);
+  };
+
+  v8::Local<v8::Function> style_function =
+      v8::Function::New(context, style_callback).ToLocalChecked();
+
+  // Set the style property to the function
+  map->Set(context, v8::String::NewFromUtf8(isolate, "style").ToLocalChecked(),
+           style_function)
+      .ToChecked();
+
+  return ScriptValue(isolate, map);
 }
 
 void H5vccIdom::alignWithDOM(const String& name_or_ctor,
@@ -193,7 +287,7 @@ void H5vccIdom::Trace(Visitor* visitor) const {
   visitor->Trace(notifications_);
   visitor->Trace(symbols_);
   visitor->Trace(node_data_map_);
-  visitor->Trace(attributes_);
+  // attributes_ is a ScriptValue which handles its own V8 references
   ExecutionContextLifecycleObserver::Trace(visitor);
   ScriptWrappable::Trace(visitor);
 }

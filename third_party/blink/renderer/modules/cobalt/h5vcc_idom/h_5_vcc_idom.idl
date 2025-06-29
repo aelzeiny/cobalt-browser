@@ -86,7 +86,7 @@ interface H5vccIdom {
     void applyProp(Element el, DOMString name, any value);
 
     // A publicly mutable object to provide custom mutators for attributes.
-    [SameObject] readonly attribute IDomAttributeMap attributes;
+    [CallWith=ScriptState] attribute object attributes;
     [CallWith=ScriptState] object createAttributeMap();
 
     void alignWithDOM(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
@@ -106,18 +106,8 @@ interface H5vccIdom {
     Element? tryGetCurrentElement();
 };
 
-[
-    Exposed=Window,
-    SecureContext
-]
-interface IDomAttributeMap {
-    // Special generic mutator that's called for any attribute that does not
-    // have a specific mutator.
-    attribute AttrMutator? defaultValue;
-    attribute AttrMutator? style;
-};
 
-callback AttrMutator = void(Element el, DOMString name, DOMString? value);
+callback AttrMutator = void(Element el, DOMString name, any value);
 
 dictionary PatchConfig {
     MatchFn? matches;

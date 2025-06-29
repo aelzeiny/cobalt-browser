@@ -27,7 +27,7 @@ namespace h5vcc {
 namespace idom {
 
 using AttrMutator = std::function<
-    void(blink::Element*, const WTF::String&, const WTF::String&)>;
+    void(blink::Element*, const WTF::String&, const blink::ScriptValue&)>;
 
 // Applies an attribute or property to a given Element.
 void ApplyAttr(blink::Element* el,
@@ -36,6 +36,23 @@ void ApplyAttr(blink::Element* el,
 void ApplyProp(blink::Element* el,
                const WTF::String& name,
                const blink::ScriptValue& value);
+
+// Type-aware attribute application (matches TypeScript applyAttributeTyped)
+void ApplyAttributeTyped(blink::Element* el,
+                         const WTF::String& name,
+                         const blink::ScriptValue& value);
+
+// Comprehensive style application (matches TypeScript applyStyle)
+void ApplyStyle(blink::Element* el,
+                const WTF::String& name,
+                const blink::ScriptValue& style);
+
+// Updates a single attribute using the appropriate mutator from the attribute
+// map
+void UpdateAttribute(blink::Element* el,
+                     const WTF::String& name,
+                     const blink::ScriptValue& value,
+                     const blink::ScriptValue& attrs);
 
 }  // namespace idom
 }  // namespace h5vcc
