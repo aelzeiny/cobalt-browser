@@ -53,7 +53,7 @@ class H5vccIdom final : public ScriptWrappable,
   String getKeyAttributeName();
   IDomSymbols* symbols();
   void clearCache(Node* node);
-  String getKey(Node* node);
+  String getKey(Node* node, ExceptionState&);
   IDomNodeData* getData(Node* node, const String& fallback_key = String());
   void importNode(Node* node);
   bool isDataInitialized(Node* node);

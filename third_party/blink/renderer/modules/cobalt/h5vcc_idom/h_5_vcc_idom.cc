@@ -29,6 +29,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 
 namespace blink {
@@ -65,7 +66,12 @@ void H5vccIdom::clearCache(Node* node) {
   cobalt::h5vcc::idom::ClearCache(node_data_map_, node);
 }
 
-String H5vccIdom::getKey(Node* node) {
+String H5vccIdom::getKey(Node* node, ExceptionState& exception_state) {
+  if (!cobalt::h5vcc::idom::IsDataInitialized(node_data_map_, node)) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidStateError,
+                                      "Expected value to be defined");
+    return String();
+  }
   return cobalt::h5vcc::idom::GetKey(node_data_map_, node);
 }
 

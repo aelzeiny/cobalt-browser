@@ -53,9 +53,10 @@ NodeData* ImportSingleNode(NodeDataMap& data_map,
     const WTF::AtomicString key_attr_name(KeyAttributeName());
     if (!key_attr_name.IsNull() && element->hasAttribute(key_attr_name)) {
       key = element->getAttribute(key_attr_name);
-    } else {
+    } else if (!fallback_key.empty()) {
       key = fallback_key;
     }
+    // Otherwise, key remains empty (null in JS)
   }
 
   NodeData* data = InitData(data_map, node, node_name, key);
@@ -101,7 +102,6 @@ NodeData* GetData(NodeDataMap& data_map,
 }
 
 WTF::String GetKey(NodeDataMap& data_map, blink::Node* node) {
-  DCHECK(IsDataInitialized(data_map, node));
   return GetData(data_map, node)->GetKey();
 }
 

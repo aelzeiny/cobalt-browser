@@ -38,8 +38,8 @@ interface IDomSymbols {
 ]
 interface IDomNodeData {
     readonly attribute DOMString nameOrCtor;
-    readonly attribute DOMString key;
-    readonly attribute DOMString text;
+    readonly attribute DOMString? key;
+    readonly attribute DOMString? text;
     readonly attribute boolean staticsApplied;
     readonly attribute boolean alwaysDiffAttributes;
 };
@@ -69,7 +69,7 @@ interface H5vccIdom {
     void clearCache(Node node);
 
     // Gets the key for a Node.
-    DOMString? getKey(Node node);
+    [RaisesException] DOMString? getKey(Node node);
 
     // Gets the NodeData for a Node, creating it if necessary.
     IDomNodeData? getData(Node node, optional DOMString fallbackKey);
