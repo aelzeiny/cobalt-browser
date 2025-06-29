@@ -22,10 +22,12 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/dom/qualified_name.h"
+#include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/core/svg/svg_element.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
+#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
 namespace cobalt {
 namespace h5vcc {
@@ -45,9 +47,34 @@ WTF::String GetNamespace(const WTF::String& name) {
 
 }  // namespace
 
+bool IsValidAttributeName(const WTF::String& name) {
+  // Empty names are invalid
+  if (name.empty()) {
+    return false;
+  }
+
+  // Check for invalid characters according to HTML spec
+  // Attribute names cannot contain: space, tab, newline, form feed, /, >, =, "
+  // and certain other special characters like !@#$%^&*()
+  for (unsigned i = 0; i < name.length(); ++i) {
+    UChar c = name[i];
+    if (c <= 0x20 || c == '/' || c == '>' || c == '=' || c == '"' ||
+        c == '\'' || c == '!' || c == '@' || c == '#' || c == '$' || c == '%' ||
+        c == '^' || c == '&' || c == '*' || c == '(' || c == ')' || c == '+' ||
+        c == '[' || c == ']' || c == '{' || c == '}' || c == '|' || c == '\\' ||
+        c == '?' || c == '<' || c == '`' || c == '~') {
+      return false;
+    }
+  }
+  return true;
+}
+
 void ApplyAttr(blink::Element* el,
                const WTF::String& name,
                const WTF::String& value) {
+  // Note: Attribute name validation is handled at the API level in
+  // H5vccIdom::applyAttr
+
   if (value.IsNull()) {
     blink::QualifiedName qname(g_null_atom, AtomicString(name), g_null_atom);
     el->removeAttribute(qname);
@@ -99,16 +126,36 @@ void ApplyProp(blink::Element* el,
 
 namespace {
 
+WTF::String CamelCaseToKebabCase(const WTF::String& camel_case) {
+  WTF::StringBuilder kebab_case;
+  for (unsigned i = 0; i < camel_case.length(); ++i) {
+    UChar c = camel_case[i];
+    if (c >= 'A' && c <= 'Z') {
+      if (i > 0) {
+        kebab_case.Append('-');
+      }
+      kebab_case.Append(c + ('a' - 'A'));  // Convert to lowercase
+    } else {
+      kebab_case.Append(c);
+    }
+  }
+  return kebab_case.ToString();
+}
+
 void SetStyleValue(blink::CSSStyleDeclaration* style,
                    const WTF::String& prop,
-                   const WTF::String& value) {
+                   const WTF::String& value,
+                   blink::ExecutionContext* execution_context) {
+  WTF::String css_prop;
   if (prop.Contains("-")) {
-    style->setProperty(prop, value, WTF::String(), ASSERT_NO_EXCEPTION);
+    // Already kebab-case
+    css_prop = prop;
   } else {
-    style->SetPropertyInternal(
-        blink::CSSPropertyID::kInvalid, prop, value, false,
-        blink::SecureContextMode::kInsecureContext, nullptr);
+    // Convert camelCase to kebab-case (backgroundColor -> background-color)
+    css_prop = CamelCaseToKebabCase(prop);
   }
+  style->setProperty(execution_context, css_prop, value, WTF::String(),
+                     ASSERT_NO_EXCEPTION);
 }
 
 }  // namespace
@@ -139,13 +186,18 @@ void ApplyStyle(blink::Element* el,
 
   blink::CSSStyleDeclaration* el_style = nullptr;
   if (html_element) {
-    el_style = &html_element->style();
+    el_style = html_element->style();
   } else if (svg_element) {
-    el_style = &svg_element->style();
+    el_style = svg_element->style();
   }
 
   if (!el_style) {
     return;  // Element doesn't support style
+  }
+
+  blink::ExecutionContext* execution_context = el->GetExecutionContext();
+  if (!execution_context) {
+    return;
   }
 
   v8::Local<v8::Value> v8_style = style.V8Value();
@@ -154,10 +206,11 @@ void ApplyStyle(blink::Element* el,
     // Handle string CSS
     v8::String::Utf8Value css_text_utf8(style.GetIsolate(), v8_style);
     WTF::String css_text(*css_text_utf8);
-    el_style->setCSSText(css_text);
+    el_style->setCSSText(execution_context, css_text, ASSERT_NO_EXCEPTION);
   } else if (v8_style->IsObject()) {
     // Handle object with property-value pairs
-    el_style->setCSSText("");  // Clear existing styles
+    el_style->setCSSText(execution_context, "",
+                         ASSERT_NO_EXCEPTION);  // Clear existing styles
 
     v8::Local<v8::Object> style_obj = v8_style.As<v8::Object>();
     v8::Local<v8::Context> context = style.GetIsolate()->GetCurrentContext();
@@ -176,7 +229,7 @@ void ApplyStyle(blink::Element* el,
           WTF::String prop(*prop_utf8);
           WTF::String val(*value_utf8);
 
-          SetStyleValue(el_style, prop, val);
+          SetStyleValue(el_style, prop, val, execution_context);
         }
       }
     }
@@ -205,7 +258,9 @@ void UpdateAttribute(blink::Element* el,
       // Fall back to __default mutator
       v8::Local<v8::String> default_key =
           v8::String::NewFromUtf8(isolate, "__default").ToLocalChecked();
-      attrs_obj->Get(context, default_key).ToLocal(&mutator_value);
+      bool success =
+          attrs_obj->Get(context, default_key).ToLocal(&mutator_value);
+      (void)success;  // Suppress unused variable warning
     }
   }
 
@@ -224,7 +279,9 @@ void UpdateAttribute(blink::Element* el,
 
       // Call the mutator function
       v8::Local<v8::Function> mutator_func = mutator_value.As<v8::Function>();
-      mutator_func->Call(context, v8::Undefined(isolate), 3, args);
+      v8::MaybeLocal<v8::Value> result =
+          mutator_func->Call(context, v8::Undefined(isolate), 3, args);
+      (void)result;  // Suppress unused variable warning
     }
   } else {
     // Fall back to default behavior (type-aware attribute application)

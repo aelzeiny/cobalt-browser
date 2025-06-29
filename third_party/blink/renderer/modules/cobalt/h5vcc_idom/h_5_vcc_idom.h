@@ -19,6 +19,7 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
@@ -56,8 +57,14 @@ class H5vccIdom final : public ScriptWrappable,
   IDomNodeData* getData(Node* node, const String& fallback_key = String());
   void importNode(Node* node);
   bool isDataInitialized(Node* node);
-  void applyAttr(Element* el, const String& name, const String& value);
-  void applyProp(Element* el, const String& name, const ScriptValue& value);
+  void applyAttr(Element* el,
+                 const String& name,
+                 const String& value,
+                 ExceptionState&);
+  void applyProp(Element* el,
+                 const ScriptValue& name,
+                 const ScriptValue& value,
+                 ExceptionState&);
   ScriptValue attributes(ScriptState* script_state);
   void setAttributes(ScriptState* script_state, const ScriptValue& attributes);
   ScriptValue createAttributeMap(ScriptState*);
@@ -75,12 +82,13 @@ class H5vccIdom final : public ScriptWrappable,
   Element* open(const String& name_or_ctor,
                 const String& key,
                 const String& nonce);
-  IDomPatcher* patchInner(Element* el,
-                          V8PatchFunction* template_function,
-                          ScriptValue data);
-  IDomPatcher* patchOuter(Element* el,
-                          V8PatchFunction* template_function,
-                          ScriptValue data);
+  Node* patchInner(Element* el,
+                   V8PatchFunction* template_function,
+                   ScriptValue data = ScriptValue());
+  Node* patchOuter(Element* el,
+                   V8PatchFunction* template_function,
+                   ScriptValue data = ScriptValue());
+  Text* text();
   void skip();
   Node* skipNode();
   Element* tryGetCurrentElement();

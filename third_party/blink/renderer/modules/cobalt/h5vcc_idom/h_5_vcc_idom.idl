@@ -81,9 +81,9 @@ interface H5vccIdom {
     boolean isDataInitialized(Node node);
 
     // Applies an attribute a given Element.
-    void applyAttr(Element el, DOMString name, DOMString? value);
+    [RaisesException] void applyAttr(Element el, DOMString name, DOMString? value);
     // Applies a property to a given Element. Value can be a string or object.
-    void applyProp(Element el, DOMString name, any value);
+    [RaisesException] void applyProp(Element el, any name, any value);
 
     // A publicly mutable object to provide custom mutators for attributes.
     [CallWith=ScriptState] attribute object attributes;
@@ -99,13 +99,23 @@ interface H5vccIdom {
     Node currentPointer();
     Node? getNextNode();
     Element open(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
-    IDomPatcher patchInner(Element el, PatchFunction template, any data);
-    IDomPatcher patchOuter(Element el, PatchFunction template, any data);
+    Node patchInner(Element el, PatchFunction template, optional any data);
+    Node? patchOuter(Element el, PatchFunction template, optional any data);
+    Text text();
     void skip();
     Node? skipNode();
     Element? tryGetCurrentElement();
 };
 
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomAttributeMap {
+    // Minimal interface kept for binding generation compatibility
+    // This is not used in the actual implementation
+};
 
 callback AttrMutator = void(Element el, DOMString name, any value);
 

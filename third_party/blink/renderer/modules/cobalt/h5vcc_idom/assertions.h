@@ -21,7 +21,8 @@
 
 namespace blink {
 class Node;
-}
+class Element;
+}  // namespace blink
 
 namespace cobalt {
 namespace h5vcc {
@@ -99,10 +100,19 @@ bool SetInSkip(bool value) {
 }
 
 // Checks that no children have been declared yet for the given node.
-void AssertNoChildrenDeclaredYet(const char* function_name, blink::Node* node) {
-  // This is a simplified implementation.
-  // In the original, this would check if any children have been processed.
-}
+void AssertNoChildrenDeclaredYet(const char* function_name, blink::Node* node);
+
+// Asserts that patchOuter has a parent node.
+void AssertPatchOuterHasParentNode(blink::Node* parent);
+
+// Asserts that no extra elements were patched.
+void AssertPatchElementNoExtras(blink::Element* start_node,
+                                blink::Node* current_node,
+                                blink::Node* expected_next_node,
+                                blink::Node* expected_prev_node);
+
+// Asserts that no unclosed tags remain.
+void AssertNoUnclosedTags(blink::Node* current_node, blink::Node* root_node);
 
 }  // namespace idom
 }  // namespace h5vcc

@@ -54,6 +54,9 @@ void UpdateAttribute(blink::Element* el,
                      const blink::ScriptValue& value,
                      const blink::ScriptValue& attrs);
 
+// Validates attribute names according to HTML spec
+bool IsValidAttributeName(const WTF::String& name);
+
 }  // namespace idom
 }  // namespace h5vcc
 }  // namespace cobalt

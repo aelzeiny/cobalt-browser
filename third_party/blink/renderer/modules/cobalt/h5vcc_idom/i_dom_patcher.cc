@@ -26,10 +26,15 @@ IDomPatcher::IDomPatcher(bool is_outer) : is_outer_(is_outer) {}
 void IDomPatcher::patch(Element* el,
                         V8PatchFunction* template_function,
                         ScriptValue data) {
+  // We need to get the data map from the H5vccIdom instance
+  // For now, we'll create a temporary one, but this should be improved
+  // to get the actual data map from the owning H5vccIdom instance
+  cobalt::h5vcc::idom::NodeDataMap temp_data_map;
+
   if (is_outer_) {
-    cobalt::h5vcc::idom::PatchOuter(el, template_function, data);
+    cobalt::h5vcc::idom::PatchOuter(temp_data_map, el, template_function, data);
   } else {
-    cobalt::h5vcc::idom::PatchInner(el, template_function, data);
+    cobalt::h5vcc::idom::PatchInner(temp_data_map, el, template_function, data);
   }
 }
 

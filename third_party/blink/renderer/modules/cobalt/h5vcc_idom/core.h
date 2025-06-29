@@ -23,6 +23,9 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 
+#include <functional>
+#include <vector>
+
 namespace blink {
 class V8VoidCallback;
 }
@@ -48,18 +51,29 @@ blink::Element* Open(NodeDataMap& data_map,
 void Skip();
 blink::Node* SkipNode();
 blink::Element* TryGetCurrentElement();
+blink::Text* Text();
 
-void PatchInner(blink::Element* node,
-                blink::V8PatchFunction* template_function,
-                blink::ScriptValue data);
-void PatchOuter(blink::Element* node,
-                blink::V8PatchFunction* template_function,
-                blink::ScriptValue data);
+// Get builders for arguments and attributes (currently unused but exposed for
+// API completeness) std::vector<blink::ScriptValue>& GetArgsBuilder();
+// std::vector<blink::ScriptValue>& GetAttrsBuilder();
+
+// Sets the current data map for this patch session
+void SetCurrentDataMap(NodeDataMap* data_map);
+
+blink::Node* PatchInner(NodeDataMap& data_map,
+                        blink::Element* node,
+                        blink::V8PatchFunction* template_function,
+                        blink::ScriptValue data = blink::ScriptValue());
+blink::Node* PatchOuter(NodeDataMap& data_map,
+                        blink::Element* node,
+                        blink::V8PatchFunction* template_function,
+                        blink::ScriptValue data = blink::ScriptValue());
 
 // Overload for V8VoidCallback
-void PatchInner(blink::Element* node,
-                blink::V8VoidCallback* template_function,
-                blink::ScriptValue data);
+blink::Node* PatchInner(NodeDataMap& data_map,
+                        blink::Element* node,
+                        blink::V8VoidCallback* template_function,
+                        blink::ScriptValue data = blink::ScriptValue());
 
 }  // namespace idom
 }  // namespace h5vcc
