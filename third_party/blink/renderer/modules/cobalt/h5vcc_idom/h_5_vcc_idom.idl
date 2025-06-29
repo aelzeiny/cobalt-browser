@@ -89,7 +89,7 @@ interface H5vccIdom {
     [CallWith=ScriptState] attribute object attributes;
     [CallWith=ScriptState] object createAttributeMap();
 
-    void alignWithDOM(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
+    void alignWithDOM(DOMString nameOrCtor, DOMString? key, optional DOMString? nonce);
     void alwaysDiffAttributes(Element el);
     Element close();
     IDomPatcher createPatchInner(optional PatchConfig config);
@@ -98,7 +98,7 @@ interface H5vccIdom {
     Element currentElement();
     Node currentPointer();
     Node? getNextNode();
-    Element open(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
+    Element open(DOMString nameOrCtor, optional DOMString? key, optional DOMString? nonce);
     Node patchInner(Element el, PatchFunction template, optional any data);
     Node? patchOuter(Element el, PatchFunction template, optional any data);
     Text text();

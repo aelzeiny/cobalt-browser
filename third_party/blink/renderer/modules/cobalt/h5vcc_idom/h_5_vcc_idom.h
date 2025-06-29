@@ -70,7 +70,7 @@ class H5vccIdom final : public ScriptWrappable,
   ScriptValue createAttributeMap(ScriptState*);
   void alignWithDOM(const String& name_or_ctor,
                     const String& key,
-                    const String& nonce);
+                    const String& nonce = String());
   void alwaysDiffAttributes(Element* el);
   Element* close();
   IDomPatcher* createPatchInner(const PatchConfig* config = nullptr);
@@ -80,8 +80,8 @@ class H5vccIdom final : public ScriptWrappable,
   Node* currentPointer();
   Node* getNextNode();
   Element* open(const String& name_or_ctor,
-                const String& key,
-                const String& nonce);
+                const String& key = String(),
+                const String& nonce = String());
   Node* patchInner(Element* el,
                    V8PatchFunction* template_function,
                    ScriptValue data = ScriptValue());
