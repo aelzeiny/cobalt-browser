@@ -108,8 +108,8 @@ IDomAttributeMap* H5vccIdom::attributes() {
   return attributes_;
 }
 
-IDomAttributeMap* H5vccIdom::createAttributeMap() {
-  return MakeGarbageCollected<IDomAttributeMap>();
+ScriptValue H5vccIdom::createAttributeMap(ScriptState* script_state) {
+  return IDomAttributeMap::CreateJavaScriptAttributeMap(script_state);
 }
 
 void H5vccIdom::alignWithDOM(const String& name_or_ctor,

@@ -86,7 +86,7 @@ interface H5vccIdom {
 
     // A publicly mutable object to provide custom mutators for attributes.
     [SameObject] readonly attribute IDomAttributeMap attributes;
-    IDomAttributeMap createAttributeMap();
+    [CallWith=ScriptState] object createAttributeMap();
 
     void alignWithDOM(DOMString nameOrCtor, DOMString? key, DOMString? nonce);
     void alwaysDiffAttributes(Element el);

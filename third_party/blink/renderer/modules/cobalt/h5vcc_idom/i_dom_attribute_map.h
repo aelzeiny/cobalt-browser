@@ -21,6 +21,8 @@
 
 namespace blink {
 
+class ScriptState;
+class ScriptValue;
 class V8AttrMutator;
 
 class IDomAttributeMap final : public ScriptWrappable {
@@ -28,6 +30,9 @@ class IDomAttributeMap final : public ScriptWrappable {
 
  public:
   IDomAttributeMap();
+
+  // Static factory method to create a JavaScript object with attribute mutators
+  static ScriptValue CreateJavaScriptAttributeMap(ScriptState* script_state);
 
   V8AttrMutator* defaultValue() const;
   void setDefaultValue(V8AttrMutator* value);
