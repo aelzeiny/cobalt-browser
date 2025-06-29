@@ -28,16 +28,10 @@ namespace cobalt {
 namespace h5vcc {
 namespace idom {
 
-// Keeps track of whether or not we are in a patch.
-bool in_patch_ = false;
-
-// Keeps track whether or not we are in an attributes declaration (after
-// elementOpenStart, but before elementOpenEnd).
-bool in_attributes_ = false;
-
-// Keeps track whether or not we are in an element that should not have its
-// children cleared.
-bool in_skip_ = false;
+// Global state variables (declared here, defined in assertions.cc)
+extern bool in_patch_;
+extern bool in_attributes_;
+extern bool in_skip_;
 
 // Asserts that a value exists and is not null or undefined.
 template <typename T>
@@ -46,58 +40,14 @@ T* Assert(T* val) {
   return val;
 }
 
-// Makes sure that there is a current patch context.
-void AssertInPatch(const char* function_name) {
-  if (!in_patch_) {
-    DLOG(FATAL) << "Cannot call " << function_name << "() unless in patch.";
-  }
-}
-
-// Makes sure that the caller is not where attributes are expected.
-void AssertNotInAttributes(const char* function_name) {
-  if (in_attributes_) {
-    DLOG(FATAL) << function_name << "() can not be called between "
-                << "elementOpenStart() and elementOpenEnd().";
-  }
-}
-
-// Makes sure that the caller is not inside an element that has declared skip.
-void AssertNotInSkip(const char* function_name) {
-  if (in_skip_) {
-    DLOG(FATAL) << function_name << "() may not be called inside an element "
-                << "that has called skip().";
-  }
-}
-
-// Makes sure that the caller is where attributes are expected.
-void AssertInAttributes(const char* function_name) {
-  if (!in_attributes_) {
-    DLOG(FATAL) << function_name << "() can only be called after calling "
-                << "elementOpenStart().";
-  }
-}
-
-// Makes sure the patch closes virtual attributes call
-void AssertVirtualAttributesClosed() {
-  if (in_attributes_) {
-    DLOG(FATAL) << "elementOpenEnd() must be called after calling "
-                << "elementOpenStart().";
-  }
-}
-
-// Updates the state of being in an attribute declaration.
-bool SetInAttributes(bool value) {
-  bool previous = in_attributes_;
-  in_attributes_ = value;
-  return previous;
-}
-
-// Updates the state of being in a skip element.
-bool SetInSkip(bool value) {
-  bool previous = in_skip_;
-  in_skip_ = value;
-  return previous;
-}
+// Function declarations (implementations in assertions.cc)
+void AssertInPatch(const char* function_name);
+void AssertNotInAttributes(const char* function_name);
+void AssertNotInSkip(const char* function_name);
+void AssertInAttributes(const char* function_name);
+void AssertVirtualAttributesClosed();
+bool SetInAttributes(bool value);
+bool SetInSkip(bool value);
 
 // Checks that no children have been declared yet for the given node.
 void AssertNoChildrenDeclaredYet(const char* function_name, blink::Node* node);
