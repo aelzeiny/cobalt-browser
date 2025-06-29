@@ -334,9 +334,12 @@ blink::Node* RunPatchWithContext(blink::Node* node,
 
     // Get V8 isolate from ExecutionContext
     v8::Isolate* isolate = node->GetExecutionContext()->GetIsolate();
-    blink::ScriptValue script_data(isolate, data.V8Value());
-    v8::Maybe<void> result = fn->Invoke(nullptr, script_data);
-    (void)result;  // Suppress unused variable warning
+    // Handle case where data might be undefined/empty
+    blink::ScriptValue script_data =
+        data.IsEmpty() ? blink::ScriptValue(isolate, v8::Undefined(isolate))
+                       : data;
+    fn->InvokeAndReportException(
+        node->GetExecutionContext()->ToScriptWrappable(), script_data);
 
     // Verify that we have the right node structure
     if (current_data_map) {
@@ -361,9 +364,12 @@ blink::Node* RunPatchWithContext(blink::Node* node,
 
     // Get V8 isolate from ExecutionContext
     v8::Isolate* isolate = node->GetExecutionContext()->GetIsolate();
-    blink::ScriptValue script_data(isolate, data.V8Value());
-    v8::Maybe<void> result = fn->Invoke(nullptr, script_data);
-    (void)result;  // Suppress unused variable warning
+    // Handle case where data might be undefined/empty
+    blink::ScriptValue script_data =
+        data.IsEmpty() ? blink::ScriptValue(isolate, v8::Undefined(isolate))
+                       : data;
+    fn->InvokeAndReportException(
+        node->GetExecutionContext()->ToScriptWrappable(), script_data);
 
     ExitNode();
     AssertNoUnclosedTags(current_node, node);
@@ -415,17 +421,16 @@ blink::Node* PatchInner(NodeDataMap& data_map,
                         blink::Element* node,
                         blink::V8VoidCallback* template_function,
                         blink::ScriptValue data) {
-  // Convert V8VoidCallback to a simple patch operation
-  // For now, just call the callback directly as this matches the original
-  // intent
-  if (node && template_function) {
-    SetCurrentDataMap(&data_map);
-    template_function->InvokeAndReportException(
-        node->GetExecutionContext()->ToScriptWrappable());
-    SetCurrentDataMap(nullptr);
-    return node;
+  if (!node || !template_function) {
+    return nullptr;
   }
-  return nullptr;
+
+  // Simple implementation: just call the callback
+  // This should be enough to test if the basic callback mechanism works
+  template_function->InvokeAndReportException(
+      node->GetExecutionContext()->ToScriptWrappable());
+
+  return node;
 }
 
 }  // namespace idom
