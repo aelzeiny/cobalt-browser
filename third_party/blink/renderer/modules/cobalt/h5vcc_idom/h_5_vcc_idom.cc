@@ -17,10 +17,12 @@
 #include "base/logging.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_for_core.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_element.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
 #include "third_party/blink/renderer/core/dom/element.h"
+#include "third_party/blink/renderer/core/dom/text.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
@@ -396,6 +398,24 @@ Text* H5vccIdom::text() {
   return result;
 }
 
+Text* H5vccIdom::textWithValue(
+    const ScriptValue& value,
+    const HeapVector<Member<V8VoidCallback>>& formatters) {
+  auto text_func = [this]() -> Text* {
+    cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+    Text* result = cobalt::h5vcc::idom::Text();
+    cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+    return result;
+  };
+
+  auto get_data_func = [this](Node* node) -> IDomNodeData* {
+    return getData(node);
+  };
+
+  return virtual_elements::TextWithValue(value, formatters, text_func,
+                                         get_data_func);
+}
+
 void H5vccIdom::skip() {
   cobalt::h5vcc::idom::Skip();
 }
@@ -408,10 +428,105 @@ Element* H5vccIdom::tryGetCurrentElement() {
   return cobalt::h5vcc::idom::TryGetCurrentElement();
 }
 
+// Virtual element functions implementation
+
+void H5vccIdom::attr(const String& name, const ScriptValue& value) {
+  virtual_elements::Attr(attrs_builder_, name, value);
+}
+
+void H5vccIdom::key(const String& key) {
+  virtual_elements::Key(args_builder_, key);
+}
+
+void H5vccIdom::applyAttrs() {
+  Element* element = currentElement();
+  virtual_elements::ApplyAttrs(attrs_builder_, element);
+}
+
+void H5vccIdom::applyStatics(const HeapVector<ScriptValue>& statics) {
+  Element* element = currentElement();
+  virtual_elements::ApplyStatics(statics, element);
+}
+
+void H5vccIdom::elementOpenStart(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics) {
+  // Clear and initialize args builder
+  args_builder_.clear();
+  args_builder_.resize(3);
+
+  v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
+  args_builder_[0] = ScriptValue(isolate, V8String(isolate, name_or_ctor));
+  if (!key.IsNull()) {
+    args_builder_[1] = ScriptValue(isolate, V8String(isolate, key));
+  }
+  if (statics && !statics->empty()) {
+    // Convert HeapVector to v8::Array
+    v8::Local<v8::Array> statics_array =
+        v8::Array::New(isolate, statics->size());
+    for (wtf_size_t i = 0; i < statics->size(); ++i) {
+      statics_array->Set(context, i, (*statics)[i].V8Value()).ToChecked();
+    }
+    args_builder_[2] = ScriptValue(isolate, statics_array);
+  }
+}
+
+Element* H5vccIdom::elementOpenEnd() {
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+
+  return virtual_elements::ElementOpenEnd(args_builder_, attrs_builder_,
+                                          open_func);
+}
+
+Element* H5vccIdom::elementOpen(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const HeapVector<ScriptValue>& var_args) {
+  // First call elementOpenStart to set up the args_builder
+  elementOpenStart(name_or_ctor, key, statics);
+
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+
+  return virtual_elements::ElementOpen(args_builder_, attrs_builder_,
+                                       name_or_ctor, key, statics, var_args,
+                                       open_func);
+}
+
+Element* H5vccIdom::elementClose(const String& name_or_ctor) {
+  auto close_func = [this]() -> Element* { return close(); };
+
+  return virtual_elements::ElementClose(name_or_ctor, close_func);
+}
+
+Element* H5vccIdom::elementVoid(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const HeapVector<ScriptValue>& var_args) {
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+  auto close_func = [this]() -> Element* { return close(); };
+
+  return virtual_elements::ElementVoid(args_builder_, attrs_builder_,
+                                       name_or_ctor, key, statics, var_args,
+                                       open_func, close_func);
+}
+
 void H5vccIdom::Trace(Visitor* visitor) const {
   visitor->Trace(notifications_);
   visitor->Trace(symbols_);
   visitor->Trace(node_data_map_);
+  visitor->Trace(args_builder_);
+  visitor->Trace(attrs_builder_);
   // attributes_ is a ScriptValue which handles its own V8 references
   ExecutionContextLifecycleObserver::Trace(visitor);
   ScriptWrappable::Trace(visitor);

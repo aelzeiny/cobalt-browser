@@ -26,7 +26,10 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
+
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace blink {
 
@@ -89,9 +92,34 @@ class H5vccIdom final : public ScriptWrappable,
                    V8PatchFunction* template_function,
                    ScriptValue data = ScriptValue());
   Text* text();
+  Text* textWithValue(const ScriptValue& value,
+                      const HeapVector<Member<V8VoidCallback>>& formatters =
+                          HeapVector<Member<V8VoidCallback>>());
   void skip();
   Node* skipNode();
   Element* tryGetCurrentElement();
+
+  // Virtual element functions
+  void attr(const String& name, const ScriptValue& value);
+  void key(const String& key);
+  void applyAttrs();
+  void applyStatics(const HeapVector<ScriptValue>& statics);
+  void elementOpenStart(
+      const String& name_or_ctor,
+      const String& key = String(),
+      const absl::optional<HeapVector<ScriptValue>>& statics = absl::nullopt);
+  Element* elementOpenEnd();
+  Element* elementOpen(
+      const String& name_or_ctor,
+      const String& key = String(),
+      const absl::optional<HeapVector<ScriptValue>>& statics = absl::nullopt,
+      const HeapVector<ScriptValue>& var_args = HeapVector<ScriptValue>());
+  Element* elementClose(const String& name_or_ctor);
+  Element* elementVoid(
+      const String& name_or_ctor,
+      const String& key = String(),
+      const absl::optional<HeapVector<ScriptValue>>& statics = absl::nullopt,
+      const HeapVector<ScriptValue>& var_args = HeapVector<ScriptValue>());
 
   void Trace(Visitor*) const override;
 
@@ -100,6 +128,10 @@ class H5vccIdom final : public ScriptWrappable,
   Member<IDomSymbols> symbols_;
   cobalt::h5vcc::idom::NodeDataMap node_data_map_;
   ScriptValue attributes_;
+
+  // Virtual element builders
+  HeapVector<ScriptValue> args_builder_;
+  HeapVector<ScriptValue> attrs_builder_;
 };
 
 }  // namespace blink

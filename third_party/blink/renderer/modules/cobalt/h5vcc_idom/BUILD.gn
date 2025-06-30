@@ -48,5 +48,7 @@ blink_modules_sources("h5vcc_idom") {
     "nodes.h",
     "notification.cc",
     "symbols.cc",
+    "virtual_elements.cc",
+    "virtual_elements.h",
   ]
 }

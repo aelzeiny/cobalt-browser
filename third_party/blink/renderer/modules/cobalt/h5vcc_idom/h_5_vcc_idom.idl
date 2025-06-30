@@ -102,9 +102,21 @@ interface H5vccIdom {
     Node patchInner(Element el, PatchFunction template, optional any data);
     Node? patchOuter(Element el, PatchFunction template, optional any data);
     Text text();
+    Text textWithValue(any value, VoidCallback... formatters);
     void skip();
     Node? skipNode();
     Element? tryGetCurrentElement();
+
+    // Virtual element functions
+    void attr(DOMString name, any value);
+    void key(DOMString key);
+    void applyAttrs();
+    void applyStatics(sequence<any> statics);
+    void elementOpenStart(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics);
+    Element elementOpenEnd();
+    Element elementOpen(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics, any... varArgs);
+    Element elementClose(DOMString nameOrCtor);
+    Element elementVoid(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics, any... varArgs);
 };
 
 
