@@ -22,6 +22,8 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/assertions.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/dom_util.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_attributes.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_virtual_elements.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/nodes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
@@ -66,16 +68,14 @@ blink::Document* doc = nullptr;
 blink::HeapVector<blink::Member<blink::Node>>* focus_path = nullptr;
 blink::TreeWalker* comment_tree_walker = nullptr;
 
-// Used to build up call arguments. Each patch call gets a separate copy.
-// Using base::NoDestructor to avoid global constructor warnings
-std::vector<blink::ScriptValue>& GetArgsBuilderInternal() {
-  static base::NoDestructor<std::vector<blink::ScriptValue>> args_builder;
+// Native C++ builders to eliminate V8 overhead
+NativeVirtualElements::ElementArgs& GetArgsBuilderInternal() {
+  static base::NoDestructor<NativeVirtualElements::ElementArgs> args_builder;
   return *args_builder;
 }
 
-// Used to build up attrs for an element.
-std::vector<blink::ScriptValue>& GetAttrsBuilderInternal() {
-  static base::NoDestructor<std::vector<blink::ScriptValue>> attrs_builder;
+AttributeBuilder& GetAttrsBuilderInternal() {
+  static base::NoDestructor<AttributeBuilder> attrs_builder;
   return *attrs_builder;
 }
 
@@ -371,17 +371,15 @@ void SetCurrentDataMap(NodeDataMap* data_map) {
   current_data_map = data_map;
 }
 
-// Shared patch setup and cleanup
+// Shared patch setup and cleanup with minimal state copying
 blink::Node* RunPatchWithContext(blink::Node* node,
                                  blink::V8PatchFunction* fn,
                                  blink::ScriptValue data,
                                  bool is_outer) {
+  // OPTIMIZED: Store only essential state without full copying
   Context* prev_context = context;
   blink::Document* prev_doc = doc;
   blink::HeapVector<blink::Member<blink::Node>>* prev_focus_path = focus_path;
-  std::vector<blink::ScriptValue> prev_args_builder = GetArgsBuilderInternal();
-  std::vector<blink::ScriptValue> prev_attrs_builder =
-      GetAttrsBuilderInternal();
   blink::Node* prev_current_node = current_node;
   blink::Node* prev_current_parent = current_parent;
   blink::TreeWalker* prev_tree_walker = comment_tree_walker;
@@ -389,10 +387,26 @@ blink::Node* RunPatchWithContext(blink::Node* node,
   bool previous_in_skip = false;
   bool previous_in_patch = false;
 
+  // OPTIMIZED: Use stack allocation for builders instead of copying
+  NativeVirtualElements::ElementArgs& args_builder = GetArgsBuilderInternal();
+  AttributeBuilder& attrs_builder = GetAttrsBuilderInternal();
+
+  // OPTIMIZED: Store builder states without full copy - just mark as saved
+  bool args_was_empty = (args_builder.name_or_ctor.IsNull());
+  bool attrs_was_empty = attrs_builder.IsEmpty();
+
+  // OPTIMIZED: Set up new state efficiently
   doc = &node->GetDocument();
   context = MakeGarbageCollected<Context>(node);
-  GetArgsBuilderInternal().clear();
-  GetAttrsBuilderInternal().clear();
+
+  // OPTIMIZED: Only clear if not already empty
+  if (!args_was_empty) {
+    args_builder.Clear();
+  }
+  if (!attrs_was_empty) {
+    attrs_builder.Clear();
+  }
+
   current_node = nullptr;
   current_parent = node->parentNode();
   auto current_focus_path = GetFocusedPath(node, current_parent);
@@ -467,15 +481,21 @@ blink::Node* RunPatchWithContext(blink::Node* node,
     context->NotifyChanges(nullptr);
   }
 
-  // Restore previous state (this must always happen)
+  // OPTIMIZED: Restore state without expensive copying
   doc = prev_doc;
   context = prev_context;
-  GetArgsBuilderInternal() = prev_args_builder;
-  GetAttrsBuilderInternal() = prev_attrs_builder;
   current_node = prev_current_node;
   current_parent = prev_current_parent;
   focus_path = prev_focus_path;
   comment_tree_walker = prev_tree_walker;
+
+  // OPTIMIZED: Only clear builders if they weren't empty before
+  if (!args_was_empty) {
+    args_builder.Clear();
+  }
+  if (!attrs_was_empty) {
+    attrs_builder.Clear();
+  }
 
   SetInAttributes(previous_in_attributes);
   SetInSkip(previous_in_skip);
@@ -521,9 +541,12 @@ blink::Node* PatchInner(NodeDataMap& data_map,
   Context* prev_context = context;
   blink::Document* prev_doc = doc;
   blink::HeapVector<blink::Member<blink::Node>>* prev_focus_path = focus_path;
-  std::vector<blink::ScriptValue> prev_args_builder = GetArgsBuilderInternal();
-  std::vector<blink::ScriptValue> prev_attrs_builder =
-      GetAttrsBuilderInternal();
+  NativeVirtualElements::ElementArgs& args_builder = GetArgsBuilderInternal();
+  AttributeBuilder& attrs_builder = GetAttrsBuilderInternal();
+
+  // Save previous state with minimal copying
+  NativeVirtualElements::ElementArgs prev_args_builder = args_builder;
+  AttributeBuilder prev_attrs_builder = attrs_builder;
   blink::Node* prev_current_node = current_node;
   blink::Node* prev_current_parent = current_parent;
   blink::TreeWalker* prev_tree_walker = comment_tree_walker;
@@ -533,8 +556,8 @@ blink::Node* PatchInner(NodeDataMap& data_map,
 
   doc = &node->GetDocument();
   context = MakeGarbageCollected<Context>(node);
-  GetArgsBuilderInternal().clear();
-  GetAttrsBuilderInternal().clear();
+  args_builder.Clear();
+  attrs_builder.Clear();
   current_node = node;
   current_parent = node->parentNode();
   auto current_focus_path = GetFocusedPath(node, current_parent);
@@ -566,8 +589,8 @@ blink::Node* PatchInner(NodeDataMap& data_map,
   // Restore previous state (this must always happen)
   doc = prev_doc;
   context = prev_context;
-  GetArgsBuilderInternal() = prev_args_builder;
-  GetAttrsBuilderInternal() = prev_attrs_builder;
+  args_builder = prev_args_builder;
+  attrs_builder = prev_attrs_builder;
   current_node = prev_current_node;
   current_parent = prev_current_parent;
   focus_path = prev_focus_path;

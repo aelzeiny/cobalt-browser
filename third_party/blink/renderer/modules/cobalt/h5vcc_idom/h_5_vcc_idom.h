@@ -17,6 +17,7 @@
 
 #include "third_party/blink/renderer/bindings/core/v8/script_value.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attribute_value.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_attribute_map.h"
@@ -25,6 +26,8 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_patch.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_virtual_elements.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
@@ -129,12 +132,29 @@ class H5vccIdom final : public ScriptWrappable,
   void Trace(Visitor*) const override;
 
  private:
+  // OPTIMIZED NATIVE IMPLEMENTATIONS
+  // These methods use the high-performance native C++ APIs
+  void setAttributeOptimized(const String& name, const ScriptValue& value);
+  Element* elementOpenOptimized(const String& name_or_ctor, const String& key);
+  Text* textOptimized(const String& value);
+
+  // Fast path for patch operations using native APIs
+  Node* patchInnerOptimized(Element* el,
+                            V8PatchFunction* template_function,
+                            ScriptValue data);
+  Node* patchOuterOptimized(Element* el,
+                            V8PatchFunction* template_function,
+                            ScriptValue data);
   Member<IDomNotification> notifications_;
   Member<IDomSymbols> symbols_;
   cobalt::h5vcc::idom::NodeDataMap node_data_map_;
   ScriptValue attributes_;
 
-  // Virtual element builders
+  // Virtual element builders (optimized native versions)
+  cobalt::h5vcc::idom::NativeVirtualElements::ElementArgs native_args_builder_;
+  cobalt::h5vcc::idom::AttributeBuilder native_attrs_builder_;
+
+  // Legacy V8 builders for compatibility
   HeapVector<ScriptValue> args_builder_;
   HeapVector<ScriptValue> attrs_builder_;
 };

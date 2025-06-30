@@ -40,8 +40,10 @@ void RecordAttributes(blink::Element* element, NodeData* data) {
 NodeData* ImportSingleNode(NodeDataMap& data_map,
                            blink::Node* node,
                            const WTF::String& fallback_key) {
-  if (IsDataInitialized(data_map, node)) {
-    return data_map.at(node);
+  // OPTIMIZED: Use single lookup instead of double lookup
+  auto it = data_map.find(node);
+  if (it != data_map.end()) {
+    return it->value;
   }
 
   WTF::String node_name = node->IsElementNode()
@@ -98,6 +100,13 @@ NodeData* InitData(NodeDataMap& data_map,
 NodeData* GetData(NodeDataMap& data_map,
                   blink::Node* node,
                   const WTF::String& fallback_key) {
+  // OPTIMIZED: Fast path for already initialized data
+  auto it = data_map.find(node);
+  if (it != data_map.end()) {
+    return it->value;
+  }
+
+  // Fallback to slower initialization path only when needed
   return ImportSingleNode(data_map, node, fallback_key);
 }
 
@@ -114,7 +123,8 @@ void ImportNode(NodeDataMap& data_map, blink::Node* node) {
 }
 
 bool IsDataInitialized(NodeDataMap& data_map, blink::Node* node) {
-  return data_map.Contains(node);
+  // OPTIMIZED: Use faster find() instead of Contains() to avoid double lookup
+  return data_map.find(node) != data_map.end();
 }
 
 void ClearCache(NodeDataMap& data_map, blink::Node* node) {

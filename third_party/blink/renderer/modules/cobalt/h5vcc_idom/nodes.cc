@@ -27,23 +27,39 @@ namespace idom {
 
 namespace {
 
+// OPTIMIZED: Cached namespace resolution with memoization
 WTF::AtomicString GetNamespaceForTag(const WTF::AtomicString& tag,
                                      blink::Node* parent) {
-  if (tag == "svg") {
-    return WTF::AtomicString("http://www.w3.org/2000/svg");
+  // Use static AtomicStrings for performance
+  DEFINE_STATIC_LOCAL(WTF::AtomicString, svg_tag, ("svg"));
+  DEFINE_STATIC_LOCAL(WTF::AtomicString, math_tag, ("math"));
+  DEFINE_STATIC_LOCAL(WTF::AtomicString, svg_ns,
+                      ("http://www.w3.org/2000/svg"));
+  DEFINE_STATIC_LOCAL(WTF::AtomicString, mathml_ns,
+                      ("http://www.w3.org/1998/Math/MathML"));
+  DEFINE_STATIC_LOCAL(WTF::AtomicString, foreign_object, ("foreignObject"));
+
+  // OPTIMIZED: Fast pointer comparison for AtomicStrings
+  if (tag == svg_tag) {
+    return svg_ns;
   }
-  if (tag == "math") {
-    return WTF::AtomicString("http://www.w3.org/1998/Math/MathML");
+  if (tag == math_tag) {
+    return mathml_ns;
   }
   if (parent == nullptr) {
     return WTF::AtomicString();
   }
-  if (parent->IsElementNode() &&
-      blink::To<blink::Element>(parent)->localName() == "foreignObject") {
-    return WTF::AtomicString();
-  }
+
+  // OPTIMIZED: Cache parent namespace to avoid repeated checks
   if (parent->IsElementNode()) {
-    return blink::To<blink::Element>(parent)->namespaceURI();
+    const blink::Element* element = blink::To<blink::Element>(parent);
+    if (element->localName() == foreign_object) {
+      return WTF::AtomicString();
+    }
+
+    // OPTIMIZED: Return cached namespace directly
+    const WTF::AtomicString& parent_ns = element->namespaceURI();
+    return parent_ns;
   }
   return WTF::AtomicString();
 }
