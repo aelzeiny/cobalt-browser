@@ -92,6 +92,9 @@ class H5vccIdom final : public ScriptWrappable,
                    V8PatchFunction* template_function,
                    ScriptValue data = ScriptValue());
   Text* text();
+  Text* text(const ScriptValue& value,
+             const HeapVector<Member<V8VoidCallback>>& formatters =
+                 HeapVector<Member<V8VoidCallback>>());
   Text* textWithValue(const ScriptValue& value,
                       const HeapVector<Member<V8VoidCallback>>& formatters =
                           HeapVector<Member<V8VoidCallback>>());

@@ -398,6 +398,11 @@ Text* H5vccIdom::text() {
   return result;
 }
 
+Text* H5vccIdom::text(const ScriptValue& value,
+                      const HeapVector<Member<V8VoidCallback>>& formatters) {
+  return textWithValue(value, formatters);
+}
+
 Text* H5vccIdom::textWithValue(
     const ScriptValue& value,
     const HeapVector<Member<V8VoidCallback>>& formatters) {

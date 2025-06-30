@@ -102,6 +102,7 @@ interface H5vccIdom {
     Node patchInner(Element el, PatchFunction template, optional any data);
     Node? patchOuter(Element el, PatchFunction template, optional any data);
     Text text();
+    Text text(any value, VoidCallback... formatters);
     Text textWithValue(any value, VoidCallback... formatters);
     void skip();
     Node? skipNode();
