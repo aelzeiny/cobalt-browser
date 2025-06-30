@@ -511,6 +511,9 @@ Element* H5vccIdom::elementVoid(
     const String& key,
     const absl::optional<HeapVector<ScriptValue>>& statics,
     const HeapVector<ScriptValue>& var_args) {
+  // First call elementOpenStart to set up the args_builder
+  elementOpenStart(name_or_ctor, key, statics);
+
   auto open_func = [this](const String& name, const String& key) -> Element* {
     return open(name, key);
   };

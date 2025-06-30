@@ -210,10 +210,10 @@ Element* ElementVoid(
     std::function<Element*()> close_func) {
   Element* element = ElementOpen(args_builder, attrs_builder, name_or_ctor, key,
                                  statics, var_args, open_func);
-  if (element) {
-    ElementClose(name_or_ctor, close_func);
+  if (element && close_func) {
+    close_func();  // Close the element but don't use the return value
   }
-  return element;
+  return element;  // Return the opened element
 }
 
 Text* TextWithValue(const ScriptValue& value,
