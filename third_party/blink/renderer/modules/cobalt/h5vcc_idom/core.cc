@@ -32,6 +32,32 @@ namespace idom {
 
 namespace {
 
+// Validates element names according to HTML spec
+bool IsValidElementName(const WTF::String& name) {
+  // Empty names are invalid
+  if (name.empty()) {
+    return false;
+  }
+
+  // Element names must start with a letter
+  UChar first_char = name[0];
+  if (!((first_char >= 'a' && first_char <= 'z') ||
+        (first_char >= 'A' && first_char <= 'Z'))) {
+    return false;
+  }
+
+  // Check for invalid characters in element names
+  // Element names can contain letters, digits, hyphens, periods, underscores
+  for (unsigned i = 0; i < name.length(); ++i) {
+    UChar c = name[i];
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') || c == '-' || c == '.' || c == '_')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 Context* context = nullptr;
 blink::Node* current_node = nullptr;
 blink::Node* current_parent = nullptr;
@@ -103,6 +129,13 @@ blink::Node* CreateNode(NodeDataMap& data_map,
                         const WTF::String& name_or_ctor,
                         const WTF::String& key,
                         const WTF::String& nonce) {
+  // Check if we have a valid document context
+  if (!doc) {
+    // Log error and return null - cannot create nodes without document context
+    DLOG(ERROR) << "CreateNode called outside patch context - doc is null";
+    return nullptr;
+  }
+
   blink::Node* node = nullptr;
 
   if (name_or_ctor == "#text") {
@@ -110,7 +143,7 @@ blink::Node* CreateNode(NodeDataMap& data_map,
   } else {
     node = CreateElement(data_map, doc, current_parent,
                          WTF::AtomicString(name_or_ctor), key);
-    if (!nonce.IsNull() && node->IsElementNode()) {
+    if (!nonce.IsNull() && node && node->IsElementNode()) {
       blink::To<blink::Element>(node)->setAttribute(WTF::AtomicString("nonce"),
                                                     WTF::AtomicString(nonce));
     }
@@ -157,6 +190,9 @@ void ClearUnvisitedDOM(blink::Node* maybe_parent_node,
 }
 
 void ExitNode() {
+  if (!current_parent) {
+    return;  // Early return if no valid parent
+  }
   ClearUnvisitedDOM(current_parent, GetNextNode(), nullptr);
   current_node = current_parent;
   current_parent = current_parent->parentNode();
@@ -183,6 +219,12 @@ void AlignWithDOM(NodeDataMap& data_map,
                   const WTF::String& name_or_ctor,
                   const WTF::String& key,
                   const WTF::String& nonce) {
+  // Check if we have a valid patch context
+  if (!doc) {
+    DLOG(ERROR) << "AlignWithDOM called outside patch context - cannot proceed";
+    return;
+  }
+
   NextNode();
   blink::Node* existing_node =
       GetMatchingNode(data_map, current_node, name_or_ctor, key);
@@ -190,8 +232,20 @@ void AlignWithDOM(NodeDataMap& data_map,
                           ? existing_node
                           : CreateNode(data_map, name_or_ctor, key, nonce);
 
+  // Additional safety check - if CreateNode failed, return early
+  if (!node) {
+    DLOG(ERROR) << "Failed to create or find node in AlignWithDOM";
+    return;
+  }
+
   // If we are at the matching node, then we are done.
   if (node == current_node) {
+    return;
+  }
+
+  // Safety check - ensure we have a valid parent
+  if (!current_parent) {
+    DLOG(ERROR) << "AlignWithDOM: current_parent is null - cannot insert node";
     return;
   }
 
@@ -230,7 +284,7 @@ void AlwaysDiffAttributes(blink::Element* el) {
 
 blink::Element* Close() {
   ExitNode();
-  return blink::To<blink::Element>(current_node);
+  return current_node ? blink::To<blink::Element>(current_node) : nullptr;
 }
 
 Context* CurrentContext() {
@@ -248,8 +302,10 @@ blink::Node* CurrentPointer() {
 blink::Node* GetNextNode() {
   if (current_node) {
     return current_node->nextSibling();
-  } else {
+  } else if (current_parent) {
     return current_parent->firstChild();
+  } else {
+    return nullptr;  // Safe fallback when no patch context is active
   }
 }
 
@@ -257,9 +313,27 @@ blink::Element* Open(NodeDataMap& data_map,
                      const WTF::String& name_or_ctor,
                      const WTF::String& key,
                      const WTF::String& nonce) {
+  // Check if we have a valid document context
+  if (!doc) {
+    DLOG(ERROR) << "Open() called outside patch context - doc is null";
+    return nullptr;
+  }
+
+  // Validate element name
+  if (name_or_ctor.empty()) {
+    DLOG(ERROR) << "Open() called with empty element name";
+    return nullptr;
+  }
+
+  // Check for invalid characters in element names
+  if (!IsValidElementName(name_or_ctor)) {
+    DLOG(ERROR) << "Open() called with invalid element name: " << name_or_ctor;
+    return nullptr;
+  }
+
   AlignWithDOM(data_map, name_or_ctor, key, nonce);
   EnterNode();
-  return blink::To<blink::Element>(current_parent);
+  return current_parent ? blink::To<blink::Element>(current_parent) : nullptr;
 }
 
 void Skip() {
@@ -280,6 +354,11 @@ blink::Element* TryGetCurrentElement() {
 // Makes sure the current node is a Text node and creates one if it's not
 blink::Text* Text() {
   if (!current_data_map) {
+    return nullptr;
+  }
+  // Check if we have a valid document context
+  if (!doc) {
+    DLOG(ERROR) << "Text() called outside patch context - doc is null";
     return nullptr;
   }
   AlignWithDOM(*current_data_map, "#text", WTF::String(), WTF::String());
@@ -338,6 +417,7 @@ blink::Node* RunPatchWithContext(blink::Node* node,
     blink::ScriptValue script_data =
         data.IsEmpty() ? blink::ScriptValue(isolate, v8::Undefined(isolate))
                        : data;
+
     fn->InvokeAndReportException(
         node->GetExecutionContext()->ToScriptWrappable(), script_data);
 
@@ -368,6 +448,7 @@ blink::Node* RunPatchWithContext(blink::Node* node,
     blink::ScriptValue script_data =
         data.IsEmpty() ? blink::ScriptValue(isolate, v8::Undefined(isolate))
                        : data;
+
     fn->InvokeAndReportException(
         node->GetExecutionContext()->ToScriptWrappable(), script_data);
 
@@ -375,10 +456,15 @@ blink::Node* RunPatchWithContext(blink::Node* node,
     AssertNoUnclosedTags(current_node, node);
     ret_val = node;
   }
+
+  // Always restore state, even if exceptions occurred above
   AssertVirtualAttributesClosed();
 
-  context->NotifyChanges(nullptr);
+  if (context) {
+    context->NotifyChanges(nullptr);
+  }
 
+  // Restore previous state (this must always happen)
   doc = prev_doc;
   context = prev_context;
   GetArgsBuilderInternal() = prev_args_builder;

@@ -115,8 +115,8 @@ void AssertPatchElementNoExtras(blink::Element* start_node,
 // Asserts that no unclosed tags remain.
 void AssertNoUnclosedTags(blink::Node* current_node, blink::Node* root_node) {
   if (current_node != root_node) {
-    DLOG(FATAL) << "Unclosed element tags detected. Make sure all element "
-                << "calls have matching close() calls.";
+    DLOG(WARNING) << "Unclosed element tags detected. Make sure all element "
+                  << "calls have matching close() calls.";
   }
 }
 

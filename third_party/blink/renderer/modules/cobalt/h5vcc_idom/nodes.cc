@@ -18,6 +18,7 @@
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/dom/text.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 
 namespace cobalt {
@@ -54,17 +55,34 @@ blink::Element* CreateElement(NodeDataMap& data_map,
                               blink::Node* parent,
                               const WTF::AtomicString& name_or_ctor,
                               const WTF::String& key) {
-  blink::Element* el;
+  // Null check for document pointer
+  if (!doc) {
+    DLOG(ERROR) << "CreateElement: Document is null";
+    return nullptr;
+  }
+
+  blink::Element* el = nullptr;
   // TODO: Handle function case
   // if (typeof nameOrCtor === "function") {
   //   el = new nameOrCtor();
   // } else {
   const WTF::AtomicString& namespace_uri =
       GetNamespaceForTag(name_or_ctor, parent);
+
+  // Use ExceptionState to handle potential DOM exceptions
+  blink::DummyExceptionStateForTesting exception_state;
+
   if (!namespace_uri.IsNull()) {
-    el = doc->createElementNS(namespace_uri, name_or_ctor, ASSERT_NO_EXCEPTION);
+    el = doc->createElementNS(namespace_uri, name_or_ctor, exception_state);
   } else {
-    el = doc->CreateElementForBinding(name_or_ctor);
+    el = doc->CreateElementForBinding(name_or_ctor, exception_state);
+  }
+
+  // Check if element creation failed due to invalid name
+  if (exception_state.HadException() || !el) {
+    DLOG(ERROR) << "CreateElement: Failed to create element '" << name_or_ctor
+                << "'";
+    return nullptr;
   }
   // }
 
@@ -73,6 +91,12 @@ blink::Element* CreateElement(NodeDataMap& data_map,
 }
 
 blink::Text* CreateText(NodeDataMap& data_map, blink::Document* doc) {
+  // Null check for document pointer
+  if (!doc) {
+    DLOG(ERROR) << "CreateText: Document is null";
+    return nullptr;
+  }
+
   blink::Text* node = doc->createTextNode(WTF::String());
   InitData(data_map, node, "#text", WTF::String());
   return node;

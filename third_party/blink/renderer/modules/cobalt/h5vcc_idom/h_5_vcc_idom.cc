@@ -349,12 +349,28 @@ Node* H5vccIdom::getNextNode() {
 Element* H5vccIdom::open(const String& name_or_ctor,
                          const String& key,
                          const String& nonce) {
-  return cobalt::h5vcc::idom::Open(node_data_map_, name_or_ctor, key, nonce);
+  Element* result =
+      cobalt::h5vcc::idom::Open(node_data_map_, name_or_ctor, key, nonce);
+  if (!result && !name_or_ctor.empty()) {
+    // If Open() returned null but name was not empty, it means invalid name
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(
+        v8::String::NewFromUtf8Literal(isolate, "Invalid element name")));
+    return nullptr;
+  }
+  return result;
 }
 
 Node* H5vccIdom::patchInner(Element* el,
                             V8PatchFunction* template_function,
                             ScriptValue data) {
+  if (!el) {
+    // Throw exception for null element
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::TypeError(
+        v8::String::NewFromUtf8Literal(isolate, "Element cannot be null")));
+    return nullptr;
+  }
   return cobalt::h5vcc::idom::PatchInner(node_data_map_, el, template_function,
                                          data);
 }
@@ -362,6 +378,13 @@ Node* H5vccIdom::patchInner(Element* el,
 Node* H5vccIdom::patchOuter(Element* el,
                             V8PatchFunction* template_function,
                             ScriptValue data) {
+  if (!el) {
+    // Throw exception for null element
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::TypeError(
+        v8::String::NewFromUtf8Literal(isolate, "Element cannot be null")));
+    return nullptr;
+  }
   return cobalt::h5vcc::idom::PatchOuter(node_data_map_, el, template_function,
                                          data);
 }
