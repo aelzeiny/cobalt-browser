@@ -39,6 +39,7 @@ class Context final : public blink::GarbageCollected<Context> {
   blink::HeapVector<blink::Member<blink::Node>> created_;
   blink::HeapVector<blink::Member<blink::Node>> deleted_;
   blink::Member<blink::Node> node_;
+  bool tracking_disabled_;
 };
 
 }  // namespace idom

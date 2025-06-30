@@ -23,28 +23,68 @@ namespace cobalt {
 namespace h5vcc {
 namespace idom {
 
-Context::Context(blink::Node* node) : node_(node) {}
+Context::Context(blink::Node* node) : node_(node), tracking_disabled_(false) {
+  // Reserve modest capacity - larger patches will disable tracking if needed
+  created_.reserve(1024);
+  deleted_.reserve(512);
+}
 
 void Context::MarkCreated(blink::Node* node) {
+  if (tracking_disabled_) {
+    return;  // Skip tracking entirely
+  }
+
+  // If we're approaching vector limits, disable tracking to prevent crashes
+  if (created_.size() >= 8192) {  // 8K limit - much more conservative
+    if (!tracking_disabled_) {
+      tracking_disabled_ = true;
+      DLOG(WARNING) << "Context: Disabling node tracking after "
+                    << created_.size() << " nodes to prevent memory issues";
+      // Clear existing tracked nodes to free memory
+      created_.clear();
+      deleted_.clear();
+    }
+    return;
+  }
+
   created_.push_back(node);
 }
 
 void Context::MarkDeleted(blink::Node* node) {
+  if (tracking_disabled_) {
+    return;  // Skip tracking entirely
+  }
+
+  // Apply same limit logic as MarkCreated
+  if (deleted_.size() >= 2048) {  // 2K limit for deletions
+    if (!tracking_disabled_) {
+      tracking_disabled_ = true;
+      DLOG(WARNING) << "Context: Disabling node tracking after "
+                    << deleted_.size() << " deletions to prevent memory issues";
+      created_.clear();
+      deleted_.clear();
+    }
+    return;
+  }
+
   deleted_.push_back(node);
 }
 
 void Context::NotifyChanges(blink::IDomNotification* notifications) {
-  if (notifications) {
-    if (notifications->nodesCreated() && !created_.empty()) {
-      v8::Maybe<void> result =
-          notifications->nodesCreated()->Invoke(nullptr, created_);
-      (void)result;
-    }
-    if (notifications->nodesDeleted() && !deleted_.empty()) {
-      v8::Maybe<void> result =
-          notifications->nodesDeleted()->Invoke(nullptr, deleted_);
-      (void)result;
-    }
+  // If tracking was disabled, we have no nodes to notify about
+  if (tracking_disabled_ || !notifications) {
+    return;
+  }
+
+  if (notifications->nodesCreated() && !created_.empty()) {
+    v8::Maybe<void> result =
+        notifications->nodesCreated()->Invoke(nullptr, created_);
+    (void)result;
+  }
+  if (notifications->nodesDeleted() && !deleted_.empty()) {
+    v8::Maybe<void> result =
+        notifications->nodesDeleted()->Invoke(nullptr, deleted_);
+    (void)result;
   }
 }
 
