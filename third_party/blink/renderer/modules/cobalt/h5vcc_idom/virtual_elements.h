@@ -62,7 +62,8 @@ void Key(HeapVector<ScriptValue>& args_builder, const String& key);
  * @param current_element The current element to apply attributes to.
  */
 void ApplyAttrs(HeapVector<ScriptValue>& attrs_builder,
-                Element* current_element);
+                Element* current_element,
+                const ScriptValue& attrs = ScriptValue());
 
 /**
  * Applies the current static attributes to the currently open element. Note:
@@ -71,7 +72,8 @@ void ApplyAttrs(HeapVector<ScriptValue>& attrs_builder,
  * @param current_element The current element to apply statics to.
  */
 void ApplyStatics(const HeapVector<ScriptValue>& statics,
-                  Element* current_element);
+                  Element* current_element,
+                  const ScriptValue& attrs = ScriptValue());
 
 /**
  * Declares a virtual Element at the current location in the document. This

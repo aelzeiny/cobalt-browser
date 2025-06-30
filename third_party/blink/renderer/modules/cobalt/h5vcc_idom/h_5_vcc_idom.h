@@ -105,8 +105,10 @@ class H5vccIdom final : public ScriptWrappable,
   // Virtual element functions
   void attr(const String& name, const ScriptValue& value);
   void key(const String& key);
-  void applyAttrs();
-  void applyStatics(const HeapVector<ScriptValue>& statics);
+  void applyAttrs(const ScriptValue& attrs = ScriptValue());
+  void applyStatics(
+      const absl::optional<HeapVector<ScriptValue>>& statics = absl::nullopt,
+      const ScriptValue& attrs = ScriptValue());
   void elementOpenStart(
       const String& name_or_ctor,
       const String& key = String(),

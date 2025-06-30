@@ -14,11 +14,13 @@
 
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 
+#include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
+#include "third_party/blink/renderer/platform/bindings/script_state.h"
 
 namespace blink {
 namespace virtual_elements {
@@ -44,19 +46,91 @@ void Key(HeapVector<ScriptValue>& args_builder, const String& key) {
 }
 
 void ApplyAttrs(HeapVector<ScriptValue>& attrs_builder,
-                Element* current_element) {
+                Element* current_element,
+                const ScriptValue& attrs) {
   if (!current_element) {
     return;
   }
 
-  // Apply buffered attributes in pairs (name, value)
-  for (wtf_size_t i = 0; i < attrs_builder.size(); i += 2) {
-    if (i + 1 < attrs_builder.size()) {
-      v8::Local<v8::Value> name_v8 = attrs_builder[i].V8Value();
-      v8::String::Utf8Value name_utf8(attrs_builder[i].GetIsolate(), name_v8);
-      String name(*name_utf8);
-      cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
-                                               attrs_builder[i + 1]);
+  // If custom attrs are provided, use them to apply the buffered attributes
+  if (!attrs.IsEmpty()) {
+    v8::Isolate* isolate = attrs.GetIsolate();
+    v8::Local<v8::Context> context = isolate->GetCurrentContext();
+    v8::Local<v8::Value> attrs_v8 = attrs.V8Value();
+
+    if (attrs_v8->IsObject()) {
+      v8::Local<v8::Object> attrs_obj = attrs_v8.As<v8::Object>();
+
+      // Apply buffered attributes using custom attribute map
+      for (wtf_size_t i = 0; i < attrs_builder.size(); i += 2) {
+        if (i + 1 < attrs_builder.size()) {
+          v8::Local<v8::Value> name_v8 = attrs_builder[i].V8Value();
+          v8::String::Utf8Value name_utf8(attrs_builder[i].GetIsolate(),
+                                          name_v8);
+          String name(*name_utf8);
+
+          // Look for a specific handler for this attribute name
+          v8::Local<v8::String> key_string = V8String(isolate, name);
+          v8::Local<v8::Value> handler_value;
+          bool has_handler = false;
+
+          if (attrs_obj->Get(context, key_string).ToLocal(&handler_value) &&
+              handler_value->IsFunction()) {
+            has_handler = true;
+          } else {
+            // Fall back to __default handler
+            v8::Local<v8::String> default_key = V8String(isolate, "__default");
+            if (attrs_obj->Get(context, default_key).ToLocal(&handler_value) &&
+                handler_value->IsFunction()) {
+              has_handler = true;
+            }
+          }
+
+          if (has_handler) {
+            v8::Local<v8::Function> handler = handler_value.As<v8::Function>();
+
+            // Convert current_element to V8 object
+            ScriptState* script_state = ScriptState::From(context);
+            v8::MaybeLocal<v8::Value> maybe_element =
+                ToV8Traits<Element>::ToV8(script_state, current_element);
+            v8::Local<v8::Value> element_v8;
+            if (maybe_element.ToLocal(&element_v8)) {
+              // Call the handler: handler(element, name, value)
+              v8::Local<v8::Value> args[] = {element_v8, name_v8,
+                                             attrs_builder[i + 1].V8Value()};
+              handler->Call(context, v8::Undefined(isolate), 3, args)
+                  .ToLocalChecked();
+            }
+          } else {
+            // Fall back to default behavior if no handler found
+            cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                     attrs_builder[i + 1]);
+          }
+        }
+      }
+    } else {
+      // attrs is not an object, fall back to default behavior
+      for (wtf_size_t i = 0; i < attrs_builder.size(); i += 2) {
+        if (i + 1 < attrs_builder.size()) {
+          v8::Local<v8::Value> name_v8 = attrs_builder[i].V8Value();
+          v8::String::Utf8Value name_utf8(attrs_builder[i].GetIsolate(),
+                                          name_v8);
+          String name(*name_utf8);
+          cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                   attrs_builder[i + 1]);
+        }
+      }
+    }
+  } else {
+    // No custom attrs provided, use default behavior
+    for (wtf_size_t i = 0; i < attrs_builder.size(); i += 2) {
+      if (i + 1 < attrs_builder.size()) {
+        v8::Local<v8::Value> name_v8 = attrs_builder[i].V8Value();
+        v8::String::Utf8Value name_utf8(attrs_builder[i].GetIsolate(), name_v8);
+        String name(*name_utf8);
+        cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                 attrs_builder[i + 1]);
+      }
     }
   }
 
@@ -65,19 +139,89 @@ void ApplyAttrs(HeapVector<ScriptValue>& attrs_builder,
 }
 
 void ApplyStatics(const HeapVector<ScriptValue>& statics,
-                  Element* current_element) {
+                  Element* current_element,
+                  const ScriptValue& attrs) {
   if (!current_element || statics.empty()) {
     return;
   }
 
-  // Apply static attributes in pairs (name, value)
-  for (wtf_size_t i = 0; i < statics.size(); i += 2) {
-    if (i + 1 < statics.size()) {
-      v8::Local<v8::Value> name_v8 = statics[i].V8Value();
-      v8::String::Utf8Value name_utf8(statics[i].GetIsolate(), name_v8);
-      String name(*name_utf8);
-      cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
-                                               statics[i + 1]);
+  // If custom attrs are provided, use them to apply the static attributes
+  if (!attrs.IsEmpty()) {
+    v8::Isolate* isolate = attrs.GetIsolate();
+    v8::Local<v8::Context> context = isolate->GetCurrentContext();
+    v8::Local<v8::Value> attrs_v8 = attrs.V8Value();
+
+    if (attrs_v8->IsObject()) {
+      v8::Local<v8::Object> attrs_obj = attrs_v8.As<v8::Object>();
+
+      // Apply static attributes using custom attribute map
+      for (wtf_size_t i = 0; i < statics.size(); i += 2) {
+        if (i + 1 < statics.size()) {
+          v8::Local<v8::Value> name_v8 = statics[i].V8Value();
+          v8::String::Utf8Value name_utf8(statics[i].GetIsolate(), name_v8);
+          String name(*name_utf8);
+
+          // Look for a specific handler for this attribute name
+          v8::Local<v8::String> key_string = V8String(isolate, name);
+          v8::Local<v8::Value> handler_value;
+          bool has_handler = false;
+
+          if (attrs_obj->Get(context, key_string).ToLocal(&handler_value) &&
+              handler_value->IsFunction()) {
+            has_handler = true;
+          } else {
+            // Fall back to __default handler
+            v8::Local<v8::String> default_key = V8String(isolate, "__default");
+            if (attrs_obj->Get(context, default_key).ToLocal(&handler_value) &&
+                handler_value->IsFunction()) {
+              has_handler = true;
+            }
+          }
+
+          if (has_handler) {
+            v8::Local<v8::Function> handler = handler_value.As<v8::Function>();
+
+            // Convert current_element to V8 object
+            ScriptState* script_state = ScriptState::From(context);
+            v8::MaybeLocal<v8::Value> maybe_element =
+                ToV8Traits<Element>::ToV8(script_state, current_element);
+            v8::Local<v8::Value> element_v8;
+            if (maybe_element.ToLocal(&element_v8)) {
+              // Call the handler: handler(element, name, value)
+              v8::Local<v8::Value> args[] = {element_v8, name_v8,
+                                             statics[i + 1].V8Value()};
+              handler->Call(context, v8::Undefined(isolate), 3, args)
+                  .ToLocalChecked();
+            }
+          } else {
+            // Fall back to default behavior if no handler found
+            cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                     statics[i + 1]);
+          }
+        }
+      }
+    } else {
+      // attrs is not an object, fall back to default behavior
+      for (wtf_size_t i = 0; i < statics.size(); i += 2) {
+        if (i + 1 < statics.size()) {
+          v8::Local<v8::Value> name_v8 = statics[i].V8Value();
+          v8::String::Utf8Value name_utf8(statics[i].GetIsolate(), name_v8);
+          String name(*name_utf8);
+          cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                   statics[i + 1]);
+        }
+      }
+    }
+  } else {
+    // No custom attrs provided, use default behavior
+    for (wtf_size_t i = 0; i < statics.size(); i += 2) {
+      if (i + 1 < statics.size()) {
+        v8::Local<v8::Value> name_v8 = statics[i].V8Value();
+        v8::String::Utf8Value name_utf8(statics[i].GetIsolate(), name_v8);
+        String name(*name_utf8);
+        cobalt::h5vcc::idom::ApplyAttributeTyped(current_element, name,
+                                                 statics[i + 1]);
+      }
     }
   }
 }

@@ -443,14 +443,19 @@ void H5vccIdom::key(const String& key) {
   virtual_elements::Key(args_builder_, key);
 }
 
-void H5vccIdom::applyAttrs() {
+void H5vccIdom::applyAttrs(const ScriptValue& attrs) {
   Element* element = currentElement();
-  virtual_elements::ApplyAttrs(attrs_builder_, element);
+  virtual_elements::ApplyAttrs(attrs_builder_, element, attrs);
 }
 
-void H5vccIdom::applyStatics(const HeapVector<ScriptValue>& statics) {
+void H5vccIdom::applyStatics(
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const ScriptValue& attrs) {
   Element* element = currentElement();
-  virtual_elements::ApplyStatics(statics, element);
+  if (statics.has_value()) {
+    virtual_elements::ApplyStatics(statics.value(), element, attrs);
+  }
+  // If statics is null/undefined, do nothing (don't throw)
 }
 
 void H5vccIdom::elementOpenStart(

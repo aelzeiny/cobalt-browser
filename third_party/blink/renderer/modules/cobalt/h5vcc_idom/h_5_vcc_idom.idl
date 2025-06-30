@@ -111,8 +111,8 @@ interface H5vccIdom {
     // Virtual element functions
     void attr(DOMString name, any value);
     void key(DOMString key);
-    void applyAttrs();
-    void applyStatics(sequence<any> statics);
+    void applyAttrs(optional any attrs);
+    void applyStatics(optional sequence<any>? statics, optional any attrs);
     void elementOpenStart(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics);
     Element elementOpenEnd();
     Element elementOpen(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics, any... varArgs);
