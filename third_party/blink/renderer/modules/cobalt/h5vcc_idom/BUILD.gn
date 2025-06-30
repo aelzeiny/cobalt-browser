@@ -1,0 +1,60 @@
+# Copyright 2025 The Cobalt Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//third_party/blink/renderer/modules/modules.gni")
+
+blink_modules_sources("h5vcc_idom") {
+  sources = [
+    "assertions.cc",
+    "assertions.h",
+    "attribute_value.h",
+    "attributes.cc",
+    "attributes.h",
+    "changes.cc",
+    "changes.h",
+    "context.cc",
+    "context.h",
+    "core.cc",
+    "core.h",
+    "dom_util.cc",
+    "dom_util.h",
+    "global.cc",
+    "global.h",
+    "h_5_vcc_idom.cc",
+    "h_5_vcc_idom.h",
+    "i_dom_attribute_map.cc",
+    "i_dom_attribute_map.h",
+    "i_dom_context.cc",
+    "i_dom_context.h",
+    "i_dom_node_data.cc",
+    "i_dom_node_data.h",
+    "i_dom_notification.h",
+    "i_dom_patcher.cc",
+    "i_dom_patcher.h",
+    "i_dom_symbols.h",
+    "native_attributes.h",
+    "native_patch.cc",
+    "native_patch.h",
+    "native_virtual_elements.cc",
+    "native_virtual_elements.h",
+    "node_data.cc",
+    "node_data.h",
+    "nodes.cc",
+    "nodes.h",
+    "notification.cc",
+    "symbols.cc",
+    "virtual_elements.cc",
+    "virtual_elements.h",
+  ]
+}

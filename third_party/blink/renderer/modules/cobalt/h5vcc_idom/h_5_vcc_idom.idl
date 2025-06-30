@@ -1,0 +1,157 @@
+// Copyright 2025 The Cobalt Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+callback NodeFunction = void (sequence<Node> nodes);
+callback PatchFunction = void (any data);
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomNotification {
+    attribute NodeFunction? nodesCreated;
+    attribute NodeFunction? nodesDeleted;
+};
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomSymbols {
+    [ImplementedAs=defaultValue] readonly attribute DOMString default;
+};
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomNodeData {
+    readonly attribute DOMString nameOrCtor;
+    readonly attribute DOMString? key;
+    readonly attribute DOMString? text;
+    readonly attribute boolean staticsApplied;
+    readonly attribute boolean alwaysDiffAttributes;
+};
+
+// Incremental DOM interface for efficient DOM updates.
+[
+    Exposed=Window,
+    SecureContext
+]
+interface H5vccIdom {
+    // Patches a DOM element using incremental DOM approach.
+    void patch(Element element, VoidCallback function);
+
+    // Notifications for when nodes are created or deleted.
+    readonly attribute IDomNotification? notifications;
+
+    // Sets the name of the HTML attribute that holds the element key.
+    void setKeyAttributeName(DOMString? name);
+
+    // Gets the name of the HTML attribute that holds the element key.
+    DOMString getKeyAttributeName();
+
+    // An object that provides symbols for various internal purposes.
+    readonly attribute IDomSymbols? symbols;
+
+    // Clears all caches from a node and all of its children.
+    void clearCache(Node node);
+
+    // Gets the key for a Node.
+    [RaisesException] DOMString? getKey(Node node);
+
+    // Gets the NodeData for a Node, creating it if necessary.
+    IDomNodeData? getData(Node node, optional DOMString fallbackKey);
+
+    // Imports node and its subtree, initializing caches.
+    void importNode(Node node);
+
+    // Checks if the NodeData already exists.
+    boolean isDataInitialized(Node node);
+
+    // Applies an attribute a given Element.
+    [RaisesException] void applyAttr(Element el, DOMString name, DOMString? value);
+    // Applies a property to a given Element. Value can be a string or object.
+    [RaisesException] void applyProp(Element el, any name, any value);
+
+    // A publicly mutable object to provide custom mutators for attributes.
+    [CallWith=ScriptState] attribute object attributes;
+    [CallWith=ScriptState] object createAttributeMap();
+
+    void alignWithDOM(DOMString nameOrCtor, DOMString? key, optional DOMString? nonce);
+    void alwaysDiffAttributes(Element el);
+    Element close();
+    IDomPatcher createPatchInner(optional PatchConfig config);
+    IDomPatcher createPatchOuter(optional PatchConfig config);
+    IDomContext? currentContext();
+    Element currentElement();
+    Node currentPointer();
+    Node? getNextNode();
+    Element open(DOMString nameOrCtor, optional DOMString? key, optional DOMString? nonce);
+    Node patchInner(Element el, PatchFunction template, optional any data);
+    Node? patchOuter(Element el, PatchFunction template, optional any data);
+    Text text();
+    Text text(any value, VoidCallback... formatters);
+    Text textWithValue(any value, VoidCallback... formatters);
+    void skip();
+    Node? skipNode();
+    Element? tryGetCurrentElement();
+
+    // Virtual element functions
+    void attr(DOMString name, any value);
+    void key(DOMString key);
+    void applyAttrs(optional any attrs);
+    void applyStatics(optional sequence<any>? statics, optional any attrs);
+    void elementOpenStart(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics);
+    Element elementOpenEnd();
+    Element elementOpen(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics, any... varArgs);
+    Element elementClose(DOMString nameOrCtor);
+    Element elementVoid(DOMString nameOrCtor, optional DOMString? key, optional sequence<any>? statics, any... varArgs);
+};
+
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomAttributeMap {
+    // Minimal interface kept for binding generation compatibility
+    // This is not used in the actual implementation
+};
+
+callback AttrMutator = void(Element el, DOMString name, any value);
+
+dictionary PatchConfig {
+    MatchFn? matches;
+};
+
+callback MatchFn = boolean (Node matchNode, DOMString nameOrCtor, DOMString expectedNameOrCtor, DOMString? key, DOMString? expectedKey);
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomPatcher {
+    void patch(Element el, PatchFunction template, any data);
+};
+
+[
+    Exposed=Window,
+    SecureContext
+]
+interface IDomContext {
+    void markCreated(Node node);
+    void markDeleted(Node node);
+    void notifyChanges(IDomNotification? notifications);
+};

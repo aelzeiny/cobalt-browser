@@ -1,4 +1,5 @@
 /client-py/
+third_party/idom
 *.bak
 *.code-workspace
 *.gstmp

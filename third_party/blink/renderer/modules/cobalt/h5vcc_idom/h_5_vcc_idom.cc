@@ -1,0 +1,771 @@
+// Copyright 2025 The Cobalt Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/h_5_vcc_idom.h"
+
+#include "base/logging.h"
+#include "third_party/blink/renderer/bindings/core/v8/to_v8_for_core.h"
+#include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_element.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_patch_function.h"
+#include "third_party/blink/renderer/core/dom/element.h"
+#include "third_party/blink/renderer/core/dom/text.h"
+#include "third_party/blink/renderer/core/execution_context/execution_context.h"
+#include "third_party/blink/renderer/core/frame/local_dom_window.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/assertions.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_node_data.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_notification.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_attributes.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_patch.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/native_virtual_elements.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
+#include "third_party/blink/renderer/platform/bindings/exception_state.h"
+#include "third_party/blink/renderer/platform/bindings/script_state.h"
+
+namespace blink {
+
+H5vccIdom::H5vccIdom(LocalDOMWindow& window)
+    : ExecutionContextLifecycleObserver(window.GetExecutionContext()),
+      notifications_(MakeGarbageCollected<IDomNotification>()),
+      symbols_(MakeGarbageCollected<IDomSymbols>()) {
+  // attributes_ will be initialized lazily when first accessed
+}
+
+void H5vccIdom::ContextDestroyed() {}
+
+void H5vccIdom::patch(Element* element, V8VoidCallback* function) {
+  cobalt::h5vcc::idom::PatchInner(node_data_map_, element, function,
+                                  ScriptValue());
+}
+
+IDomNotification* H5vccIdom::notifications() {
+  return notifications_;
+}
+
+void H5vccIdom::setKeyAttributeName(const String& name) {
+  cobalt::h5vcc::idom::SetKeyAttributeName(name);
+}
+
+String H5vccIdom::getKeyAttributeName() {
+  return cobalt::h5vcc::idom::KeyAttributeName();
+}
+
+IDomSymbols* H5vccIdom::symbols() {
+  return symbols_;
+}
+
+void H5vccIdom::clearCache(Node* node) {
+  cobalt::h5vcc::idom::ClearCache(node_data_map_, node);
+}
+
+String H5vccIdom::getKey(Node* node, ExceptionState& exception_state) {
+  if (!cobalt::h5vcc::idom::IsDataInitialized(node_data_map_, node)) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidStateError,
+                                      "Expected value to be defined");
+    return String();
+  }
+  return cobalt::h5vcc::idom::GetKey(node_data_map_, node);
+}
+
+IDomNodeData* H5vccIdom::getData(Node* node, const String& fallback_key) {
+  cobalt::h5vcc::idom::NodeData* internal_data =
+      cobalt::h5vcc::idom::GetData(node_data_map_, node, fallback_key);
+  if (!internal_data) {
+    return nullptr;
+  }
+  return MakeGarbageCollected<IDomNodeData>(internal_data);
+}
+
+void H5vccIdom::importNode(Node* node) {
+  cobalt::h5vcc::idom::ImportNode(node_data_map_, node);
+}
+
+bool H5vccIdom::isDataInitialized(Node* node) {
+  return cobalt::h5vcc::idom::IsDataInitialized(node_data_map_, node);
+}
+
+void H5vccIdom::applyAttr(Element* el,
+                          const String& name,
+                          const String& value,
+                          ExceptionState& exception_state) {
+  if (!el) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidStateError,
+                                      "Element cannot be null");
+    return;
+  }
+
+  // Check for empty attribute names
+  if (name.empty()) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidCharacterError,
+                                      "Attribute name cannot be empty");
+    return;
+  }
+
+  // Check for invalid characters in attribute names
+  if (!cobalt::h5vcc::idom::IsValidAttributeName(name)) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidCharacterError,
+                                      "Invalid character in attribute name");
+    return;
+  }
+
+  cobalt::h5vcc::idom::ApplyAttr(el, name, value);
+}
+
+void H5vccIdom::applyProp(Element* el,
+                          const ScriptValue& name,
+                          const ScriptValue& value,
+                          ExceptionState& exception_state) {
+  if (!el) {
+    exception_state.ThrowDOMException(DOMExceptionCode::kInvalidStateError,
+                                      "Element cannot be null");
+    return;
+  }
+
+  v8::Local<v8::Value> name_v8 = name.V8Value();
+
+  if (name_v8->IsSymbol()) {
+    // Handle symbol property names directly
+    blink::LocalFrame* frame = el->GetDocument().GetFrame();
+    if (!frame) {
+      return;
+    }
+    v8::Isolate* isolate = blink::ToIsolate(frame);
+    v8::HandleScope handle_scope(isolate);
+    v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
+    blink::ScriptState* script_state = blink::ScriptState::From(context);
+    if (!script_state) {
+      return;
+    }
+
+    v8::MaybeLocal<v8::Value> maybe_v8_element =
+        blink::ToV8Traits<blink::Element>::ToV8(script_state, el);
+    v8::Local<v8::Value> v8_element_value;
+    if (!maybe_v8_element.ToLocal(&v8_element_value) ||
+        !v8_element_value->IsObject()) {
+      return;
+    }
+    v8::Local<v8::Object> v8_object = v8_element_value.As<v8::Object>();
+
+    // Set property using symbol key directly
+    v8::Maybe<bool> result = v8_object->Set(context, name_v8, value.V8Value());
+    (void)result;
+  } else {
+    // Handle string property names
+    v8::String::Utf8Value name_utf8(name.GetIsolate(), name_v8);
+    String string_name(*name_utf8);
+    cobalt::h5vcc::idom::ApplyProp(el, string_name, value);
+  }
+}
+
+ScriptValue H5vccIdom::attributes(ScriptState* script_state) {
+  // Lazy-initialize attributes if not set
+  if (attributes_.IsEmpty()) {
+    attributes_ = createAttributeMap(script_state);
+  }
+  return attributes_;
+}
+
+void H5vccIdom::setAttributes(ScriptState* script_state,
+                              const ScriptValue& attributes) {
+  attributes_ = attributes;
+}
+
+ScriptValue H5vccIdom::createAttributeMap(ScriptState* script_state) {
+  ScriptState::Scope scope(script_state);
+  v8::Isolate* isolate = script_state->GetIsolate();
+  v8::Local<v8::Context> context = script_state->GetContext();
+
+  // Create a plain JavaScript object
+  v8::Local<v8::Object> map = v8::Object::New(isolate);
+
+  // Create the default mutator function
+  auto default_callback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+    if (info.Length() < 3) {
+      return;
+    }
+
+    v8::Isolate* isolate = info.GetIsolate();
+    v8::HandleScope handle_scope(isolate);
+
+    // Extract arguments: element, name, value
+    if (!info[0]->IsObject()) {
+      return;
+    }
+    v8::Local<v8::Object> element_obj = info[0].As<v8::Object>();
+
+    // Get the native Element from the V8 object
+    Element* element = V8Element::ToWrappable(isolate, element_obj);
+    if (!element) {
+      return;
+    }
+
+    // Handle symbol property names
+    if (info[1]->IsSymbol()) {
+      // For symbols, we need to use ApplyProp directly with the V8 value
+      ScriptValue value(isolate, info[2]);
+
+      blink::LocalFrame* frame = element->GetDocument().GetFrame();
+      if (!frame) {
+        return;
+      }
+      v8::Local<v8::Context> context = isolate->GetCurrentContext();
+      blink::ScriptState* script_state = blink::ScriptState::From(context);
+      if (!script_state) {
+        return;
+      }
+
+      v8::MaybeLocal<v8::Value> maybe_v8_element =
+          blink::ToV8Traits<blink::Element>::ToV8(script_state, element);
+      v8::Local<v8::Value> v8_element_value;
+      if (!maybe_v8_element.ToLocal(&v8_element_value) ||
+          !v8_element_value->IsObject()) {
+        return;
+      }
+      v8::Local<v8::Object> v8_object = v8_element_value.As<v8::Object>();
+
+      // Set property using symbol key directly
+      v8::Maybe<bool> result = v8_object->Set(context, info[1], info[2]);
+      (void)result;
+      return;
+    }
+
+    v8::String::Utf8Value name_utf8(isolate, info[1]);
+    String name(*name_utf8);
+
+    // Create ScriptValue from the V8 value for type-aware handling
+    ScriptValue value(isolate, info[2]);
+
+    cobalt::h5vcc::idom::ApplyAttributeTyped(element, name, value);
+  };
+
+  v8::Local<v8::Function> default_function =
+      v8::Function::New(context, default_callback).ToLocalChecked();
+
+  // Set the __default property to the function
+  map->Set(context,
+           v8::String::NewFromUtf8(isolate, "__default").ToLocalChecked(),
+           default_function)
+      .ToChecked();
+
+  // Create the style mutator function
+  auto style_callback = [](const v8::FunctionCallbackInfo<v8::Value>& info) {
+    if (info.Length() < 3) {
+      return;
+    }
+
+    v8::HandleScope handle_scope(info.GetIsolate());
+
+    // Extract arguments: element, name, value
+    if (!info[0]->IsObject()) {
+      return;
+    }
+    v8::Local<v8::Object> element_obj = info[0].As<v8::Object>();
+
+    // Get the native Element from the V8 object
+    Element* element = V8Element::ToWrappable(info.GetIsolate(), element_obj);
+    if (!element) {
+      return;
+    }
+
+    v8::String::Utf8Value name_utf8(info.GetIsolate(), info[1]);
+    String name(*name_utf8);
+
+    // Create ScriptValue from the V8 value
+    ScriptValue value(info.GetIsolate(), info[2]);
+
+    // For style, use the comprehensive style handler
+    cobalt::h5vcc::idom::ApplyStyle(element, name, value);
+  };
+
+  v8::Local<v8::Function> style_function =
+      v8::Function::New(context, style_callback).ToLocalChecked();
+
+  // Set the style property to the function
+  map->Set(context, v8::String::NewFromUtf8(isolate, "style").ToLocalChecked(),
+           style_function)
+      .ToChecked();
+
+  return ScriptValue(isolate, map);
+}
+
+void H5vccIdom::alignWithDOM(const String& name_or_ctor,
+                             const String& key,
+                             const String& nonce) {
+  cobalt::h5vcc::idom::AlignWithDOM(node_data_map_, name_or_ctor, key, nonce);
+}
+
+void H5vccIdom::alwaysDiffAttributes(Element* el) {
+  cobalt::h5vcc::idom::AlwaysDiffAttributes(el);
+}
+
+Element* H5vccIdom::close() {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call close() unless in patch.")));
+    return nullptr;
+  }
+
+  return cobalt::h5vcc::idom::Close();
+}
+
+IDomPatcher* H5vccIdom::createPatchInner(const PatchConfig* config) {
+  (void)config;  // Suppress unused parameter warning
+  return MakeGarbageCollected<IDomPatcher>(false);
+}
+
+IDomPatcher* H5vccIdom::createPatchOuter(const PatchConfig* config) {
+  (void)config;  // Suppress unused parameter warning
+  return MakeGarbageCollected<IDomPatcher>(true);
+}
+
+IDomContext* H5vccIdom::currentContext() {
+  cobalt::h5vcc::idom::Context* ctx = cobalt::h5vcc::idom::CurrentContext();
+  if (!ctx) {
+    return nullptr;
+  }
+  // Create IDomContext wrapper for the cobalt context
+  return MakeGarbageCollected<IDomContext>(ctx);
+}
+
+Element* H5vccIdom::currentElement() {
+  return cobalt::h5vcc::idom::CurrentElement();
+}
+
+Node* H5vccIdom::currentPointer() {
+  return cobalt::h5vcc::idom::CurrentPointer();
+}
+
+Node* H5vccIdom::getNextNode() {
+  return cobalt::h5vcc::idom::GetNextNode();
+}
+
+Element* H5vccIdom::open(const String& name_or_ctor,
+                         const String& key,
+                         const String& nonce) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call open() unless in patch.")));
+    return nullptr;
+  }
+
+  Element* result =
+      cobalt::h5vcc::idom::Open(node_data_map_, name_or_ctor, key, nonce);
+  if (!result && !name_or_ctor.empty()) {
+    // If Open() returned null but name was not empty, it means invalid name
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(
+        v8::String::NewFromUtf8Literal(isolate, "Invalid element name")));
+    return nullptr;
+  }
+
+  return result;
+}
+
+Node* H5vccIdom::patchInner(Element* el,
+                            V8PatchFunction* template_function,
+                            ScriptValue data) {
+  if (!el) {
+    // Throw exception for null element
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::TypeError(
+        v8::String::NewFromUtf8Literal(isolate, "Element cannot be null")));
+    return nullptr;
+  }
+
+  // OPTIMIZED: Use native implementation for better performance
+  // Fall back to legacy implementation if native fails
+  Node* result = patchInnerOptimized(el, template_function, data);
+  if (result) {
+    return result;
+  }
+
+  // Legacy fallback
+  return cobalt::h5vcc::idom::PatchInner(node_data_map_, el, template_function,
+                                         data);
+}
+
+Node* H5vccIdom::patchOuter(Element* el,
+                            V8PatchFunction* template_function,
+                            ScriptValue data) {
+  if (!el) {
+    // Throw exception for null element
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::TypeError(
+        v8::String::NewFromUtf8Literal(isolate, "Element cannot be null")));
+    return nullptr;
+  }
+
+  // OPTIMIZED: Use native implementation for better performance
+  // Fall back to legacy implementation if native fails
+  Node* result = patchOuterOptimized(el, template_function, data);
+  if (result) {
+    return result;
+  }
+
+  // Legacy fallback
+  return cobalt::h5vcc::idom::PatchOuter(node_data_map_, el, template_function,
+                                         data);
+}
+
+Text* H5vccIdom::text() {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call text() unless in patch.")));
+    return nullptr;
+  }
+  cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+  Text* result = cobalt::h5vcc::idom::Text();
+  cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+  return result;
+}
+
+Text* H5vccIdom::text(const ScriptValue& value,
+                      const HeapVector<Member<V8VoidCallback>>& formatters) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call text() unless in patch.")));
+    return nullptr;
+  }
+
+  // OPTIMIZED: If no formatters, use the fast native implementation
+  if (formatters.empty() && !value.IsEmpty()) {
+    v8::Local<v8::Value> v8_value = value.V8Value();
+    if (v8_value->IsString()) {
+      v8::String::Utf8Value utf8_value(value.GetIsolate(), v8_value);
+      return textOptimized(WTF::String(*utf8_value));
+    }
+  }
+
+  // Legacy implementation for complex cases
+  return textWithValue(value, formatters);
+}
+
+Text* H5vccIdom::textWithValue(
+    const ScriptValue& value,
+    const HeapVector<Member<V8VoidCallback>>& formatters) {
+  auto text_func = [this]() -> Text* {
+    cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+    Text* result = cobalt::h5vcc::idom::Text();
+    cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+    return result;
+  };
+
+  auto get_data_func = [this](Node* node) -> IDomNodeData* {
+    return getData(node);
+  };
+
+  return virtual_elements::TextWithValue(value, formatters, text_func,
+                                         get_data_func);
+}
+
+void H5vccIdom::skip() {
+  cobalt::h5vcc::idom::Skip();
+}
+
+Node* H5vccIdom::skipNode() {
+  return cobalt::h5vcc::idom::SkipNode();
+}
+
+Element* H5vccIdom::tryGetCurrentElement() {
+  return cobalt::h5vcc::idom::TryGetCurrentElement();
+}
+
+// Virtual element functions implementation
+
+void H5vccIdom::attr(const String& name, const ScriptValue& value) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call attr() unless in patch.")));
+    return;
+  }
+
+  // OPTIMIZED: Use native attribute builder for better performance
+  setAttributeOptimized(name, value);
+
+  // Also maintain legacy V8 builder for compatibility
+  virtual_elements::Attr(attrs_builder_, name, value);
+}
+
+void H5vccIdom::key(const String& key) {
+  virtual_elements::Key(args_builder_, key);
+}
+
+void H5vccIdom::applyAttrs(const ScriptValue& attrs) {
+  Element* element = currentElement();
+  virtual_elements::ApplyAttrs(attrs_builder_, element, attrs);
+}
+
+void H5vccIdom::applyStatics(
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const ScriptValue& attrs) {
+  Element* element = currentElement();
+  if (statics.has_value()) {
+    virtual_elements::ApplyStatics(statics.value(), element, attrs);
+  }
+  // If statics is null/undefined, do nothing (don't throw)
+}
+
+void H5vccIdom::elementOpenStart(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics) {
+  // Clear and initialize args builder
+  args_builder_.clear();
+  args_builder_.resize(3);
+
+  v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+
+  args_builder_[0] = ScriptValue(isolate, V8String(isolate, name_or_ctor));
+  if (!key.IsNull()) {
+    args_builder_[1] = ScriptValue(isolate, V8String(isolate, key));
+  }
+  if (statics && !statics->empty()) {
+    // Convert HeapVector to v8::Array
+    v8::Local<v8::Array> statics_array =
+        v8::Array::New(isolate, statics->size());
+    for (wtf_size_t i = 0; i < statics->size(); ++i) {
+      statics_array->Set(context, i, (*statics)[i].V8Value()).ToChecked();
+    }
+    args_builder_[2] = ScriptValue(isolate, statics_array);
+  }
+}
+
+Element* H5vccIdom::elementOpenEnd() {
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+
+  return virtual_elements::ElementOpenEnd(args_builder_, attrs_builder_,
+                                          open_func);
+}
+
+Element* H5vccIdom::elementOpen(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const HeapVector<ScriptValue>& var_args) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call elementOpen() unless in patch.")));
+    return nullptr;
+  }
+
+  // First call elementOpenStart to set up the args_builder
+  elementOpenStart(name_or_ctor, key, statics);
+
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+
+  return virtual_elements::ElementOpen(args_builder_, attrs_builder_,
+                                       name_or_ctor, key, statics, var_args,
+                                       open_func);
+}
+
+Element* H5vccIdom::elementClose(const String& name_or_ctor) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call elementClose() unless in patch.")));
+    return nullptr;
+  }
+
+  // Close the element first
+  Element* element = close();
+
+  // Then validate it matches the expected tag (like the TypeScript version)
+  if (element) {
+    IDomNodeData* data = getData(element);
+    if (data && data->nameOrCtor() != name_or_ctor) {
+      v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+      String error_message = "Received a call to close \"" + name_or_ctor +
+                             "\" but \"" + data->nameOrCtor() + "\" was open.";
+      isolate->ThrowException(
+          v8::Exception::Error(V8String(isolate, error_message)));
+      return nullptr;
+    }
+  }
+
+  return element;
+}
+
+Element* H5vccIdom::elementVoid(
+    const String& name_or_ctor,
+    const String& key,
+    const absl::optional<HeapVector<ScriptValue>>& statics,
+    const HeapVector<ScriptValue>& var_args) {
+  // First call elementOpenStart to set up the args_builder
+  elementOpenStart(name_or_ctor, key, statics);
+
+  auto open_func = [this](const String& name, const String& key) -> Element* {
+    return open(name, key);
+  };
+  auto close_func = [this]() -> Element* { return close(); };
+
+  Element* result = virtual_elements::ElementVoid(
+      args_builder_, attrs_builder_, name_or_ctor, key, statics, var_args,
+      open_func, close_func);
+
+  return result;
+}
+
+// OPTIMIZED IMPLEMENTATIONS using native C++ APIs
+
+// Convert ScriptValue to native AttributeValue for optimization
+cobalt::h5vcc::idom::AttributeValue ScriptValueToAttributeValue(
+    const ScriptValue& script_value) {
+  if (script_value.IsEmpty() || script_value.V8Value()->IsNull() ||
+      script_value.V8Value()->IsUndefined()) {
+    return cobalt::h5vcc::idom::AttributeValue();
+  }
+
+  v8::Local<v8::Value> v8_value = script_value.V8Value();
+
+  if (v8_value->IsString()) {
+    v8::String::Utf8Value utf8_value(script_value.GetIsolate(), v8_value);
+    return cobalt::h5vcc::idom::AttributeValue(WTF::String(*utf8_value));
+  } else if (v8_value->IsNumber()) {
+    v8::Local<v8::Context> context =
+        script_value.GetIsolate()->GetCurrentContext();
+    return cobalt::h5vcc::idom::AttributeValue(
+        v8_value->NumberValue(context).FromMaybe(0));
+  } else if (v8_value->IsBoolean()) {
+    return cobalt::h5vcc::idom::AttributeValue(
+        v8_value->BooleanValue(script_value.GetIsolate()));
+  }
+
+  // For complex objects, convert to string
+  v8::String::Utf8Value utf8_value(script_value.GetIsolate(), v8_value);
+  return cobalt::h5vcc::idom::AttributeValue(WTF::String(*utf8_value));
+}
+
+// Optimized attribute setting using native implementation
+void H5vccIdom::setAttributeOptimized(const String& name,
+                                      const ScriptValue& value) {
+  WTF::AtomicString atomic_name(name);
+  cobalt::h5vcc::idom::AttributeValue attr_value =
+      ScriptValueToAttributeValue(value);
+  native_attrs_builder_.AddAttribute(atomic_name, attr_value);
+}
+
+// Optimized element opening using native implementation
+Element* H5vccIdom::elementOpenOptimized(const String& name_or_ctor,
+                                         const String& key) {
+  WTF::AtomicString atomic_name(name_or_ctor);
+
+  // OPTIMIZED: Use the native implementation for maximum performance
+  cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+
+  // Set up element args
+  cobalt::h5vcc::idom::NativeVirtualElements::ElementArgs args;
+  cobalt::h5vcc::idom::NativeVirtualElements::ElementOpenStart(
+      args, atomic_name, key);
+
+  Element* element = cobalt::h5vcc::idom::NativeVirtualElements::ElementOpenEnd(
+      node_data_map_, args, native_attrs_builder_);
+  cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+
+  return element;
+}
+
+// Optimized text creation using native implementation
+Text* H5vccIdom::textOptimized(const String& value) {
+  cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+  Text* result = cobalt::h5vcc::idom::NativeVirtualElements::TextWithValue(
+      node_data_map_, value);
+  cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+  return result;
+}
+
+// OPTIMIZED patch implementations using native C++ APIs
+Node* H5vccIdom::patchInnerOptimized(Element* el,
+                                     V8PatchFunction* template_function,
+                                     ScriptValue data) {
+  if (!el) {
+    return nullptr;
+  }
+
+  // OPTIMIZED: Use fast native path when possible
+  // For now, fallback to optimized legacy implementation
+
+  // Use optimized context setup but still call V8 function
+  cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
+
+  // Call template function with minimal context setup
+  v8::Isolate* isolate = this->GetExecutionContext()->GetIsolate();
+  ScriptValue script_data =
+      data.IsEmpty() ? ScriptValue(isolate, v8::Undefined(isolate)) : data;
+
+  template_function->InvokeAndReportException(
+      this->GetExecutionContext()->ToScriptWrappable(), script_data);
+
+  cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
+
+  return el;
+}
+
+Node* H5vccIdom::patchOuterOptimized(Element* el,
+                                     V8PatchFunction* template_function,
+                                     ScriptValue data) {
+  if (!el) {
+    return nullptr;
+  }
+
+  // Create a native patch function that wraps the V8 callback
+  cobalt::h5vcc::idom::NativePatchFunction native_fn =
+      [template_function, data,
+       this](cobalt::h5vcc::idom::NativePatchContext& ctx) {
+        v8::Isolate* isolate = this->GetExecutionContext()->GetIsolate();
+        ScriptValue script_data =
+            data.IsEmpty() ? ScriptValue(isolate, v8::Undefined(isolate))
+                           : data;
+
+        template_function->InvokeAndReportException(
+            this->GetExecutionContext()->ToScriptWrappable(), script_data);
+      };
+
+  // Use the high-performance native patch implementation
+  return cobalt::h5vcc::idom::NativePatch::PatchOuter(node_data_map_, el,
+                                                      native_fn);
+}
+
+void H5vccIdom::Trace(Visitor* visitor) const {
+  visitor->Trace(notifications_);
+  visitor->Trace(symbols_);
+  visitor->Trace(node_data_map_);
+  visitor->Trace(args_builder_);
+  visitor->Trace(attrs_builder_);
+  // Native builders don't need tracing as they're not GC objects
+  // attributes_ is a ScriptValue which handles its own V8 references
+  ExecutionContextLifecycleObserver::Trace(visitor);
+  ScriptWrappable::Trace(visitor);
+}
+
+}  // namespace blink

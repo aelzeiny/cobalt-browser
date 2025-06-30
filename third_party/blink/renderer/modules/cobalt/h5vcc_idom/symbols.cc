@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This interface mirrors the H5vcc Web IDL defined in Cobalt LTS 25:
-// https://github.com/youtube/cobalt/blob/25.lts.stable/cobalt/h5vcc/h5vcc.idl
-[
-    Exposed=Window,
-    SecureContext
-]
-interface H5vcc {
-    readonly attribute CrashLog crashLog;
-    readonly attribute H5vccAccessibility accessibility;
-    readonly attribute H5vccExperiments experiments;
-    readonly attribute H5vccIdom idom;
-    readonly attribute H5vccMetrics metrics;
-    readonly attribute H5vccSystem system;
-    readonly attribute H5vccRuntime runtime;
-};
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
+
+namespace blink {
+
+IDomSymbols::IDomSymbols() = default;
+IDomSymbols::~IDomSymbols() = default;
+
+String IDomSymbols::defaultValue() const {
+  return "__default";
+}
+
+void IDomSymbols::Trace(Visitor* visitor) const {
+  ScriptWrappable::Trace(visitor);
+}
+
+}  // namespace blink
