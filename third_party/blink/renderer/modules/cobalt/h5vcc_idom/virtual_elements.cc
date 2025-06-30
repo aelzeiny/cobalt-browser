@@ -14,6 +14,7 @@
 
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 
+#include "base/no_destructor.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_void_callback.h"

@@ -24,6 +24,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/dom_util.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/nodes.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 
 namespace cobalt {
@@ -386,6 +387,7 @@ blink::Node* RunPatchWithContext(blink::Node* node,
   blink::TreeWalker* prev_tree_walker = comment_tree_walker;
   bool previous_in_attributes = false;
   bool previous_in_skip = false;
+  bool previous_in_patch = false;
 
   doc = &node->GetDocument();
   context = MakeGarbageCollected<Context>(node);
@@ -398,6 +400,7 @@ blink::Node* RunPatchWithContext(blink::Node* node,
 
   previous_in_attributes = SetInAttributes(false);
   previous_in_skip = SetInSkip(false);
+  previous_in_patch = SetInPatch(true);  // Enter patch context
   updatePatchContext(context);
 
   blink::Node* ret_val = nullptr;
@@ -476,6 +479,7 @@ blink::Node* RunPatchWithContext(blink::Node* node,
 
   SetInAttributes(previous_in_attributes);
   SetInSkip(previous_in_skip);
+  SetInPatch(previous_in_patch);  // Restore patch context
   updatePatchContext(context);
 
   return ret_val;
@@ -511,11 +515,70 @@ blink::Node* PatchInner(NodeDataMap& data_map,
     return nullptr;
   }
 
-  // Simple implementation: just call the callback
-  // This should be enough to test if the basic callback mechanism works
+  SetCurrentDataMap(&data_map);
+
+  // Set up proper patch context
+  Context* prev_context = context;
+  blink::Document* prev_doc = doc;
+  blink::HeapVector<blink::Member<blink::Node>>* prev_focus_path = focus_path;
+  std::vector<blink::ScriptValue> prev_args_builder = GetArgsBuilderInternal();
+  std::vector<blink::ScriptValue> prev_attrs_builder =
+      GetAttrsBuilderInternal();
+  blink::Node* prev_current_node = current_node;
+  blink::Node* prev_current_parent = current_parent;
+  blink::TreeWalker* prev_tree_walker = comment_tree_walker;
+  bool previous_in_attributes = false;
+  bool previous_in_skip = false;
+  bool previous_in_patch = false;
+
+  doc = &node->GetDocument();
+  context = MakeGarbageCollected<Context>(node);
+  GetArgsBuilderInternal().clear();
+  GetAttrsBuilderInternal().clear();
+  current_node = node;
+  current_parent = node->parentNode();
+  auto current_focus_path = GetFocusedPath(node, current_parent);
+  focus_path = &current_focus_path;
+
+  previous_in_attributes = SetInAttributes(false);
+  previous_in_skip = SetInSkip(false);
+  previous_in_patch = SetInPatch(true);  // Enter patch context
+  updatePatchContext(context);
+
+  // Enter the node for patching its children
+  EnterNode();
+
+  // Call the template function
   template_function->InvokeAndReportException(
       node->GetExecutionContext()->ToScriptWrappable());
 
+  // Exit the node
+  ExitNode();
+  AssertNoUnclosedTags(current_node, node);
+
+  // Always restore state, even if exceptions occurred above
+  AssertVirtualAttributesClosed();
+
+  if (context) {
+    context->NotifyChanges(nullptr);
+  }
+
+  // Restore previous state (this must always happen)
+  doc = prev_doc;
+  context = prev_context;
+  GetArgsBuilderInternal() = prev_args_builder;
+  GetAttrsBuilderInternal() = prev_attrs_builder;
+  current_node = prev_current_node;
+  current_parent = prev_current_parent;
+  focus_path = prev_focus_path;
+  comment_tree_walker = prev_tree_walker;
+
+  SetInAttributes(previous_in_attributes);
+  SetInSkip(previous_in_skip);
+  SetInPatch(previous_in_patch);  // Restore patch context
+  updatePatchContext(context);
+
+  SetCurrentDataMap(nullptr);
   return node;
 }
 

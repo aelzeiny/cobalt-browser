@@ -48,6 +48,7 @@ void AssertInAttributes(const char* function_name);
 void AssertVirtualAttributesClosed();
 bool SetInAttributes(bool value);
 bool SetInSkip(bool value);
+bool SetInPatch(bool value);
 
 // Checks that no children have been declared yet for the given node.
 void AssertNoChildrenDeclaredYet(const char* function_name, blink::Node* node);

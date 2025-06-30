@@ -29,7 +29,10 @@ bool in_skip_ = false;
 // Makes sure that there is a current patch context.
 void AssertInPatch(const char* function_name) {
   if (!in_patch_) {
-    DLOG(FATAL) << "Cannot call " << function_name << "() unless in patch.";
+    LOG(ERROR) << "Cannot call " << function_name << "() unless in patch.";
+    // For now, we'll use DCHECK(false) to cause a crash in debug mode
+    // This will trigger an assertion failure that V8 can handle
+    DCHECK(false) << "Cannot call " << function_name << "() unless in patch.";
   }
 }
 
@@ -76,6 +79,13 @@ bool SetInAttributes(bool value) {
 bool SetInSkip(bool value) {
   bool previous = in_skip_;
   in_skip_ = value;
+  return previous;
+}
+
+// Updates the state of being in a patch.
+bool SetInPatch(bool value) {
+  bool previous = in_patch_;
+  in_patch_ = value;
   return previous;
 }
 

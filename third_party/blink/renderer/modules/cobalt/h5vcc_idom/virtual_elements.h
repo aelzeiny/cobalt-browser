@@ -15,6 +15,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_VIRTUAL_ELEMENTS_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_COBALT_H5VCC_IDOM_VIRTUAL_ELEMENTS_H_
 
+#include <vector>
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_value.h"
 #include "third_party/blink/renderer/core/dom/element.h"

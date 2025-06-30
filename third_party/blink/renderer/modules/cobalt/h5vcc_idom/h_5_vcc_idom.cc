@@ -25,6 +25,7 @@
 #include "third_party/blink/renderer/core/dom/text.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/assertions.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/attributes.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/core.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/global.h"
@@ -33,6 +34,7 @@
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_patcher.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/i_dom_symbols.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/node_data.h"
+#include "third_party/blink/renderer/modules/cobalt/h5vcc_idom/virtual_elements.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 
@@ -314,6 +316,13 @@ void H5vccIdom::alwaysDiffAttributes(Element* el) {
 }
 
 Element* H5vccIdom::close() {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call close() unless in patch.")));
+    return nullptr;
+  }
+
   return cobalt::h5vcc::idom::Close();
 }
 
@@ -351,6 +360,13 @@ Node* H5vccIdom::getNextNode() {
 Element* H5vccIdom::open(const String& name_or_ctor,
                          const String& key,
                          const String& nonce) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call open() unless in patch.")));
+    return nullptr;
+  }
+
   Element* result =
       cobalt::h5vcc::idom::Open(node_data_map_, name_or_ctor, key, nonce);
   if (!result && !name_or_ctor.empty()) {
@@ -360,6 +376,7 @@ Element* H5vccIdom::open(const String& name_or_ctor,
         v8::String::NewFromUtf8Literal(isolate, "Invalid element name")));
     return nullptr;
   }
+
   return result;
 }
 
@@ -392,6 +409,12 @@ Node* H5vccIdom::patchOuter(Element* el,
 }
 
 Text* H5vccIdom::text() {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call text() unless in patch.")));
+    return nullptr;
+  }
   cobalt::h5vcc::idom::SetCurrentDataMap(&node_data_map_);
   Text* result = cobalt::h5vcc::idom::Text();
   cobalt::h5vcc::idom::SetCurrentDataMap(nullptr);
@@ -400,6 +423,12 @@ Text* H5vccIdom::text() {
 
 Text* H5vccIdom::text(const ScriptValue& value,
                       const HeapVector<Member<V8VoidCallback>>& formatters) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call text() unless in patch.")));
+    return nullptr;
+  }
   return textWithValue(value, formatters);
 }
 
@@ -436,6 +465,12 @@ Element* H5vccIdom::tryGetCurrentElement() {
 // Virtual element functions implementation
 
 void H5vccIdom::attr(const String& name, const ScriptValue& value) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call attr() unless in patch.")));
+    return;
+  }
   virtual_elements::Attr(attrs_builder_, name, value);
 }
 
@@ -498,6 +533,13 @@ Element* H5vccIdom::elementOpen(
     const String& key,
     const absl::optional<HeapVector<ScriptValue>>& statics,
     const HeapVector<ScriptValue>& var_args) {
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call elementOpen() unless in patch.")));
+    return nullptr;
+  }
+
   // First call elementOpenStart to set up the args_builder
   elementOpenStart(name_or_ctor, key, statics);
 
@@ -511,9 +553,30 @@ Element* H5vccIdom::elementOpen(
 }
 
 Element* H5vccIdom::elementClose(const String& name_or_ctor) {
-  auto close_func = [this]() -> Element* { return close(); };
+  if (!cobalt::h5vcc::idom::in_patch_) {
+    v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+    isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8Literal(
+        isolate, "Cannot call elementClose() unless in patch.")));
+    return nullptr;
+  }
 
-  return virtual_elements::ElementClose(name_or_ctor, close_func);
+  // Close the element first
+  Element* element = close();
+
+  // Then validate it matches the expected tag (like the TypeScript version)
+  if (element) {
+    IDomNodeData* data = getData(element);
+    if (data && data->nameOrCtor() != name_or_ctor) {
+      v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
+      String error_message = "Received a call to close \"" + name_or_ctor +
+                             "\" but \"" + data->nameOrCtor() + "\" was open.";
+      isolate->ThrowException(
+          v8::Exception::Error(V8String(isolate, error_message)));
+      return nullptr;
+    }
+  }
+
+  return element;
 }
 
 Element* H5vccIdom::elementVoid(
@@ -529,9 +592,11 @@ Element* H5vccIdom::elementVoid(
   };
   auto close_func = [this]() -> Element* { return close(); };
 
-  return virtual_elements::ElementVoid(args_builder_, attrs_builder_,
-                                       name_or_ctor, key, statics, var_args,
-                                       open_func, close_func);
+  Element* result = virtual_elements::ElementVoid(
+      args_builder_, attrs_builder_, name_or_ctor, key, statics, var_args,
+      open_func, close_func);
+
+  return result;
 }
 
 void H5vccIdom::Trace(Visitor* visitor) const {
