@@ -105,6 +105,9 @@ size_t MediaBufferPoolDecoderBufferAllocatorStrategy::GetAllocated() const {
 void MediaBufferPoolDecoderBufferAllocatorStrategy::
     DecommitAllDecommitableBlocks() {
   audio_allocator_.DecommitAllDecommitableBlocks();
+  if (video_allocator_) {
+    video_allocator_->DecommitAllDecommitableBlocks();
+  }
 }
 
 }  // namespace media
