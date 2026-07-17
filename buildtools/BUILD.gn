@@ -1,0 +1,334 @@
+# Copyright 2026 The Cobalt Authors. All Rights Reserved.
+
+# Custom buildtools/BUILD.gn to compile libunwindstack and its dependencies
+# (lzma, zlib, zstd) for Perfetto heap profiling on Linux/RDK.
+# Paths are rebased to point to //third_party/perfetto/buildtools/.
+# Removed internal Perfetto default_deps to bypass visibility restrictions.
+
+config("libunwindstack_config") {
+  cflags = [
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/android-unwinding/libunwindstack/include", root_build_dir),
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/android-libprocinfo/include", root_build_dir),
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/android-libbase/include", root_build_dir),
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/android-core/demangle/include", root_build_dir),
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/rustc-demangle-capi", root_build_dir),
+  ]
+  if (is_starboard) {
+    cflags += [
+      "-isystem",
+      rebase_path("//buildtools/custom_includes", root_build_dir),
+    ]
+  }
+  defines = [
+    "NO_LIBDEXFILE_SUPPORT",
+    "NT_RISCV_VECTOR=0x901",
+    "ELFCOMPRESS_ZSTD=2",
+  ]
+}
+
+source_set("libunwindstack") {
+  include_dirs = [
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/include",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack",
+    "//third_party/perfetto/buildtools/android-libbase/include",
+    "//third_party/perfetto/buildtools/android-logging/liblog/include",
+    "//third_party/perfetto/buildtools/android-libprocinfo/include",
+    "//third_party/perfetto/buildtools/android-core/include",
+    "//third_party/perfetto/buildtools/android-core/libcutils/include",
+    "//third_party/perfetto/buildtools/bionic/libc/async_safe/include",
+    "//third_party/perfetto/buildtools/bionic/libc/platform/",
+    "//third_party/perfetto/buildtools/lzma/C",
+    "//third_party/perfetto/buildtools/zstd/lib",
+  ]
+  if (is_starboard) {
+    include_dirs += [ "//buildtools/custom_includes" ]
+  }
+  deps = [
+    ":lzma",
+    ":zlib",
+    ":zstd",
+  ]
+  sources = [
+    "//third_party/perfetto/buildtools/android-libbase/file.cpp",
+    "//third_party/perfetto/buildtools/android-libbase/stringprintf.cpp",
+    "//third_party/perfetto/buildtools/android-libbase/strings.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/ArmExidx.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Demangle.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/DwarfCfa.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/DwarfEhFrameWithHdr.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/DwarfMemory.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/DwarfOp.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/DwarfSection.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Elf.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/ElfInterface.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/ElfInterfaceArm.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Global.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/JitDebug.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/MapInfo.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Maps.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Memory.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/MemoryXz.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Regs.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/RegsArm.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/RegsArm64.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/RegsRiscv64.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/RegsX86.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/RegsX86_64.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Symbols.cpp",
+    "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/Unwinder.cpp",
+  ]
+  if (!is_android) {
+    sources += [
+      "//third_party/perfetto/buildtools/android-libbase/liblog_symbols.cpp",
+      "//third_party/perfetto/buildtools/android-libbase/logging.cpp",
+      "//third_party/perfetto/buildtools/android-libbase/threads.cpp",
+      "//third_party/perfetto/buildtools/android-logging/liblog/logger_write.cpp",
+      "//third_party/perfetto/buildtools/android-logging/liblog/properties.cpp",
+      "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/LogStdout.cpp",
+      "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/MemoryMte.cpp",
+    ]
+  } else {
+    sources += [ "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/LogAndroid.cpp" ]
+  }
+  if (current_cpu == "x86") {
+    sources += [ "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/AsmGetRegsX86.S" ]
+  } else if (current_cpu == "x64") {
+    sources += [ "//third_party/perfetto/buildtools/android-unwinding/libunwindstack/AsmGetRegsX86_64.S" ]
+  }
+  cflags = [ "-DFAKE_LOG_DEVICE=1" ]
+  if (!is_win) {
+    cflags += [
+      "-Wno-deprecated-declarations",
+      "-Wno-format-zero-length",
+    ]
+    if (is_clang) {
+      cflags += [
+        "-Wno-vla-cxx-extension",
+        "-Wno-c99-designator",
+      ]
+    }
+  }
+  public_configs = [ ":libunwindstack_config" ]
+}
+
+source_set("lzma") {
+  defines = [ "_7ZIP_ST" ]
+  sources = [
+    "//third_party/perfetto/buildtools/lzma/C/7zAlloc.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zArcIn.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zBuf.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zBuf2.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zCrc.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zCrcOpt.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zDec.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zFile.c",
+    "//third_party/perfetto/buildtools/lzma/C/7zStream.c",
+    "//third_party/perfetto/buildtools/lzma/C/Aes.c",
+    "//third_party/perfetto/buildtools/lzma/C/AesOpt.c",
+    "//third_party/perfetto/buildtools/lzma/C/Alloc.c",
+    "//third_party/perfetto/buildtools/lzma/C/Bcj2.c",
+    "//third_party/perfetto/buildtools/lzma/C/Bra.c",
+    "//third_party/perfetto/buildtools/lzma/C/Bra86.c",
+    "//third_party/perfetto/buildtools/lzma/C/BraIA64.c",
+    "//third_party/perfetto/buildtools/lzma/C/CpuArch.c",
+    "//third_party/perfetto/buildtools/lzma/C/Delta.c",
+    "//third_party/perfetto/buildtools/lzma/C/LzFind.c",
+    "//third_party/perfetto/buildtools/lzma/C/Lzma2Dec.c",
+    "//third_party/perfetto/buildtools/lzma/C/Lzma2Enc.c",
+    "//third_party/perfetto/buildtools/lzma/C/Lzma86Dec.c",
+    "//third_party/perfetto/buildtools/lzma/C/Lzma86Enc.c",
+    "//third_party/perfetto/buildtools/lzma/C/LzmaDec.c",
+    "//third_party/perfetto/buildtools/lzma/C/LzmaEnc.c",
+    "//third_party/perfetto/buildtools/lzma/C/LzmaLib.c",
+    "//third_party/perfetto/buildtools/lzma/C/Ppmd7.c",
+    "//third_party/perfetto/buildtools/lzma/C/Ppmd7Dec.c",
+    "//third_party/perfetto/buildtools/lzma/C/Ppmd7Enc.c",
+    "//third_party/perfetto/buildtools/lzma/C/Sha256.c",
+    "//third_party/perfetto/buildtools/lzma/C/Sort.c",
+    "//third_party/perfetto/buildtools/lzma/C/Xz.c",
+    "//third_party/perfetto/buildtools/lzma/C/XzCrc64.c",
+    "//third_party/perfetto/buildtools/lzma/C/XzCrc64Opt.c",
+    "//third_party/perfetto/buildtools/lzma/C/XzDec.c",
+    "//third_party/perfetto/buildtools/lzma/C/XzEnc.c",
+    "//third_party/perfetto/buildtools/lzma/C/XzIn.c",
+  ]
+  cflags = [
+    "-Wno-empty-body",
+  ]
+  if (is_clang) {
+    cflags += [
+      "-Wno-enum-conversion",
+    ]
+  } else {
+    cflags += [
+      "-Wno-misleading-indentation",
+    ]
+  }
+}
+
+config("zlib_config") {
+  defines = [
+    "ZLIB_IMPLEMENTATION",
+    "CHROMIUM_ZLIB_NO_CHROMECONF",
+  ]
+  cflags = [
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/zlib", root_build_dir),
+  ]
+  if (is_clang) {
+    cflags += [
+      "-Wno-unknown-warning-option",
+      "-Wno-deprecated-non-prototype",
+      "-Wno-macro-redefined",
+      "-Wno-implicit-fallthrough",
+    ]
+  }
+}
+
+source_set("zlib") {
+  sources = [
+    "//third_party/perfetto/buildtools/zlib/adler32.c",
+    "//third_party/perfetto/buildtools/zlib/chromeconf.h",
+    "//third_party/perfetto/buildtools/zlib/compress.c",
+    "//third_party/perfetto/buildtools/zlib/contrib/optimizations/insert_string.h",
+    "//third_party/perfetto/buildtools/zlib/cpu_features.c",
+    "//third_party/perfetto/buildtools/zlib/cpu_features.h",
+    "//third_party/perfetto/buildtools/zlib/crc32.c",
+    "//third_party/perfetto/buildtools/zlib/crc32.h",
+    "//third_party/perfetto/buildtools/zlib/deflate.c",
+    "//third_party/perfetto/buildtools/zlib/deflate.h",
+    "//third_party/perfetto/buildtools/zlib/gzclose.c",
+    "//third_party/perfetto/buildtools/zlib/gzguts.h",
+    "//third_party/perfetto/buildtools/zlib/gzlib.c",
+    "//third_party/perfetto/buildtools/zlib/gzread.c",
+    "//third_party/perfetto/buildtools/zlib/gzwrite.c",
+    "//third_party/perfetto/buildtools/zlib/infback.c",
+    "//third_party/perfetto/buildtools/zlib/inffast.c",
+    "//third_party/perfetto/buildtools/zlib/inffast.h",
+    "//third_party/perfetto/buildtools/zlib/inffixed.h",
+    "//third_party/perfetto/buildtools/zlib/inflate.c",
+    "//third_party/perfetto/buildtools/zlib/inflate.h",
+    "//third_party/perfetto/buildtools/zlib/inftrees.c",
+    "//third_party/perfetto/buildtools/zlib/inftrees.h",
+    "//third_party/perfetto/buildtools/zlib/trees.c",
+    "//third_party/perfetto/buildtools/zlib/trees.h",
+    "//third_party/perfetto/buildtools/zlib/uncompr.c",
+    "//third_party/perfetto/buildtools/zlib/zconf.h",
+    "//third_party/perfetto/buildtools/zlib/zlib.h",
+    "//third_party/perfetto/buildtools/zlib/zutil.c",
+    "//third_party/perfetto/buildtools/zlib/zutil.h",
+  ]
+  public_configs = [ ":zlib_config" ]
+
+  if (is_win) {
+    defines = [ "X86_WINDOWS" ]
+  } else if (current_cpu == "arm" || current_cpu == "arm64") {
+    defines = [ "ARMV8_OS_LINUX" ]
+  }
+}
+
+config("zstd_config") {
+  cflags = [
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/zstd", root_build_dir),
+  ]
+  if (current_cpu == "x64") {
+    defines = [ "ZSTD_DISABLE_ASM" ]
+  }
+}
+
+source_set("zstd") {
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  cflags = [
+    "-Wno-unreachable-code",
+    "-Wno-unreachable-code-aggressive",
+  ]
+  sources = [
+    "//third_party/perfetto/buildtools/zstd/lib/common/allocations.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/bits.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/bitstream.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/compiler.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/cpu.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/debug.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/debug.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/entropy_common.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/error_private.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/error_private.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/fse.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/fse_decompress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/huf.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/mem.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/pool.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/pool.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/portability_macros.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/threading.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/threading.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/xxhash.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/xxhash.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/zstd_common.c",
+    "//third_party/perfetto/buildtools/zstd/lib/common/zstd_deps.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/zstd_internal.h",
+    "//third_party/perfetto/buildtools/zstd/lib/common/zstd_trace.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/clevels.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/fse_compress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/hist.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/hist.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/huf_compress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_internal.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_literals.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_literals.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_sequences.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_sequences.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_superblock.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_compress_superblock.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_cwksp.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_double_fast.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_double_fast.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_fast.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_fast.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_lazy.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_lazy.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_ldm.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_ldm.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_ldm_geartab.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_opt.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstd_opt.h",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstdmt_compress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/compress/zstdmt_compress.h",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/huf_decompress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_ddict.c",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_ddict.h",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_decompress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_decompress_block.c",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_decompress_block.h",
+    "//third_party/perfetto/buildtools/zstd/lib/decompress/zstd_decompress_internal.h",
+    "//third_party/perfetto/buildtools/zstd/lib/deprecated/zbuff.h",
+    "//third_party/perfetto/buildtools/zstd/lib/deprecated/zbuff_common.c",
+    "//third_party/perfetto/buildtools/zstd/lib/deprecated/zbuff_compress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/deprecated/zbuff_decompress.c",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/cover.c",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/cover.h",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/divsufsort.c",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/divsufsort.h",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/fastcover.c",
+    "//third_party/perfetto/buildtools/zstd/lib/dictBuilder/zdict.c",
+    "//third_party/perfetto/buildtools/zstd/lib/zdict.h",
+    "//third_party/perfetto/buildtools/zstd/lib/zstd.h",
+    "//third_party/perfetto/buildtools/zstd/lib/zstd_errors.h",
+  ]
+  public_configs = [ ":zstd_config" ]
+}
+
+config("bionic_kernel_uapi_headers") {
+  cflags = [
+    "-isystem",
+    rebase_path("//third_party/perfetto/buildtools/bionic/libc/kernel", root_build_dir),
+  ]
+}

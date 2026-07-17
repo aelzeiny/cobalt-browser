@@ -23,7 +23,7 @@ executable("traced") {
     # on lib. This is to reduce binary size on android builds. All the code is
     # built into libperfetto and the executables are just tiny shells that call
     # into the xxx_main() defined in the library.
-    "../../../:libperfetto",
+    "../../../:libperfetto_platform_services",
     "../../../gn:default_deps",
     "../../../include/perfetto/ext/traced",
   ]

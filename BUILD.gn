@@ -68,7 +68,7 @@ declare_args() {
   # A list of extra dependencies to add to the root target. This allows a
   # checkout to add additional targets without explicitly changing any checked-
   # in files.
-  root_extra_deps = []
+  root_extra_deps = [ "//third_party/perfetto/src/profiling/memory:test_unwind(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target)" ]
 }
 
 if (is_official_build) {
@@ -740,6 +740,15 @@ group("gn_all") {
 
     if (is_mac || is_linux || is_chromeos || is_android || is_fuchsia) {
       deps += [ "//third_party/perfetto:all" ]
+    }
+
+    if (is_linux && target_cpu == "arm") {
+      deps += [
+        "//third_party/perfetto/src/profiling/memory:heapprofd_glibc_preload(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target)",
+        "//third_party/perfetto/src/perfetto_cmd:perfetto(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target)",
+        "//third_party/perfetto/src/profiling/memory:heapprofd(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target)",
+        "//third_party/perfetto/src/traced/service:traced(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target)",
+      ]
     }
 
     if (is_win || is_mac || is_linux || is_chromeos) {

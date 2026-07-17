@@ -82,6 +82,10 @@ config("platform_configuration") {
       "-funwind-tables",
     ]
 
+    if (current_cpu == "arm") {
+      cflags += [ "-mthumb" ]
+    }
+
     cflags_cc += [
       "-Wno-invalid-offsetof",
       "-Wno-literal-suffix",

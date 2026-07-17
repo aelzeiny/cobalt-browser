@@ -15,6 +15,15 @@
 #include "starboard/elf_loader/program_table.h"
 
 #include <sys/mman.h>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#ifndef PR_SET_VMA
+#define PR_SET_VMA 0x53564d41
+#endif
+#ifndef PR_SET_VMA_ANON_NAME
+#define PR_SET_VMA_ANON_NAME 0
+#endif
+#endif
 
 #include "starboard/common/log.h"
 #include "starboard/common/string.h"
@@ -373,6 +382,9 @@ bool ProgramTable::ReserveLoadMemory() {
                   << " bytes of address space";
     return false;
   }
+#if defined(__linux__)
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, load_start_, load_size_, "cobalt");
+#endif
   base_memory_address_ = reinterpret_cast<Addr>(load_start_);
   SB_LOG(INFO) << "Load start=" << std::hex << load_start_
                << " base_memory_address=0x" << base_memory_address_;
