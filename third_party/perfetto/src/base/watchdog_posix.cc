@@ -436,3 +436,43 @@ Watchdog::Timer::Timer(Timer&& other) noexcept {
 }  // namespace perfetto
 
 #endif  // PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
+#include <unistd.h>
+#include <stdio.h>
+#include "perfetto/ext/base/watchdog_posix.h"
+#include "perfetto/ext/base/utils.h"
+#include "perfetto/base/logging.h"
+
+namespace perfetto {
+namespace base {
+
+bool ReadProcStat(int fd, ProcStat* out) {
+  char c[512];
+  size_t c_pos = 0;
+  while (c_pos < sizeof(c) - 1) {
+    ssize_t rd = PERFETTO_EINTR(read(fd, c + c_pos, sizeof(c) - c_pos));
+    if (rd < 0) {
+      PERFETTO_ELOG("Failed to read stat file to enforce resource limits.");
+      return false;
+    }
+    if (rd == 0)
+      break;
+    c_pos += static_cast<size_t>(rd);
+  }
+  PERFETTO_CHECK(c_pos < sizeof(c));
+  c[c_pos] = '\0';
+
+  if (sscanf(c,
+             "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu "
+             "%lu %*d %*d %*d %*d %*d %*d %*u %*u %ld",
+             &out->utime, &out->stime, &out->rss_pages) != 3) {
+    PERFETTO_ELOG("Invalid stat format: %s", c);
+    return false;
+  }
+  return true;
+}
+
+}  // namespace base
+}  // namespace perfetto
+#endif

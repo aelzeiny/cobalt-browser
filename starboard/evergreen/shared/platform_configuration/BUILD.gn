@@ -17,7 +17,7 @@ import("//build/config/clang/clang.gni")
 config("platform_configuration") {
   configs = [ "//starboard/build/config/modular" ]
   ldflags = []
-  if (sb_is_evergreen) {
+  if (sb_is_evergreen && is_starboard) {
     ldflags += [
       "-fuse-ld=lld",
       "-Wl,--build-id",
@@ -34,7 +34,7 @@ config("platform_configuration") {
     ]
   }
 
-  if (sb_is_evergreen) {
+  if (sb_is_evergreen && is_starboard) {
     ldflags += [ "-nostdlib" ]
   }
 

@@ -270,7 +270,7 @@ if (enable_perfetto_platform_services) {
     libperfetto_target_type = "shared_library"
   }
 
-  target(libperfetto_target_type, "libperfetto") {
+  target(libperfetto_target_type, "libperfetto_platform_services") {
     if (libperfetto_target_type == "static_library") {
       complete_static_lib = true
     }

@@ -20,6 +20,10 @@
 #include <limits>
 #include <optional>
 
+#ifndef __SIGRTMIN
+#define __SIGRTMIN 32
+#endif
+
 #include "perfetto/ext/tracing/core/trace_writer.h"
 #include "src/profiling/common/proc_cmdline.h"
 #include "src/profiling/common/proc_utils.h"

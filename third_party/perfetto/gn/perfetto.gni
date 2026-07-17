@@ -70,6 +70,10 @@ if (!defined(is_nacl)) {
   is_nacl = false
 }
 
+if (!defined(is_fuzzer)) {
+  is_fuzzer = false
+}
+
 if (!defined(is_gcc)) {
   is_gcc = !is_clang && !is_win
 }

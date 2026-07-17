@@ -38,7 +38,7 @@ _rdk_toolchain_toolprefix = "$_rdk_toolchain_path/arm-rdkmllib32-linux-gnueabi-"
 _rdk_toolchain_platform_cflags = ""
 
 if (!rdk_build_with_yocto) {
-  _rdk_toolchain_platform_cflags += "-march=armv7-a -mthumb -mfpu=neon"
+  _rdk_toolchain_platform_cflags += "-march=armv7-a -mfpu=neon"
   if (rdk_arm_call_convention == "softfp") {
     _rdk_toolchain_platform_cflags += " -mfloat-abi=softfp"
   } else {
@@ -48,6 +48,7 @@ if (!rdk_build_with_yocto) {
   # Use the gold linker instead of default ld to avoid
   # linker errors. see b/510541109
  _rdk_toolchain_platform_cflags += " -fuse-ld=gold"
+ _rdk_toolchain_platform_cflags += " -fno-omit-frame-pointer"
 }
 
 rdk_gcc_toolchain("starboard") {

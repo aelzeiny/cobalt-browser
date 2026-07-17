@@ -39,6 +39,8 @@
 #include "starboard/extension/crash_handler.h"
 #include "starboard/extension/loader_app_metrics.h"
 #include "starboard/extension/graphics.h"
+#include "starboard/extension/memory_mapped_file.h"
+#include "starboard/shared/posix/memory_mapped_file.h"
 #include "third_party/starboard/rdk/shared/graphics.h"
 #include "starboard/extension/platform_service.h"
 #include "third_party/starboard/rdk/shared/accessibility_extension.h"
@@ -78,6 +80,9 @@ const void* SbSystemGetExtension(const char* name) {
     return starboard::GetNativeStabilityApi();
   }
 #endif
+  if (strcmp(name, kCobaltExtensionMemoryMappedFileName) == 0) {
+    return starboard::GetMemoryMappedFileApi();
+  }
   if (strcmp(name, kCobaltExtensionConfigurationName) == 0) {
     return starboard::GetConfigurationApi();
   }

@@ -17,6 +17,7 @@
 #ifndef INCLUDE_PERFETTO_EXT_BASE_WATCHDOG_POSIX_H_
 #define INCLUDE_PERFETTO_EXT_BASE_WATCHDOG_POSIX_H_
 
+#include "perfetto/base/build_config.h"
 #include "perfetto/base/thread_annotations.h"
 #include "perfetto/base/time.h"
 #include "perfetto/ext/base/scoped_file.h"
@@ -39,6 +40,7 @@ struct ProcStat {
 
 bool ReadProcStat(int fd, ProcStat* out);
 
+#if PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
 // Ensures that the calling program does not exceed certain hard limits on
 // resource usage e.g. time, memory and CPU. If exceeded, the program is
 // crashed.
@@ -195,6 +197,7 @@ class Watchdog {
 
   bool disable_kill_failsafe_for_testing_ = false;
 };
+#endif  // PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
 
 }  // namespace base
 }  // namespace perfetto
