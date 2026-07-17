@@ -21,6 +21,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifndef __SIGRTMIN
+#define __SIGRTMIN 32
+#endif
+
 #include <algorithm>
 #include <cinttypes>
 #include <functional>

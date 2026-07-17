@@ -18,6 +18,7 @@
 #define SRC_PROFILING_COMMON_PROC_UTILS_H_
 
 #include <sys/types.h>
+#include <stdlib.h>
 
 #include <cinttypes>
 #include <optional>

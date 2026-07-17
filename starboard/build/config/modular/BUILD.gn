@@ -79,6 +79,9 @@ config("modular") {
       # Default visibility to hidden, to enable dead stripping.
       "-fvisibility=hidden",
       "-fno-exceptions",
+
+      # Enable usage of frame pointers for Perfetto profiling.
+      "-fno-omit-frame-pointer",
       "-fno-strict-aliasing",  # See http://crbug.com/32204
       "-fno-use-cxa-atexit",
 
@@ -91,11 +94,9 @@ config("modular") {
       "-Wno-sign-compare",
     ]
 
-    if (!is_official_build || can_unwind_with_frame_pointers) {
-      cflags += [ "-fno-omit-frame-pointer" ]
-    } else {
-      cflags += [ "-fomit-frame-pointer" ]
-    }
+    # Upstream picks omit/no-omit-frame-pointer from the platform default here.
+    # Modular (evergreen) builds keep frame pointers unconditionally so Perfetto
+    # can unwind, so the -fno-omit-frame-pointer above stands.
   }
 
   if (use_asan) {

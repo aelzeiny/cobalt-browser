@@ -25,7 +25,9 @@ namespace {
 // AHeapProfile_registerHeap is guaranteed to be safe to call from global
 // constructors.
 #pragma GCC diagnostic push
+#ifdef __clang__
 #pragma GCC diagnostic ignored "-Wglobal-constructors"
+#endif
 uint32_t g_heap_id = AHeapProfile_registerHeap(AHeapInfo_create("libc.malloc"));
 #pragma GCC diagnostic pop
 

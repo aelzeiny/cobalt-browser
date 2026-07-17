@@ -125,19 +125,23 @@ shared_library("heapprofd_api_noop") {
 
   # This target does absolutely nothing, so we do not want to depend on
   # liblog.
-  configs -= [ "//gn/standalone:android_liblog" ]  # nogncheck
+  if (filter_include(configs, [ "//gn/standalone:android_liblog" ]) != []) {
+    configs -= [ "//gn/standalone:android_liblog" ]  # nogncheck
+  }
   sources = [ "client_api_noop.cc" ]
 }
 
 shared_library("heapprofd_client_api") {
-  configs -= [ "//gn/standalone:android_liblog" ]  # nogncheck
+  if (filter_include(configs, [ "//gn/standalone:android_liblog" ]) != []) {
+    configs -= [ "//gn/standalone:android_liblog" ]  # nogncheck
+  }
   if (perfetto_build_with_android) {
     cflags = [ "-DPERFETTO_ANDROID_ASYNC_SAFE_LOG" ]
   } else {
     # We don't have async safe logging for non-Android, so disable all
     # logging in the client.
     # TODO(fmayer): Add async-safe logging for non-Android.
-    cflags = [ "-DPERFETTO_DISABLE_LOG" ]
+    cflags = []
   }
   deps = [ ":client_api" ]
   if (perfetto_build_with_android) {
@@ -173,7 +177,7 @@ source_set("client_api") {
     # We don't have async safe logging for non-Android, so disable all
     # logging in the client.
     # TODO(fmayer): Add async-safe logging for non-Android.
-    cflags = [ "-DPERFETTO_DISABLE_LOG" ]
+    cflags = []
   }
   deps = [
     ":client",
@@ -288,7 +292,14 @@ source_set("daemon") {
   ]
 }
 
+config("force_arm") {
+  cflags = [ "-marm" ]
+}
+
 source_set("client") {
+  if (current_cpu == "arm") {
+    configs += [ ":force_arm" ]
+  }
   deps = [
     ":ring_buffer",
     ":scoped_spinlock",
@@ -342,6 +353,7 @@ perfetto_unittest_source_set("unittests") {
   }
 }
 
+if (enable_perfetto_integration_tests) {
 source_set("end_to_end_tests") {
   testonly = true
   deps = [
@@ -370,6 +382,7 @@ source_set("end_to_end_tests") {
   } else {
     deps += [ ":heapprofd_standalone_client" ]
   }
+}
 }
 
 perfetto_fuzzer_test("unwinding_fuzzer") {
@@ -419,4 +432,12 @@ if (enable_perfetto_benchmarks) {
     ]
     sources = [ "client_api_benchmark.cc" ]
   }
+}
+
+executable("test_unwind") {
+  sources = [ "test_unwind.cc" ]
+  deps = [
+    "../../../gn:default_deps",
+    "../../../gn:libunwindstack",
+  ]
 }

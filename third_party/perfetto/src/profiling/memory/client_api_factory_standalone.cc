@@ -30,6 +30,7 @@
 #include "src/profiling/memory/heapprofd_producer.h"
 
 #include <string>
+#include <stdio.h>
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -85,6 +86,12 @@ void StartHeapprofdIfStatic() {
     PERFETTO_ELOG("Failed to get cmdline.");
   }
 
+  FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
+  if (f_log) {
+    fprintf(f_log, "[%d] StartHeapprofdIfStatic called for %s\n", pid, cmdline.c_str());
+    fclose(f_log);
+  }
+
   g_client_sock = new base::UnixSocketRaw();
   base::UnixSocketRaw srv_sock;
   base::UnixSocketRaw cli_sock;
@@ -100,10 +107,20 @@ void StartHeapprofdIfStatic() {
 
   if (f == -1) {
     PERFETTO_PLOG("fork");
+    FILE* f_log_err = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_err) {
+      fprintf(f_log_err, "[%d] fork failed!\n", pid);
+      fclose(f_log_err);
+    }
     return;
   }
 
   if (f != 0) {
+    FILE* f_log_parent = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_parent) {
+      fprintf(f_log_parent, "[%d] fork succeeded, child pid is %d\n", pid, f);
+      fclose(f_log_parent);
+    }
     int wstatus;
     if (PERFETTO_EINTR(waitpid(f, &wstatus, 0)) == -1)
       PERFETTO_PLOG("waitpid");
@@ -121,7 +138,23 @@ void StartHeapprofdIfStatic() {
     return;
   }
 
+  {
+    FILE* f_log_child = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_child) {
+      fprintf(f_log_child, "[%d] Child process pre-daemon\n", getpid());
+      fclose(f_log_child);
+    }
+  }
+
   daemon(/* nochdir= */ 0, /* noclose= */ 1);
+
+  {
+    FILE* f_log_daemon = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_daemon) {
+      fprintf(f_log_daemon, "[%d] Child process post-daemon\n", getpid());
+      fclose(f_log_daemon);
+    }
+  }
 
   // On debug builds, we want to turn on crash reporting for heapprofd.
 #if PERFETTO_BUILDFLAG(PERFETTO_STDERR_CRASH_DUMP)
@@ -130,7 +163,12 @@ void StartHeapprofdIfStatic() {
 
   cli_sock.ReleaseFd();
 
-  // Leave stderr open for logging.
+  int err_fd = open("/tmp/heapprofd_child.log", O_WRONLY | O_CREAT | O_APPEND, 0666);
+  if (err_fd != -1) {
+    dup2(err_fd, STDERR_FILENO);
+    close(err_fd);
+  }
+
   int null = open("/dev/null", O_RDWR);  // NOLINT(android-cloexec-open)
   dup2(null, STDIN_FILENO);
   dup2(null, STDOUT_FILENO);
@@ -146,12 +184,40 @@ void StartHeapprofdIfStatic() {
 
   base::UnixTaskRunner task_runner;
   base::Watchdog::GetInstance()->Start();  // crash on exceedingly long tasks
+  {
+    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log) {
+      fprintf(f_log, "[%d] Creating HeapprofdProducer for target pid %d (%s)\n", getpid(), pid, cmdline.c_str());
+      fclose(f_log);
+    }
+  }
   HeapprofdProducer producer(HeapprofdMode::kChild, &task_runner,
                              /* exit_when_done= */ false);
   producer.SetTargetProcess(pid, cmdline);
+  {
+    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log) {
+      fprintf(f_log, "[%d] Connecting HeapprofdProducer to socket: %s\n", getpid(), GetProducerSocket());
+      fclose(f_log);
+    }
+  }
   producer.ConnectWithRetries(GetProducerSocket());
+  {
+    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log) {
+      fprintf(f_log, "[%d] ConnectWithRetries called successfully\n", getpid());
+      fclose(f_log);
+    }
+  }
   // Signal MonitorFd in the parent process to start a session.
-  producer.SetDataSourceCallback([&srv_sock] { srv_sock.Send("x", 1); });
+  producer.SetDataSourceCallback([&srv_sock] {
+    FILE* f_log_cb = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_cb) {
+      fprintf(f_log_cb, "[%d] SetDataSourceCallback triggered! Sending byte to parent...\n", getpid());
+      fclose(f_log_cb);
+    }
+    srv_sock.Send("x", 1);
+  });
   task_runner.AddFileDescriptorWatch(
       srv_sock.fd(), [&task_runner, &producer, &srv_sock] {
         base::ScopedFile fd;
