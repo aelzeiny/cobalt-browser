@@ -20,6 +20,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/mman.h>
+#ifndef MAP_POPULATE
+#define MAP_POPULATE 0
+#endif
 #include <unistd.h>
 
 #include "starboard/common/log.h"
@@ -67,14 +70,14 @@ void* SbPageMapFile(void* addr,
   void* p = nullptr;
   if (addr != nullptr) {
     p = mmap(addr, size, SbMemoryMapFlagsToMmapProtect(flags),
-             MAP_PRIVATE | MAP_FIXED, fd, file_offset);
+             MAP_PRIVATE | MAP_FIXED | MAP_POPULATE, fd, file_offset);
     if (p == MAP_FAILED) {
       close(fd);
       return nullptr;
     }
   } else {
-    p = mmap(addr, size, SbMemoryMapFlagsToMmapProtect(flags), MAP_PRIVATE, fd,
-             file_offset);
+    p = mmap(addr, size, SbMemoryMapFlagsToMmapProtect(flags),
+             MAP_PRIVATE | MAP_POPULATE, fd, file_offset);
     if (p == MAP_FAILED) {
       close(fd);
       return nullptr;
@@ -85,3 +88,4 @@ void* SbPageMapFile(void* addr,
   close(fd);
   return p;
 }
+
