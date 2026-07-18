@@ -45,7 +45,11 @@ size_t ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode(
     bool for_renderer) {
 #if BUILDFLAG(IS_COBALT)
   static const size_t cobalt_decoded_image_working_set_budget_bytes = []() {
-    size_t budget = 128 * 1024 * 1024;
+    // Cobalt targets memory-constrained TV devices; keep the fallback at
+    // 24MB so that targets which do not pass
+    // --decoded-image-working-set-budget-bytes cannot silently regress to a
+    // desktop-sized working set.
+    size_t budget = 24 * 1024 * 1024;
     auto* command_line = base::CommandLine::ForCurrentProcess();
     if (command_line->HasSwitch(switches::kDecodedImageWorkingSetBudgetBytes)) {
       std::string value = command_line->GetSwitchValueASCII(

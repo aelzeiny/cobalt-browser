@@ -37,6 +37,8 @@ public class CommandLineOverrideHelperTest {
     public void testDefaultCommandLineOverridesList() {
         List<String> overrides = CommandLineOverrideHelper.getDefaultCommandLineOverridesList();
         assertThat(overrides.contains("--enable-low-end-device-mode")).isTrue();
+        assertThat(overrides.contains("--decoded-image-working-set-budget-bytes=25165824"))
+            .isTrue();
     }
 
     @Test
@@ -51,7 +53,9 @@ public class CommandLineOverrideHelperTest {
     public void testDefaultEnableFeatureOverridesList() {
         String overrides = CommandLineOverrideHelper.getDefaultEnableFeatureOverridesList().toString();
         assertThat(overrides.contains("LogJsConsoleMessages")).isTrue();
-        assertThat(overrides.contains("LimitImageDecodeCacheSize:mb/24")).isTrue();
+        // The dead "LimitImageDecodeCacheSize:mb/24" feature token was replaced
+        // by the --decoded-image-working-set-budget-bytes switch.
+        assertThat(overrides.contains("LimitImageDecodeCacheSize")).isFalse();
     }
 
     @Test
@@ -88,6 +92,11 @@ public class CommandLineOverrideHelperTest {
 
         expected = "1";
         actual = CommandLine.getInstance().getSwitchValue("force-device-scale-factor");
+        Assert.assertEquals(expected, actual);
+
+        expected = "25165824";
+        actual =
+            CommandLine.getInstance().getSwitchValue("decoded-image-working-set-budget-bytes");
         Assert.assertEquals(expected, actual);
 
         actual = CommandLine.getInstance().getSwitchValue("enable-features");
