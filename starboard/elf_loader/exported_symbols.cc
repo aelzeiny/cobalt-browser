@@ -242,6 +242,17 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(madvise);
   REGISTER_SYMBOL(malloc);
   REGISTER_SYMBOL(malloc_usable_size);
+#if defined(__GLIBC__)
+  // glibc-specific allocator controls, declared in <malloc.h>. Cobalt code
+  // uses these, when available, to reduce ptmalloc free-page retention on
+  // glibc-based ports (e.g. Linux/RDK): mallopt() caps arenas and fixes the
+  // mmap/trim thresholds, and malloc_trim() returns retained-free pages to
+  // the kernel on memory pressure. Evergreen (musl-built) Cobalt declares
+  // malloc_trim() weakly and null-checks it, so older loaders without this
+  // registration remain compatible.
+  REGISTER_SYMBOL(malloc_trim);
+  REGISTER_SYMBOL(mallopt);
+#endif  // defined(__GLIBC__)
   REGISTER_SYMBOL(mincore);
   REGISTER_SYMBOL(mkdir);
   REGISTER_SYMBOL(mkdtemp);

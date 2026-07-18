@@ -101,6 +101,9 @@ class ApplicationRdk : public QueueApplication {
   void ScheduleMemoryUsageCheck(int64_t delay);
   int64_t CheckMemoryUsage();
   void ReleaseMemory();
+#if defined(__GLIBC__)
+  void ScheduleMallocTrim(int64_t delay);
+#endif  // defined(__GLIBC__)
 
   static EssTerminateListener terminateListener;
   static EssKeyListener keyListener;

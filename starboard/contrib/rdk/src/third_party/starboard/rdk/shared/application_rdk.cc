@@ -82,6 +82,14 @@ EssSettingsListener ApplicationRdk::settingsListener = {
 
 constexpr auto kEssRunLoopPeriod = 16666us;
 
+#if defined(__GLIBC__)
+// Interval between periodic malloc_trim(0) calls. Cobalt's allocation churn
+// (tens of MB/s through glibc malloc) refills ptmalloc's free lists quickly;
+// a periodic trim turns "free pages retained forever" into "free pages
+// retained for at most one interval".
+constexpr int64_t kMallocTrimInterval = 60 * kSbTimeSecond;
+#endif  // defined(__GLIBC__)
+
 static void setTimerInterval(int fd, microseconds time) {
   struct itimerspec timeout;
   timeout.it_value.tv_sec = time.count() / kSbTimeSecond;
@@ -114,6 +122,21 @@ ApplicationRdk::~ApplicationRdk() {
 }
 
 void ApplicationRdk::Initialize() {
+#if defined(__GLIBC__)
+  // Tame glibc ptmalloc free-page retention. Do this before the app spawns
+  // its worker threads so the arena cap applies from the start:
+  // - Cap malloc arenas at 2: the default limit (8 x cores on 32-bit) lets
+  //   dozens of arenas each retain their own free lists indefinitely.
+  // - Pin the mmap threshold at 256 KB: disables glibc's dynamic threshold
+  //   ratchet, so large transient blocks (media buffer pools, IO buffers)
+  //   are plain mmaps returned to the kernel on free instead of landing in
+  //   arenas where their pages are retained.
+  // - Trim threshold 512 KB: release main-arena top pages aggressively.
+  mallopt(M_ARENA_MAX, 2);
+  mallopt(M_MMAP_THRESHOLD, 256 * 1024);
+  mallopt(M_TRIM_THRESHOLD, 512 * 1024);
+#endif  // defined(__GLIBC__)
+
   wakeup_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if ( wakeup_fd_ == -1 ) {
     SB_LOG(ERROR) << "Failed to create eventfd, error: " << errno << " (" << strerror(errno) << ')';
@@ -145,6 +168,9 @@ void ApplicationRdk::Initialize() {
   KeySystemSupportabilityCache::GetInstance()->SetCacheEnabled(true);
 
   ScheduleMemoryUsageCheck(kSbTimeSecond);
+#if defined(__GLIBC__)
+  ScheduleMallocTrim(kMallocTrimInterval);
+#endif  // defined(__GLIBC__)
   NetworkInfo::Initialize();
 }
 
@@ -424,6 +450,17 @@ void ApplicationRdk::ReleaseMemory() {
     malloc_trim(0);
   }));
 }
+
+#if defined(__GLIBC__)
+void ApplicationRdk::ScheduleMallocTrim(int64_t delay) {
+  SbEventSchedule([](void* data) {
+    // Walk all ptmalloc arenas and madvise(MADV_DONTNEED) free chunks back
+    // to the kernel (glibc >= 2.26 trims per-chunk, not just arena tops).
+    malloc_trim(0);
+    ApplicationRdk::Get()->ScheduleMallocTrim(kMallocTrimInterval);
+  }, nullptr, delay);
+}
+#endif  // defined(__GLIBC__)
 
 void ApplicationRdk::ScheduleMemoryUsageCheck(int64_t delay) {
   SbEventSchedule([](void* data) {
