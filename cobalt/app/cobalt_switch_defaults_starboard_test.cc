@@ -107,7 +107,7 @@ TEST(CobaltSwitchDefaultsTest, GpuMemorySwitchDefault) {
 
   std::string gpu_mem =
       GetSwitchValue(cmd_line_pxr, ::switches::kForceGpuMemAvailableMb);
-  EXPECT_EQ(std::string("64"), gpu_mem);
+  EXPECT_EQ(std::string("32"), gpu_mem);
 }
 
 TEST(CobaltSwitchDefaultsTest, AlwaysEnabledSwitches) {

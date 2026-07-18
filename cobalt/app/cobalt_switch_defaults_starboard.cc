@@ -134,8 +134,8 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "--no-sparkplug "
        // Disable v8 concurrent marking by default.
        "--no-concurrent-marking"},
-      // Limit GPU memory available to 64MB.
-      {::switches::kForceGpuMemAvailableMb, "64"},
+      // Limit GPU memory available to 32MB.
+      {::switches::kForceGpuMemAvailableMb, "32"},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
   };
