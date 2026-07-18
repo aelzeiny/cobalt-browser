@@ -98,7 +98,14 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "DefaultEnableANGLEValidation, "
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
-       "ReclaimOldPrepaintTiles"},
+       "ReclaimOldPrepaintTiles, "
+       // Tear down accessibility trees when no assistive technology consumes
+       // accessibility events (3 user input events over 30+ seconds with no
+       // accessibility API usage). On TV no screen reader runs, but e.g. an
+       // attached DevTools/CDP session can flip on an accessibility mode and
+       // keep the full AX tree alive and churning. See
+       // content/browser/accessibility/browser_accessibility_state_impl.cc.
+       "AutoDisableAccessibility"},
   // Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
