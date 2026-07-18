@@ -86,8 +86,12 @@ CommandLinePreprocessor::GetCobaltToggleSwitches() {
 const base::CommandLine::SwitchMap&
 CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
   static const base::CommandLine::SwitchMap kCobaltSwitchDefaults{
-      // Disable Vulkan.
-      {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
+      // Disable Vulkan. Disable LessAggressiveParkableString: it suspends
+      // ParkableString parking while the renderer is foreground, and a TV
+      // app is permanently foreground, so large strings (e.g. JS source)
+      // would never compress.
+      {::switches::kDisableFeatures,
+       "Vulkan,MemoryCacheStrongReference,LessAggressiveParkableString"},
       {::switches::kEnableFeatures,
        "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
