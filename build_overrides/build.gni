@@ -37,6 +37,14 @@ if (is_cronet_build) {
   perfetto_libperfetto_includes_json = false
 }
 
+declare_args() {
+  # Cobalt: escape hatch to keep base/perfetto tracing support compiled into a
+  # gold (production) evergreen image, e.g. for a field-debugging or profiling
+  # build. Has no effect outside gold evergreen Cobalt builds, which always
+  # keep tracing support.
+  cobalt_keep_base_tracing_in_gold = false
+}
+
 # Features used by //base/trace_event and //services/tracing.
 declare_args() {
   # Tracing support requires //third_party/perfetto, which is not available in
@@ -44,7 +52,17 @@ declare_args() {
   # altogether, in which case all tracing instrumentation in //base becomes a
   # no-op.
   # TODO(crbug.com/40124378): Add dependency on perfetto to support typed events.
-  enable_base_tracing = true
+  #
+  # Cobalt: gold (production) evergreen builds default this off. The compiled-in
+  # perfetto/trace_event instrumentation costs ~1.4-1.8 MB of .text plus rodata
+  # category/string tables, all of which is dirty anonymous memory under
+  # evergreen, and its runtime hooks allocate whenever a producer session is
+  # connected. Dev/QA/profiling images keep tracing; set
+  # cobalt_keep_base_tracing_in_gold = true (or enable_base_tracing = true) to
+  # retain it in a gold evergreen image.
+  enable_base_tracing =
+      !is_cobalt || !is_gold || !use_evergreen ||
+      cobalt_keep_base_tracing_in_gold
 
   # Limits the defined //third_party/android_deps targets to only "buildCompile"
   # and "buildCompileNoDeps" targets. This is useful for third-party
