@@ -34,6 +34,8 @@ source_set("browser") {
     "cobalt_web_contents_observer.h",
     "h5vcc_settings_impl.cc",
     "h5vcc_settings_impl.h",
+    "idle_memory_purger.cc",
+    "idle_memory_purger.h",
   ]
 
   if (is_androidtv) {
@@ -55,6 +57,7 @@ source_set("browser") {
     ":features",
     ":global_features",
     ":metrics",
+    "//base",
     "//cobalt/browser:switches",
     "//cobalt/browser/client_hint_headers",
     "//cobalt/browser/constants:cobalt_experiment_names",

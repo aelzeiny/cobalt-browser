@@ -44,6 +44,7 @@
 #include "cobalt/browser/features.h"
 #include "cobalt/browser/global_features.h"
 #include "cobalt/browser/h5vcc_settings_impl.h"
+#include "cobalt/browser/idle_memory_purger.h"
 #include "cobalt/browser/lifecycle/cobalt_lifecycle_manager.h"
 #include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
 #include "cobalt/browser/mojom/h5vcc_settings.mojom.h"
@@ -422,6 +423,10 @@ void CobaltContentBrowserClient::OnWebContentsCreated(
   }
   VLOG(1) << "NativeSplash: Observing main frame WebContents.";
   web_contents_observer_.reset(new CobaltWebContentsObserver(web_contents));
+  // Sweep memory caches whenever the user parks the app: no OS
+  // memory-pressure source fires on Linux/Starboard, so without this the
+  // caches only ever grow over multi-hour sessions.
+  idle_memory_purger_ = std::make_unique<IdleMemoryPurger>(web_contents);
   // Initialize the lifecycle tracker for this WebContents to ensure we track
   // and register its frames (including the main frame) for lifecycle events
   // from the very start.
