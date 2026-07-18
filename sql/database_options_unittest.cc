@@ -6,6 +6,7 @@
 
 #include "base/files/file_path.h"
 #include "base/files/scoped_temp_dir.h"
+#include "build/build_config.h"
 #include "sql/database.h"
 #include "sql/statement.h"
 #include "sql/test/scoped_error_expecter.h"
@@ -204,7 +205,13 @@ TEST_P(DatabaseOptionsTest, CacheSize_Legacy) {
               test::kTestTag);
   OpenDatabase(db);
 
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt overrides SQLite's default page cache size for unconfigured
+  // databases. See Database::OpenInternal().
+  EXPECT_EQ("64", sql::test::ExecuteWithResult(&db, "PRAGMA cache_size"));
+#else
   EXPECT_EQ("-2000", sql::test::ExecuteWithResult(&db, "PRAGMA cache_size"));
+#endif
 }
 
 TEST_P(DatabaseOptionsTest, CacheSize_Small) {
