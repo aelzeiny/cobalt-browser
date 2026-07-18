@@ -51,6 +51,13 @@ class FeatureList {
   // given SbFeature must exist in the FeatureList.
   static bool IsEnabledByName(const std::string& feature_name);
 
+  // Returns true once InitializeFeatureList() has completed. IsEnabled() and
+  // GetParam() SB_CHECK() that the FeatureList is initialized, so callers that
+  // can run before Cobalt pushes feature state down to Starboard (e.g. threads
+  // created during Starboard startup) should check this first and fall back to
+  // their default behavior when it returns false.
+  static bool IsFeatureListInitialized();
+
   // Template function to retrieve a parameter based on the value type of the
   // parameter.SbParams must be initialized before use. There's an SB_CHECK() to
   // ensure that the given SbFeature must exist in the FeatureList.

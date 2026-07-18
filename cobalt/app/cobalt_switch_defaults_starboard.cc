@@ -98,7 +98,15 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "DefaultEnableANGLEValidation, "
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
-       "ReclaimOldPrepaintTiles"},
+       "ReclaimOldPrepaintTiles, "
+       // Cap the default stack size of Chromium-created threads at 256 KiB
+       // instead of the 8 MiB glibc default. Threads that request an explicit
+       // stack size are unaffected. Note that
+       // base/threading/platform_thread_linux_base.cc detects this feature by
+       // scanning the --enable-features switch string, so it must be enabled
+       // here (on the command line) rather than by flipping the declared
+       // feature default.
+       "ReduceAndroidThreadStackSize"},
   // Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
