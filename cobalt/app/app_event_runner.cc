@@ -26,6 +26,7 @@
 #include "base/command_line.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/memory/discardable_memory_allocator.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/no_destructor.h"
 #include "base/run_loop.h"
@@ -273,6 +274,19 @@ class AppEventRunnerImpl : public AppEventRunner,
     // Chromium internally calls Reclaim/ReclaimNormal at regular interval
     // to claim free memory. Using ReclaimAll is more aggressive.
     ::partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+
+    // Synchronously return freed-but-resident discardable memory to the OS.
+    // In Cobalt's single-process mode the process-wide allocator is the
+    // client-side ClientDiscardableSharedMemoryManager (the browser skips
+    // installing the service-side manager under --single-process), whose
+    // ReleaseFreeMemory() releases purged and free heap spans back to the
+    // in-process DiscardableSharedMemoryManager. The CRITICAL pressure
+    // notification above also reaches RenderThreadImpl's listener, but only
+    // asynchronously on its task runner; on a low-memory event we want the
+    // release to happen before this handler returns.
+    if (base::DiscardableMemoryAllocator::HasInstance()) {
+      base::DiscardableMemoryAllocator::GetInstance()->ReleaseFreeMemory();
+    }
 
     if (event->data) {
       auto mem_cb = reinterpret_cast<SbEventCallback>(event->data);
