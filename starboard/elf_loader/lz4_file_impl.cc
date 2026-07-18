@@ -14,8 +14,11 @@
 
 #include "starboard/elf_loader/lz4_file_impl.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <vector>
@@ -66,6 +69,141 @@ static size_t GetBlockSize(const LZ4F_frameInfo_t* frame_info) {
       SB_LOG(INFO) << "Got an unknown block size; continuing with 256KB";
       return 256 * (1 << 10);
   }
+}
+
+namespace {
+
+// Sizes of the buffers used by DecompressToFile(). The peak transient memory
+// used by the file-to-file decompression is the sum of the two.
+const size_t kStreamInputBufferSize = 1 << 20;    // 1 MiB
+const size_t kStreamOutputBufferSize = 4 << 20;   // 4 MiB
+
+bool WriteAll(int fd, const char* data, size_t size) {
+  while (size > 0) {
+    const ssize_t written = write(fd, data, size);
+    if (written < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return false;
+    }
+    data += written;
+    size -= static_cast<size_t>(written);
+  }
+  return true;
+}
+
+// Reads the single LZ4 frame in |source_fd| from its current offset and
+// writes the decompressed content to |target_fd|, |kStreamOutputBufferSize|
+// bytes at a time.
+bool DecompressStream(LZ4F_dctx* context, int source_fd, int target_fd) {
+  std::vector<char> compressed(kStreamInputBufferSize);
+  std::vector<char> decompressed(kStreamOutputBufferSize);
+
+  // Nonzero while LZ4F_decompress() expects more input; the initial value
+  // only needs to be nonzero to enter the loop.
+  size_t source_bytes_hint = 1;
+  while (source_bytes_hint != 0) {
+    const ssize_t bytes_read =
+        read(source_fd, compressed.data(), compressed.size());
+    if (bytes_read < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      SB_LOG(ERROR) << "Failed to read LZ4 file: " << strerror(errno);
+      return false;
+    }
+    if (bytes_read == 0) {
+      SB_LOG(ERROR) << "Truncated LZ4 frame";
+      return false;
+    }
+
+    size_t offset = 0;
+    while (offset < static_cast<size_t>(bytes_read)) {
+      size_t consumed = static_cast<size_t>(bytes_read) - offset;
+      size_t produced = decompressed.size();
+      source_bytes_hint = LZ4F_decompress(context, decompressed.data(),
+                                          &produced, compressed.data() + offset,
+                                          &consumed, nullptr);
+      if (LZ4F_isError(source_bytes_hint)) {
+        SB_LOG(ERROR) << LZ4F_getErrorName(source_bytes_hint);
+        return false;
+      }
+      if (consumed == 0 && produced == 0) {
+        SB_LOG(ERROR) << "LZ4 decompression made no progress";
+        return false;
+      }
+      offset += consumed;
+      if (produced > 0 &&
+          !WriteAll(target_fd, decompressed.data(), produced)) {
+        SB_LOG(ERROR) << "Failed to write decompressed data: "
+                      << strerror(errno);
+        return false;
+      }
+      if (source_bytes_hint == 0) {
+        // The frame is complete. The file is expected to consist of a single
+        // frame, so anything after it is ignored.
+        return true;
+      }
+    }
+  }
+  return true;
+}
+
+}  // namespace
+
+// static
+bool LZ4FileImpl::DecompressToFile(const char* source_path,
+                                   const char* target_path) {
+  SB_DCHECK(source_path);
+  SB_DCHECK(target_path);
+
+  LZ4F_dctx* context = nullptr;
+  const LZ4F_errorCode_t lz4f_error_code =
+      LZ4F_createDecompressionContext(&context, LZ4F_VERSION);
+  if (lz4f_error_code != 0) {
+    SB_LOG(ERROR) << LZ4F_getErrorName(lz4f_error_code);
+    return false;
+  }
+
+  const int64_t start_time_us = CurrentMonotonicTime();
+
+  bool success = false;
+  const int source_fd = open(source_path, O_RDONLY);
+  if (source_fd < 0) {
+    SB_LOG(ERROR) << "Failed to open " << source_path << ": "
+                  << strerror(errno);
+  } else {
+    const int target_fd = open(target_path, O_WRONLY | O_CREAT | O_TRUNC,
+                               S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (target_fd < 0) {
+      SB_LOG(ERROR) << "Failed to create " << target_path << ": "
+                    << strerror(errno);
+    } else {
+      success = DecompressStream(context, source_fd, target_fd);
+      if (success && fsync(target_fd) != 0) {
+        SB_LOG(ERROR) << "Failed to fsync " << target_path << ": "
+                      << strerror(errno);
+        success = false;
+      }
+      if (close(target_fd) != 0) {
+        success = false;
+      }
+      if (!success) {
+        unlink(target_path);
+      }
+    }
+    close(source_fd);
+  }
+
+  LZ4F_freeDecompressionContext(context);
+
+  if (success) {
+    SB_LOG(INFO) << "Decompressed " << source_path << " to " << target_path
+                 << " in " << (CurrentMonotonicTime() - start_time_us) / 1000
+                 << " ms";
+  }
+  return success;
 }
 
 bool LZ4FileImpl::Open(const char* name) {

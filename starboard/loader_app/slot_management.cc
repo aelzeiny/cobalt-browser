@@ -14,8 +14,10 @@
 
 #include "starboard/loader_app/slot_management.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <iostream>
@@ -31,6 +33,7 @@
 #include "starboard/crashpad_wrapper/annotations.h"
 #include "starboard/crashpad_wrapper/wrapper.h"
 #include "starboard/elf_loader/elf_loader_constants.h"
+#include "starboard/elf_loader/lz4_file_impl.h"
 #include "starboard/elf_loader/sabi_string.h"
 #include "starboard/event.h"
 #include "starboard/extension/loader_app_metrics.h"
@@ -64,8 +67,99 @@ const char kCobaltContentPath[] = "content";
 // Filename for the manifest file which contains the Evergreen version.
 const char kManifestFileName[] = "manifest.json";
 
+// Filename for the uncompressed copy of the Cobalt binary that is created
+// on-device from the LZ4 compressed binary so that it can be loaded as a
+// memory mapped file. This file is a derived cache and is never installed by
+// an update.
+const char kMemoryMappedCobaltLibraryName[] = "libcobalt.mmap.so";
+
+// Suffix, appended to the cache file name, of the temporary file the cache is
+// written to before it is atomically renamed into place.
+const char kMemoryMappedCacheTempSuffix[] = ".tmp";
+
+// Suffix, appended to the cache file name, of the sentinel file recording
+// which compressed binary the cache was derived from.
+const char kMemoryMappedCacheSourceSuffix[] = ".src";
+
 // Deliminator of the Evergreen version string segments.
 const char kEgVersionDeliminator = '.';
+
+// Returns a string identifying the compressed library a cache was derived
+// from. Any change to the compressed library's size or mtime, in either
+// direction, changes this string and thereby invalidates the cache.
+std::string GetCacheSourceId(const struct stat& info) {
+  std::stringstream id;
+  id << "size:" << static_cast<int64_t>(info.st_size)
+     << " mtime:" << static_cast<int64_t>(info.st_mtime);
+  return id.str();
+}
+
+bool ReadSmallFile(const char* path, std::string* out_content) {
+  const int fd = open(path, O_RDONLY);
+  if (fd < 0) {
+    return false;
+  }
+  char buffer[256];
+  const ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+  close(fd);
+  if (bytes_read <= 0) {
+    return false;
+  }
+  out_content->assign(buffer, bytes_read);
+  return true;
+}
+
+// Ensures that a valid uncompressed, memory-mappable copy of the LZ4
+// compressed library at |compressed_lib_path| exists at |cache_path|.
+//
+// An existing cache is reused iff its sentinel file records exactly the
+// current compressed library's size and mtime and the cache is non-empty.
+// Otherwise the compressed library is decompressed to |cache_path| + ".tmp",
+// fsync'd, atomically renamed to |cache_path|, and only then is the sentinel
+// atomically replaced - so a power cut at any point either leaves the old
+// consistent state or an invalid cache that is simply rebuilt on the next
+// boot; it can never result in a torn cache being used.
+//
+// Returns true if a valid cache is present at |cache_path| on return.
+bool EnsureUncompressedCache(const std::string& compressed_lib_path,
+                             const std::string& cache_path) {
+  struct stat compressed_info;
+  if (stat(compressed_lib_path.c_str(), &compressed_info) != 0) {
+    return false;
+  }
+  const std::string source_id = GetCacheSourceId(compressed_info);
+  const std::string sentinel_path = cache_path + kMemoryMappedCacheSourceSuffix;
+
+  struct stat cache_info;
+  std::string recorded_id;
+  if (stat(cache_path.c_str(), &cache_info) == 0 && cache_info.st_size > 0 &&
+      ReadSmallFile(sentinel_path.c_str(), &recorded_id) &&
+      recorded_id == source_id) {
+    SB_LOG(INFO) << "Reusing uncompressed library cache: " << cache_path;
+    return true;
+  }
+
+  SB_LOG(INFO) << "Decompressing " << compressed_lib_path << " to "
+               << cache_path;
+  const std::string temp_path = cache_path + kMemoryMappedCacheTempSuffix;
+  if (!elf_loader::LZ4FileImpl::DecompressToFile(compressed_lib_path.c_str(),
+                                                 temp_path.c_str())) {
+    // DecompressToFile() removes the partial temporary file on failure.
+    return false;
+  }
+  if (rename(temp_path.c_str(), cache_path.c_str()) != 0) {
+    SB_LOG(ERROR) << "Failed to rename " << temp_path << " to " << cache_path;
+    unlink(temp_path.c_str());
+    return false;
+  }
+  if (!starboard::FileAtomicReplace(sentinel_path.c_str(), source_id.c_str(),
+                                    source_id.size())) {
+    // The freshly written cache is known-good for this boot even without the
+    // sentinel; it will be rebuilt on the next boot.
+    SB_LOG(WARNING) << "Failed to write cache sentinel: " << sentinel_path;
+  }
+  return true;
+}
 
 }  // namespace
 
@@ -383,10 +477,30 @@ void* LoadSlotManagedLibrary(const std::string& app_key,
       return NULL;
     }
 
+    // Memory mapping requires an uncompressed library. If the selected
+    // library is LZ4 compressed, decompress it once to a cache file next to
+    // it and memory map the cache; the cache is reused on subsequent boots
+    // until the compressed library changes. If no uncompressed library can be
+    // obtained, fall back to loading the compressed library with in-memory
+    // decompression, as is done when memory mapping is disabled.
+    bool load_with_memory_mapped_file = use_memory_mapped_file;
     if (compression_type != elf_loader::CompressionType::kNone &&
-        use_memory_mapped_file) {
-      SB_LOG(ERROR) << "Using both compression and mmap files is not supported";
-      return NULL;
+        load_with_memory_mapped_file) {
+      if (compression_type == elf_loader::CompressionType::kLz4) {
+        std::vector<char> cache_lib_path(kSbFileMaxPath);
+        snprintf(cache_lib_path.data(), kSbFileMaxPath, "%s%s%s%s%s",
+                 installation_path.data(), kSbFileSepString, kCobaltLibraryPath,
+                 kSbFileSepString, kMemoryMappedCobaltLibraryName);
+        if (EnsureUncompressedCache(lib_path, cache_lib_path.data())) {
+          lib_path = cache_lib_path.data();
+          compression_type = elf_loader::CompressionType::kNone;
+        }
+      }
+      if (compression_type != elf_loader::CompressionType::kNone) {
+        SB_LOG(WARNING) << "No uncompressed library available for memory "
+                        << "mapping; falling back to in-memory decompression";
+        load_with_memory_mapped_file = false;
+      }
     }
 
     SB_LOG(INFO) << "lib_path=" << lib_path;
@@ -405,7 +519,7 @@ void* LoadSlotManagedLibrary(const std::string& app_key,
     SB_LOG(INFO) << "content=" << content;
 
     if (!library_loader->Load(lib_path, content.c_str(), compression_type,
-                              use_memory_mapped_file)) {
+                              load_with_memory_mapped_file)) {
       SB_LOG(WARNING) << "Failed to load Cobalt!";
 
       // Hard failure. Discard the image and auto rollback, but only if

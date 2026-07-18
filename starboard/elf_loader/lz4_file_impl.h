@@ -36,6 +36,14 @@ class LZ4FileImpl : public FileImpl {
 
   bool ReadFromOffset(int64_t offset, char* buffer, int size) override;
 
+  // Decompresses the LZ4 Frame Format file at |source_path| into
+  // |target_path|, streaming the data through small fixed-size buffers so the
+  // whole decompressed image is never resident in memory. The target file's
+  // contents are fsync'd before returning. On failure the partially written
+  // target file is removed. Returns true on success.
+  static bool DecompressToFile(const char* source_path,
+                               const char* target_path);
+
  private:
   // Returns the size of the LZ4 frame header in bytes.
   size_t PeekHeaderSize();
