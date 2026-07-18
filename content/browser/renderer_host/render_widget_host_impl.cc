@@ -26,6 +26,7 @@
 #include "base/i18n/rtl.h"
 #include "base/lazy_instance.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/metrics/field_trial.h"
 #include "base/metrics/histogram_functions.h"
@@ -2147,6 +2148,14 @@ void RenderWidgetHostImpl::NotifyScreenInfoChanged() {
 void RenderWidgetHostImpl::GetSnapshotFromBrowser(
     GetSnapshotFromBrowserCallback callback,
     bool from_surface) {
+  // Production canary: nothing in a plain playback session should read frames
+  // back from the compositor. Any occurrence of this line in production logs
+  // means a capture path (e.g. automation CDP screenshots or a platform
+  // snapshot poller) is active. Runs on the UI thread only, so a plain static
+  // counter suffices.
+  static int g_snapshot_request_count = 0;
+  LOG(WARNING) << "Surface readback requested (#" << ++g_snapshot_request_count
+               << "), from_surface=" << from_surface;
   int snapshot_id = next_browser_snapshot_id_++;
   if (from_surface) {
     pending_surface_browser_snapshots_.insert(

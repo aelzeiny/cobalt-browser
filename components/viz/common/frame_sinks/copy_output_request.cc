@@ -9,6 +9,7 @@
 
 #include "base/check_op.h"
 #include "base/functional/bind.h"
+#include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "base/synchronization/lock.h"
 #include "base/task/task_traits.h"
@@ -69,6 +70,12 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
          result_destination_ == ResultDestination::kSystemMemory);
 
   DCHECK(!result_callback_.is_null());
+  // Production canary: readback requests should be ~zero during plain
+  // playback; each full-resolution CPU readback materializes a multi-MB
+  // transient buffer. One line per request, no rate limiting needed.
+  LOG(WARNING) << "CopyOutputRequest created, format="
+               << ResultFormatToShortString(result_format_) << " destination="
+               << ResultDestinationToShortString(result_destination_);
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
 }
 
