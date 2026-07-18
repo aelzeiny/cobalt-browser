@@ -9,6 +9,11 @@ since the version previous to it.
 
 ## Version 18
 
+### Re-added SbMediaGetMaxBufferCapacity
+`SbMediaGetMaxBufferCapacity` (removed in Version 17) is used again as a hard
+cap on the media buffer pool: when it returns a value greater than 0, the
+media buffer pool refuses to grow its capacity beyond that value.
+
 ### Removed SbFileAtomicReplace from Starboard API
 Moved `SbFileAtomicReplace` from `starboard/file.h` to `starboard/common/file.h`.
 Platforms no longer need to implement this API.
