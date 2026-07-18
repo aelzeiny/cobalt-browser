@@ -398,6 +398,11 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
         base::FilePath(kSCTAuditingPendingReportsFileName);
   }
 
+  // Domain Reliability is desktop Google-services telemetry; keep it off on
+  // TV. This is the mojom default, but set it explicitly so the network
+  // service never creates a DomainReliabilityMonitor for Cobalt.
+  network_context_params->enable_domain_reliability = false;
+
   network_context_params->enable_certificate_reporting = true;
 
   network_context_params->sct_auditing_mode =
@@ -407,6 +412,16 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
   // NetworkAnonymizationKey / IsolationInfos, so storage can be isolated on a
   // per-site basis.
   network_context_params->require_network_anonymization_key = true;
+}
+
+bool CobaltContentBrowserClient::IsFirstPartySetsEnabled() {
+  // First-Party Sets (Related Website Sets) is a desktop cookie feature with
+  // no use in a single-app TV browser. There is no base::Feature for it in
+  // this tree; the ContentBrowserClient default returns true, which makes
+  // FirstPartySetsHandlerImplInstance load sets and exercise its sqlite
+  // database. Returning false keeps the handler disabled so the database is
+  // never opened.
+  return false;
 }
 
 void CobaltContentBrowserClient::OnWebContentsCreated(

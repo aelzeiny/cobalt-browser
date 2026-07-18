@@ -207,7 +207,23 @@ int ShellBrowserMainParts::PreMainMessageLoopRun() {
   InitializeBrowserContexts();
   Shell::Initialize(CreateShellPlatformDelegate(), is_visible_);
   net::NetModule::SetResourceProvider(PlatformResourceProvider);
-  ShellDevToolsManagerDelegate::StartHttpHandler(browser_context_.get());
+  // DevTools is opt-in: only start the remote debugging server when it is
+  // explicitly requested on the command line. Without this guard,
+  // ShellDevToolsManagerDelegate::CreateSocketFactory() falls back to an
+  // ephemeral port (or a default Unix socket on Android) even when no
+  // debugging switch was passed, so the HTTP handler and agent registries
+  // would exist in every production launch.
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  bool start_devtools =
+      command_line.HasSwitch(switches::kRemoteDebuggingPort);
+#if BUILDFLAG(IS_ANDROID)
+  start_devtools |=
+      command_line.HasSwitch(switches::kRemoteDebuggingSocketName);
+#endif
+  if (start_devtools) {
+    ShellDevToolsManagerDelegate::StartHttpHandler(browser_context_.get());
+  }
   InitializeMessageLoopContext();
   return 0;
 }
