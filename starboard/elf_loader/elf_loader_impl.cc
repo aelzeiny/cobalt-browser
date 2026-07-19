@@ -95,8 +95,11 @@ bool ElfLoaderImpl::Load(const char* name,
     program_table_.reset(new ProgramTable(nullptr));
   }
 
-  program_table_->LoadProgramHeader(elf_header_loader_->GetHeader(),
-                                    elf_file.get());
+  if (!program_table_->LoadProgramHeader(elf_header_loader_->GetHeader(),
+                                         elf_file.get())) {
+    SB_LOG(ERROR) << "Failed to load program header";
+    return false;
+  }
 
   SB_DLOG(INFO) << "Loaded Program header";
 
