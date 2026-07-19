@@ -585,8 +585,30 @@ void BrowserAccessibilityStateImpl::OnUserInputEvent() {
 
       accessibility_disabled_time_ = now;
 
-      // TODO(accessibility) Reimplement by making a11y dormant as opposed to
-      // turning off flags, which leads to thrashing.
+      // Make accessibility dormant by tearing down the accessibility trees
+      // for all WebContentses and telling their renderers to stop
+      // serializing, without turning off any mode flags (which leads to
+      // thrashing). Scoped modes targeting the process, a BrowserContext or
+      // a WebContents are left in place; any subsequent change to the
+      // effective mode will re-apply it to the WebContentses (see
+      // OnModeChanged()). This mirrors what AccessibilityDisabler does for
+      // hidden WebContentses when the disable_on_hide feature of
+      // ProgressiveAccessibility is enabled.
+      for (WebContentsImpl* web_contents :
+           WebContentsImpl::GetAllWebContents()) {
+        if (!web_contents->IsBeingDestroyed() &&
+            !web_contents->IsNeverComposited()) {
+          web_contents->SetAccessibilityMode(ui::AXMode());
+        }
+      }
+
+      // Re-arm the heuristic so that the next disablement requires another
+      // kAutoDisableAccessibilityEventCount user input events over at least
+      // kAutoDisableAccessibilityTimeSecs. Without this, every subsequent
+      // user input event would re-run this block (the process-wide mode
+      // flags remain on, so the early-return at the top of this function
+      // does not kick in).
+      user_input_event_count_ = 0;
     }
   }
 }
