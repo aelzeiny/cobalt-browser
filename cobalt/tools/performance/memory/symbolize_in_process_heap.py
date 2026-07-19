@@ -24,6 +24,15 @@ import re
 import subprocess
 import sys
 
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+if _SCRIPT_DIR not in sys.path:
+  sys.path.insert(0, _SCRIPT_DIR)
+
+try:
+  import convert_heaps_v2_to_html as html_converter
+except ImportError:
+  html_converter = None
+
 
 def find_repo_root():
   """Walks upwards to find the Cobalt repository root."""
@@ -58,6 +67,12 @@ def main():
       "--symbolizer_path",
       help=("Path to llvm-symbolizer. If omitted, will auto-detect "
             "inside the toolchain, falling back to system PATH."))
+  parser.add_argument(
+      "--export_html",
+      nargs="?",
+      const=True,
+      help=("Export self-contained interactive HTML Flamegraph report for "
+            "direct browser visualization. Optional output path."))
 
   args = parser.parse_args()
 
@@ -110,32 +125,45 @@ def main():
   with open(trace_path, "r", encoding="utf-8", errors="replace") as f:
     trace_string = f.read()
 
-  # Step 5: Find the base load address of libchrobalt.so
-  print("Extracting libchrobalt.so memory mapping from trace...")
-  regex_pattern = (r"\\\"?mf\\\"?:\s*\\\"?([^\\\"]*libchrobalt.so)\\\"?,"
-                   r"\s*\\\"?pf\\\"?:\s*5,"
-                   r"\s*\\\"?sa\\\"?:\s*\\\"?(?P<sa>[0-9a-fA-F]+)\\\"?,"
-                   r"\s*\\\"?sz\\\"?:\s*\\\"?(?P<sz>[0-9a-fA-F]+)\\\"?")
-  match = re.search(regex_pattern, trace_string)
+  # Step 5: Find the base load address of the executable/library
+  lib_name = os.path.basename(lib_path)
+  print(f"Extracting {lib_name} memory mapping from trace...")
+  
+  # Match any pf value. sa and sz are hexadecimal
+  pattern = (r"\\\"?mf\\\"?:\s*\\\"?([^\\\"]*" + re.escape(lib_name) + r")\\\"?,"
+             r"\s*\\\"?pf\\\"?:\s*(?P<pf>[0-9]+),"
+             r"\s*\\\"?sa\\\"?:\s*\\\"?(?P<sa>[0-9a-fA-F]+)\\\"?,"
+             r"\s*\\\"?sz\\\"?:\s*\\\"?(?P<sz>[0-9a-fA-F]+)\\\"?")
+  
+  matches = list(re.finditer(pattern, trace_string))
+  if not matches:
+    # Try a relaxed pattern
+    relaxed_pattern = (re.escape(lib_name) + r"[^}\n]*?pf[^}\n]*?(?P<pf>[0-9]+)[^}\n]*?sa[^}\n]*?"
+                       r"(?P<sa>[0-9a-fA-F]+)[^}\n]*?sz[^}\n]*?(?P<sz>[0-9a-fA-F]+)")
+    matches = list(re.finditer(relaxed_pattern, trace_string))
 
-  if not match:
-    relaxed_pattern = (r"libchrobalt.so[^}\n]*?pf[^}\n]*?5[^}\n]*?sa[^}\n]*?"
-                       r"(?P<sa>[0-9a-fA-F]+)"
-                       r"[^}\n]*?sz[^}\n]*?(?P<sz>[0-9a-fA-F]+)")
-    match = re.search(relaxed_pattern, trace_string)
-
-  if not match:
-    print("Error: Could not find libchrobalt.so executable mapping in trace!")
+  if not matches:
+    print(f"Error: Could not find any {lib_name} memory mappings in trace!")
     sys.exit(1)
 
-  base_address_hex = match.group("sa")
-  size_hex = match.group("sz")
+  # Find the lowest start address segment and compute overall virtual range
+  mappings = []
+  for m in matches:
+    sa_val = int(m.group("sa"), 16)
+    sz_val = int(m.group("sz"), 16)
+    pf_val = int(m.group("pf"))
+    mappings.append((sa_val, sz_val, pf_val))
 
-  base_address = int(base_address_hex, 16)
-  size = int(size_hex, 16)
+  mappings.sort(key=lambda x: x[0])
+  base_address = mappings[0][0]
+  
+  # Calculate virtual size containing all mapped segments
+  max_end = max(sa_val + sz_val for sa_val, sz_val, _ in mappings)
+  size = max_end - base_address
 
-  print(f"🎉 Found libchrobalt.so base load address: 0x{base_address_hex} "
-        f"(Size: 0x{size_hex} bytes)")
+  print(f"🎉 Found {len(mappings)} mappings for {lib_name}.")
+  print(f"🎉 Selected lowest segment as ELF base load address: 0x{base_address:x}")
+  print(f"🎉 Overall virtual mapped range size: 0x{size:x} bytes")
 
   trace_data = json.loads(trace_string)
 
@@ -151,10 +179,12 @@ def main():
 
   parsed_dumps = []
   for e in events:
-    args = e.get("args", {})
-    if "dumps" not in args:
+    if not isinstance(e, dict):
       continue
-    dumps = args["dumps"]
+    event_args = e.get("args") or {}
+    if "dumps" not in event_args:
+      continue
+    dumps = event_args["dumps"]
     was_string = isinstance(dumps, str)
     temp = json.loads(dumps) if was_string else dumps
     if isinstance(temp, dict) and "heaps_v2" in temp:
@@ -293,6 +323,16 @@ def main():
     for s in resolved[:10]:
       print(f"      - {s}")
     print()
+
+  if args.export_html:
+    if html_converter:
+      if isinstance(args.export_html, str):
+        html_out = os.path.abspath(args.export_html)
+      else:
+        html_out = os.path.splitext(trace_path)[0] + ".html"
+      html_converter.convert_trace_to_html(trace_path, html_out)
+    else:
+      print("Warning: Could not import convert_heaps_v2_to_html.")
 
   print("============================================================")
   print("🎉 SYMBOLIZATION COMPLETELY SUCCESSFUL!")
