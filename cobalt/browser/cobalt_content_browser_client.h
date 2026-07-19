@@ -54,6 +54,7 @@ namespace cobalt {
 class GlobalFeatures;
 class CobaltMetricsServicesManagerClient;
 class CobaltWebContentsObserver;
+class IdleMemoryPurger;
 
 void ParseAndApplyH5vccSettingsForTesting(std::string_view settings_value,
                                           GlobalFeatures* global_features);
@@ -161,6 +162,10 @@ class CobaltContentBrowserClient : public content::ShellContentBrowserClient {
   bool is_visible_;
 
   std::unique_ptr<CobaltWebContentsObserver> web_contents_observer_;
+
+  // Purges memory caches after user quiescence to bound long-session heap
+  // drift; observes the same main WebContents as |web_contents_observer_|.
+  std::unique_ptr<IdleMemoryPurger> idle_memory_purger_;
 
   uint64_t cached_sb_window_ = 0;
   std::vector<
