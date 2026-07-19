@@ -293,6 +293,7 @@ void CobaltMemoryMetricsEmitter::FetchAndEmitProcessMemoryMetrics() {
     }
     instrumentation->RequestGlobalDump(mad_list, std::move(callback));
   } else {
+    LOG(WARNING) << "MemoryInstrumentation instance is null.";
     base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE,
         base::BindOnce(&CobaltMemoryMetricsEmitter::ReceivedMemoryDump, this,
@@ -309,6 +310,8 @@ void CobaltMemoryMetricsEmitter::ReceivedMemoryDump(
 
   memory_dump_in_progress_ = false;
   if (!success || !dump) {
+    LOG(WARNING) << "ReceivedMemoryDump failed. success=" << success
+                 << ", dump=" << (dump ? "not null" : "null");
     if (callback_for_testing_) {
       std::move(callback_for_testing_).Run();
     }
