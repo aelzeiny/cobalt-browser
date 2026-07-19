@@ -441,6 +441,7 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
             net::DefineNetworkTrafficAnnotation("cobalt_manual_proxy",
                                                 "Manually configured proxy via command line"));
     LOG(INFO) << "Configuring Cobalt to use proxy: " << proxy_server;
+  }
 
   // Runtime memory experiment ("CobaltMemStripDesktop"): Domain
   // Reliability is desktop Google-services telemetry; keep it off on TV.
