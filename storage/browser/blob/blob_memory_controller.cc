@@ -91,7 +91,15 @@ BlobStorageLimits CalculateBlobStorageLimitsImpl(
 
   // Don't do specialty configuration for error size (-1).
   if (memory_size > 0) {
-#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && \
+#if BUILDFLAG(IS_COBALT)
+    // Cobalt runs on memory-constrained TV devices. Without this branch a
+    // 32-bit non-Android build falls into the desktop-shaped memory/5 branch
+    // below, legalizing a 200-400 MB in-RAM blob ceiling on a 1-2 GB device.
+    // Follow the Android formula instead (memory/100, ~10-20 MB) and rely on
+    // disk paging as the pressure valve. The min_page_file_size floor below
+    // still applies.
+    limits.max_blob_in_memory_space = static_cast<size_t>(memory_size / 100);
+#elif !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && \
     defined(ARCH_CPU_64_BITS)
     constexpr size_t kTwoGigabytes = 2ull * 1024 * 1024 * 1024;
     limits.max_blob_in_memory_space = kTwoGigabytes;
