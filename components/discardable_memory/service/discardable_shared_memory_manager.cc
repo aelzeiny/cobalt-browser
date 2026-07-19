@@ -167,6 +167,14 @@ uint64_t GetDefaultMemoryLimit() {
   // Chromecast devices. Set value here as IsLowEndDevice() is used on some, but
   // not all Chromecast devices.
   uint64_t max_default_memory_limit = 64 * kMegabyte;
+#elif BUILDFLAG(IS_COBALT)
+  // Cobalt is a single-app TV browser whose large pixel consumers (media
+  // frames, compositor tiles) are budgeted elsewhere; the desktop-shaped
+  // default (512MB, or 64MB in low-end mode) is far larger than the
+  // workload needs on memory-constrained TV devices. Cap the base limit at
+  // 16MB; the physical-memory and shmem-free-space minimums below still
+  // apply.
+  uint64_t max_default_memory_limit = 16 * kMegabyte;
 #else
 #if BUILDFLAG(IS_ANDROID)
   // Limits the number of FDs used to 32, assuming a 4MB allocation size.
