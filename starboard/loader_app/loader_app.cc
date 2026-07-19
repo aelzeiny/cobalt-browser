@@ -168,8 +168,13 @@ void LoadLibraryAndInitialize(const std::string& alternative_content_path,
 
   if (compression_type != elf_loader::CompressionType::kNone &&
       use_memory_mapped_file) {
-    SB_LOG(ERROR) << "Using both compression and mmap files is not supported";
-    return;
+    // The system image directory may not be writable, so no decompressed
+    // cache is created for it (unlike for update slots, see
+    // slot_management.cc). Fall back to in-memory decompression.
+    SB_LOG(WARNING) << "The system image library is compressed and cannot be "
+                    << "memory mapped; falling back to in-memory "
+                    << "decompression";
+    use_memory_mapped_file = false;
   }
 
   if (!g_elf_loader.Load(library_path, content_path, false, nullptr,
@@ -288,11 +293,10 @@ void SbEventHandle(const SbEvent* event) {
     SB_LOG(INFO) << "use_memory_mapped_file=" << use_memory_mapped_file;
 
     if (use_compressed_updates && use_memory_mapped_file) {
-      SB_LOG(ERROR) << "Compression and memory mapping are incompatible."
-                    << " Compressed updates should not be installed because"
-                    << " the loader app is configured to use memory mapping"
-                    << " and would not be able to load them.";
-      return;
+      SB_LOG(INFO) << "Memory mapping is enabled with compressed updates."
+                   << " Each installed library will be decompressed once to"
+                   << " an uncompressed on-disk cache, and the cache will be"
+                   << " memory mapped.";
     }
 
     if (command_line.HasSwitch(loader_app::kLoaderTrackMemory)) {

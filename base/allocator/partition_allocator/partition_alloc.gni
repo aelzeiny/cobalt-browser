@@ -96,6 +96,14 @@ if (is_nacl) {
 # experiments.
 #
 # TODO(crbug.com/329199197): Clean this up when experiments are complete.
+#
+# Cobalt memory experiment (build-time only; gn has no runtime gating): on
+# memory-constrained TV devices, keeping up to 1024 (instead of 128)
+# empty-but-committed slot spans per partition in foreground mode is a
+# desktop-throughput trade that also grows the per-PartitionRoot ring array
+# 8x. To run the experiment, shrink the ring by setting
+# `use_large_empty_slot_span_ring = false` in args.gn. The default here stays
+# upstream.
 use_large_empty_slot_span_ring = true
 
 has_memory_tagging = current_cpu == "arm64" && is_clang && !is_asan &&

@@ -28,13 +28,18 @@ template <typename ReuseAllocatorBase>
 class BidirectionalFitDecoderBufferAllocatorStrategy
     : public DecoderBufferAllocator::Strategy {
  public:
+  // |max_capacity|: If non-zero, the allocator refuses to grow the pool
+  // capacity beyond it, and allocations that cannot be fulfilled within the
+  // capacity fail (return nullptr).
   BidirectionalFitDecoderBufferAllocatorStrategy(size_t initial_capacity,
-                                                 size_t allocation_increment)
+                                                 size_t allocation_increment,
+                                                 size_t max_capacity = 0)
       : fallback_allocator_(/*enable_decommit_on_idle=*/false),
         bidirectional_fit_allocator_(&fallback_allocator_,
                                      initial_capacity,
                                      kSmallAllocationThreshold,
-                                     allocation_increment) {}
+                                     allocation_increment,
+                                     max_capacity) {}
 
   // Constructs a strategy with explicit decommit configurations.
   // |enable_decommit_on_idle|: Whether to perform any decommits when idle.
@@ -44,13 +49,17 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
   // these are aggressively decommitted (e.g. using MADV_DONTNEED).
   // |aggressive_decommit_on_suspend|: Whether to aggressively decommit all idle
   // blocks when app is suspended.
+  // |max_capacity|: If non-zero, the allocator refuses to grow the pool
+  // capacity beyond it, and allocations that cannot be fulfilled within the
+  // capacity fail (return nullptr).
   BidirectionalFitDecoderBufferAllocatorStrategy(
       size_t initial_capacity,
       size_t allocation_increment,
       bool enable_decommit_on_idle,
       size_t retain_blocks,
       size_t conservative_decommit_blocks,
-      bool aggressive_decommit_on_suspend = false)
+      bool aggressive_decommit_on_suspend = false,
+      size_t max_capacity = 0)
       : fallback_allocator_(enable_decommit_on_idle),
         bidirectional_fit_allocator_(&fallback_allocator_,
                                      initial_capacity,
@@ -59,7 +68,8 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
                                      enable_decommit_on_idle,
                                      retain_blocks,
                                      conservative_decommit_blocks,
-                                     aggressive_decommit_on_suspend) {}
+                                     aggressive_decommit_on_suspend,
+                                     max_capacity) {}
 
   void* Allocate(DemuxerStream::Type type, size_t size) override {
     return bidirectional_fit_allocator_.Allocate(size);

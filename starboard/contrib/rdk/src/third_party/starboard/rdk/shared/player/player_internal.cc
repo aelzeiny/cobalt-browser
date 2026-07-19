@@ -18,6 +18,7 @@
 
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include <glib.h>
@@ -49,6 +50,7 @@
 #include "starboard/common/time.h"
 #include "starboard/drm.h"
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
 #include "third_party/starboard/rdk/shared/media/gst_media_utils.h"
 #include "third_party/starboard/rdk/shared/hang_detector.h"
 #include "third_party/starboard/rdk/shared/drm/gst_decryptor_ocdm.h"
@@ -452,14 +454,42 @@ void gst_cobalt_src_setup_and_add_app_src(SbMediaType media_type,
   }
 
   {
+    // CobaltMemGstQueues experiment: bound the queue in both buffers
+    // and bytes so it applies backpressure instead of growing into a
+    // multi-MB elastic pool. A GStreamer queue blocks upstream when a limit
+    // is hit -- it does not drop data -- and the appsrc/MSE buffer upstream
+    // already holds the forward buffer, so capping here just keeps the
+    // queued data there instead of duplicating it downstream. With the
+    // experiment off (the default), the upstream 60-buffer / unbounded-bytes
+    // configuration is used. Read from the Starboard FeatureList on every
+    // pipeline build (not cached): pipelines are only built at playback
+    // time, well after Cobalt pushes feature state down, but if one were
+    // ever built before that the guard falls back to the upstream (OFF)
+    // configuration instead of crashing on an uninitialized FeatureList.
+    const bool bounded_queues_enabled =
+        features::FeatureList::IsFeatureListInitialized() &&
+        features::FeatureList::IsEnabled(features::kCobaltMemGstQueues);
     GstElement* queue = gst_element_factory_make("queue", nullptr);
-    g_object_set (
-      G_OBJECT (queue),
-      "max-size-buffers", 60,
-      "max-size-bytes", 0,
-      "max-size-time", (gint64) 0,
-      "silent", TRUE,
-      nullptr);
+    if (bounded_queues_enabled) {
+      const guint kQueueMaxBytes = (media_type == kSbMediaTypeVideo)
+          ? 8 * 1024 * 1024
+          : 4 * 1024 * 1024;
+      g_object_set (
+        G_OBJECT (queue),
+        "max-size-buffers", 30,
+        "max-size-bytes", kQueueMaxBytes,
+        "max-size-time", (gint64) 0,
+        "silent", TRUE,
+        nullptr);
+    } else {
+      g_object_set (
+        G_OBJECT (queue),
+        "max-size-buffers", 60,
+        "max-size-bytes", 0,
+        "max-size-time", (gint64) 0,
+        "silent", TRUE,
+        nullptr);
+    }
     gst_bin_add(GST_BIN(element), queue);
     gst_element_sync_state_with_parent(queue);
     gst_element_link(src_elem, queue);

@@ -54,6 +54,7 @@ namespace cobalt {
 class GlobalFeatures;
 class CobaltMetricsServicesManagerClient;
 class CobaltWebContentsObserver;
+class IdleMemoryPurger;
 
 void ParseAndApplyH5vccSettingsForTesting(std::string_view settings_value,
                                           GlobalFeatures* global_features);
@@ -99,6 +100,7 @@ class CobaltContentBrowserClient : public content::ShellContentBrowserClient {
       network::mojom::NetworkContextParams* network_context_params,
       cert_verifier::mojom::CertVerifierCreationParams*
           cert_verifier_creation_params) override;
+  bool IsFirstPartySetsEnabled() override;
   void OverrideWebPreferences(content::WebContents* web_contents,
                               content::SiteInstance& main_frame_site,
                               blink::web_pref::WebPreferences* prefs) override;
@@ -119,6 +121,13 @@ class CobaltContentBrowserClient : public content::ShellContentBrowserClient {
   // Read from the experiment config, override features, and associate feature
   // params for Cobalt experiments.
   void SetUpCobaltFeaturesAndParams(base::FeatureList* feature_list);
+
+  // Bridges memory-experiment features (CobaltMem*) that must act through
+  // command-line switches: edits base::CommandLine::ForCurrentProcess() based
+  // on the state of the just-created feature list. Must be called after
+  // base::FeatureList::SetInstance() and before any consumer of the affected
+  // switches runs (DevTools HTTP handler, renderer/compositor init).
+  void ApplyMemoryExperimentSwitches();
 
   void WillCreateURLLoaderFactory(
       content::BrowserContext* browser_context,
@@ -160,6 +169,10 @@ class CobaltContentBrowserClient : public content::ShellContentBrowserClient {
   bool is_visible_;
 
   std::unique_ptr<CobaltWebContentsObserver> web_contents_observer_;
+
+  // Purges memory caches after user quiescence to bound long-session heap
+  // drift; observes the same main WebContents as |web_contents_observer_|.
+  std::unique_ptr<IdleMemoryPurger> idle_memory_purger_;
 
   uint64_t cached_sb_window_ = 0;
   std::vector<

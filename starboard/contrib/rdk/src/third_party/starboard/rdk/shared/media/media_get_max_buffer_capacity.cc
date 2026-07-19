@@ -16,27 +16,47 @@
 #include "starboard/media.h"
 
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
+
+namespace {
+
+// Runtime gate for the reduced-media-buffer-budget experiment
+// (CobaltMemMediaBudgets). OFF (the default, and always before Cobalt pushes
+// feature state down through the Starboard features extension) keeps the
+// upstream values. Deliberately evaluated on every call rather than cached,
+// so callers that run before the FeatureList is initialized read OFF without
+// latching it.
+bool MediaBudgetsExperimentEnabled() {
+  return starboard::features::FeatureList::IsFeatureListInitialized() &&
+         starboard::features::FeatureList::IsEnabled(
+             starboard::features::kCobaltMemMediaBudgets);
+}
+
+}  // namespace
 
 int SbMediaGetMaxBufferCapacity(SbMediaVideoCodec codec,
                                 int resolution_width,
                                 int resolution_height,
                                 int bits_per_pixel) {
   SB_UNREFERENCED_PARAMETER(codec);
+  const bool reduced_budgets = MediaBudgetsExperimentEnabled();
   if ((resolution_width <= 1920 && resolution_height <= 1080) ||
       resolution_width == kSbMediaVideoResolutionDimensionInvalid ||
       resolution_height == kSbMediaVideoResolutionDimensionInvalid) {
     // The maximum amount of memory that will be used to store media buffers
     // when video resolution is 1080p. If 0, then memory can grow without bound.
-    // This must be larger than sum of 1080p video budget and non-video budget.
-    return 50 * 1024 * 1024;
+    // This must be larger than sum of 1080p video budget and non-video budget
+    // (with the experiment on: 16 MiB + 3 MiB).
+    return (reduced_budgets ? 24 : 50) * 1024 * 1024;
   }
 
   if (resolution_width <= 3840 && resolution_height <= 2160) {
       // The maximum amount of memory that will be used to store media buffers
       // when video resolution is 4k. If 0,
       // then memory can grow without bound. This must be larger than sum of 4k
-      // video budget and non-video budget.
-      return 210 * 1024 * 1024;
+      // video budget and non-video budget (with the experiment on: 60 MiB +
+      // 3 MiB for 4K HDR).
+      return (reduced_budgets ? 64 : 210) * 1024 * 1024;
   }
 
   // The maximum amount of memory that will be used to store media buffers when

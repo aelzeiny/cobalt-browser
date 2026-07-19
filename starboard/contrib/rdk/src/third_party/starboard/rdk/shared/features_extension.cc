@@ -1,0 +1,55 @@
+// Copyright 2026 The Cobalt Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "third_party/starboard/rdk/shared/features_extension.h"
+
+#include "starboard/extension/features.h"
+#include "starboard/shared/starboard/feature_list.h"
+#include "third_party/starboard/rdk/shared/application_rdk.h"
+
+namespace starboard {
+// Variable that designates what extension version is used.
+const uint32_t FEATURES_API_EXTENSION_VERSION = 1u;
+
+// Extension function to receive the features and parameters passed
+// down from Cobalt. This function will then pass these values to
+// Starboard's own FeatureList class, where they can be initialized
+// for use under Starboard. Mirrors the Android implementation in
+// starboard/android/shared/features_extension.cc, plus an RDK-specific
+// hook so the application can act on features that must be applied as
+// soon as their resolved state is known (e.g. glibc allocator tuning).
+void InitializeStarboardFeatures(const SbFeature* features,
+                                 size_t number_of_features,
+                                 const SbFeatureParam* params,
+                                 size_t number_of_params) {
+  features::FeatureList::InitializeFeatureList(features, number_of_features,
+                                               params, number_of_params);
+  // Let the application react to the now-available feature state. This runs
+  // on the thread Cobalt calls the extension from (browser main thread), not
+  // the Starboard event loop thread; the hook only uses thread-safe entry
+  // points (mallopt/SbEventSchedule).
+  ApplicationRdk::OnStarboardFeaturesInitialized();
+}
+
+constexpr StarboardExtensionFeaturesApi kFeaturesApi = {
+    kStarboardExtensionFeaturesName,
+    FEATURES_API_EXTENSION_VERSION,
+    &InitializeStarboardFeatures,
+};
+
+const void* GetFeaturesApi() {
+  return &kFeaturesApi;
+}
+
+}  // namespace starboard

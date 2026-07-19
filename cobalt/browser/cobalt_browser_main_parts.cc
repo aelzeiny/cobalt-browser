@@ -36,11 +36,14 @@
 #include "cobalt/shell/common/shell_paths.h"
 #include "components/metrics/metrics_service.h"
 #include "components/metrics_services_manager/metrics_services_manager.h"
+#include "content/public/browser/browser_accessibility_state.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/resource_coordinator_service.h"
 #include "services/resource_coordinator/public/cpp/memory_instrumentation/client_process_impl.h"
 #include "services/resource_coordinator/public/cpp/memory_instrumentation/memory_instrumentation.h"
 #include "services/resource_coordinator/public/cpp/memory_instrumentation/memory_instrumentation_features.h"
+#include "ui/accessibility/ax_mode.h"
+#include "ui/accessibility/platform/ax_platform.h"
 #if !BUILDFLAG(COBALT_IS_RELEASE_BUILD)
 #include "base/location.h"
 #include "base/task/single_thread_task_runner.h"
@@ -211,6 +214,17 @@ int CobaltBrowserMainParts::PreCreateThreads() {
 }
 
 int CobaltBrowserMainParts::PreMainMessageLoopRun() {
+  // Log the process-wide accessibility mode at startup and observe later
+  // additions (see OnAXModeAdded()). On TV no assistive technology should be
+  // active, so a non-empty mode indicates that some channel (e.g. an attached
+  // DevTools/CDP session or --force-renderer-accessibility) has enabled
+  // accessibility and is paying its memory/CPU cost.
+  LOG(INFO) << "AXMode at startup: "
+            << content::BrowserAccessibilityState::GetInstance()
+                   ->GetAccessibilityMode()
+                   .ToString();
+  ui::AXPlatform::GetInstance().AddModeObserver(this);
+
   StartMetricsRecording();
 
 #if BUILDFLAG(COBALT_DETAILED_MEMORY_METRICS)
@@ -294,9 +308,21 @@ void CobaltBrowserMainParts::PostOrRunIfStorageMigrationFinished(
   }
 }
 
+void CobaltBrowserMainParts::PostMainMessageLoopRun() {
+  ui::AXPlatform::GetInstance().RemoveModeObserver(this);
+  ShellBrowserMainParts::PostMainMessageLoopRun();
+}
+
 void CobaltBrowserMainParts::PostDestroyThreads() {
   GlobalFeatures::GetInstance()->Shutdown();
   ShellBrowserMainParts::PostDestroyThreads();
+}
+
+void CobaltBrowserMainParts::OnAXModeAdded(ui::AXMode mode) {
+  LOG(INFO) << "AXMode flags added: " << mode.ToString() << "; AXMode now: "
+            << content::BrowserAccessibilityState::GetInstance()
+                   ->GetAccessibilityMode()
+                   .ToString();
 }
 
 void CobaltBrowserMainParts::SetupMetrics() {

@@ -800,6 +800,17 @@ NET_EXPORT extern const base::FeatureParam<std::string>
 // Finch-controlled list of ports that should be blocked on localhost.
 NET_EXPORT BASE_DECLARE_FEATURE(kRestrictAbusePortsOnLocalhost);
 
+#if BUILDFLAG(IS_COBALT)
+// Cobalt (TV) memory experiment: net/-layer half of the "CobaltMemCacheSweep"
+// experiment (see cobalt/COBALT_MEMORY_EXPERIMENTS.md). Shrinks the SSL
+// client session cache from 1024 to 32 entries. Declared under a distinct
+// name because net/ cannot include the cobalt/ header that declares
+// "CobaltMemCacheSweep" and a feature name must have exactly one BASE_FEATURE
+// in the binary; CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams()
+// fans the config's "CobaltMemCacheSweep" out to this name.
+NET_EXPORT BASE_DECLARE_FEATURE(kCobaltMemCacheSweepNet);
+#endif
+
 }  // namespace net::features
 
 #endif  // NET_BASE_FEATURES_H_

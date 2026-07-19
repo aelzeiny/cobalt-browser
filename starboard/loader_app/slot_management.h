@@ -55,8 +55,11 @@ class LibraryLoader {
 // An alternative content can be used by specifying non-empty
 // |alternative_content_path| with the full path to the content.
 // If |use_memory_mapped_file| is true the library would be loaded as a memory
-// mapped file. It should not be enabled if the library selected may be
-// compressed since compression and memory mapping are incompatible.
+// mapped file. If the selected library is LZ4 compressed it is first
+// decompressed, once per installed binary, to an uncompressed cache file in
+// the slot's lib directory and the cache is memory mapped instead. If no
+// uncompressed library can be obtained the library is loaded with in-memory
+// decompression, as if |use_memory_mapped_file| were false.
 // Returns a pointer to the |SbEventHandle| symbol in the library.
 void* LoadSlotManagedLibrary(const std::string& app_key,
                              const std::string& alternative_content_path,

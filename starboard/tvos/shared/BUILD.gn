@@ -21,13 +21,21 @@ if (is_internal_build) {
 static_library("test_support") {
   testonly = true
 
-  public_deps = [ "//testing/gtest" ]
+  public_deps = [
+    "//starboard/testing:test_runner",
+    "//testing/gtest",
+  ]
 
-  deps = [ ":starboard_platform" ]
+  deps = [
+    ":starboard_platform",
+    "//base",
+    "//base/test:test_support",
+  ]
 
   sources = [
     "starboard_test_environment.h",
     "starboard_test_environment.mm",
+    "test_runner.cc",
   ]
 }
 
@@ -70,6 +78,7 @@ static_library("starboard_platform") {
     "//starboard/shared/starboard/media/media_get_buffer_allocation_unit.cc",
     "//starboard/shared/starboard/media/media_get_buffer_garbage_collection_duration_threshold.cc",
     "//starboard/shared/starboard/media/media_get_initial_buffer_capacity.cc",
+    "//starboard/shared/starboard/media/media_get_max_buffer_capacity.cc",
     "//starboard/shared/starboard/media/media_get_video_buffer_budget.cc",
     "//starboard/shared/starboard/media/media_is_buffer_pool_allocate_on_demand.cc",
     "//starboard/shared/starboard/queue_application.cc",

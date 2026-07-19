@@ -32,6 +32,7 @@
 
 #include "starboard/common/log.h"
 #include "starboard/event.h"
+#include "starboard/shared/starboard/features.h"
 #include "starboard/speech_synthesis.h"
 #include "starboard/shared/starboard/audio_sink/audio_sink_internal.h"
 #include "starboard/shared/starboard/media/key_system_supportability_cache.h"
@@ -42,6 +43,7 @@
 
 #include <fcntl.h>
 #include <poll.h>
+#include <cstdlib>
 #include <cstring>
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
@@ -81,6 +83,59 @@ EssSettingsListener ApplicationRdk::settingsListener = {
 };
 
 constexpr auto kEssRunLoopPeriod = 16666us;
+
+#if defined(__GLIBC__)
+// Interval between periodic malloc_trim(0) calls. Cobalt's allocation churn
+// (tens of MB/s through glibc malloc) refills ptmalloc's free lists quickly;
+// a periodic trim turns "free pages retained forever" into "free pages
+// retained for at most one interval".
+constexpr int64_t kMallocTrimInterval = 60 * kSbTimeSecond;
+#endif  // defined(__GLIBC__)
+
+namespace {
+
+// Runtime gate for the 1080p UI window experiment (CobaltMem1080pUi). OFF
+// (the default, and always before Cobalt pushes feature state down through
+// the Starboard features extension) keeps the upstream behavior of following
+// the panel resolution. Deliberately evaluated on every call rather than
+// cached: the feature state only becomes available once Cobalt calls
+// InitializeStarboardFeatures(), so callers that run before that must read
+// OFF without latching it.
+bool Ui1080pExperimentEnabled() {
+  return features::FeatureList::IsFeatureListInitialized() &&
+         features::FeatureList::IsEnabled(features::kCobaltMem1080pUi);
+}
+
+// The native (Essos) window backs the UI/graphics plane only; video is
+// rendered on a separate punch-out plane at native display resolution.
+// A TV UI gains nothing above 1080p, while every full-screen pixel buffer
+// (EGL swapchain, raster and render-pass targets) costs 4x at 4K. Under the
+// CobaltMem1080pUi experiment, clamp the window to 1080p and let the
+// display pipeline hardware-scale the graphics plane to the panel. With the
+// experiment off (the default) the window follows the panel resolution, as
+// upstream does.
+constexpr int kMaxNativeWindowWidth = 1920;
+constexpr int kMaxNativeWindowHeight = 1080;
+
+void ClampNativeWindowSize(int* width, int* height) {
+  if (!Ui1080pExperimentEnabled())
+    return;
+  if (*width <= kMaxNativeWindowWidth && *height <= kMaxNativeWindowHeight)
+    return;
+  // Scale both dimensions by the same factor so the window keeps the
+  // display's aspect ratio (16:9 panels clamp to exactly 1920x1080).
+  const double scale =
+      std::min(kMaxNativeWindowWidth / static_cast<double>(*width),
+               kMaxNativeWindowHeight / static_cast<double>(*height));
+  const int clamped_width = static_cast<int>(*width * scale + 0.5);
+  const int clamped_height = static_cast<int>(*height * scale + 0.5);
+  SB_LOG(INFO) << "Clamping native window size from " << *width << 'x'
+               << *height << " to " << clamped_width << 'x' << clamped_height;
+  *width = clamped_width;
+  *height = clamped_height;
+}
+
+}  // namespace
 
 static void setTimerInterval(int fd, microseconds time) {
   struct itimerspec timeout;
@@ -145,6 +200,10 @@ void ApplicationRdk::Initialize() {
   KeySystemSupportabilityCache::GetInstance()->SetCacheEnabled(true);
 
   ScheduleMemoryUsageCheck(kSbTimeSecond);
+  // Note: the CobaltMemGlibcTuning experiment (mallopt tuning + periodic
+  // malloc_trim) is NOT applied here. Initialize() runs long before Cobalt
+  // resolves and pushes feature state down to Starboard, so the tuning is
+  // applied from OnStarboardFeaturesInitialized() instead.
   NetworkInfo::Initialize();
 }
 
@@ -311,6 +370,9 @@ void ApplicationRdk::OnKeyReleased(unsigned int key) {
 }
 
 void ApplicationRdk::OnDisplaySize(int width, int height) {
+  // Compare against the clamped size, otherwise a >1080p display report
+  // would flag a spurious resize away from the clamped window size.
+  ClampNativeWindowSize(&width, &height);
   if (window_width_ == width && window_height_ == height) {
     resize_pending_ = false;
     return;
@@ -330,6 +392,8 @@ void ApplicationRdk::MaterializeNativeWindow() {
   if ( !EssContextGetDisplaySize(ctx_, &window_width_, &window_height_) ) {
     error = true;
   }
+
+  ClampNativeWindowSize(&window_width_, &window_height_);
 
   if ( resize_pending_ ) {
     EssContextResizeWindow(ctx_, window_width_, window_height_);
@@ -424,6 +488,57 @@ void ApplicationRdk::ReleaseMemory() {
     malloc_trim(0);
   }));
 }
+
+// static
+void ApplicationRdk::OnStarboardFeaturesInitialized() {
+  ApplicationRdk* app = ApplicationRdk::Get();
+  if (!app) {
+    SB_LOG(WARNING) << "Starboard features initialized before the RDK "
+                       "application exists; feature-gated platform tuning "
+                       "is not applied.";
+    return;
+  }
+#if defined(__GLIBC__)
+  if (features::FeatureList::IsFeatureListInitialized() &&
+      features::FeatureList::IsEnabled(features::kCobaltMemGlibcTuning)) {
+    app->ApplyGlibcTuning();
+  }
+#endif  // defined(__GLIBC__)
+}
+
+#if defined(__GLIBC__)
+// CobaltMemGlibcTuning experiment: tame glibc ptmalloc free-page retention.
+// Called when Cobalt pushes the resolved feature state down to Starboard
+// (early in browser startup, before media playback and most worker threads,
+// but after process start):
+// - Cap malloc arenas at 2: the default limit (8 x cores on 32-bit) lets
+//   dozens of arenas each retain their own free lists indefinitely. Threads
+//   created before this point may already be attached to other arenas; the
+//   cap bounds arena growth from here on.
+// - Pin the mmap threshold at 256 KB: disables glibc's dynamic threshold
+//   ratchet, so large transient blocks (media buffer pools, IO buffers)
+//   are plain mmaps returned to the kernel on free instead of landing in
+//   arenas where their pages are retained.
+// - Trim threshold 512 KB: release main-arena top pages aggressively.
+// Also kicks off the periodic malloc_trim() chain; not scheduling it at all
+// when the feature is off disables the whole reschedule chain.
+void ApplicationRdk::ApplyGlibcTuning() {
+  SB_LOG(INFO) << "Applying glibc allocator tuning (CobaltMemGlibcTuning).";
+  mallopt(M_ARENA_MAX, 2);
+  mallopt(M_MMAP_THRESHOLD, 256 * 1024);
+  mallopt(M_TRIM_THRESHOLD, 512 * 1024);
+  ScheduleMallocTrim(kMallocTrimInterval);
+}
+
+void ApplicationRdk::ScheduleMallocTrim(int64_t delay) {
+  SbEventSchedule([](void* data) {
+    // Walk all ptmalloc arenas and madvise(MADV_DONTNEED) free chunks back
+    // to the kernel (glibc >= 2.26 trims per-chunk, not just arena tops).
+    malloc_trim(0);
+    ApplicationRdk::Get()->ScheduleMallocTrim(kMallocTrimInterval);
+  }, nullptr, delay);
+}
+#endif  // defined(__GLIBC__)
 
 void ApplicationRdk::ScheduleMemoryUsageCheck(int64_t delay) {
   SbEventSchedule([](void* data) {

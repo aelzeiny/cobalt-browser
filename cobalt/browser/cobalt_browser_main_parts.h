@@ -24,6 +24,8 @@
 // TODO(b/390021478): Remove this include when CobaltBrowserMainParts stops
 // being a ShellBrowserMainParts.
 #include "cobalt/shell/browser/shell_browser_main_parts.h"
+#include "ui/accessibility/ax_mode.h"
+#include "ui/accessibility/platform/ax_mode_observer.h"
 
 class PrefService;
 
@@ -43,7 +45,8 @@ class GlobalFeatures;
 
 // TODO(b/390021478): When CobaltContentBrowserClient stops deriving from
 // ShellContentBrowserClient, this should implement BrowserMainParts.
-class CobaltBrowserMainParts : public content::ShellBrowserMainParts {
+class CobaltBrowserMainParts : public content::ShellBrowserMainParts,
+                               public ui::AXModeObserver {
  public:
   explicit CobaltBrowserMainParts(const std::string& deep_link,
                                   bool is_visible);
@@ -56,7 +59,16 @@ class CobaltBrowserMainParts : public content::ShellBrowserMainParts {
   // ShellBrowserMainParts overrides.
   int PreCreateThreads() override;
   int PreMainMessageLoopRun() override;
+  void PostMainMessageLoopRun() override;
   void PostDestroyThreads() override;
+
+  // ui::AXModeObserver:
+  // Logs additions to the process-wide accessibility mode. On TV no
+  // assistive technology should be active, so any addition indicates that
+  // some channel (e.g. an attached DevTools/CDP session or
+  // --force-renderer-accessibility) is enabling accessibility and paying its
+  // memory/CPU cost.
+  void OnAXModeAdded(ui::AXMode mode) override;
 
 // TODO(cobalt, b/383301493): we should consider moving any ATV-specific
 // behaviors into an ATV implementation of BrowserMainParts. For example, see

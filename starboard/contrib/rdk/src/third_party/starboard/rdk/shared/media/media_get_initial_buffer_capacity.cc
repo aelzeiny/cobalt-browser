@@ -16,7 +16,32 @@
 #include "starboard/media.h"
 
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
+
+namespace {
+
+// Runtime gate for the reduced-media-buffer-budget experiment
+// (CobaltMemMediaBudgets). OFF (the default, and always before Cobalt pushes
+// feature state down through the Starboard features extension) keeps the
+// upstream values. Deliberately evaluated on every call rather than cached,
+// so callers that run before the FeatureList is initialized read OFF without
+// latching it.
+bool MediaBudgetsExperimentEnabled() {
+  return starboard::features::FeatureList::IsFeatureListInitialized() &&
+         starboard::features::FeatureList::IsEnabled(
+             starboard::features::kCobaltMemMediaBudgets);
+}
+
+}  // namespace
 
 int SbMediaGetInitialBufferCapacity() {
+  if (MediaBudgetsExperimentEnabled()) {
+    // The media buffer pool is allocated on demand and grows in units of
+    // SbMediaGetBufferAllocationUnit() (1 MiB), so a large initial block only
+    // reserves memory that may never be needed.  Keep the initial capacity at
+    // a single allocation unit and let the pool grow to the actual buffered
+    // size.
+    return 1 * 1024 * 1024;
+  }
   return 21 * 1024 * 1024;
 }

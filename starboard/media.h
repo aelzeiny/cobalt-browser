@@ -609,6 +609,26 @@ SB_EXPORT int64_t SbMediaGetBufferGarbageCollectionDurationThreshold();
 // can return 0.
 SB_EXPORT int SbMediaGetInitialBufferCapacity();
 
+// The maximum amount of memory that will be used to store media buffers. This
+// must be larger than sum of the video budget and audio budget.
+// If this returns a value greater than 0, the media buffer pool will refuse to
+// grow its capacity beyond it, and media buffer allocations that cannot be
+// fulfilled within the capacity will fail, under which case the app will be
+// terminated as under other OOM situations.
+//
+// |codec|: the video codec associated with the buffer.
+//
+// |resolution_width|: the width of the video resolution.
+//
+// |resolution_height|: the height of the video resolution.
+//
+// |bits_per_pixel|: the bits per pixel. This value is larger for HDR
+// than non-HDR video.
+SB_EXPORT int SbMediaGetMaxBufferCapacity(SbMediaVideoCodec codec,
+                                          int resolution_width,
+                                          int resolution_height,
+                                          int bits_per_pixel);
+
 // When either SbMediaGetInitialBufferCapacity or SbMediaGetBufferAllocationUnit
 // isn't zero, media buffers will be allocated using a memory pool. Set the
 // following variable to true to allocate the media buffer pool memory on demand

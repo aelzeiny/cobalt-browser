@@ -173,8 +173,6 @@ if (is_ios && target_platform == "tvos") {
     cobalt_target_type = "executable"
   }
   target(cobalt_target_type, "cobalt") {
-    testonly = true
-
     sources = [ "app/cobalt.cc" ]
 
     configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
@@ -193,6 +191,7 @@ if (is_ios && target_platform == "tvos") {
       deps += [ "//ui/ozone/platform/starboard:starboard" ]
     } else {
       # Web test support only built for the linux-x64x11-no-starboard target.
+      testonly = true
       deps += [
         "//content/web_test:web_test_browser",
         "//content/web_test:web_test_common",
@@ -251,12 +250,14 @@ source_set("common") {
     "//cobalt/browser:switches",
     "//cobalt/browser/h5vcc_accessibility:manager",
     "//cobalt/browser/h5vcc_runtime:deep_link_manager",
+    "//cobalt/common/features",
     "//cobalt/gpu",
     "//cobalt/renderer",
     "//cobalt/shell:cobalt_shell_app",
     "//cobalt/shell:cobalt_shell_lib",
     "//cobalt/shell:pak",
     "//cobalt/utility",
+    "//components/discardable_memory/common",
     "//components/memory_system:memory_system",
     "//content/public/app",
     "//gpu/command_buffer/service",
@@ -398,6 +399,7 @@ test("cobalt_unittests") {
     "//content/test:test_support",
     "//gpu/config",
     "//sandbox/policy:policy",
+    "//third_party/blink/public/common",
     "//ui/events/devices",
   ]
 

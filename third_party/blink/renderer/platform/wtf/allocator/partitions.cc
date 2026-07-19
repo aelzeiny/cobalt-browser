@@ -30,12 +30,16 @@
 
 #include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
 
+#include <cstdlib>
+
 #include "base/allocator/partition_alloc_features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/debug/alias.h"
 #include "base/feature_list.h"
+#include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/strings/safe_sprintf.h"
+#include "base/system/sys_info.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/thread_annotations.h"
 #include "build/build_config.h"
@@ -44,8 +48,10 @@
 #include "partition_alloc/oom.h"
 #include "partition_alloc/page_allocator.h"
 #include "partition_alloc/partition_alloc.h"
+#include "partition_alloc/partition_alloc_config.h"
 #include "partition_alloc/partition_alloc_constants.h"
 #include "partition_alloc/partition_root.h"
+#include "partition_alloc/thread_cache.h"
 #include "third_party/blink/renderer/platform/wtf/wtf.h"
 
 namespace WTF {
@@ -58,6 +64,21 @@ BASE_FEATURE(kBlinkUseLargeEmptySlotSpanRingForBufferRoot,
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
              base::FEATURE_ENABLED_BY_DEFAULT);
 #else
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
+#if BUILDFLAG(IS_COBALT) && PA_CONFIG(THREAD_CACHE_SUPPORTED) && \
+    !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+// Cobalt (TV) memory experiment (see cobalt/COBALT_MEMORY_EXPERIMENTS.md):
+// halves the PartitionAlloc thread-cache multiplier on low-end devices.
+// Declared here because blink cannot include cobalt/ headers; h5vcc
+// experiment overrides are registered by feature NAME, so the name string is
+// the contract. Guarded exactly like its consumer below (which sits inside
+// the !USE_PARTITION_ALLOC_AS_MALLOC FastMalloc-partition setup): in
+// configurations where the experiment's code path does not compile, the
+// feature does not exist.
+BASE_FEATURE(kCobaltMemPaTuning,
+             "CobaltMemPaTuning",
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
@@ -161,6 +182,37 @@ bool Partitions::InitializeOnce() {
   static base::NoDestructor<partition_alloc::PartitionAllocator>
       fast_malloc_allocator(options);
   fast_malloc_root_ = fast_malloc_allocator->root();
+
+#if BUILDFLAG(IS_COBALT) && PA_CONFIG(THREAD_CACHE_SUPPORTED)
+  // Cobalt's Starboard (TV) builds run single-process, with PartitionAlloc
+  // serving Blink's partitions but not malloc(). The upstream low-end
+  // thread-cache halving in
+  // PartitionAllocSupport::ReconfigureAfterTaskRunnerInit() is compiled out
+  // when PartitionAlloc is not malloc() (and the browser-side call would run
+  // before this partition -- the sole thread-cache owner in the process --
+  // exists, making ThreadCacheRegistry::SetThreadCacheMultiplier() a no-op on
+  // an empty registry). Apply the halving here instead, immediately after the
+  // FastMalloc partition has created this thread's cache.
+  // base::SysInfo::IsLowEndDevice() returns true whenever
+  // --enable-low-end-device-mode is present, which Cobalt sets by default on
+  // TV targets.
+  //
+  // Runtime experiment: only active when the "CobaltMemPaTuning" feature is
+  // enabled; otherwise behavior is identical to upstream. Feature-check
+  // timing: InitializeOnce() already consults base::FeatureList a few lines
+  // above (kPartitionAllocDisableBRPInBufferPartition), and in Cobalt's
+  // single-process mode it runs during in-process renderer initialization,
+  // after the browser feature list was created in
+  // CobaltMainDelegate::PostEarlyInitialization(). Should any exotic path
+  // ever reach this earlier, base::FeatureList::IsEnabled() without an
+  // instance returns the feature's default state (disabled, i.e. upstream
+  // behavior).
+  if (base::FeatureList::IsEnabled(kCobaltMemPaTuning) &&
+      base::SysInfo::IsLowEndDevice()) {
+    ::partition_alloc::ThreadCacheRegistry::Instance().SetThreadCacheMultiplier(
+        ::partition_alloc::ThreadCache::kDefaultMultiplier / 2.);
+  }
+#endif  // BUILDFLAG(IS_COBALT) && PA_CONFIG(THREAD_CACHE_SUPPORTED)
 #endif
 
   initialized_ = true;
@@ -201,6 +253,13 @@ void Partitions::StartMemoryReclaimer(
   CHECK(IsMainThread());
   DCHECK(initialized_);
 
+#if BUILDFLAG(IS_COBALT)
+  // One-time startup confirmation that the periodic PartitionAlloc memory
+  // reclaimer is actually scheduled for Blink's partitions on this build (the
+  // reclaimer start in partition_alloc_support.cc is compiled out when
+  // PartitionAlloc is not malloc(), so this is the only live path).
+  LOG(INFO) << "Starting PartitionAlloc memory reclaimer for Blink partitions";
+#endif
   base::allocator::StartMemoryReclaimer(task_runner);
 }
 

@@ -10,6 +10,7 @@
 #include "storage/browser/blob/blob_memory_controller.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <memory>
 #include <numeric>
 
@@ -37,6 +38,7 @@
 #include "build/build_config.h"
 #include "storage/browser/blob/blob_data_builder.h"
 #include "storage/browser/blob/blob_data_item.h"
+#include "storage/browser/blob/features.h"
 #include "storage/browser/blob/shareable_blob_data_item.h"
 #include "storage/browser/blob/shareable_file_reference.h"
 
@@ -91,7 +93,31 @@ BlobStorageLimits CalculateBlobStorageLimitsImpl(
 
   // Don't do specialty configuration for error size (-1).
   if (memory_size > 0) {
+#if BUILDFLAG(IS_COBALT)
+    // Runtime memory experiment ("CobaltMemBlobLimits"): Cobalt runs on
+    // memory-constrained TV devices. Without this a 32-bit non-Android build
+    // falls into the desktop-shaped memory/5 branch, legalizing a 200-400 MB
+    // in-RAM blob ceiling on a 1-2 GB device. When the experiment is
+    // enabled, follow the Android formula instead (memory/100, ~10-20 MB)
+    // and rely on disk paging as the pressure valve; the min_page_file_size
+    // floor below still applies. When disabled (default), fall through to
+    // the upstream platform selection (mirrored from the non-Cobalt branch
+    // below) unchanged. This runs on a blocking thread-pool task well after
+    // startup created the feature list, so a plain IsEnabled() is safe.
+    if (base::FeatureList::IsEnabled(features::kCobaltMemBlobLimits)) {
+      limits.max_blob_in_memory_space = static_cast<size_t>(memory_size / 100);
+    } else {
 #if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && \
+    defined(ARCH_CPU_64_BITS)
+      constexpr size_t kTwoGigabytes = 2ull * 1024 * 1024 * 1024;
+      limits.max_blob_in_memory_space = kTwoGigabytes;
+#elif BUILDFLAG(IS_ANDROID)
+      limits.max_blob_in_memory_space = static_cast<size_t>(memory_size / 100);
+#else
+      limits.max_blob_in_memory_space = static_cast<size_t>(memory_size / 5);
+#endif
+    }
+#elif !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && \
     defined(ARCH_CPU_64_BITS)
     constexpr size_t kTwoGigabytes = 2ull * 1024 * 1024 * 1024;
     limits.max_blob_in_memory_space = kTwoGigabytes;

@@ -32,6 +32,7 @@
 #include "starboard/common/log.h"
 #include "starboard/configuration.h"
 #include "starboard/media.h"
+#include "starboard/shared/starboard/features.h"
 
 namespace media {
 
@@ -46,6 +47,41 @@ using starboard::experimental::MediaBufferPool;
 
 const char* ToString(bool value) {
   return value ? "enabled" : "disabled";
+}
+
+// Returns the hard cap on the media buffer pool capacity, or 0 when the pool
+// is uncapped.
+//
+// The cap is part of the CobaltMemMediaBudgets experiment, read from the
+// Starboard FeatureList.  When the experiment is off (the default, and always
+// before Cobalt pushes the resolved feature state down to Starboard) this
+// returns 0, preserving the upstream Cobalt 25 behavior of not capping the
+// pool at all.  It is deliberately evaluated on every call rather than
+// cached: the DecoderBufferAllocator can in principle be constructed before
+// the FeatureList is initialized, and caching at construction would latch the
+// uncapped value forever.  The call sites (strategy creation and
+// GetMaximumMemoryCapacity()) are not hot.
+//
+// When the experiment is on, the cap comes from SbMediaGetMaxBufferCapacity().
+// The DecoderBufferAllocator is created before any video config is known and
+// no longer receives video resolution updates, so the cap is computed for
+// the worst case resolution expected on TV targets (4K HDR).  Per-resolution
+// memory usage is controlled by the SourceBufferStream budgets
+// (SbMediaGetVideoBufferBudget() etc.), which trigger eviction well below this
+// value; the cap is only a backstop that keeps a misbehaving client or codec
+// change from growing the pool without bound.
+size_t GetMaxBufferCapacity() {
+  if (!starboard::features::FeatureList::IsFeatureListInitialized() ||
+      !starboard::features::FeatureList::IsEnabled(
+          starboard::features::kCobaltMemMediaBudgets)) {
+    return 0;
+  }
+  int max_capacity =
+      SbMediaGetMaxBufferCapacity(kSbMediaVideoCodecNone, /*resolution_width=*/
+                                  3840,
+                                  /*resolution_height=*/2160,
+                                  /*bits_per_pixel=*/10);
+  return max_capacity > 0 ? static_cast<size_t>(max_capacity) : 0;
 }
 
 }  // namespace
@@ -210,10 +246,13 @@ size_t DecoderBufferAllocator::GetCurrentMemoryCapacity() const {
 }
 
 size_t DecoderBufferAllocator::GetMaximumMemoryCapacity() const {
-  // Always returns 0, as we no longer cap the capacity since Cobalt 25.
-  //
-  // base::AutoLock scoped_lock(mutex_);
-  return 0;
+  // The capacity has not been capped since Cobalt 25; the cap based on
+  // SbMediaGetMaxBufferCapacity() is only enforced under the
+  // CobaltMemMediaBudgets experiment.  It is re-computed on each call (see
+  // GetMaxBufferCapacity() above), passed to the allocator strategies at
+  // strategy-creation time to refuse pool growth beyond it, and reported
+  // here.  Returns 0 (uncapped) when the experiment is off.
+  return GetMaxBufferCapacity();
 }
 
 void DecoderBufferAllocator::UpdateAllocatorStrategy(
@@ -261,7 +300,7 @@ void DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
         return std::make_unique<DefaultReuseAllocatorStrategy>(
             block_size, block_size, /*enable_decommit_on_idle=*/true,
             retain_blocks, conservative_decommit_blocks,
-            aggressive_decommit_on_suspend);
+            aggressive_decommit_on_suspend, GetMaxBufferCapacity());
       },
       block_size, retain_blocks, conservative_decommit_blocks,
       aggressive_decommit_on_suspend));
@@ -316,8 +355,11 @@ void DecoderBufferAllocator::EnsureStrategyIsCreated() {
                     "strategy. Falling back to default.";
   }
 
-  strategy_ = std::make_unique<DefaultReuseAllocatorStrategy>(initial_capacity_,
-                                                              allocation_unit_);
+  const size_t max_buffer_capacity = GetMaxBufferCapacity();
+  DCHECK(max_buffer_capacity == 0 ||
+         max_buffer_capacity >= static_cast<size_t>(initial_capacity_));
+  strategy_ = std::make_unique<DefaultReuseAllocatorStrategy>(
+      initial_capacity_, allocation_unit_, max_buffer_capacity);
   LOG(INFO) << "DecoderBufferAllocator is using "
                "DefaultReuseAllocatorStrategy.";
 

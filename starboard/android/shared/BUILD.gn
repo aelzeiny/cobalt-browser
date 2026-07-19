@@ -190,6 +190,7 @@ static_library("starboard_platform") {
     "media_get_audio_configuration.cc",
     "media_get_audio_output_count.cc",
     "media_get_initial_buffer_capacity.cc",
+    "media_get_max_buffer_capacity.cc",
     "media_get_video_buffer_budget.cc",
     "media_is_audio_supported.cc",
     "media_is_buffer_pool_allocate_on_demand.cc",
@@ -198,6 +199,10 @@ static_library("starboard_platform") {
     "memfd_media_buffer_pool.cc",
     "memfd_media_buffer_pool.h",
     "microphone_impl.cc",
+    "ndk_media_codec.cc",
+    "ndk_media_codec.h",
+    "ndk_media_utils.cc",
+    "ndk_media_utils.h",
     "platform_info.cc",
     "platform_info.h",
     "platform_service.cc",
@@ -228,7 +233,7 @@ static_library("starboard_platform") {
     #"speech_synthesis_internal.cc",
     #"speech_synthesis_is_supported.cc",
     #"speech_synthesis_speak.cc",
-    "starboard_bridge.cc",
+    "base_starboard_bridge.cc",
     "starboard_bridge.h",
     "starboard_feature_list.cc",
     "system_get_extensions.cc",
@@ -389,6 +394,8 @@ static_library("test_support") {
 
   configs += [ "//starboard/build/config:starboard_implementation" ]
 
+  public_deps = [ "//starboard/testing:test_runner" ]
+
   deps = [
     ":starboard_platform",
     "//testing/gmock",
@@ -405,6 +412,7 @@ static_library("test_support") {
     "fake_media_codec.h",
     "starboard_test_environment.cc",
     "starboard_test_environment.h",
+    "test_runner.cc",
   ]
 }
 

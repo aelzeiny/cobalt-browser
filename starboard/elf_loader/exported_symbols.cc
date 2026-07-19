@@ -65,6 +65,7 @@
 #include "starboard/shared/modular/starboard_layer_posix_getrandom_abi_wrappers.h"
 #include "starboard/shared/modular/starboard_layer_posix_inotify_abi_wrappers.h"
 #include "starboard/shared/modular/starboard_layer_posix_ioctl_abi_wrappers.h"
+#include "starboard/shared/modular/starboard_layer_posix_malloc_abi_wrappers.h"
 #include "starboard/shared/modular/starboard_layer_posix_mmap_abi_wrappers.h"
 #include "starboard/shared/modular/starboard_layer_posix_pipe2_abi_wrappers.h"
 #include "starboard/shared/modular/starboard_layer_posix_poll_abi_wrappers.h"
@@ -147,6 +148,7 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(SbMediaGetBufferAllocationUnit);
   REGISTER_SYMBOL(SbMediaGetBufferGarbageCollectionDurationThreshold);
   REGISTER_SYMBOL(SbMediaGetInitialBufferCapacity);
+  REGISTER_SYMBOL(SbMediaGetMaxBufferCapacity);
   REGISTER_SYMBOL(SbMediaGetVideoBufferBudget);
   REGISTER_SYMBOL(SbMediaIsBufferPoolAllocateOnDemand);
   REGISTER_SYMBOL(SbMicrophoneClose);
@@ -218,8 +220,6 @@ ExportedSymbols::ExportedSymbols() {
 
   // POSIX APIs
   REGISTER_SYMBOL(alarm);
-  REGISTER_SYMBOL(aligned_alloc);
-  REGISTER_SYMBOL(calloc);
   REGISTER_SYMBOL(close);
   REGISTER_SYMBOL(fdatasync);
   REGISTER_SYMBOL(dup);
@@ -240,8 +240,18 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(link);
   REGISTER_SYMBOL(listen);
   REGISTER_SYMBOL(madvise);
-  REGISTER_SYMBOL(malloc);
   REGISTER_SYMBOL(malloc_usable_size);
+#if defined(__GLIBC__)
+  // glibc-specific allocator controls, declared in <malloc.h>. Cobalt code
+  // uses these, when available, to reduce ptmalloc free-page retention on
+  // glibc-based ports (e.g. Linux/RDK): mallopt() caps arenas and fixes the
+  // mmap/trim thresholds, and malloc_trim() returns retained-free pages to
+  // the kernel on memory pressure. Evergreen (musl-built) Cobalt declares
+  // malloc_trim() weakly and null-checks it, so older loaders without this
+  // registration remain compatible.
+  REGISTER_SYMBOL(malloc_trim);
+  REGISTER_SYMBOL(mallopt);
+#endif  // defined(__GLIBC__)
   REGISTER_SYMBOL(mincore);
   REGISTER_SYMBOL(mkdir);
   REGISTER_SYMBOL(mkdtemp);
@@ -252,7 +262,6 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(munmap);
   REGISTER_SYMBOL(pause);
   REGISTER_SYMBOL(pipe);
-  REGISTER_SYMBOL(posix_memalign);
   REGISTER_SYMBOL(pread);
   REGISTER_SYMBOL(pwrite);
   REGISTER_SYMBOL(raise);
@@ -260,7 +269,6 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(rand_r);
   REGISTER_SYMBOL(read);
   REGISTER_SYMBOL(readlink);
-  REGISTER_SYMBOL(realloc);
   REGISTER_SYMBOL(realpath);
   REGISTER_SYMBOL(recv);
   REGISTER_SYMBOL(recvfrom);
@@ -278,6 +286,27 @@ ExportedSymbols::ExportedSymbols() {
   REGISTER_SYMBOL(symlink);
   REGISTER_SYMBOL(usleep);
   REGISTER_SYMBOL(write);
+
+  // Allocation entry points. Routed through diagnostic wrappers that log any
+  // request >= 16 MiB together with the caller's return address, to identify
+  // large allocations that heapprofd cannot attribute. The wrappers forward
+  // to the raw libc functions and add only a single size comparison for
+  // normal-sized requests. Define STARBOARD_LOG_LARGE_ALLOCS=0 to compile the
+  // diagnostic out (registers the raw symbols again). See
+  // starboard/shared/modular/starboard_layer_posix_malloc_abi_wrappers.h.
+#if STARBOARD_LOG_LARGE_ALLOCS
+  REGISTER_WRAPPER(aligned_alloc);
+  REGISTER_WRAPPER(calloc);
+  REGISTER_WRAPPER(malloc);
+  REGISTER_WRAPPER(posix_memalign);
+  REGISTER_WRAPPER(realloc);
+#else
+  REGISTER_SYMBOL(aligned_alloc);
+  REGISTER_SYMBOL(calloc);
+  REGISTER_SYMBOL(malloc);
+  REGISTER_SYMBOL(posix_memalign);
+  REGISTER_SYMBOL(realloc);
+#endif
 
   // Linux APIs
   REGISTER_SYMBOL(recvmmsg);
@@ -430,7 +459,8 @@ const void* ExportedSymbols::Lookup(const char* name) {
     return address;
   }
 
-  SB_LOG(ERROR) << "Failed to retrieve the address of '" << name << "'.";
+  // Not an error, as it could be a weak symbol.
+  SB_DLOG(WARNING) << "Failed to retrieve the address of '" << name << "'.";
 #if !defined(OFFICIAL_BUILD)
   // TODO: Cobalt b/421944504 - Cleanup once we are done with all the symbols or
   // potentially keep it behind a flag to help with future maintenance.

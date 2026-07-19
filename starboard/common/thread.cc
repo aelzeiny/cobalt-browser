@@ -31,7 +31,7 @@
 #include "starboard/common/thread_platform.h"
 #include "starboard/system.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_STARBOARD)
 #include "starboard/shared/starboard/features.h"
 #endif
 
@@ -68,9 +68,24 @@ struct Thread::Data {
   Semaphore join_sema_;
 };
 
+// Returns the default stack size for threads created without an explicit
+// stack size in ThreadOptions. Threads that request an explicit size are
+// never affected by this.
 std::optional<size_t> GetDefaultStackSize() {
-#if BUILDFLAG(IS_ANDROID)
-  if (features::FeatureList::IsEnabled(
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_STARBOARD)
+  // Despite its name, kReduceStarboardThreadStackSize was historically only
+  // honored on Android. Apply it on all Starboard platforms so TV targets do
+  // not inherit the 8 MiB glibc default for every unsized thread.
+  //
+  // The Starboard FeatureList is populated by Cobalt (via the features
+  // extension) well after Starboard startup. Threads created before that
+  // (e.g. the signal handler thread started from SbRunStarboardMain) must not
+  // query the feature state, since IsEnabled() SB_CHECK()s on an
+  // uninitialized list; those early threads keep the platform default stack
+  // size. On platforms that do not register the features extension the list
+  // is never initialized and this remains a no-op.
+  if (features::FeatureList::IsFeatureListInitialized() &&
+      features::FeatureList::IsEnabled(
           features::kReduceStarboardThreadStackSize)) {
     return 256 * 1024;
   }

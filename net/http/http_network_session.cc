@@ -6,6 +6,7 @@
 
 #include <inttypes.h>
 
+#include <cstdlib>
 #include <utility>
 
 #include "base/atomic_sequence_num.h"
@@ -93,6 +94,24 @@ bool OriginToForceQuicOnInternal(const QuicParams& quic_params,
                      HostPortPair::FromSchemeHostPort(destination)));
 }
 
+SSLClientSessionCache::Config GetSSLClientSessionCacheConfig() {
+  SSLClientSessionCache::Config config;
+#if BUILDFLAG(IS_COBALT)
+  // Runtime memory experiment ("CobaltMemCacheSweepNet", fanned out from the
+  // config's "CobaltMemCacheSweep"): Cobalt (TV) talks to a small, fixed set
+  // of hosts, so the desktop-sized default of 1024 entries is wasted memory.
+  // 32 entries still covers ~3x the hostnames the app contacts. When the
+  // experiment is disabled (default), the upstream default Config is used
+  // unchanged. HttpNetworkSession construction happens long after the
+  // feature list exists (HttpNetworkSessionParams' constructor in this file
+  // already checks a feature), so a plain IsEnabled() is safe.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemCacheSweepNet)) {
+    config.max_entries = 32;
+  }
+#endif
+  return config;
+}
+
 }  // unnamed namespace
 
 HttpNetworkSessionParams::HttpNetworkSessionParams()
@@ -152,7 +171,7 @@ HttpNetworkSession::HttpNetworkSession(const HttpNetworkSessionParams& params,
       ssl_config_service_(context.ssl_config_service),
       http_auth_cache_(
           params.key_auth_cache_server_entries_by_network_anonymization_key),
-      ssl_client_session_cache_(SSLClientSessionCache::Config()),
+      ssl_client_session_cache_(GetSSLClientSessionCacheConfig()),
       ssl_client_context_(context.ssl_config_service,
                           context.cert_verifier,
                           context.transport_security_state,

@@ -17,6 +17,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -24,8 +25,10 @@
 #include "base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.h"
 #include "base/at_exit.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/memory/discardable_memory_allocator.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/no_destructor.h"
 #include "base/run_loop.h"
@@ -35,6 +38,8 @@
 #include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
 #include "cobalt/app/app_event_delegate.h"
+#include "cobalt/common/features/features.h"
+#include "components/discardable_memory/common/discardable_memory_features.h"
 
 #if BUILDFLAG(USE_EVERGREEN)
 #include "cobalt/updater/updater_module.h"
@@ -62,6 +67,20 @@
 #include "cobalt/browser/loader_app_metrics.h"
 #endif
 
+#if BUILDFLAG(IS_LINUX)
+#include <malloc.h>
+
+#if BUILDFLAG(USE_EVERGREEN) && !defined(__GLIBC__)
+// Evergreen builds of libcobalt compile against musl headers, which do not
+// declare malloc_trim(). At runtime, libc calls resolve through the ELF
+// loader's exported-symbol table to the host C library, which is glibc on
+// the Linux/RDK ports (see starboard/elf_loader/exported_symbols.cc).
+// Declare the symbol weakly so libcobalt still loads against older loaders
+// that do not export it; call sites null-check before calling.
+extern "C" __attribute__((weak)) int malloc_trim(size_t pad);
+#endif  // BUILDFLAG(USE_EVERGREEN) && !defined(__GLIBC__)
+#endif  // BUILDFLAG(IS_LINUX)
+
 namespace cobalt {
 
 namespace {
@@ -69,6 +88,36 @@ namespace {
 // normal operations to complete, but short enough to avoid unnecessary
 // user-perceived delays.
 constexpr base::TimeDelta kTransitionTimeout = base::Seconds(2);
+
+// Returns glibc ptmalloc's retained-free pages to the kernel. On Linux
+// ports the process allocator is glibc ptmalloc, which under Cobalt's high
+// allocation churn keeps freed pages resident indefinitely; malloc_trim()
+// walks all arenas and madvise()s free chunks back to the kernel (glibc
+// >= 2.26 trims per-chunk, not just arena tops). No-op on non-glibc
+// platforms.
+//
+// Part of the "CobaltMemGlibcTuning" experiment: a no-op (the upstream
+// behavior) unless the feature is enabled. The gate lives here so all call
+// sites inherit it. All callers are conceal/freeze/low-memory SbEvent
+// handlers, which Starboard only dispatches after the Start event whose
+// handling created the feature list (CobaltMainDelegate::
+// PostEarlyInitialization), so a plain IsEnabled() check is safe.
+void TrimGlibcHeap() {
+  if (!base::FeatureList::IsEnabled(features::kCobaltMemGlibcTuning)) {
+    return;
+  }
+#if BUILDFLAG(IS_LINUX)
+#if defined(__GLIBC__)
+  malloc_trim(0);
+#elif BUILDFLAG(USE_EVERGREEN)
+  // malloc_trim is a weak import; it is null when the loader running this
+  // binary does not export it (or the host libc is not glibc).
+  if (malloc_trim != nullptr) {
+    malloc_trim(0);
+  }
+#endif
+#endif  // BUILDFLAG(IS_LINUX)
+}
 }  // namespace
 
 #if !BUILDFLAG(IS_ANDROID)
@@ -212,6 +261,9 @@ class AppEventRunnerImpl : public AppEventRunner,
   void DoConceal() override {
     content::Shell::OnConceal();
     WaitForAck(PendingAck::kConceal);
+    // The app is now hidden; give retained-free heap pages back to the
+    // kernel while it is in the background.
+    TrimGlibcHeap();
   }
 
   void DoReveal() override {
@@ -230,6 +282,9 @@ class AppEventRunnerImpl : public AppEventRunner,
       updater_module->Suspend();
     }
 #endif
+    // Frozen is the deepest background state; minimize the resident heap
+    // before the process idles there.
+    TrimGlibcHeap();
   }
 
   void DoUnfreeze() override {
@@ -273,6 +328,30 @@ class AppEventRunnerImpl : public AppEventRunner,
     // Chromium internally calls Reclaim/ReclaimNormal at regular interval
     // to claim free memory. Using ReclaimAll is more aggressive.
     ::partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+
+    // Also return glibc ptmalloc's retained-free pages to the kernel; the
+    // C++ heap freed by the reclaim above is otherwise kept resident.
+    TrimGlibcHeap();
+
+    // Synchronously return freed-but-resident discardable memory to the OS.
+    // In Cobalt's single-process mode the process-wide allocator is the
+    // client-side ClientDiscardableSharedMemoryManager (the browser skips
+    // installing the service-side manager under --single-process), whose
+    // ReleaseFreeMemory() releases purged and free heap spans back to the
+    // in-process DiscardableSharedMemoryManager. The CRITICAL pressure
+    // notification above also reaches RenderThreadImpl's listener, but only
+    // asynchronously on its task runner; on a low-memory event we want the
+    // release to happen before this handler returns.
+    //
+    // Part of the "CobaltMemDiscardable" experiment; skipped (the upstream
+    // behavior) unless the feature is enabled. Low-memory SbEvents arrive
+    // only after startup created the feature list, so a plain IsEnabled()
+    // check is safe.
+    if (base::FeatureList::IsEnabled(
+            discardable_memory::features::kCobaltMemDiscardable) &&
+        base::DiscardableMemoryAllocator::HasInstance()) {
+      base::DiscardableMemoryAllocator::GetInstance()->ReleaseFreeMemory();
+    }
 
     if (event->data) {
       auto mem_cb = reinterpret_cast<SbEventCallback>(event->data);

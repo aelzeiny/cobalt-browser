@@ -14,6 +14,7 @@
 
 #include "cobalt/browser/cobalt_content_browser_client.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "base/base_switches.h"
@@ -35,6 +36,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
+#include "cc/base/switches.h"
 #include "net/proxy_resolution/proxy_config.h"
 #include "net/proxy_resolution/proxy_config_with_annotation.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
@@ -47,7 +49,9 @@
 #include "cobalt/browser/features.h"
 #include "cobalt/browser/global_features.h"
 #include "cobalt/browser/h5vcc_settings_impl.h"
+#include "cobalt/browser/idle_memory_purger.h"
 #include "cobalt/browser/lifecycle/cobalt_lifecycle_manager.h"
+#include "cobalt/browser/memory_experiments/memory_experiment_features.h"
 #include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
 #include "cobalt/browser/mojom/h5vcc_settings.mojom.h"
 #include "cobalt/browser/switches.h"
@@ -75,11 +79,14 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_switch_dependent_feature_overrides.h"
+#include "content/public/common/content_switches.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "services/network/public/cpp/features.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_registry.h"
+#include "third_party/blink/public/common/switches.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
 
 #if BUILDFLAG(IS_STARBOARD)
@@ -283,9 +290,15 @@ void CobaltContentBrowserClient::CreateThrottlesForNavigation(
 content::GeneratedCodeCacheSettings
 CobaltContentBrowserClient::GetGeneratedCodeCacheSettings(
     content::BrowserContext* context) {
-  // Default compiled javascript quota in Cobalt 25.
+  // Default compiled javascript quota in Cobalt 25 is 3 MB:
   // https://github.com/youtube/cobalt/blob/3ccdb04a5e36c2597fe7066039037eabf4906ba5/cobalt/network/disk_cache/resource_type.cc#L72
-  constexpr size_t size = 3 * 1024 * 1024;
+  // When enable-optimized-v8-code-cache switch is set, increase to 5 MB for
+  // YouTube TV.
+  size_t size = 3 * 1024 * 1024;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          "enable-optimized-v8-code-cache")) {
+    size = 5 * 1024 * 1024;
+  }
   base::FilePath cache_path;
   CHECK(base::PathService::Get(base::DIR_CACHE, &cache_path));
   return content::GeneratedCodeCacheSettings(/*enabled=*/true, size,
@@ -370,6 +383,15 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
     network_context_params->file_paths->http_cache_directory =
         cache_path.Append(kCacheDirname);
 
+    // Runtime memory experiment ("CobaltMemCacheSweep"): bound the HTTP
+    // cache instead of letting PreferredCacheSize() pick a desktop-shaped
+    // size. This bounds the in-RAM cache index and open-entry overhead, and
+    // limits flash wear on TV devices. When the experiment is disabled
+    // (default), the field is left unset, matching upstream.
+    if (base::FeatureList::IsEnabled(features::kCobaltMemCacheSweep)) {
+      network_context_params->http_cache_max_size = 32 * 1024 * 1024;
+    }
+
     base::FilePath user_data_dir =
         context->GetPath().Append(relative_partition_path);
     network_context_params->file_paths->data_directory =
@@ -419,6 +441,15 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
             net::DefineNetworkTrafficAnnotation("cobalt_manual_proxy",
                                                 "Manually configured proxy via command line"));
     LOG(INFO) << "Configuring Cobalt to use proxy: " << proxy_server;
+
+  // Runtime memory experiment ("CobaltMemStripDesktop"): Domain
+  // Reliability is desktop Google-services telemetry; keep it off on TV.
+  // The mojom default is already false, but when the experiment is enabled
+  // set it explicitly so the network service never creates a
+  // DomainReliabilityMonitor for Cobalt. When disabled (default), the param
+  // is left untouched, matching upstream.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemStripDesktop)) {
+    network_context_params->enable_domain_reliability = false;
   }
 
   network_context_params->enable_certificate_reporting = true;
@@ -430,6 +461,28 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
   // NetworkAnonymizationKey / IsolationInfos, so storage can be isolated on a
   // per-site basis.
   network_context_params->require_network_anonymization_key = true;
+}
+
+bool CobaltContentBrowserClient::IsFirstPartySetsEnabled() {
+  // Runtime memory experiment ("CobaltMemStripDesktop"): First-Party
+  // Sets (Related Website Sets) is a desktop cookie feature with no use in a
+  // single-app TV browser. There is no base::Feature for it in this tree;
+  // the ContentBrowserClient default returns true, which makes
+  // FirstPartySetsHandlerImplInstance load sets and exercise its sqlite
+  // database. When the experiment is enabled, return false so the handler
+  // stays disabled and the database is never opened. When disabled
+  // (default), defer to the upstream default.
+  //
+  // Timing: the earliest callers in this tree are the network-service
+  // creation (content/browser/network_service_instance_impl.cc) and
+  // FirstPartySetsHandlerImplInstance creation during storage-partition
+  // initialization -- both in browser-main-loop startup, after the feature
+  // list was created in CobaltMainDelegate::PostEarlyInitialization(), so a
+  // plain IsEnabled() check is safe here.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemStripDesktop)) {
+    return false;
+  }
+  return ContentBrowserClient::IsFirstPartySetsEnabled();
 }
 
 void CobaltContentBrowserClient::OnWebContentsCreated(
@@ -445,6 +498,14 @@ void CobaltContentBrowserClient::OnWebContentsCreated(
   }
   VLOG(1) << "NativeSplash: Observing main frame WebContents.";
   web_contents_observer_.reset(new CobaltWebContentsObserver(web_contents));
+  // Runtime memory experiment ("CobaltMemIdlePurge"): sweep memory
+  // caches whenever the user parks the app: no OS memory-pressure source
+  // fires on Linux/Starboard, so without this the caches only ever grow over
+  // multi-hour sessions. When the experiment is disabled (default), the
+  // purger is never created and upstream behavior is unchanged.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemIdlePurge)) {
+    idle_memory_purger_ = std::make_unique<IdleMemoryPurger>(web_contents);
+  }
   // Initialize the lifecycle tracker for this WebContents to ensure we track
   // and register its frames (including the main frame) for lifecycle events
   // from the very start.
@@ -628,6 +689,77 @@ void CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams(
   base::UmaHistogramCounts100("Cobalt.Finch.NumFeaturesApplied",
                               static_cast<int>(features_applied));
 
+  // Compound memory-experiment aliases (see cobalt/COBALT_MEMORY_EXPERIMENTS
+  // .md): some experiments fan out to existing upstream features under their
+  // own names. "CobaltMemAxAutodisable" and "CobaltMemParkableStrings" are
+  // config-level aliases only -- they have no BASE_FEATURE declaration
+  // anywhere and base::FeatureList::IsEnabled() is never called on them; the
+  // fan-out below is their sole effect. "CobaltMemStripDesktop" additionally
+  // exists as a declared feature (cobalt/browser/memory_experiments) that
+  // ApplyMemoryExperimentSwitches() and other browser-side sites consume
+  // directly.
+  //
+  // Explicit config entries win: any name the config set itself was already
+  // registered above and must not be re-registered -- RegisterFieldTrialOverride()
+  // DCHECKs when a feature name that already has a field-trial-associated
+  // override is registered again (and RegisterOverride() is
+  // first-override-wins regardless, so a second registration would be
+  // ignored in release builds). IsFeatureOverridden() also covers overrides
+  // that came from --enable-features/--disable-features or the
+  // switch-dependent extra overrides, all of which were registered before
+  // this function runs.
+  const auto config_enables = [&feature_map](std::string_view feature_name) {
+    return feature_map.FindBool(feature_name).value_or(false);
+  };
+  const auto register_compound_override =
+      [&feature_list, &cobalt_field_trial](
+          const std::string& feature_name,
+          base::FeatureList::OverrideState override_state) {
+        if (feature_list->IsFeatureOverridden(feature_name)) {
+          return;
+        }
+        feature_list->RegisterFieldTrialOverride(feature_name, override_state,
+                                                 cobalt_field_trial);
+      };
+  if (config_enables("CobaltMemStripDesktop")) {
+    // Desktop-only allocation sources: Attribution Reporting and
+    // FLEDGE/Protected Audience storage.
+    register_compound_override(
+        "ConversionMeasurement",
+        base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
+    register_compound_override(
+        "InterestGroupStorage",
+        base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
+  }
+  if (config_enables("CobaltMemAxAutodisable")) {
+    // Tear down accessibility trees when no assistive technology consumes
+    // accessibility events.
+    register_compound_override(
+        "AutoDisableAccessibility",
+        base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE);
+  }
+  if (config_enables("CobaltMemParkableStrings")) {
+    // Re-enable ParkableString aging in the (permanently) foreground TV app
+    // so large strings such as JS source actually compress.
+    register_compound_override(
+        "LessAggressiveParkableString",
+        base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
+  }
+  if (config_enables("CobaltMemCacheSweep")) {
+    // Component-layer halves of the cache sweep: net/ (SSL client session
+    // cache 1024 -> 32 entries) and sql/ (default page cache capped at 64
+    // pages) cannot include the cobalt/ header that declares
+    // "CobaltMemCacheSweep", and a feature name must have exactly one
+    // BASE_FEATURE in the binary, so they declare distinct names that this
+    // fan-out enables alongside the browser-side feature.
+    register_compound_override(
+        "CobaltMemCacheSweepNet",
+        base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE);
+    register_compound_override(
+        "CobaltMemCacheSweepSql",
+        base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE);
+  }
+
   size_t params_applied = 0;
   base::FieldTrialParams params;
   for (const auto param_name_and_value : param_map) {
@@ -649,6 +781,129 @@ void CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams(
                               static_cast<int>(params_applied));
   base::AssociateFieldTrialParams(kCobaltExperimentName, kCobaltGroupName,
                                   params);
+}
+
+void CobaltContentBrowserClient::ApplyMemoryExperimentSwitches() {
+  // Bridges memory-experiment features whose consumers read command-line
+  // switches (not base::FeatureList) into switch edits. This runs from
+  // CreateFeatureListAndFieldTrials(), which the ContentMainDelegate invokes
+  // in PostEarlyInitialization() (cobalt/app/cobalt_main_delegate.cc /
+  // content/shell/app/shell_main_delegate.cc) -- i.e. before BrowserMain(),
+  // before ShellBrowserMainParts::PreMainMessageLoopRun() starts the DevTools
+  // HTTP handler (cobalt/shell/browser/shell_browser_main_parts.cc), and
+  // before renderer/GPU/compositor initialization in single-process mode, so
+  // all switch consumers below see the edited values.
+  //
+  // Note that base::CommandLine::AppendSwitch*() overwrites the stored value
+  // for an existing switch key (last append wins for GetSwitchValue*()).
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+
+  if (base::FeatureList::IsEnabled(features::kCobaltMemJsFlags)) {
+    // Default --js-flags value applied by the Cobalt command-line
+    // preprocessor. Keep in sync with GetCobaltParamSwitchDefaults() in
+    // cobalt/app/cobalt_switch_defaults_starboard.cc. The string is
+    // duplicated here because cobalt/app depends on cobalt/browser (not the
+    // other way around), so this file cannot reference the preprocessor.
+    static constexpr char kCobaltDefaultJsFlags[] =
+        "--no-decommit-pooled-pages "
+        "--optimize-for-size "
+        "--initial-old-space-size=64 "
+        "--max-old-space-size=512 "
+        "--disable-optimizing-compilers "
+        "--no-sparkplug "
+        "--no-concurrent-marking";
+    // The same defaults with the initial old space lowered to 16MB. A TV
+    // app's live JS heap is typically 20-40MB; a small initial old space
+    // triggers the first major GC earlier and lowers the plateau.
+    static constexpr char kCobaltMemJsFlagsDefaults[] =
+        "--no-decommit-pooled-pages "
+        "--optimize-for-size "
+        "--initial-old-space-size=16 "
+        "--max-old-space-size=512 "
+        "--disable-optimizing-compilers "
+        "--no-sparkplug "
+        "--no-concurrent-marking";
+    const std::string current_js_flags =
+        command_line->GetSwitchValueASCII(blink::switches::kJavaScriptFlags);
+    std::string merged_js_flags;
+    if (current_js_flags.empty() || current_js_flags == kCobaltDefaultJsFlags) {
+      // No platform override: just swap the initial old space 64 -> 16.
+      merged_js_flags = kCobaltMemJsFlagsDefaults;
+    } else {
+      // The platform provided its own --js-flags value. Merge
+      // defaults-first-platform-wins: V8 parses flags left to right (and gin
+      // splits --js-flags on spaces), so the platform's values override the
+      // Cobalt defaults on a per-flag basis instead of silently replacing
+      // the whole TV-tuned string.
+      merged_js_flags =
+          std::string(kCobaltMemJsFlagsDefaults) + " " + current_js_flags;
+    }
+    command_line->AppendSwitchASCII(blink::switches::kJavaScriptFlags,
+                                    merged_js_flags);
+  }
+
+  if (base::FeatureList::IsEnabled(features::kCobaltMemImageCache)) {
+    // Limit the decoded-image working set to 24MB
+    // (cc::ImageDecodeCacheUtils reads this switch). The inert
+    // "LimitImageDecodeCacheSize:mb/24" token that the switch defaults put
+    // in --enable-features stays as-is; no feature by that name exists, so
+    // it is ignored.
+    command_line->AppendSwitchASCII(
+        ::switches::kDecodedImageWorkingSetBudgetBytes, "25165824");
+  }
+
+  if (base::FeatureList::IsEnabled(features::kCobaltMemGpuBudget)) {
+    // Lower the compositor GPU memory budget from the Cobalt default of 64MB
+    // to 32MB.
+    command_line->AppendSwitchASCII(::switches::kForceGpuMemAvailableMb, "32");
+  }
+
+  if (base::FeatureList::IsEnabled(features::kCobaltMemStripDesktop)) {
+    // Make remote DevTools opt-in: drop the default --remote-debugging-port
+    // and --remote-allow-origins so the DevTools HTTP server (and its
+    // discovery/socket machinery) never starts. This runs before
+    // ShellBrowserMainParts::PreMainMessageLoopRun() checks the switch.
+    command_line->RemoveSwitch(::switches::kRemoteDebuggingPort);
+    command_line->RemoveSwitch(::switches::kRemoteAllowOrigins);
+
+    // TV devices have no FIDO transports; disabling the WebAuthn API (blink
+    // runtime feature "WebAuth") prevents page-triggered device/fido
+    // authenticator discovery churn. Preserve any existing value
+    // (comma-joined list).
+    std::string disable_blink_features =
+        command_line->GetSwitchValueASCII(::switches::kDisableBlinkFeatures);
+    if (!disable_blink_features.empty()) {
+      disable_blink_features += ",";
+    }
+    disable_blink_features += "WebAuth";
+    command_line->AppendSwitchASCII(::switches::kDisableBlinkFeatures,
+                                    disable_blink_features);
+  }
+
+  if (base::FeatureList::IsEnabled(features::kCobaltMemThreadStacks)) {
+    // Cap the default stack size of Chromium-created threads at 256KiB
+    // instead of the 8MiB glibc default. The consumer
+    // (base/threading/platform_thread_linux_base.cc) STRING-SCANS the raw
+    // --enable-features switch value for "ReduceAndroidThreadStackSize"
+    // rather than using base::FeatureList (threads are created before the
+    // feature list exists), which is why this experiment must edit the
+    // switch instead of relying on the field-trial override alone. Threads
+    // created before this point (early browser threads) keep the platform
+    // default stack size; only threads created afterwards are affected.
+    // Appending here does not re-init the feature list; only the raw-switch
+    // scanner observes the change.
+    std::string enable_features =
+        command_line->GetSwitchValueASCII(::switches::kEnableFeatures);
+    if (enable_features.find("ReduceAndroidThreadStackSize") ==
+        std::string::npos) {
+      if (!enable_features.empty()) {
+        enable_features += ",";
+      }
+      enable_features += "ReduceAndroidThreadStackSize";
+      command_line->AppendSwitchASCII(::switches::kEnableFeatures,
+                                      enable_features);
+    }
+  }
 }
 
 void CobaltContentBrowserClient::CreateFeatureListAndFieldTrials() {
@@ -696,6 +951,13 @@ void CobaltContentBrowserClient::CreateFeatureListAndFieldTrials() {
       base::FeatureList::IsEnabled(features::kTestFinchFeature));
   base::UmaHistogramSparse("Cobalt.Features.TestFinchFeatureParam",
                            base::Hash(features::kTestFinchFeatureParam.Get()));
+
+  // Bridge memory-experiment features into command-line switch edits. Must
+  // run after base::FeatureList::SetInstance() (it calls IsEnabled()), and
+  // before the CobaltCommandLine logs below (so they show the final switch
+  // values) and before InitializeStarboardFeatures().
+  ApplyMemoryExperimentSwitches();
+
   LOG(INFO) << "CobaltCommandLine: enable_features=["
             << command_line.GetSwitchValueASCII(::switches::kEnableFeatures)
             << "], disable_features=["

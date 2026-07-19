@@ -23,8 +23,11 @@ static_library("features") {
   deps = [
     "//base",
     "//starboard/common:common",
-    "//starboard/extension:feature_config_header",
   ]
+
+  # features.h #includes starboard/extension/feature_config.h, so targets
+  # that include features.h (e.g. //cobalt:common) need the header too.
+  public_deps = [ "//starboard/extension:feature_config_header" ]
 
   if (is_android) {
     deps += [ "//cobalt/android:jni_headers" ]
