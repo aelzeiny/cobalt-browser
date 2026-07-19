@@ -76,6 +76,16 @@ static void UninstallStopSignalHandlers() {
 int SbRunStarboardMain(int argc, char** argv, SbEventHandleCallback callback) {
   tzset();
 
+  // NOTE: This in-process setrlimit() does NOT change the default pthread
+  // stack size: glibc snapshots RLIMIT_STACK into its default pthread
+  // attributes during libc/pthread initialization, which happens before this
+  // code runs. Mapping censuses on device confirm threads created without an
+  // explicit stack size still get the 8 MiB glibc default despite this call.
+  // To actually cap the pthread default, the limit must be in place before
+  // exec, i.e. set by the launcher environment (e.g. `ulimit -s 2048` in the
+  // launch wrapper / process spawn configuration). This call is kept as
+  // belt-and-braces for anything that does consult RLIMIT_STACK later (e.g.
+  // the main thread stack growth limit).
   rlimit stack_size;
   getrlimit(RLIMIT_STACK, &stack_size);
   stack_size.rlim_cur = 2 * 1024 * 1024;

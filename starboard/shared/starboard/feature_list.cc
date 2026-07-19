@@ -146,6 +146,13 @@ void FeatureList::ValidateParam(const std::string& feature_name,
 }
 
 // static
+bool FeatureList::IsFeatureListInitialized() {
+  FeatureList* instance = GetInstance();
+  std::lock_guard lock(instance->mutex_);
+  return instance->IsInitialized();
+}
+
+// static
 bool FeatureList::IsEnabled(const SbFeature& feature) {
   return IsEnabledByName(feature.name);
 }
