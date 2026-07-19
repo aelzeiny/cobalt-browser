@@ -96,7 +96,12 @@ if (is_nacl) {
 # experiments.
 #
 # TODO(crbug.com/329199197): Clean this up when experiments are complete.
-use_large_empty_slot_span_ring = true
+#
+# Cobalt targets memory-constrained TV devices; keeping up to 1024 (instead of
+# 128) empty-but-committed slot spans per partition in foreground mode is a
+# desktop-throughput trade that is not worth the memory there, and it also
+# grows the per-PartitionRoot ring array 8x.
+use_large_empty_slot_span_ring = !is_cobalt
 
 has_memory_tagging = current_cpu == "arm64" && is_clang && !is_asan &&
                      !is_hwasan && (is_linux || is_android) && !is_cobalt
