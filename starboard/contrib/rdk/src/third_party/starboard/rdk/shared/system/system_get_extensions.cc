@@ -50,6 +50,25 @@
 #include "starboard/shared/starboard/loader_app_metrics.h"
 #endif
 
+#include "starboard/extension/features.h"
+#include "starboard/shared/starboard/feature_list.h"
+
+namespace {
+void InitializeStarboardFeatures(const SbFeature* features,
+                                 size_t number_of_features,
+                                 const SbFeatureParam* params,
+                                 size_t number_of_params) {
+  starboard::features::FeatureList::InitializeFeatureList(features, number_of_features,
+                                                          params, number_of_params);
+}
+
+constexpr StarboardExtensionFeaturesApi kFeaturesApi = {
+    kStarboardExtensionFeaturesName,
+    1u,
+    &InitializeStarboardFeatures,
+};
+}  // namespace
+
 const void* SbSystemGetExtension(const char* name) {
 #if SB_IS(EVERGREEN_COMPATIBLE)
   const elf_loader::EvergreenConfig* evergreen_config =
@@ -79,6 +98,9 @@ const void* SbSystemGetExtension(const char* name) {
   }
   if (strcmp(name, kStarboardExtensionAccessibilityName) == 0) {
     return starboard::GetAccessibilityApi();
+  }
+  if (strcmp(name, kStarboardExtensionFeaturesName) == 0) {
+    return &kFeaturesApi;
   }
   return NULL;
 }

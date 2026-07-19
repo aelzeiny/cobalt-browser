@@ -170,6 +170,14 @@ STARBOARD_FEATURE(kVideoDecoderDelayUsecOverride,
                   false)
 // keep-sorted end
 #endif  // BUILDFLAG(IS_ANDROID) && (SB_API_VERSION >= 17)
+
+#if SB_API_VERSION >= 17
+// Set to true to enable area-based video buffer budget calculation.
+STARBOARD_FEATURE(kAreaBasedVideoBufferBudget,
+                  "AreaBasedVideoBufferBudget",
+                  false)
+#endif
+
 FEATURE_LIST_END
 
 // To add a parameter to Starboard, use the macro:
