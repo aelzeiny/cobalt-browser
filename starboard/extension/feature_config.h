@@ -164,6 +164,27 @@ STARBOARD_FEATURE(kVideoDecoderDelayUsecOverride,
 // keep-sorted end
 #endif  // BUILDFLAG(IS_ANDROID) && (SB_API_VERSION >= 17)
 
+// Memory experiments (see cobalt/COBALT_MEMORY_EXPERIMENTS.md). All are off
+// by default and are enabled at runtime through the h5vcc experiments API or
+// --enable-features. The Starboard implementation reads them from Starboard's
+// FeatureList after cobalt::features::InitializeStarboardFeatures() pushes
+// them down.
+//
+// Set to true to clamp the native UI window to 1080p on 4K panels (the video
+// plane is unaffected).
+STARBOARD_FEATURE(kCobaltMem1080pUi, "CobaltMem1080pUi", false)
+
+// Set to true to apply glibc malloc tuning (mallopt arena/mmap/trim
+// thresholds and periodic/low-memory malloc_trim). Note that the tuning is
+// applied when the feature value arrives at Starboard, not at process start.
+STARBOARD_FEATURE(kCobaltMemGlibcTuning, "CobaltMemGlibcTuning", false)
+
+// Set to true to bound GStreamer pipeline queue sizes.
+STARBOARD_FEATURE(kCobaltMemGstQueues, "CobaltMemGstQueues", false)
+
+// Set to true to use reduced media buffer pool and MSE buffer budgets.
+STARBOARD_FEATURE(kCobaltMemMediaBudgets, "CobaltMemMediaBudgets", false)
+
 // Set the following variable to true to reduce starboard thread stack size.
 STARBOARD_FEATURE(kReduceStarboardThreadStackSize,
                   "ReduceStarboardThreadStackSize",

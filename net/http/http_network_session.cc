@@ -97,17 +97,15 @@ bool OriginToForceQuicOnInternal(const QuicParams& quic_params,
 SSLClientSessionCache::Config GetSSLClientSessionCacheConfig() {
   SSLClientSessionCache::Config config;
 #if BUILDFLAG(IS_COBALT)
-  // Runtime memory experiment (COBALT_MEM_EXP_CACHE_SWEEP): Cobalt (TV)
-  // talks to a small, fixed set of hosts, so the desktop-sized default of
-  // 1024 entries is wasted memory. 32 entries still covers ~3x the hostnames
-  // the app contacts. When the experiment is disabled (default), the
-  // upstream default Config is used unchanged.
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_CACHE_SWEEP");
-    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
-    return v && v[0] == '1';
-  }();
-  if (enabled) {
+  // Runtime memory experiment ("CobaltMemCacheSweepNet", fanned out from the
+  // config's "CobaltMemCacheSweep"): Cobalt (TV) talks to a small, fixed set
+  // of hosts, so the desktop-sized default of 1024 entries is wasted memory.
+  // 32 entries still covers ~3x the hostnames the app contacts. When the
+  // experiment is disabled (default), the upstream default Config is used
+  // unchanged. HttpNetworkSession construction happens long after the
+  // feature list exists (HttpNetworkSessionParams' constructor in this file
+  // already checks a feature), so a plain IsEnabled() is safe.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemCacheSweepNet)) {
     config.max_entries = 32;
   }
 #endif

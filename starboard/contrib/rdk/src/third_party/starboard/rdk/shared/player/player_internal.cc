@@ -50,6 +50,7 @@
 #include "starboard/common/time.h"
 #include "starboard/drm.h"
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
 #include "third_party/starboard/rdk/shared/media/gst_media_utils.h"
 #include "third_party/starboard/rdk/shared/hang_detector.h"
 #include "third_party/starboard/rdk/shared/drm/gst_decryptor_ocdm.h"
@@ -453,21 +454,21 @@ void gst_cobalt_src_setup_and_add_app_src(SbMediaType media_type,
   }
 
   {
-    // COBALT_MEM_EXP_GST_QUEUES experiment: bound the queue in both buffers
+    // CobaltMemGstQueues experiment: bound the queue in both buffers
     // and bytes so it applies backpressure instead of growing into a
     // multi-MB elastic pool. A GStreamer queue blocks upstream when a limit
     // is hit -- it does not drop data -- and the appsrc/MSE buffer upstream
     // already holds the forward buffer, so capping here just keeps the
     // queued data there instead of duplicating it downstream. With the
     // experiment off (the default), the upstream 60-buffer / unbounded-bytes
-    // configuration is used.
-    static const bool bounded_queues_enabled = [] {
-      const char* v = getenv("COBALT_MEM_EXP_GST_QUEUES");
-      if (!v) {
-        v = getenv("COBALT_MEM_EXP_ALL");
-      }
-      return v && v[0] == '1';
-    }();
+    // configuration is used. Read from the Starboard FeatureList on every
+    // pipeline build (not cached): pipelines are only built at playback
+    // time, well after Cobalt pushes feature state down, but if one were
+    // ever built before that the guard falls back to the upstream (OFF)
+    // configuration instead of crashing on an uninitialized FeatureList.
+    const bool bounded_queues_enabled =
+        features::FeatureList::IsFeatureListInitialized() &&
+        features::FeatureList::IsEnabled(features::kCobaltMemGstQueues);
     GstElement* queue = gst_element_factory_make("queue", nullptr);
     if (bounded_queues_enabled) {
       const guint kQueueMaxBytes = (media_type == kSbMediaTypeVideo)

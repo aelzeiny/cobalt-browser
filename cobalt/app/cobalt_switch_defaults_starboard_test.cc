@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-
 #include <array>
 #include <string>
 #include <vector>
@@ -29,7 +27,6 @@
 #include "media/base/media_switches.h"
 #include "sandbox/policy/switches.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/blink/public/common/switches.h"
 #include "ui/gl/gl_switches.h"
 
 namespace cobalt {
@@ -48,25 +45,6 @@ std::string GetSwitchValue(const CommandLinePreprocessor& cmd_line_pxr,
   return "";
 }
 
-// Sets a memory-experiment environment variable to "1" for the duration of a
-// test, and unsets it on destruction. GetCobaltParamSwitchDefaults() caches
-// the assembled switch defaults per experiment-state (not in a single
-// static), so toggling experiment variables between preprocessor
-// constructions is safe and does not leak state into other tests.
-class ScopedMemExpEnv {
- public:
-  explicit ScopedMemExpEnv(const char* name) : name_(name) {
-    setenv(name_, "1", 1 /* overwrite */);
-  }
-  ~ScopedMemExpEnv() { unsetenv(name_); }
-
-  ScopedMemExpEnv(const ScopedMemExpEnv&) = delete;
-  ScopedMemExpEnv& operator=(const ScopedMemExpEnv&) = delete;
-
- private:
-  const char* const name_;
-};
-
 TEST(CobaltSwitchDefaultsTest, MergeDisabledFeatures) {
   const auto input_argv = std::to_array<const char*>(
       {"PROGRAM", "--disable-features=PersistentOriginTrials"});
@@ -78,42 +56,6 @@ TEST(CobaltSwitchDefaultsTest, MergeDisabledFeatures) {
   EXPECT_EQ(
       std::string("PersistentOriginTrials,Vulkan,MemoryCacheStrongReference"),
       disabled_features);
-}
-
-TEST(CobaltSwitchDefaultsTest, MergeJavaScriptFlagsWhenExperimentOn) {
-  // With COBALT_MEM_EXP_JS_FLAGS enabled, a platform-provided --js-flags
-  // value is merged with the Cobalt default (which also uses the
-  // experimental --initial-old-space-size=16).
-  ScopedMemExpEnv js_flags_exp("COBALT_MEM_EXP_JS_FLAGS");
-
-  const auto input_argv = std::to_array<const char*>(
-      {"PROGRAM", "--js-flags=--max-old-space-size=256"});
-  const int input_argc = static_cast<int>(input_argv.size());
-  CommandLinePreprocessor cmd_line_pxr(input_argc, input_argv.data());
-
-  // The Cobalt defaults must come first; the platform-provided flags come
-  // last so they win per-flag (V8 parses flags left to right).
-  std::string js_flags =
-      GetSwitchValue(cmd_line_pxr, blink::switches::kJavaScriptFlags);
-  EXPECT_EQ(
-      std::string("--no-decommit-pooled-pages --optimize-for-size "
-                  "--initial-old-space-size=16 --max-old-space-size=512 "
-                  "--disable-optimizing-compilers --no-sparkplug "
-                  "--no-concurrent-marking --max-old-space-size=256"),
-      js_flags);
-}
-
-TEST(CobaltSwitchDefaultsTest, ReplaceJavaScriptFlagsWhenExperimentOff) {
-  // Without COBALT_MEM_EXP_JS_FLAGS, a platform-provided --js-flags value
-  // replaces the Cobalt default entirely (upstream behavior).
-  const auto input_argv = std::to_array<const char*>(
-      {"PROGRAM", "--js-flags=--max-old-space-size=256"});
-  const int input_argc = static_cast<int>(input_argv.size());
-  CommandLinePreprocessor cmd_line_pxr(input_argc, input_argv.data());
-
-  std::string js_flags =
-      GetSwitchValue(cmd_line_pxr, blink::switches::kJavaScriptFlags);
-  EXPECT_EQ(std::string("--max-old-space-size=256"), js_flags);
 }
 
 TEST(CobaltSwitchDefaultsTest, ConsistentWindowSizes) {

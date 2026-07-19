@@ -15,7 +15,6 @@
 #include "cobalt/app/cobalt_switch_defaults.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <string>
 
 #include "base/base_switches.h"
@@ -24,7 +23,6 @@
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "cobalt/shell/common/shell_switches.h"
-#include "third_party/blink/public/common/switches.h"
 
 namespace {
 
@@ -38,19 +36,6 @@ bool IsSwitch(const base::CommandLine::StringType& string) {
     return true;
   }
   return false;
-}
-
-// Returns true when the named memory experiment is enabled via environment
-// variable. Each experiment can be enabled individually (e.g.
-// COBALT_MEM_EXP_JS_FLAGS=1), or all experiments at once via
-// COBALT_MEM_EXP_ALL=1. With no experiment variables set, behavior matches
-// upstream defaults exactly.
-bool MemExpEnabled(const char* name) {
-  const char* v = getenv(name);
-  if (!v) {
-    v = getenv("COBALT_MEM_EXP_ALL");
-  }
-  return v && v[0] == '1';
 }
 
 }  // namespace
@@ -85,27 +70,6 @@ CommandLinePreprocessor::CommandLinePreprocessor(int argc,
     }
   }
 
-  // Memory experiment COBALT_MEM_EXP_JS_FLAGS: merge a platform-provided
-  // --js-flags value with the Cobalt default instead of letting it silently
-  // replace the whole TV-tuned string. The Cobalt defaults come first so
-  // platform-provided values win on a per-flag basis (V8 parses flags left
-  // to right). Keep the merged string space-separated: gin splits --js-flags
-  // on spaces as well.
-  // When the experiment is off, a platform-provided --js-flags value
-  // replaces the Cobalt default entirely (upstream behavior).
-  if (MemExpEnabled("COBALT_MEM_EXP_JS_FLAGS") &&
-      cmd_line_.HasSwitch(blink::switches::kJavaScriptFlags)) {
-    auto old_value =
-        cobalt_param_switch_defaults.find(blink::switches::kJavaScriptFlags);
-    if (old_value != cobalt_param_switch_defaults.end()) {
-      std::string js_flags(std::string(old_value->second));
-      js_flags += std::string(" ");
-      js_flags +=
-          cmd_line_.GetSwitchValueASCII(blink::switches::kJavaScriptFlags);
-      cmd_line_.AppendSwitchNative(blink::switches::kJavaScriptFlags, js_flags);
-    }
-  }
-
   // Override kContentShellHostWindowSize if the user sets kWindowSize.
   if (cmd_line_.HasSwitch(switches::kWindowSize)) {
     std::string window_size =
@@ -123,11 +87,6 @@ CommandLinePreprocessor::CommandLinePreprocessor(int argc,
       cmd_line_.AppendSwitchNative(switch_key, switch_val);
     }
   }
-
-  // Log the final effective --js-flags so device logs can verify that the
-  // TV-tuned V8 configuration actually took effect.
-  LOG(INFO) << "Effective --js-flags: "
-            << cmd_line_.GetSwitchValueASCII(blink::switches::kJavaScriptFlags);
 
   // Fix any remaining conflicts with the initial URL.
   const auto initial_url = switches::GetInitialURL(cmd_line_);

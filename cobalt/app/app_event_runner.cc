@@ -25,6 +25,7 @@
 #include "base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.h"
 #include "base/at_exit.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/memory/discardable_memory_allocator.h"
@@ -37,6 +38,8 @@
 #include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
 #include "cobalt/app/app_event_delegate.h"
+#include "cobalt/common/features/features.h"
+#include "components/discardable_memory/common/discardable_memory_features.h"
 
 #if BUILDFLAG(USE_EVERGREEN)
 #include "cobalt/updater/updater_module.h"
@@ -93,18 +96,14 @@ constexpr base::TimeDelta kTransitionTimeout = base::Seconds(2);
 // >= 2.26 trims per-chunk, not just arena tops). No-op on non-glibc
 // platforms.
 //
-// Part of the COBALT_MEM_EXP_GLIBC_TUNING experiment: a no-op (the upstream
-// behavior) unless COBALT_MEM_EXP_GLIBC_TUNING=1 (or COBALT_MEM_EXP_ALL=1) is
-// set. The gate lives here so all call sites inherit it.
+// Part of the "CobaltMemGlibcTuning" experiment: a no-op (the upstream
+// behavior) unless the feature is enabled. The gate lives here so all call
+// sites inherit it. All callers are conceal/freeze/low-memory SbEvent
+// handlers, which Starboard only dispatches after the Start event whose
+// handling created the feature list (CobaltMainDelegate::
+// PostEarlyInitialization), so a plain IsEnabled() check is safe.
 void TrimGlibcHeap() {
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_GLIBC_TUNING");
-    if (!v) {
-      v = getenv("COBALT_MEM_EXP_ALL");
-    }
-    return v && v[0] == '1';
-  }();
-  if (!enabled) {
+  if (!base::FeatureList::IsEnabled(features::kCobaltMemGlibcTuning)) {
     return;
   }
 #if BUILDFLAG(IS_LINUX)
@@ -344,17 +343,12 @@ class AppEventRunnerImpl : public AppEventRunner,
     // asynchronously on its task runner; on a low-memory event we want the
     // release to happen before this handler returns.
     //
-    // Part of the COBALT_MEM_EXP_DISCARDABLE experiment; skipped (the
-    // upstream behavior) unless COBALT_MEM_EXP_DISCARDABLE=1 (or
-    // COBALT_MEM_EXP_ALL=1) is set.
-    static const bool discardable_release_enabled = [] {
-      const char* v = getenv("COBALT_MEM_EXP_DISCARDABLE");
-      if (!v) {
-        v = getenv("COBALT_MEM_EXP_ALL");
-      }
-      return v && v[0] == '1';
-    }();
-    if (discardable_release_enabled &&
+    // Part of the "CobaltMemDiscardable" experiment; skipped (the upstream
+    // behavior) unless the feature is enabled. Low-memory SbEvents arrive
+    // only after startup created the feature list, so a plain IsEnabled()
+    // check is safe.
+    if (base::FeatureList::IsEnabled(
+            discardable_memory::features::kCobaltMemDiscardable) &&
         base::DiscardableMemoryAllocator::HasInstance()) {
       base::DiscardableMemoryAllocator::GetInstance()->ReleaseFreeMemory();
     }

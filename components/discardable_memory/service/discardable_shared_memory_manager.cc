@@ -11,6 +11,7 @@
 
 #include "base/atomic_sequence_num.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/memory/discardable_memory.h"
@@ -31,6 +32,7 @@
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "components/crash/core/common/crash_key.h"
+#include "components/discardable_memory/common/discardable_memory_features.h"
 #include "components/discardable_memory/common/discardable_shared_memory_heap.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 
@@ -181,20 +183,17 @@ uint64_t GetDefaultMemoryLimit() {
     max_default_memory_limit /= 8;
 
 #if BUILDFLAG(IS_COBALT)
-  // Runtime memory experiment (COBALT_MEM_EXP_DISCARDABLE): Cobalt is a
+  // Runtime memory experiment ("CobaltMemDiscardable"): Cobalt is a
   // single-app TV browser whose large pixel consumers (media frames,
   // compositor tiles) are budgeted elsewhere; the desktop-shaped default
   // (512MB, or 64MB in low-end mode) is far larger than the workload needs
   // on memory-constrained TV devices. When the experiment is enabled, cap
   // the base limit at 16MB; the physical-memory and shmem-free-space
   // minimums below still apply. When disabled (default), upstream behavior
-  // is unchanged.
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_DISCARDABLE");
-    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
-    return v && v[0] == '1';
-  }();
-  if (enabled)
+  // is unchanged. This runs when the browser creates the service-side
+  // manager (after the feature list exists), so a plain IsEnabled() check
+  // is safe.
+  if (base::FeatureList::IsEnabled(features::kCobaltMemDiscardable))
     max_default_memory_limit = 16 * kMegabyte;
 #endif
 #endif

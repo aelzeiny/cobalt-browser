@@ -18,4 +18,17 @@ BASE_FEATURE(kUnlockDatabaseOnClose,
              "UnlockDatabaseOnClose",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+#if BUILDFLAG(IS_COBALT)
+// Cobalt (TV) memory experiment: sql/-layer half of the "CobaltMemCacheSweep"
+// experiment (see cobalt/COBALT_MEMORY_EXPERIMENTS.md). Caps SQLite's default
+// per-connection page cache at 64 pages when the caller did not request a
+// size. Declared under a distinct name because sql/ cannot include the
+// cobalt/ header that declares "CobaltMemCacheSweep" and a feature name must
+// have exactly one BASE_FEATURE in the binary; the browser client fans the
+// config's "CobaltMemCacheSweep" out to this name.
+BASE_FEATURE(kCobaltMemCacheSweepSql,
+             "CobaltMemCacheSweepSql",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 }  // namespace sql::features

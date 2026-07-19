@@ -32,6 +32,7 @@
 
 #include "starboard/common/log.h"
 #include "starboard/event.h"
+#include "starboard/shared/starboard/features.h"
 #include "starboard/speech_synthesis.h"
 #include "starboard/shared/starboard/audio_sink/audio_sink_internal.h"
 #include "starboard/shared/starboard/media/key_system_supportability_cache.h"
@@ -93,41 +94,23 @@ constexpr int64_t kMallocTrimInterval = 60 * kSbTimeSecond;
 
 namespace {
 
-#if defined(__GLIBC__)
-// Runtime gate for the glibc allocator tuning experiment (mallopt() knobs and
-// the periodic malloc_trim()). OFF (default) keeps the upstream behavior; set
-// COBALT_MEM_EXP_GLIBC_TUNING=1 (or COBALT_MEM_EXP_ALL=1) to enable.
-bool GlibcTuningExperimentEnabled() {
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_GLIBC_TUNING");
-    if (!v) {
-      v = getenv("COBALT_MEM_EXP_ALL");
-    }
-    return v && v[0] == '1';
-  }();
-  return enabled;
-}
-#endif  // defined(__GLIBC__)
-
-// Runtime gate for the 1080p UI window experiment. OFF (default) keeps the
-// upstream behavior of following the panel resolution; set
-// COBALT_MEM_EXP_1080P_UI=1 (or COBALT_MEM_EXP_ALL=1) to enable clamping.
+// Runtime gate for the 1080p UI window experiment (CobaltMem1080pUi). OFF
+// (the default, and always before Cobalt pushes feature state down through
+// the Starboard features extension) keeps the upstream behavior of following
+// the panel resolution. Deliberately evaluated on every call rather than
+// cached: the feature state only becomes available once Cobalt calls
+// InitializeStarboardFeatures(), so callers that run before that must read
+// OFF without latching it.
 bool Ui1080pExperimentEnabled() {
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_1080P_UI");
-    if (!v) {
-      v = getenv("COBALT_MEM_EXP_ALL");
-    }
-    return v && v[0] == '1';
-  }();
-  return enabled;
+  return features::FeatureList::IsFeatureListInitialized() &&
+         features::FeatureList::IsEnabled(features::kCobaltMem1080pUi);
 }
 
 // The native (Essos) window backs the UI/graphics plane only; video is
 // rendered on a separate punch-out plane at native display resolution.
 // A TV UI gains nothing above 1080p, while every full-screen pixel buffer
 // (EGL swapchain, raster and render-pass targets) costs 4x at 4K. Under the
-// COBALT_MEM_EXP_1080P_UI experiment, clamp the window to 1080p and let the
+// CobaltMem1080pUi experiment, clamp the window to 1080p and let the
 // display pipeline hardware-scale the graphics plane to the panel. With the
 // experiment off (the default) the window follows the panel resolution, as
 // upstream does.
@@ -186,24 +169,6 @@ ApplicationRdk::~ApplicationRdk() {
 }
 
 void ApplicationRdk::Initialize() {
-#if defined(__GLIBC__)
-  // COBALT_MEM_EXP_GLIBC_TUNING experiment: tame glibc ptmalloc free-page
-  // retention. Do this before the app spawns its worker threads so the arena
-  // cap applies from the start:
-  // - Cap malloc arenas at 2: the default limit (8 x cores on 32-bit) lets
-  //   dozens of arenas each retain their own free lists indefinitely.
-  // - Pin the mmap threshold at 256 KB: disables glibc's dynamic threshold
-  //   ratchet, so large transient blocks (media buffer pools, IO buffers)
-  //   are plain mmaps returned to the kernel on free instead of landing in
-  //   arenas where their pages are retained.
-  // - Trim threshold 512 KB: release main-arena top pages aggressively.
-  if (GlibcTuningExperimentEnabled()) {
-    mallopt(M_ARENA_MAX, 2);
-    mallopt(M_MMAP_THRESHOLD, 256 * 1024);
-    mallopt(M_TRIM_THRESHOLD, 512 * 1024);
-  }
-#endif  // defined(__GLIBC__)
-
   wakeup_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
   if ( wakeup_fd_ == -1 ) {
     SB_LOG(ERROR) << "Failed to create eventfd, error: " << errno << " (" << strerror(errno) << ')';
@@ -235,13 +200,10 @@ void ApplicationRdk::Initialize() {
   KeySystemSupportabilityCache::GetInstance()->SetCacheEnabled(true);
 
   ScheduleMemoryUsageCheck(kSbTimeSecond);
-#if defined(__GLIBC__)
-  // COBALT_MEM_EXP_GLIBC_TUNING experiment: periodic malloc_trim(). Gating
-  // the initial scheduling here disables the whole reschedule chain.
-  if (GlibcTuningExperimentEnabled()) {
-    ScheduleMallocTrim(kMallocTrimInterval);
-  }
-#endif  // defined(__GLIBC__)
+  // Note: the CobaltMemGlibcTuning experiment (mallopt tuning + periodic
+  // malloc_trim) is NOT applied here. Initialize() runs long before Cobalt
+  // resolves and pushes feature state down to Starboard, so the tuning is
+  // applied from OnStarboardFeaturesInitialized() instead.
   NetworkInfo::Initialize();
 }
 
@@ -527,7 +489,47 @@ void ApplicationRdk::ReleaseMemory() {
   }));
 }
 
+// static
+void ApplicationRdk::OnStarboardFeaturesInitialized() {
+  ApplicationRdk* app = ApplicationRdk::Get();
+  if (!app) {
+    SB_LOG(WARNING) << "Starboard features initialized before the RDK "
+                       "application exists; feature-gated platform tuning "
+                       "is not applied.";
+    return;
+  }
 #if defined(__GLIBC__)
+  if (features::FeatureList::IsFeatureListInitialized() &&
+      features::FeatureList::IsEnabled(features::kCobaltMemGlibcTuning)) {
+    app->ApplyGlibcTuning();
+  }
+#endif  // defined(__GLIBC__)
+}
+
+#if defined(__GLIBC__)
+// CobaltMemGlibcTuning experiment: tame glibc ptmalloc free-page retention.
+// Called when Cobalt pushes the resolved feature state down to Starboard
+// (early in browser startup, before media playback and most worker threads,
+// but after process start):
+// - Cap malloc arenas at 2: the default limit (8 x cores on 32-bit) lets
+//   dozens of arenas each retain their own free lists indefinitely. Threads
+//   created before this point may already be attached to other arenas; the
+//   cap bounds arena growth from here on.
+// - Pin the mmap threshold at 256 KB: disables glibc's dynamic threshold
+//   ratchet, so large transient blocks (media buffer pools, IO buffers)
+//   are plain mmaps returned to the kernel on free instead of landing in
+//   arenas where their pages are retained.
+// - Trim threshold 512 KB: release main-arena top pages aggressively.
+// Also kicks off the periodic malloc_trim() chain; not scheduling it at all
+// when the feature is off disables the whole reschedule chain.
+void ApplicationRdk::ApplyGlibcTuning() {
+  SB_LOG(INFO) << "Applying glibc allocator tuning (CobaltMemGlibcTuning).";
+  mallopt(M_ARENA_MAX, 2);
+  mallopt(M_MMAP_THRESHOLD, 256 * 1024);
+  mallopt(M_TRIM_THRESHOLD, 512 * 1024);
+  ScheduleMallocTrim(kMallocTrimInterval);
+}
+
 void ApplicationRdk::ScheduleMallocTrim(int64_t delay) {
   SbEventSchedule([](void* data) {
     // Walk all ptmalloc arenas and madvise(MADV_DONTNEED) free chunks back

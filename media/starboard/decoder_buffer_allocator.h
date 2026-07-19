@@ -100,10 +100,13 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
   const bool is_memory_pool_allocated_on_demand_;
   const int initial_capacity_;
   const int allocation_unit_;
-  // Hard cap on the pool capacity from SbMediaGetMaxBufferCapacity(), or 0
-  // when the platform doesn't cap the pool.  Passed to the allocator
-  // strategies, which refuse to grow the pool beyond it.
-  const size_t max_buffer_capacity_;
+  // Note: the hard cap on the pool capacity (see GetMaxBufferCapacity() in
+  // the .cc file) is deliberately NOT cached at construction.  It depends on
+  // the CobaltMemMediaBudgets state in the Starboard FeatureList, which is
+  // only populated once Cobalt pushes feature state down to the platform; an
+  // allocator constructed before that would latch an uncapped (0) value
+  // forever.  It is instead re-computed wherever it is needed (strategy
+  // creation and GetMaximumMemoryCapacity()), which is not hot.
 
   mutable base::Lock mutex_;
   std::unique_ptr<Strategy> strategy_ GUARDED_BY(mutex_);

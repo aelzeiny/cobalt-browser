@@ -14,24 +14,21 @@
 
 #include "starboard/media.h"
 
-#include <stdlib.h>
-
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
 
 namespace {
 
-// Runtime gate for the reduced-media-buffer-budget experiment. OFF (default)
-// keeps the upstream values; set COBALT_MEM_EXP_MEDIA_BUDGETS=1 (or
-// COBALT_MEM_EXP_ALL=1) to enable the reduced values.
+// Runtime gate for the reduced-media-buffer-budget experiment
+// (CobaltMemMediaBudgets). OFF (the default, and always before Cobalt pushes
+// feature state down through the Starboard features extension) keeps the
+// upstream values. Deliberately evaluated on every call rather than cached,
+// so callers that run before the FeatureList is initialized read OFF without
+// latching it.
 bool MediaBudgetsExperimentEnabled() {
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_MEDIA_BUDGETS");
-    if (!v) {
-      v = getenv("COBALT_MEM_EXP_ALL");
-    }
-    return v && v[0] == '1';
-  }();
-  return enabled;
+  return starboard::features::FeatureList::IsFeatureListInitialized() &&
+         starboard::features::FeatureList::IsEnabled(
+             starboard::features::kCobaltMemMediaBudgets);
 }
 
 }  // namespace

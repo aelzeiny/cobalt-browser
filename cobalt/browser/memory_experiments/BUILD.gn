@@ -1,4 +1,4 @@
-# Copyright 2025 The Cobalt Authors. All Rights Reserved.
+# Copyright 2026 The Cobalt Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-static_library("features") {
+source_set("memory_experiments") {
   sources = [
-    "features.cc",
-    "features.h",
-    "starboard_features_initialization.cc",
-    "starboard_features_initialization.h",
+    "memory_experiment_features.cc",
+    "memory_experiment_features.h",
   ]
 
-  deps = [
-    "//base",
-    "//starboard/common:common",
-  ]
-
-  # features.h #includes starboard/extension/feature_config.h, so targets
-  # that include features.h (e.g. //cobalt:common) need the header too.
-  public_deps = [ "//starboard/extension:feature_config_header" ]
-
-  if (is_android) {
-    deps += [ "//cobalt/android:jni_headers" ]
-  }
+  deps = [ "//base" ]
 }

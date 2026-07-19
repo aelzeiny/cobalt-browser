@@ -19,6 +19,12 @@ BASE_FEATURE(kBlockCrossPartitionBlobUrlFetching,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
 
+#if BUILDFLAG(IS_COBALT)
+BASE_FEATURE(kCobaltMemBlobLimits,
+             "CobaltMemBlobLimits",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 // Please keep features in alphabetical order.
 
 }  // namespace features

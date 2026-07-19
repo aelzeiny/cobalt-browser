@@ -45,7 +45,7 @@ size_t ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode(
     bool for_renderer) {
 #if BUILDFLAG(IS_COBALT)
   static const size_t cobalt_decoded_image_working_set_budget_bytes = []() {
-    // The COBALT_MEM_EXP_IMAGE_CACHE experiment shrinks this budget to 24MB
+    // The CobaltMemImageCache experiment shrinks this budget to 24MB
     // by passing --decoded-image-working-set-budget-bytes (gated where the
     // switch is applied); the compiled-in fallback stays at the upstream
     // 128MB.

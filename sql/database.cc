@@ -2191,20 +2191,20 @@ bool Database::OpenInternal(const std::string& db_file_path) {
     }
 #if BUILDFLAG(IS_COBALT)
     else {
-      // Runtime memory experiment (COBALT_MEM_EXP_CACHE_SWEEP), Cobalt (TV):
-      // SQLite's default page cache is ~2 MB *per open database*
+      // Runtime memory experiment ("CobaltMemCacheSweepSql", fanned out from
+      // the config's "CobaltMemCacheSweep"), Cobalt (TV): SQLite's default
+      // page cache is ~2 MB *per open database*
       // (`PRAGMA cache_size=-2000`), which is desktop-shaped. The embedded
       // stores Cobalt opens (cookies, trust tokens, first-party sets, ...) are
       // small and lightly queried, so when the experiment is enabled, cap the
       // cache at 64 pages (~256 KB with 4 KB pages) whenever the caller did
       // not request a specific size. When disabled (default), SQLite's
-      // default is left in place, matching upstream.
-      static const bool enabled = [] {
-        const char* v = getenv("COBALT_MEM_EXP_CACHE_SWEEP");
-        if (!v) v = getenv("COBALT_MEM_EXP_ALL");
-        return v && v[0] == '1';
-      }();
-      if (enabled) {
+      // default is left in place, matching upstream. This open path already
+      // checks sql::features::kSqlFixedMmapSize via base::FeatureList, and
+      // every process type creates its feature list at process start; should
+      // a database ever open earlier, IsEnabled() without an instance falls
+      // back to the default state (disabled, i.e. upstream behavior).
+      if (base::FeatureList::IsEnabled(features::kCobaltMemCacheSweepSql)) {
         std::ignore = ExecuteWithTimeout("PRAGMA cache_size=64", kBusyTimeout);
       }
     }

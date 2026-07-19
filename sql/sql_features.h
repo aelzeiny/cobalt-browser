@@ -7,6 +7,7 @@
 
 #include "base/component_export.h"
 #include "base/feature_list.h"
+#include "build/build_config.h"
 
 namespace sql::features {
 
@@ -16,6 +17,10 @@ namespace sql::features {
 // Alphabetical:
 COMPONENT_EXPORT(SQL) BASE_DECLARE_FEATURE(kSqlFixedMmapSize);
 COMPONENT_EXPORT(SQL) BASE_DECLARE_FEATURE(kUnlockDatabaseOnClose);
+
+#if BUILDFLAG(IS_COBALT)
+COMPONENT_EXPORT(SQL) BASE_DECLARE_FEATURE(kCobaltMemCacheSweepSql);
+#endif
 
 }  // namespace sql::features
 

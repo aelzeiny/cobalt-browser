@@ -72,6 +72,15 @@ class ApplicationRdk : public QueueApplication {
 
   void InjectAccessibilityTextToSpeechSettingsChanged(bool enabled);
 
+  // Called by the RDK features extension (features_extension.cc) right after
+  // Cobalt has pushed the resolved feature state down into Starboard's
+  // FeatureList. This is the earliest point where feature-gated platform
+  // behavior that should apply "as soon as possible" (rather than lazily at
+  // its call sites) can be turned on, e.g. glibc allocator tuning
+  // (kCobaltMemGlibcTuning). May be called from any thread; it is a no-op if
+  // the application singleton does not exist.
+  static void OnStarboardFeaturesInitialized();
+
  protected:
   // --- Application overrides ---
   void Initialize() override;
@@ -102,6 +111,7 @@ class ApplicationRdk : public QueueApplication {
   int64_t CheckMemoryUsage();
   void ReleaseMemory();
 #if defined(__GLIBC__)
+  void ApplyGlibcTuning();
   void ScheduleMallocTrim(int64_t delay);
 #endif  // defined(__GLIBC__)
 

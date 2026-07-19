@@ -68,6 +68,7 @@ source_set("starboard") {
     "//mojo/public/cpp/bindings:bindings",
     "//starboard:starboard_group",
     "//starboard/common",
+    "//starboard/shared/starboard:feature_list",
     "//third_party/abseil-cpp:absl",
     "//url",
   ]

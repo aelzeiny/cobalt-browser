@@ -67,6 +67,17 @@ BASE_FEATURE(kBlinkUseLargeEmptySlotSpanRingForBufferRoot,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
+#if BUILDFLAG(IS_COBALT)
+// Cobalt (TV) memory experiment (see cobalt/COBALT_MEMORY_EXPERIMENTS.md):
+// halves the PartitionAlloc thread-cache multiplier on low-end devices.
+// Declared here because blink cannot include cobalt/ headers; h5vcc
+// experiment overrides are registered by feature NAME, so the name string is
+// the contract.
+BASE_FEATURE(kCobaltMemPaTuning,
+             "CobaltMemPaTuning",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 bool Partitions::initialized_ = false;
 
 // These statics are inlined, so cannot be LazyInstances. We create the values,
@@ -182,15 +193,18 @@ bool Partitions::InitializeOnce() {
   // --enable-low-end-device-mode is present, which Cobalt sets by default on
   // TV targets.
   //
-  // Runtime experiment: only active when COBALT_MEM_EXP_PA_TUNING (or
-  // COBALT_MEM_EXP_ALL) is set to 1 in the environment; otherwise behavior
-  // is identical to upstream.
-  static const bool enabled = [] {
-    const char* v = getenv("COBALT_MEM_EXP_PA_TUNING");
-    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
-    return v && v[0] == '1';
-  }();
-  if (enabled && base::SysInfo::IsLowEndDevice()) {
+  // Runtime experiment: only active when the "CobaltMemPaTuning" feature is
+  // enabled; otherwise behavior is identical to upstream. Feature-check
+  // timing: InitializeOnce() already consults base::FeatureList a few lines
+  // above (kPartitionAllocDisableBRPInBufferPartition), and in Cobalt's
+  // single-process mode it runs during in-process renderer initialization,
+  // after the browser feature list was created in
+  // CobaltMainDelegate::PostEarlyInitialization(). Should any exotic path
+  // ever reach this earlier, base::FeatureList::IsEnabled() without an
+  // instance returns the feature's default state (disabled, i.e. upstream
+  // behavior).
+  if (base::FeatureList::IsEnabled(kCobaltMemPaTuning) &&
+      base::SysInfo::IsLowEndDevice()) {
     ::partition_alloc::ThreadCacheRegistry::Instance().SetThreadCacheMultiplier(
         ::partition_alloc::ThreadCache::kDefaultMultiplier / 2.);
   }

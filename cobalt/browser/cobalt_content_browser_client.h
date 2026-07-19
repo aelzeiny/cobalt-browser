@@ -122,6 +122,13 @@ class CobaltContentBrowserClient : public content::ShellContentBrowserClient {
   // params for Cobalt experiments.
   void SetUpCobaltFeaturesAndParams(base::FeatureList* feature_list);
 
+  // Bridges memory-experiment features (CobaltMem*) that must act through
+  // command-line switches: edits base::CommandLine::ForCurrentProcess() based
+  // on the state of the just-created feature list. Must be called after
+  // base::FeatureList::SetInstance() and before any consumer of the affected
+  // switches runs (DevTools HTTP handler, renderer/compositor init).
+  void ApplyMemoryExperimentSwitches();
+
   void WillCreateURLLoaderFactory(
       content::BrowserContext* browser_context,
       content::RenderFrameHost* frame,
