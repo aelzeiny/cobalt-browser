@@ -95,7 +95,10 @@ enable_ppapi = false
 # Disable D-Bus
 use_dbus = false
 
-# Embed ICU data in the cobalt binary
+# Embed ICU data in the cobalt binary. Evergreen builds override this to
+# true in evergreen_common.gn to ship a demand-paged icudtl.dat instead;
+# non-evergreen packaging does not copy icudtl.dat into the content
+# directory, so this stays false here.
 icu_use_data_file = false
 
 # Disable the Pepper API (PPAPI) plugin support
