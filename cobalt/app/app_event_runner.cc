@@ -62,6 +62,20 @@
 #include "cobalt/browser/loader_app_metrics.h"
 #endif
 
+#if BUILDFLAG(IS_LINUX)
+#include <malloc.h>
+
+#if BUILDFLAG(USE_EVERGREEN) && !defined(__GLIBC__)
+// Evergreen builds of libcobalt compile against musl headers, which do not
+// declare malloc_trim(). At runtime, libc calls resolve through the ELF
+// loader's exported-symbol table to the host C library, which is glibc on
+// the Linux/RDK ports (see starboard/elf_loader/exported_symbols.cc).
+// Declare the symbol weakly so libcobalt still loads against older loaders
+// that do not export it; call sites null-check before calling.
+extern "C" __attribute__((weak)) int malloc_trim(size_t pad);
+#endif  // BUILDFLAG(USE_EVERGREEN) && !defined(__GLIBC__)
+#endif  // BUILDFLAG(IS_LINUX)
+
 namespace cobalt {
 
 namespace {
@@ -69,6 +83,26 @@ namespace {
 // normal operations to complete, but short enough to avoid unnecessary
 // user-perceived delays.
 constexpr base::TimeDelta kTransitionTimeout = base::Seconds(2);
+
+// Returns glibc ptmalloc's retained-free pages to the kernel. On Linux
+// ports the process allocator is glibc ptmalloc, which under Cobalt's high
+// allocation churn keeps freed pages resident indefinitely; malloc_trim()
+// walks all arenas and madvise()s free chunks back to the kernel (glibc
+// >= 2.26 trims per-chunk, not just arena tops). No-op on non-glibc
+// platforms.
+void TrimGlibcHeap() {
+#if BUILDFLAG(IS_LINUX)
+#if defined(__GLIBC__)
+  malloc_trim(0);
+#elif BUILDFLAG(USE_EVERGREEN)
+  // malloc_trim is a weak import; it is null when the loader running this
+  // binary does not export it (or the host libc is not glibc).
+  if (malloc_trim != nullptr) {
+    malloc_trim(0);
+  }
+#endif
+#endif  // BUILDFLAG(IS_LINUX)
+}
 }  // namespace
 
 #if !BUILDFLAG(IS_ANDROID)
@@ -212,6 +246,9 @@ class AppEventRunnerImpl : public AppEventRunner,
   void DoConceal() override {
     content::Shell::OnConceal();
     WaitForAck(PendingAck::kConceal);
+    // The app is now hidden; give retained-free heap pages back to the
+    // kernel while it is in the background.
+    TrimGlibcHeap();
   }
 
   void DoReveal() override {
@@ -230,6 +267,9 @@ class AppEventRunnerImpl : public AppEventRunner,
       updater_module->Suspend();
     }
 #endif
+    // Frozen is the deepest background state; minimize the resident heap
+    // before the process idles there.
+    TrimGlibcHeap();
   }
 
   void DoUnfreeze() override {
@@ -273,6 +313,10 @@ class AppEventRunnerImpl : public AppEventRunner,
     // Chromium internally calls Reclaim/ReclaimNormal at regular interval
     // to claim free memory. Using ReclaimAll is more aggressive.
     ::partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+
+    // Also return glibc ptmalloc's retained-free pages to the kernel; the
+    // C++ heap freed by the reclaim above is otherwise kept resident.
+    TrimGlibcHeap();
 
     if (event->data) {
       auto mem_cb = reinterpret_cast<SbEventCallback>(event->data);
