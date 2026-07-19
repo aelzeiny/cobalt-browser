@@ -67,13 +67,16 @@ BASE_FEATURE(kBlinkUseLargeEmptySlotSpanRingForBufferRoot,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
-#if BUILDFLAG(IS_COBALT) && PA_CONFIG(THREAD_CACHE_SUPPORTED)
+#if BUILDFLAG(IS_COBALT) && PA_CONFIG(THREAD_CACHE_SUPPORTED) && \
+    !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 // Cobalt (TV) memory experiment (see cobalt/COBALT_MEMORY_EXPERIMENTS.md):
 // halves the PartitionAlloc thread-cache multiplier on low-end devices.
 // Declared here because blink cannot include cobalt/ headers; h5vcc
 // experiment overrides are registered by feature NAME, so the name string is
-// the contract. Guarded like its consumer below: on configurations without
-// PartitionAlloc thread-cache support the experiment does not exist.
+// the contract. Guarded exactly like its consumer below (which sits inside
+// the !USE_PARTITION_ALLOC_AS_MALLOC FastMalloc-partition setup): in
+// configurations where the experiment's code path does not compile, the
+// feature does not exist.
 BASE_FEATURE(kCobaltMemPaTuning,
              "CobaltMemPaTuning",
              base::FEATURE_DISABLED_BY_DEFAULT);
