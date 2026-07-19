@@ -87,7 +87,18 @@ const base::CommandLine::SwitchMap&
 CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
   static const base::CommandLine::SwitchMap kCobaltSwitchDefaults{
       // Disable Vulkan.
-      {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
+      // Also disable desktop browser features that are inert or unwanted on
+      // TV but still allocate (sqlite storage, service heaps, timers):
+      // * ConversionMeasurement: Attribution Reporting API infrastructure
+      //   (content/browser/attribution_reporting; gates AttributionManager
+      //   creation in StoragePartitionImpl).
+      // * InterestGroupStorage: FLEDGE/Protected Audience interest-group
+      //   storage and AdAuction services; disabling it also forces the
+      //   AdInterestGroupAPI and Fledge runtime features off
+      //   (content/child/runtime_features.cc).
+      {::switches::kDisableFeatures,
+       "Vulkan,MemoryCacheStrongReference,ConversionMeasurement,"
+       "InterestGroupStorage"},
       {::switches::kEnableFeatures,
        "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
@@ -108,15 +119,20 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {::switches::kUseCmdDecoder, "passthrough"},
       // Set the default size for the content shell/starboard window.
       {::switches::kContentShellHostWindowSize, "1920x1080"},
-      // Enable remote Devtools access.
-      {::switches::kRemoteDebuggingPort, "9222"},
-      {::switches::kRemoteAllowOrigins, "http://localhost:9222"},
+      // Note: remote DevTools access is opt-in. Pass
+      // --remote-debugging-port=9222 (and, if needed,
+      // --remote-allow-origins=http://localhost:9222) explicitly to enable
+      // it; without the switch the DevTools HTTP server is not started.
       // kEnableLowEndDeviceMode sets MSAA to 4 (and not 8, the default). But
       // we set it explicitly just in case.
       {blink::switches::kGpuRasterizationMSAASampleCount, "4"},
       // Enable precise memory info so we can make accurate client-side
       // measurements.
       {::switches::kEnableBlinkFeatures, "PreciseMemoryInfo"},
+      // TV devices have no FIDO transports; disabling the WebAuthn API
+      // (blink runtime feature "WebAuth") prevents page-triggered
+      // device/fido authenticator discovery churn in the browser process.
+      {::switches::kDisableBlinkFeatures, "WebAuth"},
       // Enable autoplay video/audio, as Cobalt may launch directly into media
       // playback before user interaction.
       {::switches::kAutoplayPolicy, "no-user-gesture-required"},
