@@ -452,11 +452,20 @@ void gst_cobalt_src_setup_and_add_app_src(SbMediaType media_type,
   }
 
   {
+    // Bound the queue in both buffers and bytes so it applies backpressure
+    // instead of growing into a multi-MB elastic pool. A GStreamer queue
+    // blocks upstream when a limit is hit -- it does not drop data -- and
+    // the appsrc/MSE buffer upstream already holds the forward buffer, so
+    // capping here just keeps the queued data there instead of duplicating
+    // it downstream.
+    const guint kQueueMaxBytes = (media_type == kSbMediaTypeVideo)
+        ? 8 * 1024 * 1024
+        : 4 * 1024 * 1024;
     GstElement* queue = gst_element_factory_make("queue", nullptr);
     g_object_set (
       G_OBJECT (queue),
-      "max-size-buffers", 60,
-      "max-size-bytes", 0,
+      "max-size-buffers", 30,
+      "max-size-bytes", kQueueMaxBytes,
       "max-size-time", (gint64) 0,
       "silent", TRUE,
       nullptr);
