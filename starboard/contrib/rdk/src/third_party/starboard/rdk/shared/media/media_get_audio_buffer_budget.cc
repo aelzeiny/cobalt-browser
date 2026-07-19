@@ -34,5 +34,7 @@
 #include "starboard/common/log.h"
 
 int SbMediaGetAudioBufferBudget() {
-  return 5 * 1024 * 1024;
+  // 3 MiB retains a large margin for TV streaming audio: e.g. 144 kbps audio
+  // buffered for 25 seconds is only ~0.45 MiB.
+  return 3 * 1024 * 1024;
 }

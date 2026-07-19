@@ -100,6 +100,10 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
   const bool is_memory_pool_allocated_on_demand_;
   const int initial_capacity_;
   const int allocation_unit_;
+  // Hard cap on the pool capacity from SbMediaGetMaxBufferCapacity(), or 0
+  // when the platform doesn't cap the pool.  Passed to the allocator
+  // strategies, which refuse to grow the pool beyond it.
+  const size_t max_buffer_capacity_;
 
   mutable base::Lock mutex_;
   std::unique_ptr<Strategy> strategy_ GUARDED_BY(mutex_);
