@@ -374,6 +374,11 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
     network_context_params->file_paths->http_cache_directory =
         cache_path.Append(kCacheDirname);
 
+    // Bound the HTTP cache instead of letting PreferredCacheSize() pick a
+    // desktop-shaped size. This bounds the in-RAM cache index and open-entry
+    // overhead, and limits flash wear on TV devices.
+    network_context_params->http_cache_max_size = 32 * 1024 * 1024;
+
     base::FilePath user_data_dir =
         context->GetPath().Append(relative_partition_path);
     network_context_params->file_paths->data_directory =

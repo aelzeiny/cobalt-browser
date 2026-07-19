@@ -2188,6 +2188,16 @@ bool Database::OpenInternal(const std::string& db_file_path) {
           {"PRAGMA cache_size=", base::NumberToString(options_.cache_size_)});
       std::ignore = ExecuteWithTimeout(cache_size_sql, kBusyTimeout);
     }
+#if BUILDFLAG(IS_COBALT)
+    else {
+      // Cobalt (TV): SQLite's default page cache is ~2 MB *per open database*
+      // (`PRAGMA cache_size=-2000`), which is desktop-shaped. The embedded
+      // stores Cobalt opens (cookies, trust tokens, first-party sets, ...) are
+      // small and lightly queried, so cap the cache at 64 pages (~256 KB with
+      // 4 KB pages) whenever the caller did not request a specific size.
+      std::ignore = ExecuteWithTimeout("PRAGMA cache_size=64", kBusyTimeout);
+    }
+#endif
 
     static_assert(SQLITE_SECURE_DELETE == 1,
                   "Chrome assumes secure_delete is on by default.");
