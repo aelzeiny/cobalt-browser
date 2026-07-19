@@ -96,9 +96,13 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       //   storage and AdAuction services; disabling it also forces the
       //   AdInterestGroupAPI and Fledge runtime features off
       //   (content/child/runtime_features.cc).
+      // * LessAggressiveParkableString: suspends ParkableString parking
+      //   while the renderer is foreground, and a TV app is permanently
+      //   foreground, so large strings (e.g. JS source) would never
+      //   compress.
       {::switches::kDisableFeatures,
        "Vulkan,MemoryCacheStrongReference,ConversionMeasurement,"
-       "InterestGroupStorage"},
+       "InterestGroupStorage,LessAggressiveParkableString"},
       {::switches::kEnableFeatures,
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
