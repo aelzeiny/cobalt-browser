@@ -81,6 +81,11 @@ public final class CommandLineOverrideHelper {
         paramOverrides.add("--hide-scrollbars");
         // Force GPU memory available to 64MB.
         paramOverrides.add("--force-gpu-mem-available-mb=64");
+        // Limit the decoded-image working set to 24MB. This replaces the
+        // former "LimitImageDecodeCacheSize:mb/24" feature token, which is
+        // not defined anywhere and was silently ignored; this switch is what
+        // cc::ImageDecodeCacheUtils actually consumes.
+        paramOverrides.add("--decoded-image-working-set-budget-bytes=25165824");
 
         return paramOverrides;
     }
@@ -112,8 +117,6 @@ public final class CommandLineOverrideHelper {
 
         // Pass javascript console log to adb log.
         paramOverrides.add("LogJsConsoleMessages");
-        // Limit decoded image cache to 32 mbytes.
-        paramOverrides.add("LimitImageDecodeCacheSize:mb/24");
         // It is important to use a feature override instead of the
         // rendering switch, to make sure certain devices are excluded.
         paramOverrides.add("DefaultPassthroughCommandDecoder");

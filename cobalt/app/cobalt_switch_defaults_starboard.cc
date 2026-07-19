@@ -100,7 +100,6 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "Vulkan,MemoryCacheStrongReference,ConversionMeasurement,"
        "InterestGroupStorage"},
       {::switches::kEnableFeatures,
-       "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
        // creation, but egl extension required to support the attribute is
@@ -117,6 +116,11 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
 #endif
       // Use passthrough command decoder.
       {::switches::kUseCmdDecoder, "passthrough"},
+      // Limit the decoded-image working set to 24MB. This replaces the
+      // former "LimitImageDecodeCacheSize:mb/24" feature token, which is not
+      // defined anywhere and was silently ignored; this switch is what
+      // cc::ImageDecodeCacheUtils actually consumes.
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "25165824"},
       // Set the default size for the content shell/starboard window.
       {::switches::kContentShellHostWindowSize, "1920x1080"},
       // Note: remote DevTools access is opt-in. Pass
