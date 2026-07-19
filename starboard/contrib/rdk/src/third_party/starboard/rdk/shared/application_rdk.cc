@@ -90,6 +90,40 @@ constexpr auto kEssRunLoopPeriod = 16666us;
 constexpr int64_t kMallocTrimInterval = 60 * kSbTimeSecond;
 #endif  // defined(__GLIBC__)
 
+namespace {
+
+// The native (Essos) window backs the UI/graphics plane only; video is
+// rendered on a separate punch-out plane at native display resolution.
+// A TV UI gains nothing above 1080p, while every full-screen pixel buffer
+// (EGL swapchain, raster and render-pass targets) costs 4x at 4K. Clamp
+// the window to 1080p and let the display pipeline hardware-scale the
+// graphics plane to the panel. Set COBALT_NATIVE_WINDOW_AT_DISPLAY_SIZE=1
+// to opt out and follow the panel resolution as before.
+constexpr int kMaxNativeWindowWidth = 1920;
+constexpr int kMaxNativeWindowHeight = 1080;
+
+void ClampNativeWindowSize(int* width, int* height) {
+  static const bool at_display_size =
+      !!getenv("COBALT_NATIVE_WINDOW_AT_DISPLAY_SIZE");
+  if (at_display_size)
+    return;
+  if (*width <= kMaxNativeWindowWidth && *height <= kMaxNativeWindowHeight)
+    return;
+  // Scale both dimensions by the same factor so the window keeps the
+  // display's aspect ratio (16:9 panels clamp to exactly 1920x1080).
+  const double scale =
+      std::min(kMaxNativeWindowWidth / static_cast<double>(*width),
+               kMaxNativeWindowHeight / static_cast<double>(*height));
+  const int clamped_width = static_cast<int>(*width * scale + 0.5);
+  const int clamped_height = static_cast<int>(*height * scale + 0.5);
+  SB_LOG(INFO) << "Clamping native window size from " << *width << 'x'
+               << *height << " to " << clamped_width << 'x' << clamped_height;
+  *width = clamped_width;
+  *height = clamped_height;
+}
+
+}  // namespace
+
 static void setTimerInterval(int fd, microseconds time) {
   struct itimerspec timeout;
   timeout.it_value.tv_sec = time.count() / kSbTimeSecond;
@@ -337,6 +371,9 @@ void ApplicationRdk::OnKeyReleased(unsigned int key) {
 }
 
 void ApplicationRdk::OnDisplaySize(int width, int height) {
+  // Compare against the clamped size, otherwise a >1080p display report
+  // would flag a spurious resize away from the clamped window size.
+  ClampNativeWindowSize(&width, &height);
   if (window_width_ == width && window_height_ == height) {
     resize_pending_ = false;
     return;
@@ -356,6 +393,8 @@ void ApplicationRdk::MaterializeNativeWindow() {
   if ( !EssContextGetDisplaySize(ctx_, &window_width_, &window_height_) ) {
     error = true;
   }
+
+  ClampNativeWindowSize(&window_width_, &window_height_);
 
   if ( resize_pending_ ) {
     EssContextResizeWindow(ctx_, window_width_, window_height_);
