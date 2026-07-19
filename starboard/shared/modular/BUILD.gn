@@ -35,6 +35,8 @@ if (is_starboard && current_toolchain == starboard_toolchain) {
       "starboard_layer_posix_inotify_abi_wrappers.h",
       "starboard_layer_posix_ioctl_abi_wrappers.cc",
       "starboard_layer_posix_ioctl_abi_wrappers.h",
+      "starboard_layer_posix_malloc_abi_wrappers.cc",
+      "starboard_layer_posix_malloc_abi_wrappers.h",
       "starboard_layer_posix_mmap_abi_wrappers.cc",
       "starboard_layer_posix_mmap_abi_wrappers.h",
       "starboard_layer_posix_pipe2_abi_wrappers.cc",
