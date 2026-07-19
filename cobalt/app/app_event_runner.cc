@@ -17,6 +17,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -91,7 +92,21 @@ constexpr base::TimeDelta kTransitionTimeout = base::Seconds(2);
 // walks all arenas and madvise()s free chunks back to the kernel (glibc
 // >= 2.26 trims per-chunk, not just arena tops). No-op on non-glibc
 // platforms.
+//
+// Part of the COBALT_MEM_EXP_GLIBC_TUNING experiment: a no-op (the upstream
+// behavior) unless COBALT_MEM_EXP_GLIBC_TUNING=1 (or COBALT_MEM_EXP_ALL=1) is
+// set. The gate lives here so all call sites inherit it.
 void TrimGlibcHeap() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_GLIBC_TUNING");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  if (!enabled) {
+    return;
+  }
 #if BUILDFLAG(IS_LINUX)
 #if defined(__GLIBC__)
   malloc_trim(0);
@@ -328,7 +343,19 @@ class AppEventRunnerImpl : public AppEventRunner,
     // notification above also reaches RenderThreadImpl's listener, but only
     // asynchronously on its task runner; on a low-memory event we want the
     // release to happen before this handler returns.
-    if (base::DiscardableMemoryAllocator::HasInstance()) {
+    //
+    // Part of the COBALT_MEM_EXP_DISCARDABLE experiment; skipped (the
+    // upstream behavior) unless COBALT_MEM_EXP_DISCARDABLE=1 (or
+    // COBALT_MEM_EXP_ALL=1) is set.
+    static const bool discardable_release_enabled = [] {
+      const char* v = getenv("COBALT_MEM_EXP_DISCARDABLE");
+      if (!v) {
+        v = getenv("COBALT_MEM_EXP_ALL");
+      }
+      return v && v[0] == '1';
+    }();
+    if (discardable_release_enabled &&
+        base::DiscardableMemoryAllocator::HasInstance()) {
       base::DiscardableMemoryAllocator::GetInstance()->ReleaseFreeMemory();
     }
 

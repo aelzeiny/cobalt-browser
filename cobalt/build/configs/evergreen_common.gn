@@ -2,14 +2,14 @@ import("//cobalt/build/configs/linux_modular_common.gn")
 
 use_evergreen = true
 
-# Ship ICU data as a separate icudtl.dat file instead of compiling it into
-# libcobalt. Evergreen anon-maps the whole binary via the ELF loader, so the
-# ~6.5 MB compiled-in ICU blob becomes permanently dirty anonymous memory;
-# a data file is instead mmap'd read-only (demand-paged and evictable).
-# Packaging into content/ is gated on this same arg in
-# //cobalt/build/modular_executable.gni (evergreen_final_target), and
-# base::i18n::InitializeICU() loads it from DIR_ASSETS, which resolves to
-# the Starboard content directory. This overrides the `false` set in
-# linux_common.gn, which still applies to non-evergreen builds whose
-# packaging does not copy icudtl.dat.
-icu_use_data_file = true
+# BUILD-TIME MEMORY EXPERIMENT (07-externalize-icu-data): set
+# `icu_use_data_file = true` in args.gn to ship ICU data as a separate
+# icudtl.dat file instead of compiling it into libcobalt. Evergreen anon-maps
+# the whole binary via the ELF loader, so the ~6.5 MB compiled-in ICU blob is
+# permanently dirty anonymous memory; a data file is instead mmap'd read-only
+# (demand-paged and evictable, ~6-6.5 MB RSS saving). Packaging into content/
+# is gated on this same arg in //cobalt/build/modular_executable.gni
+# (evergreen_final_target), and base::i18n::InitializeICU() loads it from
+# DIR_ASSETS, which resolves to the Starboard content directory. The default
+# stays `false` (set in linux_common.gn) so behavior is unchanged unless the
+# experiment is explicitly enabled for a build.

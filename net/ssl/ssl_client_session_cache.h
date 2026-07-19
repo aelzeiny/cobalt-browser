@@ -17,7 +17,6 @@
 #include "base/functional/bind.h"
 #include "base/memory/memory_pressure_monitor.h"
 #include "base/memory/raw_ptr.h"
-#include "build/build_config.h"
 #include "net/base/host_port_pair.h"
 #include "net/base/ip_address.h"
 #include "net/base/net_export.h"
@@ -37,14 +36,7 @@ class NET_EXPORT SSLClientSessionCache {
  public:
   struct Config {
     // The maximum number of entries in the cache.
-#if BUILDFLAG(IS_COBALT)
-    // Cobalt (TV) talks to a small, fixed set of hosts, so the desktop-sized
-    // default of 1024 entries is wasted memory. 32 entries still covers ~3x
-    // the hostnames the app contacts.
-    size_t max_entries = 32;
-#else
     size_t max_entries = 1024;
-#endif
     // The number of calls to Lookup before a new check for expired sessions.
     size_t expiration_check_count = 256;
   };

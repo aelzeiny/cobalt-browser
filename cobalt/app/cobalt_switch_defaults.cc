@@ -15,6 +15,7 @@
 #include "cobalt/app/cobalt_switch_defaults.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <string>
 
 #include "base/base_switches.h"
@@ -37,6 +38,19 @@ bool IsSwitch(const base::CommandLine::StringType& string) {
     return true;
   }
   return false;
+}
+
+// Returns true when the named memory experiment is enabled via environment
+// variable. Each experiment can be enabled individually (e.g.
+// COBALT_MEM_EXP_JS_FLAGS=1), or all experiments at once via
+// COBALT_MEM_EXP_ALL=1. With no experiment variables set, behavior matches
+// upstream defaults exactly.
+bool MemExpEnabled(const char* name) {
+  const char* v = getenv(name);
+  if (!v) {
+    v = getenv("COBALT_MEM_EXP_ALL");
+  }
+  return v && v[0] == '1';
 }
 
 }  // namespace
@@ -71,12 +85,16 @@ CommandLinePreprocessor::CommandLinePreprocessor(int argc,
     }
   }
 
-  // Merge a platform-provided --js-flags value with the Cobalt default
-  // instead of letting it silently replace the whole TV-tuned string. The
-  // Cobalt defaults come first so platform-provided values win on a per-flag
-  // basis (V8 parses flags left to right). Keep the merged string
-  // space-separated: gin splits --js-flags on spaces as well.
-  if (cmd_line_.HasSwitch(blink::switches::kJavaScriptFlags)) {
+  // Memory experiment COBALT_MEM_EXP_JS_FLAGS: merge a platform-provided
+  // --js-flags value with the Cobalt default instead of letting it silently
+  // replace the whole TV-tuned string. The Cobalt defaults come first so
+  // platform-provided values win on a per-flag basis (V8 parses flags left
+  // to right). Keep the merged string space-separated: gin splits --js-flags
+  // on spaces as well.
+  // When the experiment is off, a platform-provided --js-flags value
+  // replaces the Cobalt default entirely (upstream behavior).
+  if (MemExpEnabled("COBALT_MEM_EXP_JS_FLAGS") &&
+      cmd_line_.HasSwitch(blink::switches::kJavaScriptFlags)) {
     auto old_value =
         cobalt_param_switch_defaults.find(blink::switches::kJavaScriptFlags);
     if (old_value != cobalt_param_switch_defaults.end()) {

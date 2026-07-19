@@ -30,6 +30,8 @@
 
 #include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
 
+#include <cstdlib>
+
 #include "base/allocator/partition_alloc_features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/debug/alias.h"
@@ -179,7 +181,16 @@ bool Partitions::InitializeOnce() {
   // base::SysInfo::IsLowEndDevice() returns true whenever
   // --enable-low-end-device-mode is present, which Cobalt sets by default on
   // TV targets.
-  if (base::SysInfo::IsLowEndDevice()) {
+  //
+  // Runtime experiment: only active when COBALT_MEM_EXP_PA_TUNING (or
+  // COBALT_MEM_EXP_ALL) is set to 1 in the environment; otherwise behavior
+  // is identical to upstream.
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_PA_TUNING");
+    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+    return v && v[0] == '1';
+  }();
+  if (enabled && base::SysInfo::IsLowEndDevice()) {
     ::partition_alloc::ThreadCacheRegistry::Instance().SetThreadCacheMultiplier(
         ::partition_alloc::ThreadCache::kDefaultMultiplier / 2.);
   }

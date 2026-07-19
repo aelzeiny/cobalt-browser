@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <string>
@@ -2190,12 +2191,22 @@ bool Database::OpenInternal(const std::string& db_file_path) {
     }
 #if BUILDFLAG(IS_COBALT)
     else {
-      // Cobalt (TV): SQLite's default page cache is ~2 MB *per open database*
+      // Runtime memory experiment (COBALT_MEM_EXP_CACHE_SWEEP), Cobalt (TV):
+      // SQLite's default page cache is ~2 MB *per open database*
       // (`PRAGMA cache_size=-2000`), which is desktop-shaped. The embedded
       // stores Cobalt opens (cookies, trust tokens, first-party sets, ...) are
-      // small and lightly queried, so cap the cache at 64 pages (~256 KB with
-      // 4 KB pages) whenever the caller did not request a specific size.
-      std::ignore = ExecuteWithTimeout("PRAGMA cache_size=64", kBusyTimeout);
+      // small and lightly queried, so when the experiment is enabled, cap the
+      // cache at 64 pages (~256 KB with 4 KB pages) whenever the caller did
+      // not request a specific size. When disabled (default), SQLite's
+      // default is left in place, matching upstream.
+      static const bool enabled = [] {
+        const char* v = getenv("COBALT_MEM_EXP_CACHE_SWEEP");
+        if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+        return v && v[0] == '1';
+      }();
+      if (enabled) {
+        std::ignore = ExecuteWithTimeout("PRAGMA cache_size=64", kBusyTimeout);
+      }
     }
 #endif
 

@@ -15,29 +15,51 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "starboard/media.h"
 
+#include <stdlib.h>
+
 #include "starboard/common/log.h"
+
+namespace {
+
+// Runtime gate for the reduced-media-buffer-budget experiment. OFF (default)
+// keeps the upstream values; set COBALT_MEM_EXP_MEDIA_BUDGETS=1 (or
+// COBALT_MEM_EXP_ALL=1) to enable the reduced values.
+bool MediaBudgetsExperimentEnabled() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_MEDIA_BUDGETS");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  return enabled;
+}
+
+}  // namespace
 
 int SbMediaGetMaxBufferCapacity(SbMediaVideoCodec codec,
                                 int resolution_width,
                                 int resolution_height,
                                 int bits_per_pixel) {
   SB_UNREFERENCED_PARAMETER(codec);
+  const bool reduced_budgets = MediaBudgetsExperimentEnabled();
   if ((resolution_width <= 1920 && resolution_height <= 1080) ||
       resolution_width == kSbMediaVideoResolutionDimensionInvalid ||
       resolution_height == kSbMediaVideoResolutionDimensionInvalid) {
     // The maximum amount of memory that will be used to store media buffers
     // when video resolution is 1080p. If 0, then memory can grow without bound.
     // This must be larger than sum of 1080p video budget and non-video budget
-    // (16 MiB + 3 MiB).
-    return 24 * 1024 * 1024;
+    // (with the experiment on: 16 MiB + 3 MiB).
+    return (reduced_budgets ? 24 : 50) * 1024 * 1024;
   }
 
   if (resolution_width <= 3840 && resolution_height <= 2160) {
       // The maximum amount of memory that will be used to store media buffers
       // when video resolution is 4k. If 0,
       // then memory can grow without bound. This must be larger than sum of 4k
-      // video budget and non-video budget (60 MiB + 3 MiB for 4K HDR).
-      return 64 * 1024 * 1024;
+      // video budget and non-video budget (with the experiment on: 60 MiB +
+      // 3 MiB for 4K HDR).
+      return (reduced_budgets ? 64 : 210) * 1024 * 1024;
   }
 
   // The maximum amount of memory that will be used to store media buffers when

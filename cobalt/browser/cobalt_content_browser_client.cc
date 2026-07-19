@@ -14,6 +14,7 @@
 
 #include "cobalt/browser/cobalt_content_browser_client.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "base/base_switches.h"
@@ -374,10 +375,19 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
     network_context_params->file_paths->http_cache_directory =
         cache_path.Append(kCacheDirname);
 
-    // Bound the HTTP cache instead of letting PreferredCacheSize() pick a
-    // desktop-shaped size. This bounds the in-RAM cache index and open-entry
-    // overhead, and limits flash wear on TV devices.
-    network_context_params->http_cache_max_size = 32 * 1024 * 1024;
+    // Runtime memory experiment (COBALT_MEM_EXP_CACHE_SWEEP): bound the HTTP
+    // cache instead of letting PreferredCacheSize() pick a desktop-shaped
+    // size. This bounds the in-RAM cache index and open-entry overhead, and
+    // limits flash wear on TV devices. When the experiment is disabled
+    // (default), the field is left unset, matching upstream.
+    static const bool cache_sweep_enabled = [] {
+      const char* v = getenv("COBALT_MEM_EXP_CACHE_SWEEP");
+      if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+      return v && v[0] == '1';
+    }();
+    if (cache_sweep_enabled) {
+      network_context_params->http_cache_max_size = 32 * 1024 * 1024;
+    }
 
     base::FilePath user_data_dir =
         context->GetPath().Append(relative_partition_path);
@@ -404,10 +414,20 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
         base::FilePath(kSCTAuditingPendingReportsFileName);
   }
 
-  // Domain Reliability is desktop Google-services telemetry; keep it off on
-  // TV. This is the mojom default, but set it explicitly so the network
-  // service never creates a DomainReliabilityMonitor for Cobalt.
-  network_context_params->enable_domain_reliability = false;
+  // Runtime memory experiment (COBALT_MEM_EXP_STRIP_DESKTOP): Domain
+  // Reliability is desktop Google-services telemetry; keep it off on TV.
+  // The mojom default is already false, but when the experiment is enabled
+  // set it explicitly so the network service never creates a
+  // DomainReliabilityMonitor for Cobalt. When disabled (default), the param
+  // is left untouched, matching upstream.
+  static const bool strip_desktop_enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_STRIP_DESKTOP");
+    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+    return v && v[0] == '1';
+  }();
+  if (strip_desktop_enabled) {
+    network_context_params->enable_domain_reliability = false;
+  }
 
   network_context_params->enable_certificate_reporting = true;
 
@@ -421,13 +441,23 @@ void CobaltContentBrowserClient::ConfigureNetworkContextParams(
 }
 
 bool CobaltContentBrowserClient::IsFirstPartySetsEnabled() {
-  // First-Party Sets (Related Website Sets) is a desktop cookie feature with
-  // no use in a single-app TV browser. There is no base::Feature for it in
-  // this tree; the ContentBrowserClient default returns true, which makes
+  // Runtime memory experiment (COBALT_MEM_EXP_STRIP_DESKTOP): First-Party
+  // Sets (Related Website Sets) is a desktop cookie feature with no use in a
+  // single-app TV browser. There is no base::Feature for it in this tree;
+  // the ContentBrowserClient default returns true, which makes
   // FirstPartySetsHandlerImplInstance load sets and exercise its sqlite
-  // database. Returning false keeps the handler disabled so the database is
-  // never opened.
-  return false;
+  // database. When the experiment is enabled, return false so the handler
+  // stays disabled and the database is never opened. When disabled
+  // (default), defer to the upstream default.
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_STRIP_DESKTOP");
+    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+    return v && v[0] == '1';
+  }();
+  if (enabled) {
+    return false;
+  }
+  return ContentBrowserClient::IsFirstPartySetsEnabled();
 }
 
 void CobaltContentBrowserClient::OnWebContentsCreated(
@@ -443,10 +473,19 @@ void CobaltContentBrowserClient::OnWebContentsCreated(
   }
   VLOG(1) << "NativeSplash: Observing main frame WebContents.";
   web_contents_observer_.reset(new CobaltWebContentsObserver(web_contents));
-  // Sweep memory caches whenever the user parks the app: no OS
-  // memory-pressure source fires on Linux/Starboard, so without this the
-  // caches only ever grow over multi-hour sessions.
-  idle_memory_purger_ = std::make_unique<IdleMemoryPurger>(web_contents);
+  // Runtime memory experiment (COBALT_MEM_EXP_IDLE_PURGE): sweep memory
+  // caches whenever the user parks the app: no OS memory-pressure source
+  // fires on Linux/Starboard, so without this the caches only ever grow over
+  // multi-hour sessions. When the experiment is disabled (default), the
+  // purger is never created and upstream behavior is unchanged.
+  static const bool idle_purge_enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_IDLE_PURGE");
+    if (!v) v = getenv("COBALT_MEM_EXP_ALL");
+    return v && v[0] == '1';
+  }();
+  if (idle_purge_enabled) {
+    idle_memory_purger_ = std::make_unique<IdleMemoryPurger>(web_contents);
+  }
   // Initialize the lifecycle tracker for this WebContents to ensure we track
   // and register its frames (including the main frame) for lifecycle events
   // from the very start.

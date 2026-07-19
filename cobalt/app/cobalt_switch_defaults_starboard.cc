@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
+#include <map>
+#include <string>
 #include <vector>
 
 #include "base/base_switches.h"
@@ -32,6 +35,23 @@
 
 #if BUILDFLAG(IS_OZONE)
 #endif
+
+namespace {
+
+// Returns true when the named memory experiment is enabled via environment
+// variable. Each experiment can be enabled individually (e.g.
+// COBALT_MEM_EXP_GPU_BUDGET=1), or all experiments at once via
+// COBALT_MEM_EXP_ALL=1. With no experiment variables set, behavior matches
+// upstream defaults exactly.
+bool MemExpEnabled(const char* name) {
+  const char* v = getenv(name);
+  if (!v) {
+    v = getenv("COBALT_MEM_EXP_ALL");
+  }
+  return v && v[0] == '1';
+}
+
+}  // namespace
 
 namespace cobalt {
 
@@ -85,8 +105,48 @@ CommandLinePreprocessor::GetCobaltToggleSwitches() {
 
 const base::CommandLine::SwitchMap&
 CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
-  static const base::CommandLine::SwitchMap kCobaltSwitchDefaults{
-      // Disable Vulkan.
+  // Memory-experiment behaviors below are opt-in via environment variables
+  // (see MemExpEnabled). With no experiment enabled, the assembled map is
+  // byte-identical to the upstream defaults.
+  const bool js_flags_exp = MemExpEnabled("COBALT_MEM_EXP_JS_FLAGS");
+  const bool strip_desktop_exp = MemExpEnabled("COBALT_MEM_EXP_STRIP_DESKTOP");
+  const bool image_cache_exp = MemExpEnabled("COBALT_MEM_EXP_IMAGE_CACHE");
+  const bool ax_autodisable_exp =
+      MemExpEnabled("COBALT_MEM_EXP_AX_AUTODISABLE");
+  const bool gpu_budget_exp = MemExpEnabled("COBALT_MEM_EXP_GPU_BUDGET");
+  const bool parkable_strings_exp =
+      MemExpEnabled("COBALT_MEM_EXP_PARKABLE_STRINGS");
+  const bool thread_stacks_exp = MemExpEnabled("COBALT_MEM_EXP_THREAD_STACKS");
+
+  // The environment is stable for the lifetime of the process in production,
+  // where the preprocessor is constructed exactly once at startup. Tests,
+  // however, toggle the experiment variables between constructions, so the
+  // assembled map is cached per experiment-state instead of in a single
+  // function-local static. std::map references are stable, so the returned
+  // reference stays valid for the process lifetime.
+  std::string exp_state;
+  for (bool exp_enabled :
+       {js_flags_exp, strip_desktop_exp, image_cache_exp, ax_autodisable_exp,
+        gpu_budget_exp, parkable_strings_exp, thread_stacks_exp}) {
+    exp_state += exp_enabled ? '1' : '0';
+  }
+
+  static std::map<std::string, base::CommandLine::SwitchMap>
+      switch_defaults_cache;
+  auto cached = switch_defaults_cache.find(exp_state);
+  if (cached != switch_defaults_cache.end()) {
+    return cached->second;
+  }
+
+  // Assemble the defaults for the current experiment state with an
+  // immediately-invoked lambda so entries and feature-list strings can be
+  // built conditionally.
+  base::CommandLine::SwitchMap cobalt_switch_defaults = [&] {
+    base::CommandLine::SwitchMap defaults;
+
+    // Disable Vulkan.
+    std::string disable_features = "Vulkan,MemoryCacheStrongReference";
+    if (strip_desktop_exp) {
       // Also disable desktop browser features that are inert or unwanted on
       // TV but still allocate (sqlite storage, service heaps, timers):
       // * ConversionMeasurement: Attribution Reporting API infrastructure
@@ -96,91 +156,132 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       //   storage and AdAuction services; disabling it also forces the
       //   AdInterestGroupAPI and Fledge runtime features off
       //   (content/child/runtime_features.cc).
-      // * LessAggressiveParkableString: suspends ParkableString parking
-      //   while the renderer is foreground, and a TV app is permanently
-      //   foreground, so large strings (e.g. JS source) would never
-      //   compress.
-      {::switches::kDisableFeatures,
-       "Vulkan,MemoryCacheStrongReference,ConversionMeasurement,"
-       "InterestGroupStorage,LessAggressiveParkableString"},
-      {::switches::kEnableFeatures,
-       // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
-       // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
-       // creation, but egl extension required to support the attribute is
-       // missing and causes errors. So Enable it by default. (More context in
-       // b/444042898)
-       "DefaultEnableANGLEValidation, "
-       "SmallerInterestArea, "
-       "ReclaimPrepaintTilesWhenIdle, "
-       "ReclaimOldPrepaintTiles, "
-       // Tear down accessibility trees when no assistive technology consumes
-       // accessibility events (3 user input events over 30+ seconds with no
-       // accessibility API usage). On TV no screen reader runs, but e.g. an
-       // attached DevTools/CDP session can flip on an accessibility mode and
-       // keep the full AX tree alive and churning. See
-       // content/browser/accessibility/browser_accessibility_state_impl.cc.
-       "AutoDisableAccessibility,"
-       // Cap the default stack size of Chromium-created threads at 256 KiB
-       // instead of the 8 MiB glibc default. Threads that request an explicit
-       // stack size are unaffected. Note that
-       // base/threading/platform_thread_linux_base.cc detects this feature by
-       // scanning the --enable-features switch string, so it must be enabled
-       // here (on the command line) rather than by flipping the declared
-       // feature default.
-       "ReduceAndroidThreadStackSize"},
+      disable_features += ",ConversionMeasurement,InterestGroupStorage";
+    }
+    if (parkable_strings_exp) {
+      // LessAggressiveParkableString: suspends ParkableString parking while
+      // the renderer is foreground, and a TV app is permanently foreground,
+      // so large strings (e.g. JS source) would never compress.
+      disable_features += ",LessAggressiveParkableString";
+    }
+    defaults[::switches::kDisableFeatures] = disable_features;
+
+    std::string enable_features;
+    if (!image_cache_exp) {
+      // Upstream default. This feature token is not defined anywhere and is
+      // silently ignored; the COBALT_MEM_EXP_IMAGE_CACHE experiment replaces
+      // it with the kDecodedImageWorkingSetBudgetBytes switch below, which
+      // cc::ImageDecodeCacheUtils actually consumes.
+      enable_features += "LimitImageDecodeCacheSize:mb/24, ";
+    }
+    // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
+    // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
+    // creation, but egl extension required to support the attribute is
+    // missing and causes errors. So Enable it by default. (More context in
+    // b/444042898)
+    enable_features +=
+        "DefaultEnableANGLEValidation, "
+        "SmallerInterestArea, "
+        "ReclaimPrepaintTilesWhenIdle, "
+        "ReclaimOldPrepaintTiles";
+    if (ax_autodisable_exp) {
+      // Tear down accessibility trees when no assistive technology consumes
+      // accessibility events (3 user input events over 30+ seconds with no
+      // accessibility API usage). On TV no screen reader runs, but e.g. an
+      // attached DevTools/CDP session can flip on an accessibility mode and
+      // keep the full AX tree alive and churning. See
+      // content/browser/accessibility/browser_accessibility_state_impl.cc.
+      enable_features += ", AutoDisableAccessibility";
+    }
+    if (thread_stacks_exp) {
+      // Cap the default stack size of Chromium-created threads at 256 KiB
+      // instead of the 8 MiB glibc default. Threads that request an explicit
+      // stack size are unaffected. Note that
+      // base/threading/platform_thread_linux_base.cc detects this feature by
+      // scanning the --enable-features switch string, so it must be enabled
+      // here (on the command line) rather than by flipping the declared
+      // feature default.
+      enable_features += ", ReduceAndroidThreadStackSize";
+    }
+    defaults[::switches::kEnableFeatures] = enable_features;
+
   // Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
-      {::switches::kUseGL, "angle"},
-      {::switches::kUseANGLE, "gles-egl"},
+    defaults[::switches::kUseGL] = "angle";
+    defaults[::switches::kUseANGLE] = "gles-egl";
 #endif
-      // Use passthrough command decoder.
-      {::switches::kUseCmdDecoder, "passthrough"},
+
+    // Use passthrough command decoder.
+    defaults[::switches::kUseCmdDecoder] = "passthrough";
+    if (image_cache_exp) {
       // Limit the decoded-image working set to 24MB. This replaces the
-      // former "LimitImageDecodeCacheSize:mb/24" feature token, which is not
-      // defined anywhere and was silently ignored; this switch is what
-      // cc::ImageDecodeCacheUtils actually consumes.
-      {::switches::kDecodedImageWorkingSetBudgetBytes, "25165824"},
-      // Set the default size for the content shell/starboard window.
-      {::switches::kContentShellHostWindowSize, "1920x1080"},
-      // Note: remote DevTools access is opt-in. Pass
-      // --remote-debugging-port=9222 (and, if needed,
-      // --remote-allow-origins=http://localhost:9222) explicitly to enable
-      // it; without the switch the DevTools HTTP server is not started.
-      // kEnableLowEndDeviceMode sets MSAA to 4 (and not 8, the default). But
-      // we set it explicitly just in case.
-      {blink::switches::kGpuRasterizationMSAASampleCount, "4"},
-      // Enable precise memory info so we can make accurate client-side
-      // measurements.
-      {::switches::kEnableBlinkFeatures, "PreciseMemoryInfo"},
+      // inert "LimitImageDecodeCacheSize:mb/24" feature token above.
+      defaults[::switches::kDecodedImageWorkingSetBudgetBytes] = "25165824";
+    }
+    // Set the default size for the content shell/starboard window.
+    defaults[::switches::kContentShellHostWindowSize] = "1920x1080";
+    if (!strip_desktop_exp) {
+      // Enable remote Devtools access.
+      defaults[::switches::kRemoteDebuggingPort] = "9222";
+      defaults[::switches::kRemoteAllowOrigins] = "http://localhost:9222";
+    }
+    // else: remote DevTools access is opt-in. Pass
+    // --remote-debugging-port=9222 (and, if needed,
+    // --remote-allow-origins=http://localhost:9222) explicitly to enable
+    // it; without the switch the DevTools HTTP server is not started.
+
+    // kEnableLowEndDeviceMode sets MSAA to 4 (and not 8, the default). But
+    // we set it explicitly just in case.
+    defaults[blink::switches::kGpuRasterizationMSAASampleCount] = "4";
+    // Enable precise memory info so we can make accurate client-side
+    // measurements.
+    defaults[::switches::kEnableBlinkFeatures] = "PreciseMemoryInfo";
+    if (strip_desktop_exp) {
       // TV devices have no FIDO transports; disabling the WebAuthn API
       // (blink runtime feature "WebAuth") prevents page-triggered
       // device/fido authenticator discovery churn in the browser process.
-      {::switches::kDisableBlinkFeatures, "WebAuth"},
-      // Enable autoplay video/audio, as Cobalt may launch directly into media
-      // playback before user interaction.
-      {::switches::kAutoplayPolicy, "no-user-gesture-required"},
-      {blink::switches::kJavaScriptFlags,
-       // Disable decommitting pooled pages to prevent virtual memory
-       // fragmentation.
-       "--no-decommit-pooled-pages "
-       // Enable memory saving mode with little v8 performance tradeoff.
-       "--optimize-for-size "
-       // Set initial old space size to 16MB and max old space size to 512MB.
-       // A TV app's live JS heap is typically 20-40MB; a small initial old
-       // space triggers the first major GC earlier and lowers the plateau.
-       "--initial-old-space-size=16 "
-       "--max-old-space-size=512 "
-       // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
-       "--disable-optimizing-compilers "
-       "--no-sparkplug "
-       // Disable v8 concurrent marking by default.
-       "--no-concurrent-marking"},
-      // Limit GPU memory available to 32MB.
-      {::switches::kForceGpuMemAvailableMb, "32"},
-      // Disable CC image cache items limit.
-      {::switches::kCCImageCacheLimitItems, "0"},
-  };
-  return kCobaltSwitchDefaults;
+      defaults[::switches::kDisableBlinkFeatures] = "WebAuth";
+    }
+    // Enable autoplay video/audio, as Cobalt may launch directly into media
+    // playback before user interaction.
+    defaults[::switches::kAutoplayPolicy] = "no-user-gesture-required";
+
+    std::string js_flags =
+        // Disable decommitting pooled pages to prevent virtual memory
+        // fragmentation.
+        "--no-decommit-pooled-pages "
+        // Enable memory saving mode with little v8 performance tradeoff.
+        "--optimize-for-size ";
+    if (js_flags_exp) {
+      // Set initial old space size to 16MB and max old space size to 512MB.
+      // A TV app's live JS heap is typically 20-40MB; a small initial old
+      // space triggers the first major GC earlier and lowers the plateau.
+      js_flags += "--initial-old-space-size=16 ";
+    } else {
+      // Set initial old space size to 64MB and max old space size to 512MB.
+      js_flags += "--initial-old-space-size=64 ";
+    }
+    js_flags +=
+        "--max-old-space-size=512 "
+        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
+        "--disable-optimizing-compilers "
+        "--no-sparkplug "
+        // Disable v8 concurrent marking by default.
+        "--no-concurrent-marking";
+    defaults[blink::switches::kJavaScriptFlags] = js_flags;
+
+    // Limit GPU memory available to 32MB (experiment) or 64MB (default).
+    defaults[::switches::kForceGpuMemAvailableMb] =
+        gpu_budget_exp ? "32" : "64";
+    // Disable CC image cache items limit.
+    defaults[::switches::kCCImageCacheLimitItems] = "0";
+
+    return defaults;
+  }();
+
+  return switch_defaults_cache
+      .emplace(exp_state, std::move(cobalt_switch_defaults))
+      .first->second;
 }
 
 }  // namespace cobalt

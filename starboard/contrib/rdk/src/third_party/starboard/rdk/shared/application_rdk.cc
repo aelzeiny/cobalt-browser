@@ -42,6 +42,7 @@
 
 #include <fcntl.h>
 #include <poll.h>
+#include <cstdlib>
 #include <cstring>
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
@@ -92,20 +93,49 @@ constexpr int64_t kMallocTrimInterval = 60 * kSbTimeSecond;
 
 namespace {
 
+#if defined(__GLIBC__)
+// Runtime gate for the glibc allocator tuning experiment (mallopt() knobs and
+// the periodic malloc_trim()). OFF (default) keeps the upstream behavior; set
+// COBALT_MEM_EXP_GLIBC_TUNING=1 (or COBALT_MEM_EXP_ALL=1) to enable.
+bool GlibcTuningExperimentEnabled() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_GLIBC_TUNING");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  return enabled;
+}
+#endif  // defined(__GLIBC__)
+
+// Runtime gate for the 1080p UI window experiment. OFF (default) keeps the
+// upstream behavior of following the panel resolution; set
+// COBALT_MEM_EXP_1080P_UI=1 (or COBALT_MEM_EXP_ALL=1) to enable clamping.
+bool Ui1080pExperimentEnabled() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_1080P_UI");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  return enabled;
+}
+
 // The native (Essos) window backs the UI/graphics plane only; video is
 // rendered on a separate punch-out plane at native display resolution.
 // A TV UI gains nothing above 1080p, while every full-screen pixel buffer
-// (EGL swapchain, raster and render-pass targets) costs 4x at 4K. Clamp
-// the window to 1080p and let the display pipeline hardware-scale the
-// graphics plane to the panel. Set COBALT_NATIVE_WINDOW_AT_DISPLAY_SIZE=1
-// to opt out and follow the panel resolution as before.
+// (EGL swapchain, raster and render-pass targets) costs 4x at 4K. Under the
+// COBALT_MEM_EXP_1080P_UI experiment, clamp the window to 1080p and let the
+// display pipeline hardware-scale the graphics plane to the panel. With the
+// experiment off (the default) the window follows the panel resolution, as
+// upstream does.
 constexpr int kMaxNativeWindowWidth = 1920;
 constexpr int kMaxNativeWindowHeight = 1080;
 
 void ClampNativeWindowSize(int* width, int* height) {
-  static const bool at_display_size =
-      !!getenv("COBALT_NATIVE_WINDOW_AT_DISPLAY_SIZE");
-  if (at_display_size)
+  if (!Ui1080pExperimentEnabled())
     return;
   if (*width <= kMaxNativeWindowWidth && *height <= kMaxNativeWindowHeight)
     return;
@@ -157,8 +187,9 @@ ApplicationRdk::~ApplicationRdk() {
 
 void ApplicationRdk::Initialize() {
 #if defined(__GLIBC__)
-  // Tame glibc ptmalloc free-page retention. Do this before the app spawns
-  // its worker threads so the arena cap applies from the start:
+  // COBALT_MEM_EXP_GLIBC_TUNING experiment: tame glibc ptmalloc free-page
+  // retention. Do this before the app spawns its worker threads so the arena
+  // cap applies from the start:
   // - Cap malloc arenas at 2: the default limit (8 x cores on 32-bit) lets
   //   dozens of arenas each retain their own free lists indefinitely.
   // - Pin the mmap threshold at 256 KB: disables glibc's dynamic threshold
@@ -166,9 +197,11 @@ void ApplicationRdk::Initialize() {
   //   are plain mmaps returned to the kernel on free instead of landing in
   //   arenas where their pages are retained.
   // - Trim threshold 512 KB: release main-arena top pages aggressively.
-  mallopt(M_ARENA_MAX, 2);
-  mallopt(M_MMAP_THRESHOLD, 256 * 1024);
-  mallopt(M_TRIM_THRESHOLD, 512 * 1024);
+  if (GlibcTuningExperimentEnabled()) {
+    mallopt(M_ARENA_MAX, 2);
+    mallopt(M_MMAP_THRESHOLD, 256 * 1024);
+    mallopt(M_TRIM_THRESHOLD, 512 * 1024);
+  }
 #endif  // defined(__GLIBC__)
 
   wakeup_fd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -203,7 +236,11 @@ void ApplicationRdk::Initialize() {
 
   ScheduleMemoryUsageCheck(kSbTimeSecond);
 #if defined(__GLIBC__)
-  ScheduleMallocTrim(kMallocTrimInterval);
+  // COBALT_MEM_EXP_GLIBC_TUNING experiment: periodic malloc_trim(). Gating
+  // the initial scheduling here disables the whole reschedule chain.
+  if (GlibcTuningExperimentEnabled()) {
+    ScheduleMallocTrim(kMallocTrimInterval);
+  }
 #endif  // defined(__GLIBC__)
   NetworkInfo::Initialize();
 }

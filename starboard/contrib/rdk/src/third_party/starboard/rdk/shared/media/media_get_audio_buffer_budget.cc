@@ -31,10 +31,33 @@
 
 #include "starboard/media.h"
 
+#include <stdlib.h>
+
 #include "starboard/common/log.h"
 
+namespace {
+
+// Runtime gate for the reduced-media-buffer-budget experiment. OFF (default)
+// keeps the upstream values; set COBALT_MEM_EXP_MEDIA_BUDGETS=1 (or
+// COBALT_MEM_EXP_ALL=1) to enable the reduced values.
+bool MediaBudgetsExperimentEnabled() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_MEDIA_BUDGETS");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  return enabled;
+}
+
+}  // namespace
+
 int SbMediaGetAudioBufferBudget() {
-  // 3 MiB retains a large margin for TV streaming audio: e.g. 144 kbps audio
-  // buffered for 25 seconds is only ~0.45 MiB.
-  return 3 * 1024 * 1024;
+  if (MediaBudgetsExperimentEnabled()) {
+    // 3 MiB retains a large margin for TV streaming audio: e.g. 144 kbps
+    // audio buffered for 25 seconds is only ~0.45 MiB.
+    return 3 * 1024 * 1024;
+  }
+  return 5 * 1024 * 1024;
 }

@@ -23,6 +23,32 @@ namespace {
 // Log allocation requests of at least this many bytes (16 MiB).
 constexpr uint64_t kLargeAllocLogThreshold = 16 * 1024 * 1024;
 
+#if STARBOARD_LOG_LARGE_ALLOCS
+// Runtime gate for the large-allocation log lines (the
+// COBALT_MEM_EXP_LARGE_ALLOC_LOG experiment). OFF (default) emits nothing;
+// set COBALT_MEM_EXP_LARGE_ALLOC_LOG=1 (or COBALT_MEM_EXP_ALL=1) to enable.
+// The forwarding to libc is unconditional either way.
+//
+// Lazily initialized on first use with plain statics instead of a
+// function-local `static const` (whose thread-safe guard takes a lock): these
+// wrappers may run under an allocator lock or in other async-signal-safe
+// contexts. The race on |initialized| is benign -- every racing thread
+// computes the same value -- and getenv() itself does not allocate.
+bool LargeAllocLogEnabled() {
+  static bool initialized = false;
+  static bool enabled = false;
+  if (!initialized) {
+    const char* v = getenv("COBALT_MEM_EXP_LARGE_ALLOC_LOG");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    enabled = v != nullptr && v[0] == '1';
+    initialized = true;
+  }
+  return enabled;
+}
+#endif  // STARBOARD_LOG_LARGE_ALLOCS
+
 // Logs one line for a large allocation request.
 //
 // These wrappers run inside the loader binary in host-libc context, possibly
@@ -79,7 +105,7 @@ void LogLargeAlloc(const char* function, uint64_t size, const void* caller) {
 
 void* __abi_wrap_malloc(size_t size) {
 #if STARBOARD_LOG_LARGE_ALLOCS
-  if (size >= kLargeAllocLogThreshold) {
+  if (size >= kLargeAllocLogThreshold && LargeAllocLogEnabled()) {
     LogLargeAlloc("malloc", size, __builtin_return_address(0));
   }
 #endif
@@ -89,7 +115,7 @@ void* __abi_wrap_malloc(size_t size) {
 void* __abi_wrap_calloc(size_t nmemb, size_t size) {
 #if STARBOARD_LOG_LARGE_ALLOCS
   const uint64_t total = static_cast<uint64_t>(nmemb) * size;
-  if (total >= kLargeAllocLogThreshold) {
+  if (total >= kLargeAllocLogThreshold && LargeAllocLogEnabled()) {
     LogLargeAlloc("calloc", total, __builtin_return_address(0));
   }
 #endif
@@ -98,7 +124,7 @@ void* __abi_wrap_calloc(size_t nmemb, size_t size) {
 
 void* __abi_wrap_realloc(void* ptr, size_t size) {
 #if STARBOARD_LOG_LARGE_ALLOCS
-  if (size >= kLargeAllocLogThreshold) {
+  if (size >= kLargeAllocLogThreshold && LargeAllocLogEnabled()) {
     LogLargeAlloc("realloc", size, __builtin_return_address(0));
   }
 #endif
@@ -107,7 +133,7 @@ void* __abi_wrap_realloc(void* ptr, size_t size) {
 
 int __abi_wrap_posix_memalign(void** memptr, size_t alignment, size_t size) {
 #if STARBOARD_LOG_LARGE_ALLOCS
-  if (size >= kLargeAllocLogThreshold) {
+  if (size >= kLargeAllocLogThreshold && LargeAllocLogEnabled()) {
     LogLargeAlloc("posix_memalign", size, __builtin_return_address(0));
   }
 #endif
@@ -116,7 +142,7 @@ int __abi_wrap_posix_memalign(void** memptr, size_t alignment, size_t size) {
 
 void* __abi_wrap_aligned_alloc(size_t alignment, size_t size) {
 #if STARBOARD_LOG_LARGE_ALLOCS
-  if (size >= kLargeAllocLogThreshold) {
+  if (size >= kLargeAllocLogThreshold && LargeAllocLogEnabled()) {
     LogLargeAlloc("aligned_alloc", size, __builtin_return_address(0));
   }
 #endif

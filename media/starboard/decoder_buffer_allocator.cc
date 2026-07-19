@@ -14,6 +14,8 @@
 
 #include "media/starboard/decoder_buffer_allocator.h"
 
+#include <cstdlib>
+
 #include <algorithm>
 
 #include "base/feature_list.h"
@@ -48,9 +50,14 @@ const char* ToString(bool value) {
   return value ? "enabled" : "disabled";
 }
 
-// Returns the hard cap on the media buffer pool capacity, or 0 when the
-// platform doesn't cap the pool.
+// Returns the hard cap on the media buffer pool capacity, or 0 when the pool
+// is uncapped.
 //
+// The cap is part of the COBALT_MEM_EXP_MEDIA_BUDGETS experiment.  When the
+// experiment is off (the default) this returns 0, preserving the upstream
+// Cobalt 25 behavior of not capping the pool at all.
+//
+// When the experiment is on, the cap comes from SbMediaGetMaxBufferCapacity().
 // The DecoderBufferAllocator is created before any video config is known and
 // no longer receives video resolution updates, so the cap is computed once for
 // the worst case resolution expected on TV targets (4K HDR).  Per-resolution
@@ -59,6 +66,16 @@ const char* ToString(bool value) {
 // value; the cap is only a backstop that keeps a misbehaving client or codec
 // change from growing the pool without bound.
 size_t GetMaxBufferCapacity() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_MEDIA_BUDGETS");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  if (!enabled) {
+    return 0;
+  }
   int max_capacity =
       SbMediaGetMaxBufferCapacity(kSbMediaVideoCodecNone, /*resolution_width=*/
                                   3840,
@@ -232,11 +249,12 @@ size_t DecoderBufferAllocator::GetCurrentMemoryCapacity() const {
 }
 
 size_t DecoderBufferAllocator::GetMaximumMemoryCapacity() const {
-  // The capacity cap was not enforced between Cobalt 25 and the restoration
-  // of SbMediaGetMaxBufferCapacity().  It is computed once at construction
-  // (see GetMaxBufferCapacity() above), passed to the allocator strategies to
-  // refuse pool growth beyond it, and reported here.  Returns 0 when the
-  // platform doesn't cap the pool.
+  // The capacity has not been capped since Cobalt 25; the cap based on
+  // SbMediaGetMaxBufferCapacity() is only enforced under the
+  // COBALT_MEM_EXP_MEDIA_BUDGETS experiment.  It is computed once at
+  // construction (see GetMaxBufferCapacity() above), passed to the allocator
+  // strategies to refuse pool growth beyond it, and reported here.  Returns 0
+  // (uncapped) when the experiment is off.
   return max_buffer_capacity_;
 }
 

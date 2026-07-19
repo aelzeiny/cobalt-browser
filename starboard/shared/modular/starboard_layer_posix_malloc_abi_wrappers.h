@@ -34,6 +34,11 @@
 // STARBOARD_LOG_LARGE_ALLOCS is non-zero (default: on). Define it to 0 to
 // compile the diagnostic out entirely (the raw libc symbols are then
 // registered instead, restoring exactly the previous behavior).
+//
+// The log lines are additionally gated at runtime by the
+// COBALT_MEM_EXP_LARGE_ALLOC_LOG experiment: even when compiled in, nothing
+// is logged unless COBALT_MEM_EXP_LARGE_ALLOC_LOG=1 (or COBALT_MEM_EXP_ALL=1)
+// is set in the environment. Forwarding to libc is unconditional either way.
 #if !defined(STARBOARD_LOG_LARGE_ALLOCS)
 #define STARBOARD_LOG_LARGE_ALLOCS 1
 #endif

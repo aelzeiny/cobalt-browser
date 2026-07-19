@@ -16,6 +16,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -31,6 +32,25 @@
 namespace elf_loader {
 using ::starboard::CurrentMonotonicTime;
 
+namespace {
+
+// Runtime gate for the streaming-decompression experiment. OFF (default)
+// selects the upstream whole-image implementation, which decompresses the
+// entire file into memory in Open(); set COBALT_MEM_EXP_LZ4_STREAM=1 (or
+// COBALT_MEM_EXP_ALL=1) to select on-demand streaming decompression.
+bool StreamingLz4ExperimentEnabled() {
+  static const bool enabled = [] {
+    const char* v = getenv("COBALT_MEM_EXP_LZ4_STREAM");
+    if (!v) {
+      v = getenv("COBALT_MEM_EXP_ALL");
+    }
+    return v && v[0] == '1';
+  }();
+  return enabled;
+}
+
+}  // namespace
+
 LZ4FileImpl::LZ4FileImpl() {
   const LZ4F_errorCode_t lz4f_error_code =
       LZ4F_createDecompressionContext(&lz4f_context_, LZ4F_VERSION);
@@ -42,9 +62,11 @@ LZ4FileImpl::LZ4FileImpl() {
 }
 
 LZ4FileImpl::~LZ4FileImpl() {
-  if (content_size_ > 0) {
-    // Decompression is spread across the ReadFromOffset() calls made during
-    // loading, so the total duration is only known once loading is done.
+  if (streaming_mode_ && content_size_ > 0) {
+    // In streaming mode decompression is spread across the ReadFromOffset()
+    // calls made during loading, so the total duration is only known once
+    // loading is done. (In whole-image mode the duration is logged and
+    // reported in Open() instead, as upstream does.)
     SB_LOG(INFO) << "Decompression took: " << decompression_time_us_ / 1000
                  << " ms";
     auto metrics_extension =
@@ -236,6 +258,15 @@ bool LZ4FileImpl::Open(const char* name) {
     return false;
   }
 
+  // Select the implementation once per open; ReadFromOffset() and the
+  // destructor dispatch on it.
+  streaming_mode_ = StreamingLz4ExperimentEnabled();
+
+  // Only used by whole-image mode, where decompression completes within this
+  // call; captured up here so that header parsing is included in the reported
+  // duration, as upstream does.
+  int64_t decompression_start_time_us = CurrentMonotonicTime();
+
   size_t header_size = PeekHeaderSize();
   if (LZ4F_isError(header_size)) {
     SB_LOG(ERROR) << LZ4F_getErrorName(header_size);
@@ -250,8 +281,9 @@ bool LZ4FileImpl::Open(const char* name) {
     return false;
   }
 
-  // We require the uncompressed data size to be set in the LZ4 frame header
-  // so that ReadFromOffset() can validate requested ranges up front.
+  // We require the uncompressed data size to be set in the LZ4 frame header:
+  // whole-image mode uses it to size the decompressed image up front, and
+  // streaming mode uses it to validate requested ranges in ReadFromOffset().
   uint64_t content_size = frame_info.contentSize;
   if (content_size <= 0) {
     SB_LOG(ERROR) << "Content size must be present in the LZ4 frame header";
@@ -263,7 +295,36 @@ bool LZ4FileImpl::Open(const char* name) {
   // header of the next block. We can meet this expectation often, without
   // allocating much extra space, by using a buffer of size equal to the
   // uncompressed block size.
-  block_size_ = GetBlockSize(&frame_info);
+  size_t max_compressed_buffer_size = GetBlockSize(&frame_info);
+
+  if (!streaming_mode_) {
+    // Whole-image mode: decompress the entire file into memory now.
+    decompressed_data_.resize(content_size);
+
+    bool result = Decompress(file_info.st_size, header_size,
+                             max_compressed_buffer_size, source_bytes_hint);
+
+    int64_t decompression_end_time_us = CurrentMonotonicTime();
+    int64_t decompression_duration_us =
+        decompression_end_time_us - decompression_start_time_us;
+    SB_LOG(INFO) << "Decompression took: " << decompression_duration_us / 1000
+                 << " ms";
+    auto metrics_extension =
+        static_cast<const StarboardExtensionLoaderAppMetricsApi*>(
+            SbSystemGetExtension(kStarboardExtensionLoaderAppMetricsName));
+    if (metrics_extension &&
+        strcmp(metrics_extension->name,
+               kStarboardExtensionLoaderAppMetricsName) == 0 &&
+        metrics_extension->version >= 2) {
+      metrics_extension->SetElfDecompressionDurationMicroseconds(
+          decompression_duration_us);
+    }
+
+    return result;
+  }
+
+  // Streaming mode: decompression is deferred to ReadFromOffset().
+  block_size_ = max_compressed_buffer_size;
   compressed_data_.resize(block_size_);
   carry_.resize(kCarrySize);
 
@@ -294,6 +355,61 @@ size_t LZ4FileImpl::ConsumeHeader(LZ4F_frameInfo_t* frame_info,
   FileImpl::ReadFromOffset(0, source_buffer.data(), header_size);
   return LZ4F_getFrameInfo(lz4f_context_, frame_info, source_buffer.data(),
                            &header_size);
+}
+
+bool LZ4FileImpl::Decompress(size_t file_size,
+                             size_t header_size,
+                             size_t max_compressed_buffer_size,
+                             size_t source_bytes_hint) {
+  std::vector<char> compressed_data(max_compressed_buffer_size);
+
+  char* compressed_buffer = compressed_data.data();
+  char* decompressed_buffer = decompressed_data_.data();
+
+  size_t compressed_size_remaining = file_size - header_size;
+  size_t decompressed_size_current = 0;
+
+  while (source_bytes_hint != 0) {
+    size_t compressed_buffer_size =
+        std::min(source_bytes_hint, max_compressed_buffer_size);
+    if (!FileImpl::ReadFromOffset(file_size - compressed_size_remaining,
+                                  compressed_data.data(),
+                                  compressed_buffer_size)) {
+      decompressed_data_.resize(0);
+      return false;
+    }
+
+    size_t compressed_buffer_offset = 0;
+
+    compressed_buffer = compressed_data.data();
+
+    while (source_bytes_hint != 0 &&
+           compressed_buffer_offset < compressed_buffer_size) {
+      size_t compressed = compressed_buffer_size - compressed_buffer_offset;
+      size_t decompressed =
+          decompressed_data_.size() - decompressed_size_current;
+
+      source_bytes_hint =
+          LZ4F_decompress(lz4f_context_, decompressed_buffer, &decompressed,
+                          compressed_buffer, &compressed, nullptr);
+
+      if (LZ4F_isError(source_bytes_hint)) {
+        SB_LOG(ERROR) << LZ4F_getErrorName(source_bytes_hint);
+        LZ4F_resetDecompressionContext(lz4f_context_);
+        decompressed_data_.resize(0);
+        return false;
+      }
+
+      compressed_size_remaining -= compressed;
+      decompressed_size_current += decompressed;
+
+      compressed_buffer_offset += compressed;
+      compressed_buffer += compressed;
+
+      decompressed_buffer += decompressed;
+    }
+  }
+  return true;
 }
 
 bool LZ4FileImpl::ReadStreaming(uint64_t offset, char* buffer, size_t size) {
@@ -478,6 +594,22 @@ bool LZ4FileImpl::ReadFromOffset(int64_t offset, char* buffer, int size) {
   if (offset < 0 || size < 0) {
     return false;
   }
+
+  if (!streaming_mode_) {
+    // Whole-image mode: copy from the in-memory image. Bounds are validated
+    // against the image, which is empty when Open() failed, so reads fail
+    // then just as they do before a successful Open().
+    if (offset > static_cast<int64_t>(decompressed_data_.size()) ||
+        size > static_cast<int64_t>(decompressed_data_.size()) - offset) {
+      return false;
+    }
+    memcpy(buffer, decompressed_data_.data() + offset, size);
+    return true;
+  }
+
+  // Streaming mode. |content_size_| is 0 unless Open() succeeded, so reads
+  // before a successful Open() fail here (except zero-sized reads at offset
+  // 0, which succeed in both modes).
   if (offset > static_cast<int64_t>(content_size_) ||
       size > static_cast<int64_t>(content_size_) - offset) {
     return false;
