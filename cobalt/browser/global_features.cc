@@ -123,6 +123,9 @@ void GlobalFeatures::CreateExperimentConfig() {
   base::FilePath path =
       GetPrefFilePath(kExperimentConfigFilename, "experiment config");
 
+  LOG(INFO) << "Created ExperimentConfig from path: " << path.value()
+            << ", file exists: " << base::PathExists(path);
+
   PrefServiceFactory pref_service_factory;
   pref_service_factory.set_user_prefs(
       base::MakeRefCounted<JsonPrefStore>(path));

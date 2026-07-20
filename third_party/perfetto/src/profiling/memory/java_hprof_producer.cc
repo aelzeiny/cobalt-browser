@@ -17,6 +17,9 @@
 #include "src/profiling/memory/java_hprof_producer.h"
 
 #include <signal.h>
+#ifndef __SIGRTMIN
+#define __SIGRTMIN SIGRTMIN
+#endif
 #include <limits>
 #include <optional>
 
@@ -29,7 +32,7 @@ namespace perfetto {
 namespace profiling {
 namespace {
 
-constexpr int kJavaHeapprofdSignal = __SIGRTMIN + 6;
+const int kJavaHeapprofdSignal = __SIGRTMIN + 6;
 constexpr uint32_t kInitialConnectionBackoffMs = 100;
 constexpr uint32_t kMaxConnectionBackoffMs = 30 * 1000;
 constexpr const char* kJavaHprofDataSource = "android.java_hprof";

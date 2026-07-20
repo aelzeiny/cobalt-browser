@@ -30,6 +30,12 @@
 #include <unwindstack/MachineX86.h>
 #include <unwindstack/MachineX86_64.h>
 
+namespace unwindstack {
+#ifndef RISCV64_REG_COUNT
+constexpr size_t RISCV64_REG_COUNT = 33;
+#endif
+}
+
 #include "perfetto/heap_profile.h"
 #include "src/profiling/memory/shared_ring_buffer.h"
 #include "src/profiling/memory/util.h"
