@@ -430,7 +430,8 @@ typedef Elf64_Word Word;
 typedef Elf64_Sym Sym;
 typedef Elf64_Rel Rel;
 typedef Elf64_Rela Rela;
-typedef Elf64_Word Relr;
+// RELR entries are address-sized words (Elf64_Xword), not Elf64_Word.
+typedef Elf64_Xword Relr;
 typedef Elf64_Sword Sword;
 #define ELF_BITS 64
 #define ELF_R_TYPE ELF64_R_TYPE

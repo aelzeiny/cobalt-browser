@@ -41,7 +41,9 @@
 #include "starboard/extension/loader_app_metrics.h"
 #include "starboard/extension/graphics.h"
 #include "third_party/starboard/rdk/shared/graphics.h"
+#include "starboard/extension/memory_mapped_file.h"
 #include "starboard/extension/platform_service.h"
+#include "starboard/shared/posix/memory_mapped_file.h"
 #include "third_party/starboard/rdk/shared/accessibility_extension.h"
 #include "third_party/starboard/rdk/shared/configuration.h"
 #include "third_party/starboard/rdk/shared/features_extension.h"
@@ -84,6 +86,13 @@ const void* SbSystemGetExtension(const char* name) {
   }
   if (strcmp(name, kStarboardExtensionFeaturesName) == 0) {
     return starboard::GetFeaturesApi();
+  }
+  // Used by the Evergreen ELF loader (elf_loader_impl.cc) to load
+  // libcobalt.so as a file-backed, demand-paged mmap instead of copying it
+  // into anonymous memory. The POSIX implementation maps MAP_PRIVATE with no
+  // MAP_POPULATE, so RO/RX pages stay clean and kernel-evictable.
+  if (strcmp(name, kCobaltExtensionMemoryMappedFileName) == 0) {
+    return starboard::GetMemoryMappedFileApi();
   }
   return NULL;
 }

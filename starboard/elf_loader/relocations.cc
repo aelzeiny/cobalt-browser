@@ -29,6 +29,8 @@ Relocations::Relocations(Addr base_memory_address,
       plt_got_(NULL),
       relocations_(0),
       relocations_size_(0),
+      relr_relocations_(0),
+      relr_relocations_size_(0),
       has_text_relocations_(false),
       has_symbolic_(false),
       exported_symbols_(exported_symbols) {}
@@ -104,10 +106,24 @@ bool Relocations::InitRelocations() {
         relocations_size_ = dyn_value;
         break;
       case DT_RELR:
+        SB_DLOG(INFO) << "  DT_RELR addr=0x" << std::hex
+                      << (dyn_addr - base_memory_address_);
+        relr_relocations_ = dyn_addr;
+        break;
       case DT_RELRSZ:
-        SB_LOG(ERROR) << "  DT_RELRSZ NOT IMPLEMENTED";
+        SB_DLOG(INFO) << "  DT_RELRSZ size=" << dyn_value;
+        relr_relocations_size_ = dyn_value;
         break;
       case DT_RELRENT:
+        // Note: this tag must NOT share a case with DT_PLTGOT below; before
+        // RELR support it fell through and clobbered plt_got_ with the RELR
+        // entry size.
+        if (dyn_value != sizeof(Relr)) {
+          SB_LOG(ERROR) << "Invalid DT_RELRENT entry size: " << dyn_value
+                        << " expected: " << sizeof(Relr);
+          return false;
+        }
+        break;
       case DT_PLTGOT:
         SB_DLOG(INFO) << "DT_PLTGOT addr=0x" << std::hex
                       << (dyn_addr - base_memory_address_);
@@ -143,6 +159,12 @@ bool Relocations::InitRelocations() {
 }
 
 bool Relocations::ApplyAllRelocations() {
+  SB_DLOG(INFO) << "Applying RELR relocations";
+  if (!ApplyRelrRelocations()) {
+    SB_LOG(ERROR) << "RELR relocations failed";
+    return false;
+  }
+
   SB_DLOG(INFO) << "Applying regular relocations";
   if (!ApplyRelocations(reinterpret_cast<rel_t*>(relocations_),
                         relocations_size_ / sizeof(rel_t))) {
@@ -155,6 +177,57 @@ bool Relocations::ApplyAllRelocations() {
                         plt_relocations_size_ / sizeof(rel_t))) {
     SB_LOG(ERROR) << "PLT relocations failed";
     return false;
+  }
+  return true;
+}
+
+bool Relocations::ApplyRelrRelocations() {
+  if (!relr_relocations_) {
+    return true;
+  }
+  if (relr_relocations_size_ % sizeof(Relr) != 0) {
+    SB_LOG(ERROR) << "DT_RELRSZ is not a multiple of the RELR entry size: "
+                  << relr_relocations_size_;
+    return false;
+  }
+
+  // A RELR table encodes relative relocations only (each target word gets
+  // the load bias added). Entries are address-sized words: an even entry is
+  // the address of the first relocation target and applies it; an odd entry
+  // is a bitmap - bit 0 is the continuation marker, bits 1..N-1 mark which
+  // of the next N-1 words after the last explicit address are also targets
+  // (N = bits in a word). Consecutive bitmap entries keep advancing the
+  // window without needing new address entries.
+  const Relr* relr = reinterpret_cast<const Relr*>(relr_relocations_);
+  const size_t count = relr_relocations_size_ / sizeof(Relr);
+  constexpr size_t kBitsPerEntry = 8 * sizeof(Relr);
+
+  Addr* where = NULL;
+  for (size_t i = 0; i < count; ++i) {
+    const Relr entry = relr[i];
+    if ((entry & 1) == 0) {
+      // Even entry: address of the next relocation target.
+      if (entry == 0) {
+        SB_LOG(ERROR) << "Invalid null address entry in RELR table";
+        return false;
+      }
+      where = reinterpret_cast<Addr*>(base_memory_address_ + entry);
+      *where += base_memory_address_;
+      ++where;
+    } else {
+      // Odd entry: bitmap covering the next kBitsPerEntry - 1 words.
+      if (!where) {
+        SB_LOG(ERROR) << "RELR bitmap entry before any address entry";
+        return false;
+      }
+      Addr* target = where;
+      for (Relr bits = entry >> 1; bits != 0; bits >>= 1, ++target) {
+        if (bits & 1) {
+          *target += base_memory_address_;
+        }
+      }
+      where += kBitsPerEntry - 1;
+    }
   }
   return true;
 }

@@ -148,7 +148,7 @@ original gates:
 |---|---|---|
 | `COBALT_MEM_EXP_LZ4_STREAM=1` (env var) | 20 | Loader streams LZ4 decompression (no whole-image buffer) — ~75–80 MB launch peak |
 | `COBALT_MEM_EXP_LARGE_ALLOC_LOG=1` (env var) | 25 | Diagnostic: log allocations ≥16 MiB with return address (loader wrapper) |
-| `--loader_use_memory_mapped_file` (loader_app switch, default off) | 01 | Decompress-once cache (`libcobalt.mmap.so`) + file-backed mmap of the binary — 40–60 MB |
+| `COBALT_MEM_EXP_MMAP_ELF=1` (env var) or `--loader_use_memory_mapped_file` (loader_app switch); both default off | 01 / R2-01 | File-backed, demand-paged mmap of libcobalt: decompress-once cache (`libcobalt.mmap.so`) for both update slots **and** the system image (round 2 extended the cache to the system-image path used on RDK, registered the `MemoryMappedFileApi` extension in the RDK port — it was missing, so the switch previously crashed the load — and made a missing extension degrade to the classic load instead of failing). Vetted: ~12–40 MB immediate RSS (central ~22) + ~45–55 MB evictable under pressure; also fixes heapprofd/crashpad symbolization of the code segment |
 
 ## Build-time experiments (gn args — cannot be runtime flags)
 
@@ -157,6 +157,7 @@ original gates:
 | `icu_use_data_file = true` | 07 | ICU data shipped as mmap'd `icudtl.dat` (~6.5 MB) |
 | `cobalt_disable_base_tracing_in_gold = true` | 24 | base/perfetto tracing compiled out of gold evergreen images (~2–3 MB) |
 | `use_large_empty_slot_span_ring = false` | 08b | Smaller PartitionAlloc empty-slot-span ring (~0.5–2 MB) |
+| `cobalt_pack_relr_relocations` (default **on** for evergreen on this branch) | R2-03 | `.rel.dyn` (3.16 MB of R_ARM_RELATIVE) packed into DT_RELR (`lld --pack-dyn-relocs=relr`, standard tags); loader decodes DT_RELR (`starboard/elf_loader/relocations.cc`). ~3 MB RSS under the anonymous-copy loader (mostly subsumed once R2-01 mmap is on), ~3 MB flash / smaller OTA, faster startup relocation. **Lockstep only**: loaders older than the decoder skip RELR silently → startup crash; do not ship to fleets without a loader-capability gate |
 
 ## Limitations
 

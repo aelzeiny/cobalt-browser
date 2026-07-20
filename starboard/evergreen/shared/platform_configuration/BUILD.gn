@@ -14,6 +14,25 @@
 
 import("//build/config/clang/clang.gni")
 
+declare_args() {
+  # Pack relative relocations into a DT_RELR table
+  # (lld --pack-dyn-relocs=relr, standard tags - NOT the Android
+  # DT_ANDROID_RELR variant, which Cobalt's ELF loader does not decode).
+  # This shrinks .rel.dyn (~3.2 MB of R_ARM_RELATIVE entries on a 32-bit ARM
+  # libcobalt) to tens of KB of .relr.dyn, cutting resident RSS under the
+  # anonymous-copy loader, on-flash size, update download size, and
+  # relocation time at startup.
+  #
+  # COMPATIBILITY: a Cobalt binary linked with RELR can only be loaded by an
+  # ELF loader that implements DT_RELR (starboard/elf_loader/relocations.cc,
+  # this change). Older loaders skip the table SILENTLY and the binary
+  # crashes at startup. Only enable where the loader and libcobalt ship in
+  # lockstep (e.g. the RDK package bundles libloader_app.so with
+  # libcobalt.lz4); do NOT enable for fleets with firmware-resident loaders
+  # until loader adoption is verified.
+  cobalt_pack_relr_relocations = sb_is_evergreen
+}
+
 config("platform_configuration") {
   configs = [ "//starboard/build/config/modular" ]
   ldflags = []
@@ -32,6 +51,9 @@ config("platform_configuration") {
       "-Wl,-L/lib",
       "-Wl,-u GetEvergreenSabiString",
     ]
+    if (cobalt_pack_relr_relocations) {
+      ldflags += [ "-Wl,--pack-dyn-relocs=relr" ]
+    }
   }
 
   if (sb_is_evergreen) {

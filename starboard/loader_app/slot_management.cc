@@ -109,18 +109,16 @@ bool ReadSmallFile(const char* path, std::string* out_content) {
   return true;
 }
 
-// Ensures that a valid uncompressed, memory-mappable copy of the LZ4
-// compressed library at |compressed_lib_path| exists at |cache_path|.
-//
-// An existing cache is reused iff its sentinel file records exactly the
-// current compressed library's size and mtime and the cache is non-empty.
-// Otherwise the compressed library is decompressed to |cache_path| + ".tmp",
-// fsync'd, atomically renamed to |cache_path|, and only then is the sentinel
-// atomically replaced - so a power cut at any point either leaves the old
-// consistent state or an invalid cache that is simply rebuilt on the next
-// boot; it can never result in a torn cache being used.
-//
-// Returns true if a valid cache is present at |cache_path| on return.
+}  // namespace
+
+// See slot_management.h. Behavior notes: an existing cache is reused iff its
+// sentinel file records exactly the current compressed library's size and
+// mtime and the cache is non-empty. Otherwise the compressed library is
+// decompressed to |cache_path| + ".tmp", fsync'd, atomically renamed to
+// |cache_path|, and only then is the sentinel atomically replaced - so a
+// power cut at any point either leaves the old consistent state or an
+// invalid cache that is simply rebuilt on the next boot; it can never result
+// in a torn cache being used.
 bool EnsureUncompressedCache(const std::string& compressed_lib_path,
                              const std::string& cache_path) {
   struct stat compressed_info;
@@ -160,8 +158,6 @@ bool EnsureUncompressedCache(const std::string& compressed_lib_path,
   }
   return true;
 }
-
-}  // namespace
 
 int CompareEvergreenVersion(const std::vector<char>& v1,
                             const std::vector<char>& v2) {

@@ -70,13 +70,17 @@ constexpr size_t kUnwindBatchSize = 1000;
 constexpr size_t kRecordBatchSize = 1024;
 constexpr size_t kMaxAllocRecordArenaSize = 2 * kRecordBatchSize;
 
-#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma clang diagnostic push
 // We do not care about deterministic destructor order.
-#pragma GCC diagnostic ignored "-Wglobal-constructors"
-#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#endif
 static std::vector<std::string> kSkipMaps{"heapprofd_client.so",
                                           "heapprofd_client_api.so"};
-#pragma GCC diagnostic pop
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 size_t GetRegsSize(unwindstack::Regs* regs) {
   if (regs->Is32Bit())

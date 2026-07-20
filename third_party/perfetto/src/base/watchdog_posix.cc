@@ -17,53 +17,28 @@
 #include "perfetto/ext/base/platform.h"
 #include "perfetto/ext/base/watchdog.h"
 
-#if PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
-
-#include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <sys/syscall.h>
-#include <sys/timerfd.h>
-#include <unistd.h>
-
-#include <algorithm>
-#include <cinttypes>
-#include <fstream>
-#include <thread>
-
 #include "perfetto/base/build_config.h"
+
+// ReadProcStat is needed even if watchdog is disabled (e.g. for guardrails).
+#include <unistd.h>
+#include <stdio.h>
 #include "perfetto/base/logging.h"
-#include "perfetto/base/thread_utils.h"
-#include "perfetto/base/time.h"
-#include "perfetto/ext/base/crash_keys.h"
-#include "perfetto/ext/base/file_utils.h"
-#include "perfetto/ext/base/scoped_file.h"
 #include "perfetto/ext/base/utils.h"
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
+namespace perfetto {
+namespace base {
+struct ProcStat {
+  unsigned long int utime = 0l;
+  unsigned long int stime = 0l;
+  long int rss_pages = -1l;
+};
+}  // namespace base
+}  // namespace perfetto
+#endif
 
 namespace perfetto {
 namespace base {
-
-namespace {
-
-constexpr uint32_t kDefaultPollingInterval = 30 * 1000;
-
-base::CrashKey g_crash_key_reason("wdog_reason");
-
-bool IsMultipleOf(uint32_t number, uint32_t divisor) {
-  return number >= divisor && number % divisor == 0;
-}
-
-double MeanForArray(const uint64_t array[], size_t size) {
-  uint64_t total = 0;
-  for (size_t i = 0; i < size; i++) {
-    total += array[i];
-  }
-  return static_cast<double>(total / size);
-}
-
-}  //  namespace
 
 bool ReadProcStat(int fd, ProcStat* out) {
   char c[512];
@@ -90,6 +65,53 @@ bool ReadProcStat(int fd, ProcStat* out) {
   }
   return true;
 }
+
+}  // namespace base
+}  // namespace perfetto
+
+#if PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
+
+#include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <sys/syscall.h>
+#include <sys/timerfd.h>
+
+#include <algorithm>
+#include <cinttypes>
+#include <fstream>
+#include <thread>
+
+#include "perfetto/base/thread_utils.h"
+#include "perfetto/base/time.h"
+#include "perfetto/ext/base/crash_keys.h"
+#include "perfetto/ext/base/file_utils.h"
+#include "perfetto/ext/base/scoped_file.h"
+
+namespace perfetto {
+namespace base {
+
+namespace {
+
+constexpr uint32_t kDefaultPollingInterval = 30 * 1000;
+
+base::CrashKey g_crash_key_reason("wdog_reason");
+
+bool IsMultipleOf(uint32_t number, uint32_t divisor) {
+  return number >= divisor && number % divisor == 0;
+}
+
+double MeanForArray(const uint64_t array[], size_t size) {
+  uint64_t total = 0;
+  for (size_t i = 0; i < size; i++) {
+    total += array[i];
+  }
+  return static_cast<double>(total / size);
+}
+
+}  //  namespace
 
 Watchdog::Watchdog(uint32_t polling_interval_ms)
     : polling_interval_ms_(polling_interval_ms) {}

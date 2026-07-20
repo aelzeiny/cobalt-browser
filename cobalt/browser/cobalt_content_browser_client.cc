@@ -655,6 +655,7 @@ void CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams(
   auto* experiment_config_manager =
       global_features->experiment_config_manager();
   auto config_type = experiment_config_manager->GetExperimentConfigType();
+  LOG(INFO) << "SetUpCobaltFeaturesAndParams: config_type = " << static_cast<int>(config_type);
   if (config_type == ExperimentConfigType::kEmptyConfig) {
     return;
   }
@@ -664,6 +665,7 @@ void CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams(
 
   const base::Value::Dict& feature_map = experiment_config->GetDict(
       use_safe_config ? kSafeConfigFeatures : kExperimentConfigFeatures);
+  LOG(INFO) << "SetUpCobaltFeaturesAndParams: feature_map size = " << feature_map.size();
   const base::Value::Dict& param_map = experiment_config->GetDict(
       use_safe_config ? kSafeConfigFeatureParams
                       : kExperimentConfigFeatureParams);
@@ -675,6 +677,8 @@ void CobaltContentBrowserClient::SetUpCobaltFeaturesAndParams(
           feature_name_and_value.second.GetBool()
               ? base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE
               : base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE;
+      LOG(INFO) << "SetUpCobaltFeaturesAndParams: Registering override: " 
+                << feature_name_and_value.first << " = " << (feature_name_and_value.second.GetBool() ? "true" : "false");
       feature_list->RegisterFieldTrialOverride(
           feature_name_and_value.first, override_value, cobalt_field_trial);
       features_applied++;

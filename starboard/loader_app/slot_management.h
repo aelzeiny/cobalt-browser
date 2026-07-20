@@ -49,6 +49,16 @@ class LibraryLoader {
   virtual void* Resolve(const std::string& symbol) = 0;
 };
 
+// Ensures that a valid uncompressed, memory-mappable copy of the LZ4
+// compressed library at |compressed_lib_path| exists at |cache_path|,
+// reusing a previously written cache when it still matches the compressed
+// library and (re)building it atomically otherwise. Returns true if a valid
+// cache is present at |cache_path| on return. Used for loading compressed
+// libraries as memory mapped files; see LoadSlotManagedLibrary() for the
+// update-slot flow and loader_app.cc for the system-image flow.
+bool EnsureUncompressedCache(const std::string& compressed_lib_path,
+                             const std::string& cache_path);
+
 // Load the library for the app specified by |app_key| and manage the
 // current slot selection by rolling forward or back based on the slot status.
 // The actual loading from the slot is performed by the |library_loader|.

@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import("//cobalt/build/configs/hacks.gni")
+import("//starboard/build/config/starboard_executable.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//third_party/perfetto/gn/perfetto.gni")
 
 _common_loader_app_sources = [
   "loader_app.cc",
@@ -67,11 +69,20 @@ if (is_starboard && current_toolchain == starboard_toolchain) {
     ]
   }
 
-  target(starboard_level_final_executable_type, "loader_app") {
-    output_dir = root_build_dir
+  starboard_executable("loader_app") {
     if (target_cpu == "x64" || target_cpu == "arm" || target_cpu == "arm64") {
       deps = [ ":loader_app_sources" ]
-      data_deps = [ "//starboard/content/fonts:copy_font_data" ]
+      data_deps = [
+        "//starboard/content/fonts:copy_font_data",
+      ]
+      if (enable_perfetto_heapprofd) {
+        data_deps += [
+          "//third_party/perfetto/src/profiling/memory:heapprofd($native_toolchain)",
+          "//third_party/perfetto/src/profiling/memory:heapprofd_glibc_preload($native_toolchain)",
+          "//third_party/perfetto/src/traced/service:traced($native_toolchain)",
+          "//third_party/perfetto/src/perfetto_cmd:perfetto($native_toolchain)",
+        ]
+      }
     }
   }
 } else {

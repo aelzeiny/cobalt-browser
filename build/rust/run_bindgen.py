@@ -93,7 +93,14 @@ def main():
       genargs.append(wrap_static_fns.name)
     genargs.append(args.header)
     genargs.append('--')
-    genargs.extend(filter_clang_args(args.clangargs))
+    clang_args = filter_clang_args(args.clangargs)
+    has_target = any(arg.startswith('-target') or arg.startswith('--target') for arg in clang_args)
+    if not has_target:
+      has_armv7 = any('-march=armv7' in arg for arg in clang_args)
+      if has_armv7:
+        clang_args.append('--target=arm-linux-gnueabihf')
+    clang_args.append('-Wno-unknown-warning-option')
+    genargs.extend(clang_args)
     env = os.environ
     if args.ld_library_path:
       if sys.platform == 'darwin':

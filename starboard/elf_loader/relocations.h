@@ -45,6 +45,10 @@ class Relocations {
   // Apply a set of relocations.
   bool ApplyRelocations(const rel_t* rel, size_t rel_count);
 
+  // Apply the packed relative relocations from the DT_RELR table, if the
+  // binary has one (lld --pack-dyn-relocs=relr).
+  bool ApplyRelrRelocations();
+
   // Apply an individual relocation.
   bool ApplyRelocation(const rel_t* rel);
 
@@ -76,6 +80,10 @@ class Relocations {
 
   Addr relocations_;
   size_t relocations_size_;
+
+  // The DT_RELR packed relative relocation table (0 if absent).
+  Addr relr_relocations_;
+  size_t relr_relocations_size_;
 
   bool has_text_relocations_;
   bool has_symbolic_;

@@ -17,6 +17,9 @@
 #include "src/profiling/memory/heapprofd_producer.h"
 
 #include <signal.h>
+#ifndef __SIGRTMIN
+#define __SIGRTMIN SIGRTMIN
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -68,7 +71,7 @@ constexpr uint64_t kDefaultShmemSize = 8 * 1048576;  // ~8 MB
 constexpr uint64_t kMaxShmemSize = 500 * 1048576;    // ~500 MB
 
 // Constants specified by bionic, hardcoded here for simplicity.
-constexpr int kProfilingSignal = __SIGRTMIN + 4;
+const int kProfilingSignal = __SIGRTMIN + 4;
 constexpr int kHeapprofdSignalValue = 0;
 
 std::vector<UnwindingWorker> MakeUnwindingWorkers(HeapprofdProducer* delegate,

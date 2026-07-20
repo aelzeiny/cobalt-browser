@@ -173,6 +173,9 @@ def main():
   sources = set(rsp_args[sources_separator + 1:])
   rsp_args = rsp_args[:sources_separator]
 
+  syslibs_to_filter = { "-lpthread", "-latomic", "-ldl", "-lm", "-lc", "-lrt" }
+  rsp_args = [arg for arg in rsp_args if arg not in syslibs_to_filter]
+
   if is_windows:
     # Work around for "-l<foo>.lib", where ".lib" suffix is undesirable.
     # Full fix will come from https://gn-review.googlesource.com/c/gn/+/12480
@@ -200,7 +203,10 @@ def main():
     r = subprocess.run([args.rustc, *rustc_args], env=env, check=False)
   finally:
     if not args.v:
-      os.remove(out_rsp)
+      try:
+        os.remove(out_rsp)
+      except FileNotFoundError:
+        pass
   if r.returncode != 0:
     sys.exit(r.returncode)
 
