@@ -1202,11 +1202,20 @@ void V8Debugger::asyncTaskFinished(void* task) {
 #ifdef V8_USE_PERFETTO
 namespace {
 void AddTraceDataWithSample(v8::Isolate* isolate,
-                            perfetto::TracedValue context) {
+                            perfetto::TracedValue context,
+                            void* task = nullptr) {
   uint64_t trace_id = v8::tracing::TraceId();
   auto dict = std::move(context).WriteDictionary();
   v8::CpuProfiler::CpuProfiler::CollectSample(isolate, trace_id);
   dict.Add("sampleTraceId", trace_id);
+  if (task) {
+    uintptr_t task_ptr = reinterpret_cast<uintptr_t>(task);
+    if (task_ptr % 2 == 1) {
+      dict.Add("promise_id", static_cast<uint64_t>((task_ptr - 1) / 2));
+    } else {
+      dict.Add("task_ptr", static_cast<uint64_t>(task_ptr));
+    }
+  }
 }
 }  // namespace
 #endif  // V8_USE_PERFETTO
@@ -1219,8 +1228,8 @@ void V8Debugger::asyncTaskScheduledForStack(const StringView& taskName,
               "v8::Debugger::AsyncTaskScheduled", "taskName",
               TRACE_STR_COPY(toString16(taskName).utf8().c_str()),
               perfetto::Flow::ProcessScoped(reinterpret_cast<uintptr_t>(task)),
-              "data", [isolate = m_isolate](perfetto::TracedValue context) {
-                AddTraceDataWithSample(isolate, std::move(context));
+              "data", [isolate = m_isolate, task](perfetto::TracedValue context) {
+                AddTraceDataWithSample(isolate, std::move(context), task);
               });
 #endif  // V8_USE_PERFETTO
   if (!m_maxAsyncCallStackDepth) return;
@@ -1240,8 +1249,8 @@ void V8Debugger::asyncTaskCanceledForStack(void* task) {
   TRACE_EVENT(TRACE_DISABLED_BY_DEFAULT("v8.inspector"),
               "v8::Debugger::AsyncTaskCanceled",
               perfetto::Flow::ProcessScoped(reinterpret_cast<uintptr_t>(task)),
-              "data", [isolate = m_isolate](perfetto::TracedValue context) {
-                AddTraceDataWithSample(isolate, std::move(context));
+              "data", [isolate = m_isolate, task](perfetto::TracedValue context) {
+                AddTraceDataWithSample(isolate, std::move(context), task);
               });
 #endif  // V8_USE_PERFETTO
   if (!m_maxAsyncCallStackDepth) return;
@@ -1254,8 +1263,8 @@ void V8Debugger::asyncTaskStartedForStack(void* task) {
   TRACE_EVENT_BEGIN(
       TRACE_DISABLED_BY_DEFAULT("v8.inspector"), "v8::Debugger::AsyncTaskRun",
       perfetto::Flow::ProcessScoped(reinterpret_cast<uintptr_t>(task)), "data",
-      [isolate = m_isolate](perfetto::TracedValue context) {
-        AddTraceDataWithSample(isolate, std::move(context));
+      [isolate = m_isolate, task](perfetto::TracedValue context) {
+        AddTraceDataWithSample(isolate, std::move(context), task);
       });
 #endif  // V8_USE_PERFETTO
 
