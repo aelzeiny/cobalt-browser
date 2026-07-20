@@ -322,7 +322,11 @@ void SbEventHandle(const SbEvent* event) {
       if (!v || v[0] == '\0') {
         v = getenv("COBALT_MEM_EXP_ALL");
       }
-      use_memory_mapped_file = v && v[0] == '1';
+      // BENCH VARIANT (mem-combined-bench-mmap): default ON so this build can
+      // serve as the treatment arm in A/B experiments whose harness cannot
+      // set per-arm environment variables. COBALT_MEM_EXP_MMAP_ELF=0 still
+      // opts out. Do not merge this default back to mem-combined-bench.
+      use_memory_mapped_file = !v || v[0] != '0';
     }
     SB_LOG(INFO) << "use_memory_mapped_file=" << use_memory_mapped_file;
 
