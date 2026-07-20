@@ -377,5 +377,145 @@ TEST_F(RelocationsTest, R_X86_64_PC32) {
 }
 #endif  // SB_IS(ARCH_X64) && defined(USE_RELA)
 
+// Tests for the packed relative relocation (DT_RELR) decoder. The format is
+// architecture independent: even entries are target addresses, odd entries
+// are bitmaps covering the words after the last explicit target.
+class RelrRelocationsTest : public ::testing::Test {
+ protected:
+  static constexpr size_t kNumWords = 64;
+  static constexpr Addr kInitialValue = 0x1000;
+
+  RelrRelocationsTest() {
+    for (size_t i = 0; i < kNumWords; ++i) {
+      words_[i] = kInitialValue;
+    }
+    base_addr_ = reinterpret_cast<Addr>(&words_[0]);
+    exported_symbols_.reset(new ExportedSymbols());
+  }
+
+  // Builds the dynamic section from |relr_table| and initializes
+  // |relocations_|. Returns the result of InitRelocations().
+  bool Init(const Relr* relr_table, size_t relr_size, Addr relr_ent) {
+    dynamic_table_[0].d_tag = DT_RELR;
+    dynamic_table_[0].d_un.d_ptr =
+        reinterpret_cast<Addr>(relr_table) - base_addr_;
+    dynamic_table_[1].d_tag = DT_RELRSZ;
+    dynamic_table_[1].d_un.d_val = relr_size;
+    dynamic_table_[2].d_tag = DT_RELRENT;
+    dynamic_table_[2].d_un.d_val = relr_ent;
+
+    dynamic_section_.reset(
+        new DynamicSection(base_addr_, dynamic_table_, 3, 0));
+    dynamic_section_->InitDynamicSection();
+    relocations_.reset(new Relocations(base_addr_, dynamic_section_.get(),
+                                       exported_symbols_.get()));
+    return relocations_->InitRelocations();
+  }
+
+  Addr WordOffset(size_t index) const { return index * sizeof(Addr); }
+
+  void VerifyRelocated(size_t index) {
+    EXPECT_EQ(kInitialValue + base_addr_, words_[index])
+        << "word " << index << " should have been relocated";
+  }
+
+  void VerifyUntouched(size_t index) {
+    EXPECT_EQ(kInitialValue, words_[index])
+        << "word " << index << " should not have been relocated";
+  }
+
+  std::unique_ptr<Relocations> relocations_;
+  Addr base_addr_;
+  Addr words_[kNumWords];
+  Dyn dynamic_table_[10];
+  std::unique_ptr<DynamicSection> dynamic_section_;
+  std::unique_ptr<ExportedSymbols> exported_symbols_;
+};
+
+TEST_F(RelrRelocationsTest, NoRelrTableIsNoop) {
+  // InitRelocations() with no DT_RELR leaves the table unset; applying is a
+  // no-op that succeeds.
+  dynamic_section_.reset();
+  Dyn empty_table[1];
+  empty_table[0].d_tag = DT_NULL;
+  DynamicSection dynamic_section(base_addr_, empty_table, 1, 0);
+  dynamic_section.InitDynamicSection();
+  Relocations relocations(base_addr_, &dynamic_section,
+                          exported_symbols_.get());
+  EXPECT_TRUE(relocations.InitRelocations());
+  EXPECT_TRUE(relocations.ApplyRelrRelocations());
+  VerifyUntouched(0);
+}
+
+TEST_F(RelrRelocationsTest, AddressEntryRelocatesSingleWord) {
+  const Relr relr_table[] = {WordOffset(0)};
+  ASSERT_TRUE(Init(relr_table, sizeof(relr_table), sizeof(Relr)));
+  EXPECT_TRUE(relocations_->ApplyRelrRelocations());
+
+  VerifyRelocated(0);
+  VerifyUntouched(1);
+}
+
+TEST_F(RelrRelocationsTest, BitmapEntriesRelocateMarkedWords) {
+  // Address entry applies word 0 and positions the window at word 1. The
+  // first bitmap covers words 1..31: bit 1 -> word 1, bit 4 -> word 4. The
+  // window then advances to word 32; the second bitmap's bit 1 -> word 32.
+  const Relr relr_table[] = {
+      WordOffset(0),
+      static_cast<Relr>(1) | (static_cast<Relr>(1) << 1) |
+          (static_cast<Relr>(1) << 4),
+      static_cast<Relr>(1) | (static_cast<Relr>(1) << 1),
+  };
+  ASSERT_TRUE(Init(relr_table, sizeof(relr_table), sizeof(Relr)));
+  EXPECT_TRUE(relocations_->ApplyRelrRelocations());
+
+  VerifyRelocated(0);
+  VerifyRelocated(1);
+  VerifyRelocated(4);
+  VerifyRelocated(32);
+  VerifyUntouched(2);
+  VerifyUntouched(3);
+  VerifyUntouched(5);
+  VerifyUntouched(31);
+  VerifyUntouched(33);
+}
+
+TEST_F(RelrRelocationsTest, InterleavedAddressAndBitmapEntries) {
+  // Address entries reset the window: word 0 explicitly, bitmap for word 2,
+  // then a new address entry for word 40 and a bitmap for word 42.
+  const Relr relr_table[] = {
+      WordOffset(0),
+      static_cast<Relr>(1) | (static_cast<Relr>(1) << 2),
+      WordOffset(40),
+      static_cast<Relr>(1) | (static_cast<Relr>(1) << 2),
+  };
+  ASSERT_TRUE(Init(relr_table, sizeof(relr_table), sizeof(Relr)));
+  EXPECT_TRUE(relocations_->ApplyRelrRelocations());
+
+  VerifyRelocated(0);
+  VerifyRelocated(2);
+  VerifyRelocated(40);
+  VerifyRelocated(42);
+  VerifyUntouched(1);
+  VerifyUntouched(3);
+  VerifyUntouched(41);
+  VerifyUntouched(43);
+}
+
+TEST_F(RelrRelocationsTest, InvalidRelrEntSizeFailsInit) {
+  const Relr relr_table[] = {WordOffset(0)};
+  EXPECT_FALSE(Init(relr_table, sizeof(relr_table), sizeof(Relr) + 1));
+}
+
+TEST_F(RelrRelocationsTest, RelrEntDoesNotClobberPltGot) {
+  // Regression test: DT_RELRENT used to fall through into the DT_PLTGOT
+  // case and corrupt the stored PLT/GOT pointer. A table with all three
+  // RELR tags must still initialize and apply cleanly.
+  const Relr relr_table[] = {WordOffset(3)};
+  ASSERT_TRUE(Init(relr_table, sizeof(relr_table), sizeof(Relr)));
+  EXPECT_TRUE(relocations_->ApplyRelrRelocations());
+  VerifyRelocated(3);
+}
+
 }  // namespace
 }  // namespace elf_loader
