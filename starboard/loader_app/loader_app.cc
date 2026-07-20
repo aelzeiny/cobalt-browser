@@ -14,6 +14,7 @@
 
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 
 #include <string>
@@ -168,13 +169,33 @@ void LoadLibraryAndInitialize(const std::string& alternative_content_path,
 
   if (compression_type != elf_loader::CompressionType::kNone &&
       use_memory_mapped_file) {
-    // The system image directory may not be writable, so no decompressed
-    // cache is created for it (unlike for update slots, see
-    // slot_management.cc). Fall back to in-memory decompression.
-    SB_LOG(WARNING) << "The system image library is compressed and cannot be "
-                    << "memory mapped; falling back to in-memory "
-                    << "decompression";
-    use_memory_mapped_file = false;
+    bool have_uncompressed_cache = false;
+    if (compression_type == elf_loader::CompressionType::kLz4) {
+      // Same decompress-once cache as the update-slot flow (see
+      // slot_management.cc): the cache lives next to the compressed library,
+      // so this works whenever the system image directory is writable (e.g.
+      // /data on RDK). On read-only system images the cache build fails and
+      // we fall back below.
+      const size_t dir_end = library_path.rfind(kSbFileSepString);
+      if (dir_end != std::string::npos) {
+        std::string cache_path = library_path.substr(0, dir_end);
+        cache_path += kSbFileSepString;
+        cache_path += "libcobalt.mmap.so";
+        if (loader_app::EnsureUncompressedCache(library_path, cache_path)) {
+          library_path = cache_path;
+          compression_type = elf_loader::CompressionType::kNone;
+          have_uncompressed_cache = true;
+        }
+      }
+    }
+    if (!have_uncompressed_cache) {
+      // No writable location for a decompressed cache (or Zstd, which has no
+      // cache path). Fall back to in-memory decompression.
+      SB_LOG(WARNING) << "The system image library is compressed and could "
+                      << "not be cached uncompressed; falling back to "
+                      << "in-memory decompression without memory mapping";
+      use_memory_mapped_file = false;
+    }
   }
 
   if (!g_elf_loader.Load(library_path, content_path, false, nullptr,
@@ -290,6 +311,19 @@ void SbEventHandle(const SbEvent* event) {
 
     bool use_memory_mapped_file =
         command_line.HasSwitch(loader_app::kLoaderUseMemoryMappedFile);
+    if (!use_memory_mapped_file) {
+      // Loader-level experiment gate (see the loader-level exceptions table
+      // in cobalt/COBALT_MEMORY_EXPERIMENTS.md). The loader runs before
+      // Cobalt's FeatureList exists, so like COBALT_MEM_EXP_LZ4_STREAM this
+      // is env-var driven: COBALT_MEM_EXP_MMAP_ELF=1 (or COBALT_MEM_EXP_ALL=1)
+      // enables file-backed memory mapping of libcobalt without needing to
+      // edit the command line the platform passes to the loader.
+      const char* v = getenv("COBALT_MEM_EXP_MMAP_ELF");
+      if (!v || v[0] == '\0') {
+        v = getenv("COBALT_MEM_EXP_ALL");
+      }
+      use_memory_mapped_file = v && v[0] == '1';
+    }
     SB_LOG(INFO) << "use_memory_mapped_file=" << use_memory_mapped_file;
 
     if (use_compressed_updates && use_memory_mapped_file) {
