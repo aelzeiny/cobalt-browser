@@ -81,6 +81,16 @@ public final class CommandLineOverrideHelper {
         paramOverrides.add("--hide-scrollbars");
         // Force GPU memory available to 64MB.
         paramOverrides.add("--force-gpu-mem-available-mb=64");
+        // Limit GPU memory available for discardable caches to 16MB.
+        paramOverrides.add("--force-gpu-mem-discardable-limit-mb=16");
+        // Limit Blink max decoded image size to 8MB.
+        paramOverrides.add("--max-decoded-image-size-mb=8");
+        // Avoid CC reuse resource.
+        paramOverrides.add("--avoid-cc-reuse-resource");
+        // Decoded image working set budget bytes.
+        paramOverrides.add("--decoded-image-working-set-budget-bytes=16777216");
+        // Enable optimized V8 code cache for scripts >= 1 KB.
+        paramOverrides.add("--enable-optimized-v8-code-cache");
 
         return paramOverrides;
     }
@@ -90,12 +100,16 @@ public final class CommandLineOverrideHelper {
 
         // Trades a little V8 performance for significant memory savings.
         paramOverrides.add("--optimize-for-size");
-        // Set initial old space size to 64MB and max old space size to 512MB.
-        paramOverrides.add("--initial-old-space-size=64");
-        paramOverrides.add("--max-old-space-size=512");
+        // While a 128MB Old Space limit significantly reduces memory footprint
+        // and garbage collection latency during browsing, it may be restrictive
+        // for particularly heavy third-party applications. This limit is selected
+        // under the holistic architectural budget alignment to prevent excessive
+        // RSS memory ballooning, but should be monitored for OOM safety.
+        paramOverrides.add("--initial-old-space-size=32");
+        paramOverrides.add("--max-old-space-size=128");
 
-        // Disable decommitting pooled pages to prevent virtual memory fragmentation.
-        paramOverrides.add("--no-decommit-pooled-pages");
+        // Enable decommitting pooled pages to return freed memory back to the OS.
+        paramOverrides.add("--decommit-pooled-pages");
 
         // Disable v8 concurrent marking by default.
         paramOverrides.add("--no-concurrent-marking");
@@ -112,8 +126,6 @@ public final class CommandLineOverrideHelper {
 
         // Pass javascript console log to adb log.
         paramOverrides.add("LogJsConsoleMessages");
-        // Limit decoded image cache to 32 mbytes.
-        paramOverrides.add("LimitImageDecodeCacheSize:mb/24");
         // It is important to use a feature override instead of the
         // rendering switch, to make sure certain devices are excluded.
         paramOverrides.add("DefaultPassthroughCommandDecoder");
