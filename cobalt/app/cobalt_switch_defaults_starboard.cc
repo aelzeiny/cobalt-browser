@@ -89,7 +89,6 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // Disable Vulkan.
       {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
       {::switches::kEnableFeatures,
-       "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
        // creation, but egl extension required to support the attribute is
@@ -121,14 +120,16 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // playback before user interaction.
       {::switches::kAutoplayPolicy, "no-user-gesture-required"},
       {blink::switches::kJavaScriptFlags,
-       // Disable decommitting pooled pages to prevent virtual memory
-       // fragmentation.
-       "--no-decommit-pooled-pages "
+       // Enable decommitting pooled pages.
+       "--decommit-pooled-pages "
        // Enable memory saving mode with little v8 performance tradeoff.
        "--optimize-for-size "
-       // Set initial old space size to 64MB and max old space size to 512MB.
-       "--initial-old-space-size=64 "
-       "--max-old-space-size=512 "
+       // Set initial old space size to 32MB and max old space size to 128MB.
+       // NOTE: Lowering max-old-space-size to 128MB is aggressive and carries
+       // OOM risk on heavy JS/DOM apps (e.g. YouTube TV). This is a tight limit
+       // aligned with the memory budget target and requires validation.
+       "--initial-old-space-size=32 "
+       "--max-old-space-size=128 "
        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
        "--disable-optimizing-compilers "
        "--no-sparkplug "
@@ -136,6 +137,22 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "--no-concurrent-marking"},
       // Limit GPU memory available to 64MB.
       {::switches::kForceGpuMemAvailableMb, "64"},
+      // Limit GPU discardable memory to 16MB.
+      // NOTE: This switch serves as the primary control, but is paired with a
+      // redundant 16MB hardcoded fallback in DiscardableCacheSizeLimit()
+      // in case command-line preprocessors are bypassed.
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      // Image decode working set budget of 16MB.
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
+      // Max decoded image size MB is 8 (8MB * 4 bytes/pixel = 32MB cap).
+      {::switches::kMaxDecodedImageSizeMb, "8"},
+      // Avoid CC reuse resource.
+      {::switches::kAvoidCCReuseResource, ""},
+      // Enable optimized V8 code cache.
+      // NOTE: This cache consumes ~5MB in generated code cache but is an
+      // intentional startup/runtime trade-off to offset performance loss
+      // from disabling V8 optimizing compilers.
+      {"enable-optimized-v8-code-cache", ""},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
   };

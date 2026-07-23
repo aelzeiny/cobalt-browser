@@ -608,6 +608,9 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
 
   settings.dynamic_safe_area_insets_on_scroll_enabled =
       RuntimeEnabledFeatures::DynamicSafeAreaInsetsOnScrollEnabled();
+#if BUILDFLAG(IS_COBALT)
+  settings.use_occlusion_for_tile_prioritization = true;
+#endif
   return settings;
 }
 

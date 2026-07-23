@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "build/build_config.h"
+
 #include "base/feature_list.h"
 #include "cc/base/features.h"
 #include "components/viz/common/resources/platform_color.h"
@@ -21,7 +23,11 @@ LayerTreeSettings::LayerTreeSettings()
           base::FeatureList::IsEnabled(features::kUseLayerListsByDefault)),
       memory_policy(64 * 1024 * 1024,
                     gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
-                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {}
+                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {
+#if BUILDFLAG(IS_COBALT)
+  use_occlusion_for_tile_prioritization = true;
+#endif
+}
 
 LayerTreeSettings::LayerTreeSettings(const LayerTreeSettings& other) = default;
 LayerTreeSettings::~LayerTreeSettings() = default;
