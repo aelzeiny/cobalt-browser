@@ -143,7 +143,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // in case command-line preprocessors are bypassed.
       {::switches::kForceGpuMemDiscardableLimitMb, "16"},
       // Image decode working set budget of 16MB.
-      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "8388608"},
       // Max decoded image size MB is 8 (8MB * 4 bytes/pixel = 32MB cap).
       {::switches::kMaxDecodedImageSizeMb, "8"},
       // Avoid CC reuse resource.
@@ -155,6 +155,14 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {"enable-optimized-v8-code-cache", ""},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      // Force GPU memory discardable limit to 16MB.
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      // Enable optimized V8 code cache.
+      {"enable-optimized-v8-code-cache", ""},
+      // Avoid reusing CC resources.
+      {::switches::kAvoidCCReuseResource, ""},
+      // Set decoded image working set budget to 8MB.
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "8388608"},
   };
   return kCobaltSwitchDefaults;
 }

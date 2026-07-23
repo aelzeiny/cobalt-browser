@@ -38,7 +38,7 @@ MIRACLE_PARAMETER_FOR_INT(GetMaxDefaultGlyphCacheTextureBytes,
     "MaxLowEndGaneshResourceCacheBytes",
     48 * 1024 * 1024)
 
-MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
                           kGrCacheLimitsFeature,
                           "MaxHighEndGaneshResourceCacheBytes",
                           256 * 1024 * 1024)
@@ -50,7 +50,7 @@ MIRACLE_PARAMETER_FOR_INT(GetMaxLowEndGlyphCacheTextureBytes,
                           1024 * 512 * 4)
 
 // High-end / low-end memory cutoffs.
-MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
                           kGrCacheLimitsFeature,
                           "HighEndMemoryThresholdMB",
                           4096)
@@ -105,9 +105,15 @@ void DetermineGrCacheLimitsFromAvailableMemory(
   if (base::SysInfo::IsLowEndDevice()) {
     *max_resource_cache_bytes = GetMaxLowEndGaneshResourceCacheBytes();
     *max_glyph_cache_texture_bytes = GetMaxLowEndGlyphCacheTextureBytes();
-  } else if (base::SysInfo::AmountOfPhysicalMemoryMB() >=
-             GetHighEndMemoryThresholdMB()) {
-    *max_resource_cache_bytes = GetMaxHighEndGaneshResourceCacheBytes();
+  } else {
+#if BUILDFLAG(IS_COBALT)
+    *max_resource_cache_bytes = 16 * 1024 * 1024;
+#else
+    if (base::SysInfo::AmountOfPhysicalMemoryMB() >=
+        GetHighEndMemoryThresholdMB()) {
+      *max_resource_cache_bytes = GetMaxHighEndGaneshResourceCacheBytes();
+    }
+#endif
   }
 #endif
 #endif
