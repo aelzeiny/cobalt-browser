@@ -612,6 +612,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
 #if BUILDFLAG(IS_COBALT)
   settings.max_memory_for_prepaint_percentage = 0;
   settings.release_tile_resources_for_hidden_layers = true;
+  settings.use_occlusion_for_tile_prioritization = true;
 #endif
   return settings;
 }

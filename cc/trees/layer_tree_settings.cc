@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "build/build_config.h"
+
 #include "base/feature_list.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
@@ -27,6 +29,7 @@ LayerTreeSettings::LayerTreeSettings()
 #if BUILDFLAG(IS_COBALT)
   max_memory_for_prepaint_percentage = 0;
   release_tile_resources_for_hidden_layers = true;
+  use_occlusion_for_tile_prioritization = true;
 #endif
 }
 
