@@ -14,6 +14,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
+#include "build/buildflag.h"
 #include "cc/base/features.h"
 #include "cc/base/switches.h"
 #include "cc/tiles/image_decode_cache_utils.h"
@@ -608,6 +609,10 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
 
   settings.dynamic_safe_area_insets_on_scroll_enabled =
       RuntimeEnabledFeatures::DynamicSafeAreaInsetsOnScrollEnabled();
+#if BUILDFLAG(IS_COBALT)
+  settings.max_memory_for_prepaint_percentage = 0;
+  settings.release_tile_resources_for_hidden_layers = true;
+#endif
   return settings;
 }
 
