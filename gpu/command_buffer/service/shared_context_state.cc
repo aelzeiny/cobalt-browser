@@ -22,6 +22,7 @@
 #include "base/task/thread_pool.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
+#include "build/buildflag.h"
 #include "components/crash/core/common/crash_key.h"
 #include "gpu/command_buffer/common/shm_count.h"
 #include "gpu/command_buffer/service/context_state.h"
@@ -92,6 +93,10 @@ namespace {
 static constexpr size_t kInitialScratchDeserializationBufferSize = 1024;
 
 size_t MaxNumSkSurface() {
+#if BUILDFLAG(IS_COBALT)
+  static constexpr size_t kLowEndMaxNumSkSurface = 4;
+  return kLowEndMaxNumSkSurface;
+#else
   static constexpr size_t kNormalMaxNumSkSurface = 16;
 #if BUILDFLAG(IS_ANDROID)
   static constexpr size_t kLowEndMaxNumSkSurface = 4;
@@ -102,6 +107,7 @@ size_t MaxNumSkSurface() {
   }
 #else
   return kNormalMaxNumSkSurface;
+#endif
 #endif
 }
 
