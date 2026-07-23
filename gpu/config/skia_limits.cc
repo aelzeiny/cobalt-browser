@@ -29,7 +29,7 @@ MIRACLE_PARAMETER_FOR_INT(GetMaxDefaultGlyphCacheTextureBytes,
                           "MaxDefaultGlyphCacheTextureBytes",
                           2048 * 1024 * 4)
 
-#if !BUILDFLAG(IS_NACL)
+#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_COBALT)
 // The limit of the bytes allocated toward GPU resources in the GrContext's
 // GPU cache.
 [[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(

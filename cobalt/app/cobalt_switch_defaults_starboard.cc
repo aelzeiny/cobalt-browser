@@ -98,7 +98,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
        "ReclaimOldPrepaintTiles"},
-  // Force some ozone settings.
+// Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
       {::switches::kUseANGLE, "gles-egl"},
@@ -136,7 +136,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        // Disable v8 concurrent marking by default.
        "--no-concurrent-marking"},
       // Limit GPU memory available to 64MB.
-      {::switches::kForceGpuMemAvailableMb, "64"},
+      {::switches::kForceGpuMemAvailableMb, "32"},
       // Limit GPU discardable memory to 16MB.
       // NOTE: This switch serves as the primary control, but is paired with a
       // redundant 16MB hardcoded fallback in DiscardableCacheSizeLimit()
