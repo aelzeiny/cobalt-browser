@@ -18,6 +18,7 @@ BASE_FEATURE(kGrCacheLimitsFeature,
              "GrCacheLimitsFeature",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+#if !BUILDFLAG(IS_COBALT)
 MIRACLE_PARAMETER_FOR_INT(GetMaxGaneshResourceCacheBytes,
                           kGrCacheLimitsFeature,
                           "MaxGaneshResourceCacheBytes",
@@ -54,6 +55,7 @@ MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
                           "HighEndMemoryThresholdMB",
                           4096)
 #endif
+#endif
 
 // Limits for the Graphite client image provider which is responsible for
 // uploading non-GPU backed images (e.g. raster, lazy/generated) to Graphite.
@@ -86,6 +88,14 @@ void DetermineGraphiteImageProviderCacheLimits(
 void DetermineGrCacheLimitsFromAvailableMemory(
     size_t* max_resource_cache_bytes,
     size_t* max_glyph_cache_texture_bytes) {
+#if BUILDFLAG(IS_COBALT)
+  if (base::SysInfo::IsLowEndDevice()) {
+    *max_resource_cache_bytes = 2 * 1024 * 1024;
+  } else {
+    *max_resource_cache_bytes = 16 * 1024 * 1024;
+  }
+  *max_glyph_cache_texture_bytes = 2 * 1024 * 1024;
+#else
   // Default limits.
   *max_resource_cache_bytes = GetMaxGaneshResourceCacheBytes();
   *max_glyph_cache_texture_bytes = GetMaxDefaultGlyphCacheTextureBytes();
@@ -93,17 +103,13 @@ void DetermineGrCacheLimitsFromAvailableMemory(
 // We can't call AmountOfPhysicalMemory under NACL, so leave the default.
 #if !BUILDFLAG(IS_NACL)
   if (base::SysInfo::IsLowEndDevice()) {
-#if BUILDFLAG(IS_COBALT)
-    constexpr size_t kLowEndCobaltMaxResourceCacheBytes = 2 * 1024 * 1024;
-    *max_resource_cache_bytes = kLowEndCobaltMaxResourceCacheBytes;
-#else
     *max_resource_cache_bytes = GetMaxLowEndGaneshResourceCacheBytes();
-#endif
     *max_glyph_cache_texture_bytes = GetMaxLowEndGlyphCacheTextureBytes();
   } else if (base::SysInfo::AmountOfPhysicalMemoryMB() >=
              GetHighEndMemoryThresholdMB()) {
     *max_resource_cache_bytes = GetMaxHighEndGaneshResourceCacheBytes();
   }
+#endif
 #endif
 }
 
