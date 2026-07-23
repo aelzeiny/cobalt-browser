@@ -79,6 +79,10 @@ CommandLinePreprocessor::GetCobaltToggleSwitches() {
       ::switches::kForceDarkMode,
       // Hide scrollbars to avoid memory allocation.
       ::switches::kHideScrollbars,
+      // Avoid reuse resource.
+      ::switches::kAvoidCCReuseResource,
+      // Enable optimized V8 code cache for scripts >= 1 KB.
+      "enable-optimized-v8-code-cache",
   };
   return kCobaltToggleSwitches;
 }
@@ -98,6 +102,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
        "ReclaimOldPrepaintTiles"},
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
   // Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
@@ -155,6 +160,10 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {"enable-optimized-v8-code-cache", ""},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      // Limit GPU memory available for discardable caches to 16MB.
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      // Limit Blink max decoded image size to 8MB.
+      {::switches::kMaxDecodedImageSizeMb, "8"},
   };
   return kCobaltSwitchDefaults;
 }
