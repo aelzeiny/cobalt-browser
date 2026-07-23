@@ -824,6 +824,10 @@ base::WeakPtr<media::DecoderFactory> MediaFactory::GetDecoderFactory() {
   return decoder_factory_->GetWeakPtr();
 }
 
+bool MediaFactory::IsPlayingVideo() const {
+  return media_player_delegate_ && media_player_delegate_->IsAnyVideoPlaying();
+}
+
 void MediaFactory::EnsureDecoderFactory() {
   if (!decoder_factory_) {
     std::unique_ptr<media::DecoderFactory> external_decoder_factory;

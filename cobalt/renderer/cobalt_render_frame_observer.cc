@@ -15,12 +15,20 @@
 #include "cobalt/renderer/cobalt_render_frame_observer.h"
 
 #include "base/command_line.h"
+#include "base/location.h"
+#include "base/memory/memory_pressure_listener.h"
 #include "cobalt/browser/switches.h"
 #include "content/public/renderer/render_frame.h"
+#include "content/public/renderer/render_frame_visitor.h"
 #include "starboard/extension/graphics.h"
 #include "starboard/system.h"
 
 namespace cobalt {
+
+// static
+base::TimeTicks CobaltRenderFrameObserver::last_activity_ = base::TimeTicks::Now();
+// static
+bool CobaltRenderFrameObserver::did_reclaim_this_idle_ = false;
 
 CobaltRenderFrameObserver::CobaltRenderFrameObserver(
     content::RenderFrame* render_frame)
@@ -30,6 +38,21 @@ CobaltRenderFrameObserver::~CobaltRenderFrameObserver() = default;
 
 void CobaltRenderFrameObserver::OnDestruct() {
   delete this;
+}
+
+void CobaltRenderFrameObserver::DidChangeScrollOffset() {
+  last_activity_ = base::TimeTicks::Now();
+  did_reclaim_this_idle_ = false;
+}
+
+void CobaltRenderFrameObserver::DidObserveUserInteraction(
+    base::TimeTicks max_event_start,
+    base::TimeTicks max_event_queued_main_thread,
+    base::TimeTicks max_event_commit_finish,
+    base::TimeTicks max_event_end,
+    uint64_t interaction_offset) {
+  last_activity_ = base::TimeTicks::Now();
+  did_reclaim_this_idle_ = false;
 }
 
 void CobaltRenderFrameObserver::DidMeaningfulLayout(
@@ -43,6 +66,45 @@ void CobaltRenderFrameObserver::DidMeaningfulLayout(
         graphics_extension->version >= 6) {
       graphics_extension->ReportFullyDrawn();
     }
+    if (render_frame() && render_frame()->IsMainFrame() &&
+        !idle_reclaim_timer_.IsRunning()) {
+      idle_reclaim_timer_.Start(
+          FROM_HERE, base::Seconds(5), this,
+          &CobaltRenderFrameObserver::CheckIdleReclaim);
+    }
+  }
+}
+
+void CobaltRenderFrameObserver::CheckIdleReclaim() {
+  if (!render_frame() || !render_frame()->IsMainFrame()) {
+    return;
+  }
+
+  struct PlaybackVisitor : public content::RenderFrameVisitor {
+    bool Visit(content::RenderFrame* frame) override {
+      if (frame && frame->IsPlayingVideo()) {
+        is_playing_video = true;
+        return false;  // Stop visiting.
+      }
+      return true;
+    }
+    bool is_playing_video = false;
+  } visitor;
+  content::RenderFrame::ForEach(&visitor);
+
+  if (visitor.is_playing_video) {
+    // Refresh last_activity_ while video is actively playing so steady-state playback
+    // is never misclassified as interaction-idle.
+    last_activity_ = base::TimeTicks::Now();
+    did_reclaim_this_idle_ = false;
+    return;
+  }
+
+  if (base::TimeTicks::Now() - last_activity_ >= base::Seconds(8) &&
+      !did_reclaim_this_idle_) {
+    did_reclaim_this_idle_ = true;
+    base::MemoryPressureListener::NotifyMemoryPressure(
+        base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
   }
 }
 
