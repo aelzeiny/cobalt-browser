@@ -15,6 +15,8 @@
 #ifndef COBALT_RENDERER_COBALT_RENDER_FRAME_OBSERVER_H_
 #define COBALT_RENDERER_COBALT_RENDER_FRAME_OBSERVER_H_
 
+#include "base/time/time.h"
+#include "base/timer/timer.h"
 #include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_frame_observer.h"
 #include "starboard/extension/graphics.h"
@@ -36,9 +38,22 @@ class CobaltRenderFrameObserver : public content::RenderFrameObserver {
 
  private:
   // content::RenderFrameObserver impl.
+  void DidChangeScrollOffset() override;
+  void DidObserveUserInteraction(
+      base::TimeTicks max_event_start,
+      base::TimeTicks max_event_queued_main_thread,
+      base::TimeTicks max_event_commit_finish,
+      base::TimeTicks max_event_end,
+      uint64_t interaction_offset) override;
 
   // Overridden so that the observer has the same lifetime as the RenderFrame.
   void OnDestruct() override;
+
+  void CheckIdleReclaim();
+
+  base::TimeTicks last_activity_;
+  bool did_reclaim_this_idle_ = false;
+  base::RepeatingTimer idle_reclaim_timer_;
 };
 
 }  // namespace cobalt
