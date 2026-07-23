@@ -3852,11 +3852,19 @@ scoped_refptr<TileTask> GpuImageDecodeCache::GetTaskFromMapForClientId(
 }
 
 base::TimeDelta GpuImageDecodeCache::get_purge_interval() {
+#if BUILDFLAG(IS_COBALT)
+  return base::Seconds(10);
+#else
   return base::Seconds(30);
+#endif
 }
 
 base::TimeDelta GpuImageDecodeCache::get_max_purge_age() {
+#if BUILDFLAG(IS_COBALT)
+  return base::Seconds(10);
+#else
   return base::Seconds(30);
+#endif
 }
 
 }  // namespace cc
