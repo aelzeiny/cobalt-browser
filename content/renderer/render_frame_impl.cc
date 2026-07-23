@@ -6817,6 +6817,10 @@ RenderFrameImpl::GetAgentGroupScheduler() {
   return agent_scheduling_group_->agent_group_scheduler();
 }
 
+bool RenderFrameImpl::IsPlayingVideo() {
+  return media_factory_.IsPlayingVideo();
+}
+
 url::Origin RenderFrameImpl::GetSecurityOriginOfTopFrame() {
   return frame_->Top()->GetSecurityOrigin();
 }

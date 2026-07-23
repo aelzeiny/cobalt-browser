@@ -433,6 +433,7 @@ class CONTENT_EXPORT RenderFrameImpl
       const gfx::Rect& rect) override;
   float GetDeviceScaleFactor() override;
   blink::scheduler::WebAgentGroupScheduler& GetAgentGroupScheduler() override;
+  bool IsPlayingVideo() override;
 
   // blink::mojom::AutoplayConfigurationClient implementation:
   void AddAutoplayFlags(const url::Origin& origin,

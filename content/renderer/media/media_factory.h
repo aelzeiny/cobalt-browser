@@ -119,6 +119,8 @@ class MediaFactory {
   // Can be dereferenced only on the media thread.
   base::WeakPtr<media::DecoderFactory> GetDecoderFactory();
 
+  bool IsPlayingVideo() const;
+
  private:
   // Initializes `decoder_factory_` if it hasn't been initialized yet.
   void EnsureDecoderFactory();

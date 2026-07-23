@@ -243,6 +243,8 @@ class CONTENT_EXPORT RenderFrame :
   virtual blink::scheduler::WebAgentGroupScheduler&
   GetAgentGroupScheduler() = 0;
 
+  virtual bool IsPlayingVideo() = 0;
+
  protected:
   ~RenderFrame() override {}
 

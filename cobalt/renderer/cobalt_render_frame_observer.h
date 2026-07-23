@@ -51,8 +51,8 @@ class CobaltRenderFrameObserver : public content::RenderFrameObserver {
 
   void CheckIdleReclaim();
 
-  base::TimeTicks last_activity_;
-  bool did_reclaim_this_idle_ = false;
+  static base::TimeTicks last_activity_;
+  static bool did_reclaim_this_idle_;
   base::RepeatingTimer idle_reclaim_timer_;
 };
 
