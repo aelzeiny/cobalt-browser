@@ -79,6 +79,10 @@ CommandLinePreprocessor::GetCobaltToggleSwitches() {
       ::switches::kForceDarkMode,
       // Hide scrollbars to avoid memory allocation.
       ::switches::kHideScrollbars,
+      // Avoid reuse resource.
+      ::switches::kAvoidCCReuseResource,
+      // Enable optimized V8 code cache for scripts >= 1 KB.
+      "enable-optimized-v8-code-cache",
   };
   return kCobaltToggleSwitches;
 }
@@ -89,7 +93,6 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // Disable Vulkan.
       {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
       {::switches::kEnableFeatures,
-       "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
        // creation, but egl extension required to support the attribute is
@@ -99,6 +102,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
        "ReclaimOldPrepaintTiles"},
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
   // Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
@@ -121,14 +125,17 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // playback before user interaction.
       {::switches::kAutoplayPolicy, "no-user-gesture-required"},
       {blink::switches::kJavaScriptFlags,
-       // Disable decommitting pooled pages to prevent virtual memory
-       // fragmentation.
-       "--no-decommit-pooled-pages "
+       // Enable decommitting pooled pages to return freed memory back to the OS.
+       "--decommit-pooled-pages "
        // Enable memory saving mode with little v8 performance tradeoff.
        "--optimize-for-size "
-       // Set initial old space size to 64MB and max old space size to 512MB.
-       "--initial-old-space-size=64 "
-       "--max-old-space-size=512 "
+       // While a 128MB Old Space limit significantly reduces memory footprint
+       // and garbage collection latency during browsing, it may be restrictive
+       // for particularly heavy third-party applications. This limit is selected
+       // under the holistic architectural budget alignment to prevent excessive
+       // RSS memory ballooning, but should be monitored for OOM safety.
+       "--initial-old-space-size=32 "
+       "--max-old-space-size=128 "
        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
        "--disable-optimizing-compilers "
        "--no-sparkplug "
@@ -138,6 +145,10 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {::switches::kForceGpuMemAvailableMb, "64"},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      // Limit GPU memory available for discardable caches to 16MB.
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      // Limit Blink max decoded image size to 8MB.
+      {::switches::kMaxDecodedImageSizeMb, "8"},
   };
   return kCobaltSwitchDefaults;
 }

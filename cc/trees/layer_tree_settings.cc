@@ -7,6 +7,7 @@
 #include <string>
 
 #include "base/feature_list.h"
+#include "build/build_config.h"
 #include "cc/base/features.h"
 #include "components/viz/common/resources/platform_color.h"
 #include "third_party/khronos/GLES2/gl2.h"
@@ -19,9 +20,19 @@ LayerTreeSettings::LayerTreeSettings()
       minimum_occlusion_tracking_size(gfx::Size(160, 160)),
       use_layer_lists(
           base::FeatureList::IsEnabled(features::kUseLayerListsByDefault)),
+#if BUILDFLAG(IS_COBALT)
+      memory_policy(32 * 1024 * 1024,
+                    gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
+                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {
+  max_staging_buffer_usage_in_bytes = 8 * 1024 * 1024;
+  max_memory_for_prepaint_percentage = 0;
+  release_tile_resources_for_hidden_layers = true;
+}
+#else
       memory_policy(64 * 1024 * 1024,
                     gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
                     ManagedMemoryPolicy::kDefaultNumResourcesLimit) {}
+#endif
 
 LayerTreeSettings::LayerTreeSettings(const LayerTreeSettings& other) = default;
 LayerTreeSettings::~LayerTreeSettings() = default;
