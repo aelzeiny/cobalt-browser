@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "cc/trees/layer_tree_settings.h"
+#include "build/build_config.h"
 
 #include <string>
 
@@ -21,7 +22,12 @@ LayerTreeSettings::LayerTreeSettings()
           base::FeatureList::IsEnabled(features::kUseLayerListsByDefault)),
       memory_policy(64 * 1024 * 1024,
                     gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
-                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {}
+                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {
+#if BUILDFLAG(IS_COBALT)
+  max_memory_for_prepaint_percentage = 0;
+  release_tile_resources_for_hidden_layers = true;
+#endif
+}
 
 LayerTreeSettings::LayerTreeSettings(const LayerTreeSettings& other) = default;
 LayerTreeSettings::~LayerTreeSettings() = default;

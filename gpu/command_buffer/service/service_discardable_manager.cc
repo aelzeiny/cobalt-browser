@@ -21,6 +21,9 @@
 namespace gpu {
 
 size_t DiscardableCacheSizeLimit() {
+#if BUILDFLAG(IS_COBALT)
+  return 16 * 1024 * 1024;
+#else
 // Cache size values are designed to roughly correspond to existing image cache
 // sizes for 1-1.5 renderers. These will be updated as more types of data are
 // moved to this cache.
@@ -49,6 +52,7 @@ size_t DiscardableCacheSizeLimit() {
   } else {
     return kLargeCacheSizeBytes;
   }
+#endif
 #endif
 }
 
