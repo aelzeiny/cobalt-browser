@@ -37,19 +37,19 @@ MIRACLE_PARAMETER_FOR_INT(GetMaxDefaultGlyphCacheTextureBytes,
     "MaxLowEndGaneshResourceCacheBytes",
     48 * 1024 * 1024)
 
-MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
                           kGrCacheLimitsFeature,
                           "MaxHighEndGaneshResourceCacheBytes",
                           256 * 1024 * 1024)
 
 // Limits for glyph cache textures.
-MIRACLE_PARAMETER_FOR_INT(GetMaxLowEndGlyphCacheTextureBytes,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetMaxLowEndGlyphCacheTextureBytes,
                           kGrCacheLimitsFeature,
                           "MaxLowEndGlyphCacheTextureBytes",
                           1024 * 512 * 4)
 
 // High-end / low-end memory cutoffs.
-MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
                           kGrCacheLimitsFeature,
                           "HighEndMemoryThresholdMB",
                           4096)
@@ -92,18 +92,22 @@ void DetermineGrCacheLimitsFromAvailableMemory(
 
 // We can't call AmountOfPhysicalMemory under NACL, so leave the default.
 #if !BUILDFLAG(IS_NACL)
-  if (base::SysInfo::IsLowEndDevice()) {
 #if BUILDFLAG(IS_COBALT)
-    constexpr size_t kLowEndCobaltMaxResourceCacheBytes = 2 * 1024 * 1024;
-    *max_resource_cache_bytes = kLowEndCobaltMaxResourceCacheBytes;
+  if (base::SysInfo::IsLowEndDevice()) {
+    *max_resource_cache_bytes = 2 * 1024 * 1024;
+  } else {
+    *max_resource_cache_bytes = 16 * 1024 * 1024;
+  }
+  *max_glyph_cache_texture_bytes = 2 * 1024 * 1024;
 #else
+  if (base::SysInfo::IsLowEndDevice()) {
     *max_resource_cache_bytes = GetMaxLowEndGaneshResourceCacheBytes();
-#endif
     *max_glyph_cache_texture_bytes = GetMaxLowEndGlyphCacheTextureBytes();
   } else if (base::SysInfo::AmountOfPhysicalMemoryMB() >=
              GetHighEndMemoryThresholdMB()) {
     *max_resource_cache_bytes = GetMaxHighEndGaneshResourceCacheBytes();
   }
+#endif
 #endif
 }
 

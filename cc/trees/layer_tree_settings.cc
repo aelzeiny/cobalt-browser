@@ -4,6 +4,8 @@
 
 #include "cc/trees/layer_tree_settings.h"
 
+#include "build/build_config.h"
+
 #include <string>
 
 #include "base/feature_list.h"
@@ -19,9 +21,19 @@ LayerTreeSettings::LayerTreeSettings()
       minimum_occlusion_tracking_size(gfx::Size(160, 160)),
       use_layer_lists(
           base::FeatureList::IsEnabled(features::kUseLayerListsByDefault)),
-      memory_policy(64 * 1024 * 1024,
+      memory_policy(
+#if BUILDFLAG(IS_COBALT)
+                    32 * 1024 * 1024,
+#else
+                    64 * 1024 * 1024,
+#endif
                     gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
-                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {}
+                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {
+#if BUILDFLAG(IS_COBALT)
+  max_memory_for_prepaint_percentage = 0;
+  release_tile_resources_for_hidden_layers = true;
+#endif
+}
 
 LayerTreeSettings::LayerTreeSettings(const LayerTreeSettings& other) = default;
 LayerTreeSettings::~LayerTreeSettings() = default;

@@ -89,7 +89,6 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // Disable Vulkan.
       {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
       {::switches::kEnableFeatures,
-       "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
        // creation, but egl extension required to support the attribute is
@@ -121,14 +120,13 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // playback before user interaction.
       {::switches::kAutoplayPolicy, "no-user-gesture-required"},
       {blink::switches::kJavaScriptFlags,
-       // Disable decommitting pooled pages to prevent virtual memory
-       // fragmentation.
-       "--no-decommit-pooled-pages "
+       // Enable decommitting pooled pages to return unused heap memory to OS.
+       "--decommit-pooled-pages "
        // Enable memory saving mode with little v8 performance tradeoff.
        "--optimize-for-size "
-       // Set initial old space size to 64MB and max old space size to 512MB.
-       "--initial-old-space-size=64 "
-       "--max-old-space-size=512 "
+       // Set initial old space size to 32MB and max old space size to 128MB.
+       "--initial-old-space-size=32 "
+       "--max-old-space-size=128 "
        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
        "--disable-optimizing-compilers "
        "--no-sparkplug "
@@ -138,6 +136,11 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {::switches::kForceGpuMemAvailableMb, "64"},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      {"enable-optimized-v8-code-cache", ""},
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
+      {::switches::kAvoidCCReuseResource, ""},
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      {::switches::kMaxDecodedImageSizeMb, "8"},
   };
   return kCobaltSwitchDefaults;
 }

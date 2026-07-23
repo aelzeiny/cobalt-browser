@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 
+#include "build/build_config.h"
+
 #include "base/time/time.h"
 #include "cc/base/features.h"
 #include "cc/cc_export.h"
@@ -109,7 +111,11 @@ class CC_EXPORT LayerTreeSettings {
   size_t scheduled_raster_task_limit = 32;
   bool use_occlusion_for_tile_prioritization = false;
   bool use_layer_lists = false;
+#if BUILDFLAG(IS_COBALT)
+  int max_staging_buffer_usage_in_bytes = 8 * 1024 * 1024;
+#else
   int max_staging_buffer_usage_in_bytes = 32 * 1024 * 1024;
+#endif
   ManagedMemoryPolicy memory_policy;
   size_t decoded_image_working_set_budget_bytes =
       ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode(
