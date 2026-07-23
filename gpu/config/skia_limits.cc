@@ -38,19 +38,19 @@ MIRACLE_PARAMETER_FOR_INT(GetMaxDefaultGlyphCacheTextureBytes,
     "MaxLowEndGaneshResourceCacheBytes",
     48 * 1024 * 1024)
 
-MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetMaxHighEndGaneshResourceCacheBytes,
                           kGrCacheLimitsFeature,
                           "MaxHighEndGaneshResourceCacheBytes",
                           256 * 1024 * 1024)
 
 // Limits for glyph cache textures.
-MIRACLE_PARAMETER_FOR_INT(GetMaxLowEndGlyphCacheTextureBytes,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetMaxLowEndGlyphCacheTextureBytes,
                           kGrCacheLimitsFeature,
                           "MaxLowEndGlyphCacheTextureBytes",
                           1024 * 512 * 4)
 
 // High-end / low-end memory cutoffs.
-MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
+[[maybe_unused]] MIRACLE_PARAMETER_FOR_INT(GetHighEndMemoryThresholdMB,
                           kGrCacheLimitsFeature,
                           "HighEndMemoryThresholdMB",
                           4096)

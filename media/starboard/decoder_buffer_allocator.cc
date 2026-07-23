@@ -89,9 +89,6 @@ DecoderBufferAllocator* DecoderBufferAllocator::Get() {
 }
 
 void DecoderBufferAllocator::ReleaseIdleMemory() {
-  if (is_memory_pool_allocated_on_demand_) {
-    return;
-  }
   base::AutoLock scoped_lock(mutex_);
   if (!should_release_idle_memory_) {
     return;
@@ -316,8 +313,10 @@ void DecoderBufferAllocator::EnsureStrategyIsCreated() {
                     "strategy. Falling back to default.";
   }
 
-  strategy_ = std::make_unique<DefaultReuseAllocatorStrategy>(initial_capacity_,
-                                                              allocation_unit_);
+  strategy_ = std::make_unique<DefaultReuseAllocatorStrategy>(
+      initial_capacity_, allocation_unit_, /*enable_decommit_on_idle=*/true,
+      /*retain_blocks=*/0, /*conservative_decommit_blocks=*/0,
+      /*aggressive_decommit_on_suspend=*/true);
   LOG(INFO) << "DecoderBufferAllocator is using "
                "DefaultReuseAllocatorStrategy.";
 

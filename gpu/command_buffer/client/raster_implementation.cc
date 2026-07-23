@@ -1951,11 +1951,15 @@ void RasterImplementation::SetActiveURLCHROMIUM(const char* url) {
 cc::ClientPaintCache* RasterImplementation::GetOrCreatePaintCache() {
   if (!paint_cache_) {
     size_t paint_cache_budget = 0u;
+#if BUILDFLAG(IS_COBALT)
+    paint_cache_budget = 256 * 1024;
+#else
     if (base::SysInfo::IsLowEndDevice()) {
       paint_cache_budget = 256 * 1024;
     } else {
       paint_cache_budget = 4 * 1024 * 1024;
     }
+#endif
     paint_cache_ = std::make_unique<cc::ClientPaintCache>(paint_cache_budget);
   }
   return paint_cache_.get();

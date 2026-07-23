@@ -155,6 +155,11 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {"enable-optimized-v8-code-cache", ""},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      {"enable-optimized-v8-code-cache", ""},
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
+      {::switches::kAvoidCCReuseResource, ""},
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      {::switches::kMaxDecodedImageSizeMb, "8"},
   };
   return kCobaltSwitchDefaults;
 }
