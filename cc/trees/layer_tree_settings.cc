@@ -8,6 +8,7 @@
 
 #include "base/feature_list.h"
 #include "cc/base/features.h"
+#include "build/build_config.h"
 #include "components/viz/common/resources/platform_color.h"
 #include "third_party/khronos/GLES2/gl2.h"
 
@@ -21,7 +22,13 @@ LayerTreeSettings::LayerTreeSettings()
           base::FeatureList::IsEnabled(features::kUseLayerListsByDefault)),
       memory_policy(64 * 1024 * 1024,
                     gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING,
-                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {}
+                    ManagedMemoryPolicy::kDefaultNumResourcesLimit) {
+#if BUILDFLAG(IS_COBALT)
+  use_occlusion_for_tile_prioritization = true;
+  max_memory_for_prepaint_percentage = 0;
+  release_tile_resources_for_hidden_layers = true;
+#endif
+}
 
 LayerTreeSettings::LayerTreeSettings(const LayerTreeSettings& other) = default;
 LayerTreeSettings::~LayerTreeSettings() = default;

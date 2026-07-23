@@ -86,6 +86,13 @@ void DetermineGraphiteImageProviderCacheLimits(
 void DetermineGrCacheLimitsFromAvailableMemory(
     size_t* max_resource_cache_bytes,
     size_t* max_glyph_cache_texture_bytes) {
+#if BUILDFLAG(IS_COBALT)
+  if (!base::SysInfo::IsLowEndDevice()) {
+    *max_resource_cache_bytes = 16 * 1024 * 1024;
+    *max_glyph_cache_texture_bytes = 1024 * 512 * 4;
+    return;
+  }
+#endif
   // Default limits.
   *max_resource_cache_bytes = GetMaxGaneshResourceCacheBytes();
   *max_glyph_cache_texture_bytes = GetMaxDefaultGlyphCacheTextureBytes();
