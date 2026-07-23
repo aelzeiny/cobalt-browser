@@ -608,6 +608,10 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
 
   settings.dynamic_safe_area_insets_on_scroll_enabled =
       RuntimeEnabledFeatures::DynamicSafeAreaInsetsOnScrollEnabled();
+#if BUILDFLAG(IS_COBALT)
+  settings.max_memory_for_prepaint_percentage = 0;
+  settings.release_tile_resources_for_hidden_layers = true;
+#endif
   return settings;
 }
 

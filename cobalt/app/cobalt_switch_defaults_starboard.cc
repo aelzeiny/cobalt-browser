@@ -126,9 +126,9 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "--no-decommit-pooled-pages "
        // Enable memory saving mode with little v8 performance tradeoff.
        "--optimize-for-size "
-       // Set initial old space size to 64MB and max old space size to 512MB.
-       "--initial-old-space-size=64 "
-       "--max-old-space-size=512 "
+       // Set initial old space size to 32MB and max old space size to 128MB.
+       "--initial-old-space-size=32 "
+       "--max-old-space-size=128 "
        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
        "--disable-optimizing-compilers "
        "--no-sparkplug "
@@ -138,6 +138,14 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       {::switches::kForceGpuMemAvailableMb, "64"},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
+      // Force GPU memory discardable limit to 16MB.
+      {::switches::kForceGpuMemDiscardableLimitMb, "16"},
+      // Enable optimized V8 code cache.
+      {"enable-optimized-v8-code-cache", ""},
+      // Avoid reusing CC resources.
+      {::switches::kAvoidCCReuseResource, ""},
+      // Set decoded image working set budget to 8MB.
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "8388608"},
   };
   return kCobaltSwitchDefaults;
 }
