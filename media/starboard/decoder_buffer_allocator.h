@@ -108,7 +108,11 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
   // actively decoding on the media thread. We defer idle memory reclamation
   // until buffers drain in Free().
   bool has_pending_release_ GUARDED_BY(mutex_) = false;
+#if BUILDFLAG(IS_COBALT)
+  bool should_release_idle_memory_ GUARDED_BY(mutex_) = true;
+#else
   bool should_release_idle_memory_ GUARDED_BY(mutex_) = false;
+#endif
   StrategyCreateCB experimental_strategy_create_cb_ GUARDED_BY(mutex_);
 
 #if !BUILDFLAG(COBALT_IS_RELEASE_BUILD)

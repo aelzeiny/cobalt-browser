@@ -89,7 +89,6 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // Disable Vulkan.
       {::switches::kDisableFeatures, "Vulkan,MemoryCacheStrongReference"},
       {::switches::kEnableFeatures,
-       "LimitImageDecodeCacheSize:mb/24, "
        // When DefaultEnableANGLEValidation is disabled (e.g gold/qa), EGL
        // attribute EGL_CONTEXT_OPENGL_NO_ERROR_KHR is set during egl context
        // creation, but egl extension required to support the attribute is
@@ -99,7 +98,7 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        "SmallerInterestArea, "
        "ReclaimPrepaintTilesWhenIdle, "
        "ReclaimOldPrepaintTiles"},
-  // Force some ozone settings.
+// Force some ozone settings.
 #if BUILDFLAG(IS_OZONE)
       {::switches::kUseGL, "angle"},
       {::switches::kUseANGLE, "gles-egl"},
@@ -121,21 +120,25 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
       // playback before user interaction.
       {::switches::kAutoplayPolicy, "no-user-gesture-required"},
       {blink::switches::kJavaScriptFlags,
-       // Disable decommitting pooled pages to prevent virtual memory
+       // Enable decommitting pooled pages to prevent virtual memory
        // fragmentation.
-       "--no-decommit-pooled-pages "
+       "--decommit-pooled-pages "
        // Enable memory saving mode with little v8 performance tradeoff.
        "--optimize-for-size "
-       // Set initial old space size to 64MB and max old space size to 512MB.
-       "--initial-old-space-size=64 "
-       "--max-old-space-size=512 "
+       // Set initial old space size to 32MB and max old space size to 128MB.
+       "--initial-old-space-size=32 "
+       "--max-old-space-size=128 "
        // Disable v8 optimizing compilers (turbofan, maglev, sparkplug).
        "--disable-optimizing-compilers "
        "--no-sparkplug "
        // Disable v8 concurrent marking by default.
        "--no-concurrent-marking"},
-      // Limit GPU memory available to 64MB.
-      {::switches::kForceGpuMemAvailableMb, "64"},
+      // Limit GPU memory available to 32MB.
+      {::switches::kForceGpuMemAvailableMb, "32"},
+      // Limit the decoded-image working set to 16MB.
+      {::switches::kDecodedImageWorkingSetBudgetBytes, "16777216"},
+      // Enable CC resource avoid-reuse toggle.
+      {::switches::kAvoidCCReuseResource, ""},
       // Disable CC image cache items limit.
       {::switches::kCCImageCacheLimitItems, "0"},
   };

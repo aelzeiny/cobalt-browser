@@ -482,11 +482,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
     // On low-end we want to be very careful about killing other
     // apps. So initially we use 50% more memory to avoid flickering
     // or raster-on-demand.
-  #if BUILDFLAG(IS_COBALT)
-    settings.max_memory_for_prepaint_percentage = 0;
-  #else
     settings.max_memory_for_prepaint_percentage = 67;
-  #endif
   } else {
     // On other devices we have increased memory excessively to avoid
     // raster-on-demand already, so now we reserve 50% _only_ to avoid
@@ -569,9 +565,13 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   }
 
   settings.max_staging_buffer_usage_in_bytes = 32 * 1024 * 1024;  // 32MB
+#if BUILDFLAG(IS_COBALT)
+  settings.max_staging_buffer_usage_in_bytes = 8 * 1024 * 1024;  // 8MB
+#else
   // Use 1/4th of staging buffers on low-end devices.
   if (base::SysInfo::IsLowEndDevice())
     settings.max_staging_buffer_usage_in_bytes /= 4;
+#endif
 
   cc::ManagedMemoryPolicy defaults = settings.memory_policy;
   settings.memory_policy = GetGpuMemoryPolicy(defaults, initial_screen_size,
@@ -608,6 +608,10 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
 
   settings.dynamic_safe_area_insets_on_scroll_enabled =
       RuntimeEnabledFeatures::DynamicSafeAreaInsetsOnScrollEnabled();
+#if BUILDFLAG(IS_COBALT)
+  settings.max_memory_for_prepaint_percentage = 0;
+  settings.release_tile_resources_for_hidden_layers = true;
+#endif
   return settings;
 }
 

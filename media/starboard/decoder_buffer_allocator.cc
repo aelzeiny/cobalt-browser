@@ -89,9 +89,11 @@ DecoderBufferAllocator* DecoderBufferAllocator::Get() {
 }
 
 void DecoderBufferAllocator::ReleaseIdleMemory() {
+#if !BUILDFLAG(IS_COBALT)
   if (is_memory_pool_allocated_on_demand_) {
     return;
   }
+#endif
   base::AutoLock scoped_lock(mutex_);
   if (!should_release_idle_memory_) {
     return;

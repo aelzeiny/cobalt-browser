@@ -30,11 +30,23 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
  public:
   BidirectionalFitDecoderBufferAllocatorStrategy(size_t initial_capacity,
                                                  size_t allocation_increment)
+#if BUILDFLAG(IS_COBALT)
+      : fallback_allocator_(/*enable_decommit_on_idle=*/true),
+        bidirectional_fit_allocator_(&fallback_allocator_,
+                                     initial_capacity,
+                                     kSmallAllocationThreshold,
+                                     allocation_increment,
+                                     /*enable_decommit_on_idle=*/true,
+                                     /*retain_blocks=*/0,
+                                     /*conservative_decommit_blocks=*/0,
+                                     /*aggressive_decommit_on_suspend=*/false) {}
+#else
       : fallback_allocator_(/*enable_decommit_on_idle=*/false),
         bidirectional_fit_allocator_(&fallback_allocator_,
                                      initial_capacity,
                                      kSmallAllocationThreshold,
                                      allocation_increment) {}
+#endif
 
   // Constructs a strategy with explicit decommit configurations.
   // |enable_decommit_on_idle|: Whether to perform any decommits when idle.
