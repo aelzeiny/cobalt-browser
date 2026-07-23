@@ -66,8 +66,7 @@ TEST(CobaltSwitchDefaultsTest, MergeEnabledFeatures) {
 
   std::string enabled_features =
       GetSwitchValue(cmd_line_pxr, ::switches::kEnableFeatures);
-  EXPECT_EQ(std::string("UseFoo,LimitImageDecodeCacheSize:mb/24, "
-                        "DefaultEnableANGLEValidation, "
+  EXPECT_EQ(std::string("UseFoo,DefaultEnableANGLEValidation, "
                         "SmallerInterestArea, "
                         "ReclaimPrepaintTilesWhenIdle, "
                         "ReclaimOldPrepaintTiles"),
@@ -124,6 +123,21 @@ TEST(CobaltSwitchDefaultsTest, GpuMemorySwitchDefault) {
   std::string gpu_mem =
       GetSwitchValue(cmd_line_pxr, ::switches::kForceGpuMemAvailableMb);
   EXPECT_EQ(std::string("64"), gpu_mem);
+
+  std::string discardable_limit =
+      GetSwitchValue(cmd_line_pxr, ::switches::kForceGpuMemDiscardableLimitMb);
+  EXPECT_EQ(std::string("16"), discardable_limit);
+
+  std::string working_set_budget =
+      GetSwitchValue(cmd_line_pxr, ::switches::kDecodedImageWorkingSetBudgetBytes);
+  EXPECT_EQ(std::string("16777216"), working_set_budget);
+
+  std::string max_decoded_image_size =
+      GetSwitchValue(cmd_line_pxr, ::switches::kMaxDecodedImageSizeMb);
+  EXPECT_EQ(std::string("8"), max_decoded_image_size);
+
+  EXPECT_TRUE(HasSwitch(cmd_line_pxr, ::switches::kAvoidCCReuseResource));
+  EXPECT_TRUE(HasSwitch(cmd_line_pxr, "enable-optimized-v8-code-cache"));
 }
 
 TEST(CobaltSwitchDefaultsTest, AlwaysEnabledSwitches) {
