@@ -48,7 +48,6 @@ if (!rdk_build_with_yocto) {
   # Use the gold linker instead of default ld to avoid
   # linker errors. see b/510541109
  _rdk_toolchain_platform_cflags += " -fuse-ld=gold"
- _rdk_toolchain_platform_cflags += " -fno-omit-frame-pointer"
 }
 
 rdk_gcc_toolchain("starboard") {
@@ -82,6 +81,8 @@ rdk_gcc_toolchain("native_target") {
     sysroot = "$rdk_sysroot"
     build_base_with_cpp17 = true
     enable_base_tracing = false
+    enable_frame_pointers_override = 0
+    arm_use_thumb = false
 
     # TODO: b/451695911 - enable remote compilation, when we can.
     use_remoteexec = false

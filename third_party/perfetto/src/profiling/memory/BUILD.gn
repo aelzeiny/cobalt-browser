@@ -89,6 +89,7 @@ executable("heapprofd_standalone_client_example") {
 }
 
 source_set("client_api_standalone") {
+  cflags = [ "-fno-omit-frame-pointer" ]
   deps = [
     ":client",
     ":client_api",
@@ -152,6 +153,7 @@ shared_library("heapprofd_client_api") {
 # On GLibc Linux, this can be used to override the allocators using
 # LD_PRELOAD. On non-GLibc, this will probably fail to link.
 shared_library("heapprofd_glibc_preload") {
+  cflags = [ "-fno-omit-frame-pointer" ]
   deps = [
     ":client_api_standalone",
     ":wrap_allocators",
@@ -172,12 +174,12 @@ source_set("bionic_libc_platform_headers_on_android") {
 
 source_set("client_api") {
   if (perfetto_build_with_android) {
-    cflags = [ "-DPERFETTO_ANDROID_ASYNC_SAFE_LOG" ]
+    cflags = [ "-DPERFETTO_ANDROID_ASYNC_SAFE_LOG", "-fno-omit-frame-pointer" ]
   } else {
     # We don't have async safe logging for non-Android, so disable all
     # logging in the client.
     # TODO(fmayer): Add async-safe logging for non-Android.
-    cflags = []
+    cflags = [ "-fno-omit-frame-pointer" ]
   }
   deps = [
     ":client",
@@ -190,6 +192,7 @@ source_set("client_api") {
 }
 
 source_set("wrap_allocators") {
+  cflags = [ "-fno-omit-frame-pointer" ]
   deps = [
     "../../../gn:default_deps",
     "../../base",
@@ -297,6 +300,7 @@ config("force_arm") {
 }
 
 source_set("client") {
+  cflags = [ "-fno-omit-frame-pointer" ]
   if (current_cpu == "arm") {
     configs += [ ":force_arm" ]
   }
