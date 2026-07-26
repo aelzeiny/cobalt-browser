@@ -172,6 +172,14 @@ if (use_thin_lto && is_debug) {
         " (is_debug=true) build.")
 }
 
+declare_args() {
+  # Override the default platform frame pointer setting.
+  # If set to -1, the default platform logic is used.
+  # If set to 0, frame pointers are disabled.
+  # If set to 1, frame pointers are enabled.
+  enable_frame_pointers_override = -1
+}
+
 # Determine whether to enable or disable frame pointers, based on the platform
 # and build arguments.
 if (is_chromeos) {
@@ -209,6 +217,10 @@ if (is_chromeos) {
   # Explicitly ask for frame pointers, otherwise stacks may be missing for
   # sanitizer and profiling builds.
   enable_frame_pointers = using_sanitizer || enable_profiling || is_debug
+}
+
+if (enable_frame_pointers_override != -1) {
+  enable_frame_pointers = enable_frame_pointers_override == 1
 }
 
 # In general assume that if we have frame pointers then we can use them to
