@@ -32,6 +32,8 @@ import("//starboard/build/config/linux/rdk/config_variables.gni")
 import("//cobalt/build/configs/hacks.gni")
 import("//starboard/build/toolchain/cobalt_toolchains.gni")
 import("$rdk_starboard_root/third_party/starboard/rdk/shared/build/rdk_toolchain.gni")
+import("//build/toolchain/gcc_toolchain.gni")
+import("//build/config/clang/clang.gni")
 
 _rdk_toolchain_path = "$rdk_home_dir/sysroots/x86_64-rdksdk-linux/usr/bin/arm-rdkmllib32-linux-gnueabi"
 _rdk_toolchain_toolprefix = "$_rdk_toolchain_path/arm-rdkmllib32-linux-gnueabi-"
@@ -88,3 +90,43 @@ rdk_gcc_toolchain("native_target") {
     use_remoteexec = false
   }
 }
+
+gcc_toolchain("native_target_clang") {
+  _clang_bin_dir = rebase_path("$clang_base_path/bin", root_build_dir)
+  cc = "$_clang_bin_dir/clang"
+  cxx = "$_clang_bin_dir/clang++"
+  ar = "$_clang_bin_dir/llvm-ar"
+  ld = cxx
+  strip = "$_clang_bin_dir/llvm-strip"
+
+  _gcc_lib_dir = "/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/usr/lib/arm-rdkmllib32-linux-gnueabi/9.3.0"
+  _sysroot_usr_lib_dir = "/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/usr/lib"
+  
+  _target_flags = "--target=arm-linux-gnueabihf -march=armv7-a -mfloat-abi=hard -mfpu=neon -mthumb"
+  _sysroot_flag = "--sysroot=" + rebase_path("$rdk_sysroot", root_build_dir)
+  _b_flags = "-B$_gcc_lib_dir -B$_sysroot_usr_lib_dir"
+  
+  _cflags = "$_target_flags $_sysroot_flag $_b_flags -I" + rebase_path("$rdk_starboard_root")
+  
+  extra_cflags = _cflags
+  extra_cxxflags = _cflags
+  extra_asmflags = _cflags
+  
+  _lib_paths = "-L$_gcc_lib_dir -L$_sysroot_usr_lib_dir -L/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/lib"
+  
+  extra_ldflags = "$_target_flags $_sysroot_flag $_b_flags -fuse-ld=lld $_lib_paths"
+
+  toolchain_args = {
+    is_starboard = false
+    current_cpu = "arm"
+    current_os = "linux"
+    is_clang = true
+    use_cxx17 = true
+    sysroot = "$rdk_sysroot"
+    build_base_with_cpp17 = true
+    enable_base_tracing = false
+    enable_frame_pointers_override = 0
+    arm_use_thumb = true
+  }
+}
+

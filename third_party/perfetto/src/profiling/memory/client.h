@@ -118,7 +118,7 @@ class Client {
   bool IsConnected();
 
  private:
-#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) && \
+#if (PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) || defined(__arm__)) && \
     !PERFETTO_HAS_BUILTIN_STACK_ADDRESS()
   // For specific architectures, such as riscv, different calling conventions
   // make a difference in the meaning of the frame pointer. (see comments in

@@ -18,6 +18,11 @@ import("../../../gn/test.gni")
 
 assert(enable_perfetto_heapprofd)
 
+config("native_tls") {
+  cflags = [ "-fno-emulated-tls" ]
+  cflags_cc = [ "-fno-emulated-tls" ]
+}
+
 # The Android heap profiling daemon.
 executable("heapprofd") {
   deps = [
@@ -90,6 +95,9 @@ executable("heapprofd_standalone_client_example") {
 
 source_set("client_api_standalone") {
   cflags = [ "-fno-omit-frame-pointer" ]
+  if (current_cpu == "arm") {
+    configs += [ ":force_arm" ]
+  }
   deps = [
     ":client",
     ":client_api",
@@ -153,7 +161,13 @@ shared_library("heapprofd_client_api") {
 # On GLibc Linux, this can be used to override the allocators using
 # LD_PRELOAD. On non-GLibc, this will probably fail to link.
 shared_library("heapprofd_glibc_preload") {
-  cflags = [ "-fno-omit-frame-pointer" ]
+  cflags = [
+    "-fno-omit-frame-pointer",
+  ]
+  configs += [ ":native_tls" ]
+  if (current_cpu == "arm") {
+    configs += [ ":force_arm" ]
+  }
   deps = [
     ":client_api_standalone",
     ":wrap_allocators",
@@ -163,6 +177,14 @@ shared_library("heapprofd_glibc_preload") {
   ldflags = [
     "-Wl,--version-script",
     rebase_path("heapprofd_preload.map.txt", root_build_dir),
+    "--sysroot=/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux",
+    "-L/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/usr/lib/arm-rdkmllib32-linux-gnueabi/9.3.0",
+    "-L/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/usr/lib",
+    "-L/usr/local/google/home/ahmedelzeiny/rdk/toolchain/sysroots/aarch64-rdk-linux/lib",
+    "-lc",
+    "-lpthread",
+    "-lgcc_s",
+    "-lgcc",
   ]
   sources = [ "malloc_interceptor_glibc_preload.cc" ]
 }
@@ -181,6 +203,9 @@ source_set("client_api") {
     # TODO(fmayer): Add async-safe logging for non-Android.
     cflags = [ "-fno-omit-frame-pointer" ]
   }
+  if (current_cpu == "arm") {
+    configs += [ ":force_arm" ]
+  }
   deps = [
     ":client",
     ":scoped_spinlock",
@@ -193,6 +218,9 @@ source_set("client_api") {
 
 source_set("wrap_allocators") {
   cflags = [ "-fno-omit-frame-pointer" ]
+  if (current_cpu == "arm") {
+    configs += [ ":force_arm" ]
+  }
   deps = [
     "../../../gn:default_deps",
     "../../base",

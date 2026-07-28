@@ -278,6 +278,7 @@ void UnwindingWorker::OnDataAvailable(base::UnixSocket* self) {
   // Drain buffer to clear the notification.
   char recv_buf[kUnwindBatchSize];
   self->Receive(recv_buf, sizeof(recv_buf));
+  PERFETTO_ELOG("UnwindingWorker::OnDataAvailable (pid=%d) received notification", static_cast<int>(self->peer_pid_linux()));
   BatchUnwindJob(self->peer_pid_linux());
 }
 
@@ -412,6 +413,9 @@ void UnwindingWorker::HandleBuffer(UnwindingWorker* self,
     rec->pid = peer_pid;
     rec->data_source_instance_id = data_source_instance_id;
     auto start_time_us = base::GetWallTimeNs() / 1000;
+    PERFETTO_ELOG("UnwindingWorker::HandleBuffer Malloc: size=%llu, addr=0x%llx",
+                  static_cast<unsigned long long>(rec->alloc_metadata.alloc_size),
+                  static_cast<unsigned long long>(rec->alloc_metadata.alloc_address));
     if (!client_data->stream_allocations)
       DoUnwind(&msg, unwinding_metadata, rec.get());
     rec->unwinding_time_us = static_cast<uint64_t>(
