@@ -89,6 +89,7 @@ TempFile TempFile::Create() {
 #else
   temp_file.path_ = GetSysTempDir() + "/perfetto-XXXXXXXX";
   temp_file.fd_.reset(mkstemp(&temp_file.path_[0]));
+  PERFETTO_ELOG("TempFile::Create path=%s", temp_file.path_.c_str());
 #endif
   if (PERFETTO_UNLIKELY(!temp_file.fd_)) {
     PERFETTO_FATAL("Could not create temp file %s", temp_file.path_.c_str());

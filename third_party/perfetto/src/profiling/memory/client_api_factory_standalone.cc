@@ -146,7 +146,14 @@ void StartHeapprofdIfStatic() {
     }
   }
 
-  daemon(/* nochdir= */ 0, /* noclose= */ 1);
+  if (daemon(/* nochdir= */ 0, /* noclose= */ 1) == -1) {
+    FILE* f_log_err = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_err) {
+      fprintf(f_log_err, "[%d] daemon() failed: %s\n", getpid(), strerror(errno));
+      fclose(f_log_err);
+    }
+    exit(1);
+  }
 
   {
     FILE* f_log_daemon = fopen("/tmp/heapprofd_loader.log", "a");
@@ -171,7 +178,9 @@ void StartHeapprofdIfStatic() {
 
   int null = open("/dev/null", O_RDWR);  // NOLINT(android-cloexec-open)
   dup2(null, STDIN_FILENO);
-  dup2(null, STDOUT_FILENO);
+  dup2(STDERR_FILENO, STDOUT_FILENO);
+  setvbuf(stdout, nullptr, _IONBF, 0);
+  setvbuf(stderr, nullptr, _IONBF, 0);
   if (null > STDERR_FILENO)
     close(null);
 
@@ -185,28 +194,28 @@ void StartHeapprofdIfStatic() {
   base::UnixTaskRunner task_runner;
   base::Watchdog::GetInstance()->Start();  // crash on exceedingly long tasks
   {
-    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
-    if (f_log) {
-      fprintf(f_log, "[%d] Creating HeapprofdProducer for target pid %d (%s)\n", getpid(), pid, cmdline.c_str());
-      fclose(f_log);
+    FILE* f_log_prod_create = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_prod_create) {
+      fprintf(f_log_prod_create, "[%d] Creating HeapprofdProducer for target pid %d (%s)\n", getpid(), pid, cmdline.c_str());
+      fclose(f_log_prod_create);
     }
   }
   HeapprofdProducer producer(HeapprofdMode::kChild, &task_runner,
                              /* exit_when_done= */ false);
   producer.SetTargetProcess(pid, cmdline);
   {
-    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
-    if (f_log) {
-      fprintf(f_log, "[%d] Connecting HeapprofdProducer to socket: %s\n", getpid(), GetProducerSocket());
-      fclose(f_log);
+    FILE* f_log_prod_conn = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_prod_conn) {
+      fprintf(f_log_prod_conn, "[%d] Connecting HeapprofdProducer to socket: %s\n", getpid(), GetProducerSocket());
+      fclose(f_log_prod_conn);
     }
   }
   producer.ConnectWithRetries(GetProducerSocket());
   {
-    FILE* f_log = fopen("/tmp/heapprofd_loader.log", "a");
-    if (f_log) {
-      fprintf(f_log, "[%d] ConnectWithRetries called successfully\n", getpid());
-      fclose(f_log);
+    FILE* f_log_prod_done = fopen("/tmp/heapprofd_loader.log", "a");
+    if (f_log_prod_done) {
+      fprintf(f_log_prod_done, "[%d] ConnectWithRetries called successfully\n", getpid());
+      fclose(f_log_prod_done);
     }
   }
   // Signal MonitorFd in the parent process to start a session.

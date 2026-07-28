@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <atomic>
 #include <cinttypes>
@@ -68,6 +69,8 @@ namespace {
 
 using perfetto::profiling::ScopedSpinlock;
 using perfetto::profiling::UnhookedAllocator;
+
+std::atomic<uint64_t> g_sampled_alloc_count{0};
 
 #if defined(__GLIBC__)
 const char* getprogname() {
@@ -216,9 +219,11 @@ uint64_t MaybeToggleHeap(uint32_t heap_id,
         client->client_config().adaptive_sampling_max_sampling_interval_bytes,
         std::memory_order_relaxed);
     heap.enabled.store(true, std::memory_order_release);
+    PERFETTO_ELOG("Enabling heap %s with interval %" PRIu64, heap.heap_name, interval);
     client->RecordHeapInfo(heap_id, &heap.heap_name[0], interval);
   } else if (heap.enabled.load(std::memory_order_acquire)) {
     heap.enabled.store(false, std::memory_order_release);
+    PERFETTO_ELOG("Disabling heap %s", heap.heap_name);
     if (heap.disabled_callback) {
       AHeapProfileDisableCallbackInfo info;
       heap.disabled_callback(heap.disabled_callback_data, &info);
@@ -422,6 +427,16 @@ AHeapProfile_reportAllocation(uint32_t heap_id, uint64_t id, uint64_t size) {
   if (!client->RecordMalloc(heap_id, sampled_alloc_sz, size, id)) {
     ShutdownLazy(client);
     return false;
+  }
+  uint64_t s_count = ++g_sampled_alloc_count;
+  if (s_count % 100 == 0) {
+    int fd = open("/tmp/sampled_count.txt", O_WRONLY | O_CREAT | O_APPEND, 0666);
+    if (fd >= 0) {
+      char buf[64];
+      int len = snprintf(buf, sizeof(buf), "sampled count: %llu\n", (unsigned long long)s_count);
+      ssize_t w = write(fd, buf, len); (void)w;
+      close(fd);
+    }
   }
   return true;
 }

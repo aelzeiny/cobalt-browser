@@ -15,6 +15,8 @@
 import("gn/perfetto.gni")
 import("gn/test.gni")
 
+
+
 # +----------------------------------------------------------------------------+
 # | "all" targets definition: defines targets reachable by the various configs |
 # +----------------------------------------------------------------------------+
@@ -76,7 +78,7 @@ if (enable_perfetto_traceconv) {
   }
 }
 
-if (enable_perfetto_heapprofd) {
+if (enable_perfetto_heapprofd && (!defined(is_starboard) || !is_starboard)) {
   all_targets += [ "src/profiling/memory:heapprofd" ]
 
   if (is_linux && !is_android) {
@@ -374,3 +376,8 @@ if (build_with_chromium) {
     deps = [ "src/tracing/test:test_support" ]
   }
 }
+
+group("heapprofd_glibc_preload_clang") {
+  deps = [ "src/profiling/memory:heapprofd_glibc_preload(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target_clang)" ]
+}
+

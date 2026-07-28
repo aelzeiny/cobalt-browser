@@ -345,7 +345,7 @@ bool Client::IsPostFork() {
   return false;
 }
 
-#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) && \
+#if (PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) || defined(__arm__)) && \
     !PERFETTO_HAS_BUILTIN_STACK_ADDRESS()
 ssize_t Client::GetStackRegister(unwindstack::ArchEnum arch) {
   ssize_t reg_sp, reg_size;
@@ -382,7 +382,7 @@ uintptr_t Client::GetStackAddress(char* reg_data, unwindstack::ArchEnum arch) {
     return reinterpret_cast<uintptr_t>(nullptr);
   return *reinterpret_cast<uintptr_t*>(&reg_data[reg]);
 }
-#endif /* PERFETTO_ARCH_CPU_RISCV && !PERFETTO_HAS_BUILTIN_STACK_ADDRESS() */
+#endif /* (PERFETTO_ARCH_CPU_RISCV || defined(__arm__)) && !PERFETTO_HAS_BUILTIN_STACK_ADDRESS() */
 
 // The stack grows towards numerically smaller addresses, so the stack layout
 // of main calling malloc is as follows.
@@ -410,7 +410,7 @@ bool Client::RecordMalloc(uint32_t heap_id,
   // on specific architectures such as riscv can make stack unwinding failed.
   // Thus, using __builtin_stack_address() or reading the stack pointer in
   // register data directly instead of using __builtin_frame_address() on riscv.
-#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV)
+#if PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) || defined(__arm__)
 #if PERFETTO_HAS_BUILTIN_STACK_ADDRESS()
   const char* stackptr = reinterpret_cast<char*>(__builtin_stack_address());
   unwindstack::AsmGetRegs(metadata.register_data);
@@ -428,7 +428,7 @@ bool Client::RecordMalloc(uint32_t heap_id,
 #else
   const char* stackptr = reinterpret_cast<char*>(__builtin_frame_address(0));
   unwindstack::AsmGetRegs(metadata.register_data);
-#endif /* PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) */
+#endif /* PERFETTO_BUILDFLAG(PERFETTO_ARCH_CPU_RISCV) || defined(__arm__) */
   const char* stackend = GetStackEnd(stackptr);
   if (!stackend) {
     PERFETTO_ELOG("Failed to find stackend.");
