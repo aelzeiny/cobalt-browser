@@ -56,6 +56,7 @@ size_t meta_page_size() {
 
 SharedRingBuffer::SharedRingBuffer(CreateFlag, size_t size) {
   size_t size_with_meta = size + meta_page_size();
+  PERFETTO_ELOG("SharedRingBuffer::Create size=%zu size_with_meta=%zu", size, size_with_meta);
   base::ScopedFile fd;
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
   bool is_memfd = false;
@@ -80,6 +81,7 @@ SharedRingBuffer::SharedRingBuffer(CreateFlag, size_t size) {
 
   PERFETTO_CHECK(fd);
   int res = ftruncate(fd.get(), static_cast<off_t>(size_with_meta));
+  PERFETTO_ELOG("SharedRingBuffer::Create ftruncate res=%d (errno=%d)", res, errno);
   PERFETTO_CHECK(res == 0);
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
   if (is_memfd) {

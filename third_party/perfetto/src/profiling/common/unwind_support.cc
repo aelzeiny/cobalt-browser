@@ -93,12 +93,14 @@ bool FDMaps::Parse() {
 
   // Detect Cobalt anonymous mappings and hook them to libcobalt.so
   uint64_t base_start = 0;
+  uint64_t base_end = 0;
   for (const auto& map : maps_) {
     uint64_t size = map->end() - map->start();
     // Base segment: anonymous, size ~17-18MB, not executable
     if (map->name().empty() && size >= 17 * 1024 * 1024 && size <= 19 * 1024 * 1024) {
       if ((map->flags() & PROT_EXEC) == 0) {
         base_start = map->start();
+        base_end = map->end();
         break;
       }
     }
@@ -110,14 +112,13 @@ bool FDMaps::Parse() {
       // Code segment: anonymous, size ~54-56MB, executable
       if (map->name().empty() && size >= 54 * 1024 * 1024 && size <= 56 * 1024 * 1024) {
         if (map->flags() & PROT_EXEC) {
-          uint64_t offset = map->start() - base_start;
-          if (offset >= 0x1000000 && offset <= 0x2000000) {
-            map->set_name("/data/out_cobalt/libcobalt.so");
-            map->set_offset(offset - 0x10000);
-            PERFETTO_ELOG("Patched Cobalt mapping: start=0x%" PRIx64 ", size=0x%" PRIx64 ", offset=0x%" PRIx64 " -> 0x%" PRIx64, 
-                          map->start(), size, offset, map->offset());
-            break;
-          }
+          uint64_t offset = base_end - base_start;
+          uint64_t vaddr_offset = map->start() - base_start;
+          map->set_name("/data/out_cobalt/libcobalt.so");
+          map->set_offset(offset);
+          PERFETTO_ELOG("Patched Cobalt mapping (dynamic): start=0x%" PRIx64 ", size=0x%" PRIx64 ", vaddr_offset=0x%" PRIx64 " -> file_offset=0x%" PRIx64, 
+                        map->start(), size, vaddr_offset, map->offset());
+          break;
         }
       }
     }

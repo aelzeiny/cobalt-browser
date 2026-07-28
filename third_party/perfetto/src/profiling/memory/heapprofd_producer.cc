@@ -395,6 +395,13 @@ void HeapprofdProducer::SetupDataSource(DataSourceInstanceID id,
     return;
   }
 
+  PERFETTO_ELOG("SetupDataSource: mode=%d, target_process=%s, config_cmdlines_count=%d",
+                static_cast<int>(mode_), target_process_.cmdline.c_str(),
+                static_cast<int>(heapprofd_config.process_cmdline_size()));
+  for (const auto& c : heapprofd_config.process_cmdline()) {
+    PERFETTO_ELOG("  config_cmdline: %s", c.c_str());
+  }
+
   std::optional<std::vector<std::string>> normalized_cmdlines =
       NormalizeCmdlines(heapprofd_config.process_cmdline());
   if (!normalized_cmdlines.has_value()) {
@@ -405,9 +412,11 @@ void HeapprofdProducer::SetupDataSource(DataSourceInstanceID id,
   // Child mode is only interested in the first data source matching the
   // already-connected process.
   if (mode_ == HeapprofdMode::kChild) {
-    if (!ConfigTargetsProcess(heapprofd_config, target_process_,
-                              normalized_cmdlines.value())) {
-      PERFETTO_DLOG("Child mode skipping setup of unrelated data source.");
+    bool matches = ConfigTargetsProcess(heapprofd_config, target_process_,
+                                        normalized_cmdlines.value());
+    PERFETTO_ELOG("SetupDataSource (child): ConfigTargetsProcess res=%d", matches);
+    if (!matches) {
+      PERFETTO_ELOG("Child mode skipping setup of unrelated data source.");
       return;
     }
 
@@ -960,6 +969,9 @@ void HeapprofdProducer::HandleClientConnection(
   }
 
   uint64_t shmem_size = data_source->config.shmem_size_bytes();
+  PERFETTO_ELOG("HeapprofdProducer::OnConnect (heapprofd pid=%d, ppid=%d) shmem_size=%" PRIu64 " (config=%" PRIu64 ")",
+                static_cast<int>(getpid()), static_cast<int>(getppid()),
+                shmem_size, data_source->config.shmem_size_bytes());
   if (!shmem_size)
     shmem_size = kDefaultShmemSize;
   if (shmem_size > kMaxShmemSize) {

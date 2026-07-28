@@ -16,6 +16,9 @@
 
 #include <malloc.h>
 #include <unistd.h>
+#include <atomic>
+#include <fcntl.h>
+#include <stdio.h>
 
 #include "perfetto/base/logging.h"
 #include "perfetto/heap_profile.h"
@@ -44,6 +47,7 @@ bool IsPowerOfTwo(size_t v) {
 
 // True if this thread is already inside heapprofd wrappers.
 thread_local bool inside_wrapper = false;
+std::atomic<uint64_t> g_malloc_count{0};
 
 class ScopedReentrancyPreventer {
  public:
@@ -75,6 +79,18 @@ void* malloc(size_t size) {
     return __libc_malloc(size);
   }
   ScopedReentrancyPreventer p;
+
+  uint64_t count = ++g_malloc_count;
+  if (count % 10000 == 0) {
+    int fd = open("/tmp/malloc_count.txt", O_WRONLY | O_CREAT | O_APPEND, 0666);
+    if (fd >= 0) {
+      char buf[64];
+      int len = snprintf(buf, sizeof(buf), "malloc count: %llu\n", (unsigned long long)count);
+      ssize_t w = write(fd, buf, len);
+      (void)w;
+      close(fd);
+    }
+  }
 
   return perfetto::profiling::wrap_malloc(g_heap_id, __libc_malloc, size);
 }
