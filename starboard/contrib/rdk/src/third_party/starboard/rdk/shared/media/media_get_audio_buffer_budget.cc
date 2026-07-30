@@ -34,5 +34,5 @@
 #include "starboard/common/log.h"
 
 int SbMediaGetAudioBufferBudget() {
-  return 5 * 1024 * 1024;
+  return 2 * 1024 * 1024;
 }

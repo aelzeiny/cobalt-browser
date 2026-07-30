@@ -27,7 +27,7 @@ int SbMediaGetVideoBufferBudget(SbMediaVideoCodec codec,
     // Specifies the maximum amount of memory used by video buffers of media
     // source before triggering a garbage collection when the video resolution
     // is lower than 1080p (1920x1080).
-    return 30 * 1024 * 1024;
+    return 16 * 1024 * 1024;
   }
 
   if (resolution_width <= 3840 && resolution_height <= 2160) {
@@ -35,12 +35,12 @@ int SbMediaGetVideoBufferBudget(SbMediaVideoCodec codec,
       // Specifies the maximum amount of memory used by video buffers of media
       // source before triggering a garbage collection when the video resolution
       // is lower than 4k (3840x2160) and bit per pixel is lower than 8.
-      return 100 * 1024 * 1024;
+      return 64 * 1024 * 1024;
     } else {
       // Specifies the maximum amount of memory used by video buffers of media
       // source before triggering a garbage collection when video resolution is
       // lower than 4k (3840x2160) and bit per pixel is greater than 8.
-      return 160 * 1024 * 1024;
+      return 96 * 1024 * 1024;
     }
   }
 
