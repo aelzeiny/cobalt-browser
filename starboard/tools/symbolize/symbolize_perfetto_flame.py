@@ -164,9 +164,14 @@ def main():
 
     # Symbolize PCs using a single addr2line process
     resolved_symbols = {}
-    if pcs_to_symbolize and os.path.exists(cobalt_bin) and os.path.exists(addr2line_path):
+    import shlex
+    addr2line_args = shlex.split(addr2line_path) if addr2line_path else []
+    import shutil
+    addr2line_bin_exists = len(addr2line_args) > 0 and (os.path.exists(addr2line_args[0]) or shutil.which(addr2line_args[0]))
+    
+    if pcs_to_symbolize and os.path.exists(cobalt_bin) and addr2line_bin_exists:
         print(f"Symbolizing {len(pcs_to_symbolize)} unique PCs safely...")
-        cmd = [addr2line_path, '-e', cobalt_bin, '-f', '-C']
+        cmd = addr2line_args + ['-e', cobalt_bin, '-f', '-C']
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         
         for pc in pcs_to_symbolize:
