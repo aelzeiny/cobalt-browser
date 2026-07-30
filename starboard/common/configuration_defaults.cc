@@ -57,11 +57,11 @@ int CobaltImageCacheSizeInBytesDefault() {
 }
 
 int CobaltLocalTypefaceCacheSizeInBytesDefault() {
-  return 16 * 1024 * 1024;
+  return 2 * 1024 * 1024;
 }
 
 int CobaltRemoteTypefaceCacheSizeInBytesDefault() {
-  return 4 * 1024 * 1024;
+  return 1 * 1024 * 1024;
 }
 
 int CobaltMeshCacheSizeInBytesDefault() {
@@ -69,11 +69,11 @@ int CobaltMeshCacheSizeInBytesDefault() {
 }
 
 int CobaltSoftwareSurfaceCacheSizeInBytesDefault() {
-  return 8 * 1024 * 1024;
+  return 2 * 1024 * 1024;
 }
 
 float CobaltImageCacheCapacityMultiplierWhenPlayingVideoDefault() {
-  return 1.0f;
+  return 0.25f;
 }
 
 int CobaltSkiaGlyphAtlasWidthDefault() {
