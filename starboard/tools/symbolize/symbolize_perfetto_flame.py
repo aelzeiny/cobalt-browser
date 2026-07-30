@@ -172,7 +172,7 @@ def main():
     if pcs_to_symbolize and os.path.exists(cobalt_bin) and addr2line_bin_exists:
         print(f"Symbolizing {len(pcs_to_symbolize)} unique PCs safely...")
         cmd = addr2line_args + ['-e', cobalt_bin, '-f', '-C']
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         
         for pc in pcs_to_symbolize:
             # SUBTRACT 0x10000 offset to align with ELF virtual address!
