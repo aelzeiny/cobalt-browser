@@ -96,8 +96,8 @@ bool FDMaps::Parse() {
   uint64_t base_end = 0;
   for (const auto& map : maps_) {
     uint64_t size = map->end() - map->start();
-    // Base segment: anonymous, size ~17-18MB, not executable
-    if (map->name().empty() && size >= 17 * 1024 * 1024 && size <= 19 * 1024 * 1024) {
+    // Base segment: anonymous, size ~15-22MB, not executable
+    if (map->name().empty() && size >= 15 * 1024 * 1024 && size <= 22 * 1024 * 1024) {
       if ((map->flags() & PROT_EXEC) == 0) {
         base_start = map->start();
         base_end = map->end();
@@ -109,8 +109,8 @@ bool FDMaps::Parse() {
   if (base_start != 0) {
     for (auto& map : maps_) {
       uint64_t size = map->end() - map->start();
-      // Code segment: anonymous, size ~54-56MB, executable
-      if (map->name().empty() && size >= 54 * 1024 * 1024 && size <= 56 * 1024 * 1024) {
+      // Code segment: anonymous, size ~45-65MB, executable
+      if (map->name().empty() && size >= 45 * 1024 * 1024 && size <= 65 * 1024 * 1024) {
         if (map->flags() & PROT_EXEC) {
           uint64_t offset = base_end - base_start;
           uint64_t vaddr_offset = map->start() - base_start;
