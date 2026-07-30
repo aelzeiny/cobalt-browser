@@ -101,3 +101,10 @@ enable_backup_ref_ptr_feature_flag = false
 # Disable vectorized HTML scanning (SIMD speedups for HTML parsing
 # are not needed).
 enable_vectorized_html_scanning = false
+
+# TurboFan is dead code at runtime (--disable-optimizing-compilers is a Cobalt
+# default); strip it and WebAssembly from the binary. wasm=false is required
+# once turbofan=false: v8.gni asserts "WebAssembly requires Turbofan or
+# Drumbrake" (set v8_enable_drumbrake = true instead to keep wasm).
+v8_enable_turbofan = false
+v8_enable_webassembly = false
