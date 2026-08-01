@@ -581,6 +581,21 @@ BASE_FEATURE(kCobaltGlibAlwaysMalloc,
 BASE_FEATURE(kCobaltWesterosLowMemMode,
              "CobaltWesterosLowMemMode",
              base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, sets COBALT_GST_SMALL_QUEUES=1 before the in-process
+// SbPlayer creates its first GStreamer pipeline. The RDK Starboard player
+// reads it at pipeline construction and shrinks the video appsrc max-bytes
+// (8MB -> 2MB) and the injected queue's max-size-buffers (60 -> 20);
+// encoded data held in-process (third copy of media bytes).
+BASE_FEATURE(kCobaltGstSmallQueues,
+             "CobaltGstSmallQueues",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, periodically calls malloc_trim(0) on the renderer main
+// thread every |interval_s| seconds. glibc builds only; a no-op elsewhere.
+BASE_FEATURE(kCobaltMallocTrim,
+             "CobaltMallocTrim",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltMallocTrimIntervalS{
+    &kCobaltMallocTrim, "CobaltMallocTrim:interval_s", 60};
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
 #if BUILDFLAG(IS_CHROMEOS)

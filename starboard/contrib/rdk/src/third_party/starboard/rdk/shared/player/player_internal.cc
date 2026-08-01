@@ -401,8 +401,13 @@ void gst_cobalt_src_setup_and_add_app_src(SbMediaType media_type,
                                           GstAppSrcCallbacks* callbacks,
                                           gpointer user_data,
                                           gboolean inject_decryptor) {
+  // Private handshake set by CobaltContentRendererClient when the
+  // CobaltGstSmallQueues feature is enabled: shrink the video appsrc queue
+  // and the injected queue element (audio limits are left unchanged).
+  static bool small_queues = !!getenv("COBALT_GST_SMALL_QUEUES");
   const uint32_t kAudioMaxBytes = 256 * 1024;
-  const uint32_t kVideoMaxBytes = 8 * 1024 * 1024;
+  const uint32_t kVideoMaxBytes =
+      small_queues ? 2 * 1024 * 1024 : 8 * 1024 * 1024;
 
   uint32_t max_bytes = (media_type == kSbMediaTypeVideo) ? kVideoMaxBytes : kAudioMaxBytes;
 
@@ -455,7 +460,7 @@ void gst_cobalt_src_setup_and_add_app_src(SbMediaType media_type,
     GstElement* queue = gst_element_factory_make("queue", nullptr);
     g_object_set (
       G_OBJECT (queue),
-      "max-size-buffers", 60,
+      "max-size-buffers", small_queues ? 20 : 60,
       "max-size-bytes", 0,
       "max-size-time", (gint64) 0,
       "silent", TRUE,

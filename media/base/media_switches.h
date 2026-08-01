@@ -247,6 +247,9 @@ MEDIA_EXPORT extern const base::FeatureParam<bool>
     kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend;
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltGlibAlwaysMalloc);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltWesterosLowMemMode);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltGstSmallQueues);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltMallocTrim);
+MEDIA_EXPORT extern const base::FeatureParam<int> kCobaltMallocTrimIntervalS;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #if BUILDFLAG(IS_CHROMEOS)
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCrOSSystemAEC);

@@ -16,6 +16,10 @@
 
 #include <stdlib.h>
 
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
+
 #include <memory>
 #include <string>
 #include <variant>
@@ -270,6 +274,25 @@ void CobaltContentRendererClient::RenderThreadStarted() {
               << " every " << interval;
   }
 
+#if defined(__GLIBC__)
+  // Apply the default-off malloc_trim experiment. Param-gated last resort:
+  // releases glibc arena slack (brk top + madvise of free interior pages).
+  // API call, not a glibc tunable; in-tree precedent application_rdk.cc:424.
+  // kCobaltMallocTrim is FEATURE_DISABLED_BY_DEFAULT, so this is a strict
+  // no-op unless it is enabled via h5vcc experiments.
+  if (base::FeatureList::IsEnabled(::media::kCobaltMallocTrim)) {
+    const base::TimeDelta interval =
+        base::Seconds(::media::kCobaltMallocTrimIntervalS.Get());
+    // Intentionally leaked: the timer lives for the renderer process
+    // lifetime and is started, fired and (never) destroyed on the renderer
+    // main thread only.
+    static base::NoDestructor<base::RepeatingTimer> trim_timer;
+    trim_timer->Start(FROM_HERE, interval,
+                      base::BindRepeating([]() { malloc_trim(0); }));
+    LOG(INFO) << "CobaltMallocTrim: calling malloc_trim(0) every " << interval;
+  }
+#endif  // defined(__GLIBC__)
+
   // Apply default-off memory experiment features. This point is after
   // FeatureList initialization and before any playback can start: the
   // DecoderBufferAllocator singleton already exists (created with the
@@ -316,6 +339,14 @@ void CobaltContentRendererClient::RenderThreadStarted() {
       setenv("COBALT_WESTEROS_LOW_MEM", "1", 1);
       LOG(INFO) << "CobaltWesterosLowMemMode: set WESTEROS_SINK_LOW_MEM_MODE=1"
                 << " and COBALT_WESTEROS_LOW_MEM=1.";
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltGstSmallQueues)) {
+      // Private handshake read by the RDK Starboard player at pipeline
+      // construction, which happens after this point (first pipeline setup
+      // by the in-process SbPlayer): shrinks the video appsrc max-bytes
+      // (8MB -> 2MB) and the injected queue's max-size-buffers (60 -> 20).
+      setenv("COBALT_GST_SMALL_QUEUES", "1", 1);
+      LOG(INFO) << "CobaltGstSmallQueues: set COBALT_GST_SMALL_QUEUES=1.";
     }
   }
 }
