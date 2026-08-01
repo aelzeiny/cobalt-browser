@@ -471,6 +471,16 @@ BASE_FEATURE(kLessAggressiveParkableString,
              "LessAggressiveParkableString",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+// Cobalt memory experiment: when enabled,
+// ParkableStringManager::IsPaused() always reports "not paused", so the
+// regular string aging/parking pipeline runs even in the foreground. A TV
+// renderer is never backgrounded, so with kLessAggressiveParkableString
+// enabled parking is otherwise permanently paused. Strict no-op unless
+// explicitly enabled (e.g. via h5vcc.experiments.setExperimentState()).
+BASE_FEATURE(kCobaltParkableStringAging,
+             "CobaltParkableStringAging",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 // Limits maximum capacity of disk data allocator per renderer process.
 // DiskDataAllocator and its clients(ParkableString, ParkableImage) will try
 // to keep the limitation.

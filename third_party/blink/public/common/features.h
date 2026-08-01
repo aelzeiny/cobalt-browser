@@ -242,6 +242,11 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(int,
                                                kMaxDiskDataAllocatorCapacityMB);
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kLessAggressiveParkableString);
 
+// Cobalt memory experiment (default-off): un-pause parkable string aging on
+// never-backgrounded TV renderers. See features.cc and
+// ParkableStringManager::IsPaused().
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kCobaltParkableStringAging);
+
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kCombineNewWindowIPCs);
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kConsumeCodeCacheOffThread);
 
