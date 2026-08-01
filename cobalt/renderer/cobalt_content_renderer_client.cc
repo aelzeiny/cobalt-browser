@@ -14,10 +14,13 @@
 
 #include "cobalt/renderer/cobalt_content_renderer_client.h"
 
+#include <stdlib.h>
+
 #include <memory>
 #include <string>
 #include <variant>
 
+#include "base/feature_list.h"
 #include "base/task/bind_post_task.h"
 #include "base/time/time.h"
 #include "cobalt/media/service/mojom/platform_window_provider.mojom.h"
@@ -34,6 +37,7 @@
 #include "media/base/renderer_factory.h"
 #include "media/base/starboard/experimental_features.h"
 #include "media/mojo/clients/starboard/starboard_renderer_client_factory.h"
+#include "media/starboard/decoder_buffer_allocator.h"
 #include "media/starboard/starboard_media_external_memory_allocator.h"
 #include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "starboard/media.h"
@@ -355,6 +359,42 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
     if (is_external_memory_pool_enabled_ && !media_memory_allocator_) {
       media_memory_allocator_ =
           std::make_unique<::media::StarboardMediaExternalMemoryAllocator>();
+    }
+  }
+
+  // Apply default-off memory experiment features. This point is after
+  // FeatureList initialization and before the first playback starts: the
+  // DecoderBufferAllocator singleton already exists (created with the
+  // MediaClient during RenderThreadImpl::InitializeWebKit(), before any
+  // ContentRendererClient media hooks run), but its allocation strategy has
+  // not been created yet on allocate-on-demand platforms, and no GStreamer
+  // pipeline has been created by the in-process SbPlayer. Guarded to run only
+  // once since this function is called for every playback. All three features
+  // are FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless they
+  // are enabled via h5vcc experiments.
+  static bool memory_experiments_applied = false;
+  if (!memory_experiments_applied) {
+    memory_experiments_applied = true;
+    // If both pool features are enabled, the decommit strategy wins; it
+    // replaces the allocation strategy and ignores the initial capacity.
+    if (base::FeatureList::IsEnabled(
+            ::media::kCobaltMediaPoolSmallInitialCapacity)) {
+      ::media::DecoderBufferAllocator::OverrideInitialCapacity(
+          ::media::kCobaltMediaPoolInitialCapacityBytes.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltMediaPoolDecommit)) {
+      ::media::DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
+          ::media::kCobaltMediaPoolDecommitBlockSizeBytes.Get(),
+          ::media::kCobaltMediaPoolDecommitRetainBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitConservativeDecommitBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltGlibAlwaysMalloc)) {
+      // Must be set before GStreamer initializes GLib's slice allocator,
+      // which happens when the in-process SbPlayer creates its first
+      // pipeline.
+      setenv("G_SLICE", "always-malloc", 1);
+      LOG(INFO) << "CobaltGlibAlwaysMalloc: set G_SLICE=always-malloc.";
     }
   }
 }

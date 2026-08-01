@@ -288,6 +288,24 @@ void DecoderBufferAllocator::EnableMediaBufferPoolStrategy() {
 }
 
 // static
+void DecoderBufferAllocator::OverrideInitialCapacity(
+    int initial_capacity_bytes) {
+  auto* allocator = Get();
+  CHECK(allocator);
+  base::AutoLock scoped_lock(allocator->mutex_);
+  if (allocator->strategy_) {
+    LOG(WARNING) << "DecoderBufferAllocator: ignoring initial capacity"
+                 << " override (" << initial_capacity_bytes
+                 << " bytes) because an allocation strategy already exists.";
+    return;
+  }
+  LOG(INFO) << "DecoderBufferAllocator: overriding initial capacity from "
+            << allocator->initial_capacity_ << " to " << initial_capacity_bytes
+            << " bytes.";
+  allocator->initial_capacity_ = initial_capacity_bytes;
+}
+
+// static
 void DecoderBufferAllocator::EnableReleaseIdleMemory() {
   auto* allocator = Get();
   CHECK(allocator);

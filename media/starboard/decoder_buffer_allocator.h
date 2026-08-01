@@ -90,6 +90,12 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
   static void EnableMediaBufferPoolStrategy();
   static void EnableReleaseIdleMemory();
 
+  // Overrides |initial_capacity_| of the singleton allocator. Only takes
+  // effect if called before the allocation strategy is created (i.e. before
+  // the first Allocate() when the pool is allocated on demand); otherwise it
+  // logs a warning and does nothing.
+  static void OverrideInitialCapacity(int initial_capacity_bytes);
+
  private:
   void EnsureStrategyIsCreated() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
@@ -98,7 +104,10 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
 #endif  // !BUILDFLAG(COBALT_IS_RELEASE_BUILD)
 
   const bool is_memory_pool_allocated_on_demand_;
-  const int initial_capacity_;
+  // Not const so OverrideInitialCapacity() can adjust it before the strategy
+  // is created. Written in the ctor and (under |mutex_|) by
+  // OverrideInitialCapacity(); read under |mutex_| afterwards.
+  int initial_capacity_;
   const int allocation_unit_;
 
   mutable base::Lock mutex_;
