@@ -575,6 +575,12 @@ const base::FeatureParam<bool>
 BASE_FEATURE(kCobaltGlibAlwaysMalloc,
              "CobaltGlibAlwaysMalloc",
              base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, sets WESTEROS_SINK_LOW_MEM_MODE=1 before the in-process
+// SbPlayer creates its first GStreamer pipeline, halving westeros-sink's
+// V4L2 compressed-input buffers (4x4MB -> 4x1MB).
+BASE_FEATURE(kCobaltWesterosLowMemMode,
+             "CobaltWesterosLowMemMode",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
 #if BUILDFLAG(IS_CHROMEOS)

@@ -418,7 +418,7 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
   // ContentRendererClient media hooks run), but its allocation strategy has
   // not been created yet on allocate-on-demand platforms, and no GStreamer
   // pipeline has been created by the in-process SbPlayer. Guarded to run only
-  // once since this function is called for every playback. All three features
+  // once since this function is called for every playback. All features below
   // are FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless they
   // are enabled via h5vcc experiments.
   static bool memory_experiments_applied = false;
@@ -444,6 +444,13 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
       // pipeline.
       setenv("G_SLICE", "always-malloc", 1);
       LOG(INFO) << "CobaltGlibAlwaysMalloc: set G_SLICE=always-malloc.";
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltWesterosLowMemMode)) {
+      // Halves westeros-sink's V4L2 compressed-input buffers (4x4MB -> 4x1MB).
+      // The sink reads this env at element creation, which happens after this
+      // point (first pipeline setup by the in-process SbPlayer).
+      setenv("WESTEROS_SINK_LOW_MEM_MODE", "1", 1);
+      LOG(INFO) << "CobaltWesterosLowMemMode: set WESTEROS_SINK_LOW_MEM_MODE=1.";
     }
   }
 }

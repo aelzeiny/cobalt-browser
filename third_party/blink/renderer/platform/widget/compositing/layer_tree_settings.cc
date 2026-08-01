@@ -590,6 +590,15 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
         settings.memory_policy.bytes_limit_when_visible, cap_in_bytes);
   }
 
+  // Cobalt memory experiment (default-off, see cc/base/features.cc): raster
+  // tiles in RGBA_4444.
+  if (base::FeatureList::IsEnabled(::features::kCobaltRGBA4444Tiles)) {
+    // Halves GPU raster tile bytes (RGBA_8888 -> RGBA_4444). The Mali
+    // user-space allocator never returns freed pages to the OS, so reducing
+    // allocation size (not lifetime) is what lowers the RSS high-water mark.
+    settings.use_rgba_4444 = true;
+  }
+
   settings.disallow_non_exact_resource_reuse =
       cmd.HasSwitch(::switches::kDisallowNonExactResourceReuse);
 #if BUILDFLAG(IS_ANDROID)
