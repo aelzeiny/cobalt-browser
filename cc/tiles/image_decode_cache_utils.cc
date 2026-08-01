@@ -12,6 +12,7 @@
 #if BUILDFLAG(IS_COBALT)
 #include "base/command_line.h"
 #include "base/strings/string_number_conversions.h"
+#include "cc/base/features.h"
 #include "cc/base/switches.h"
 #endif
 
@@ -53,6 +54,14 @@ size_t ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode(
       int64_t parsed_value;
       if (base::StringToInt64(value, &parsed_value) && parsed_value >= 0) {
         budget = parsed_value;
+      }
+    }
+    // Experiment override; takes precedence over the switch. Strict no-op
+    // unless the feature is explicitly enabled.
+    if (base::FeatureList::IsEnabled(features::kCobaltImageCacheBudget)) {
+      int mb = features::kCobaltImageCacheBudgetMb.Get();
+      if (mb >= 0) {
+        budget = static_cast<size_t>(mb) * 1024 * 1024;
       }
     }
     return budget;

@@ -267,6 +267,12 @@ CC_BASE_EXPORT extern const base::FeatureParam<int>
 // RGBA_4444 instead of RGBA_8888, halving raster tile memory.
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltRGBA4444Tiles);
 
+// Cobalt memory experiment (default-off): when enabled, overrides the
+// GpuImageDecodeCache working-set budget
+// (LayerTreeSettings::decoded_image_working_set_budget_bytes) with |mb| MB.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltImageCacheBudget);
+CC_BASE_EXPORT extern const base::FeatureParam<int> kCobaltImageCacheBudgetMb;
+
 }  // namespace features
 
 #endif  // CC_BASE_FEATURES_H_

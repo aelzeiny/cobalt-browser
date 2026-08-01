@@ -308,4 +308,18 @@ BASE_FEATURE(kCobaltRGBA4444Tiles,
              "CobaltRGBA4444Tiles",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Cobalt memory experiment: strict no-op unless explicitly enabled. Arm-
+// tunable replacement for the shipped "LimitImageDecodeCacheSize:mb/24"
+// enable-features entry, which is a no-op in this tree (no such base::Feature
+// is declared anywhere) and whose bare "mb" param could not be set from
+// h5vcc arms anyway (arms send "FeatureName:"-prefixed keys). When enabled,
+// ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode() returns |mb| MB,
+// overriding both the 128 MB default and the
+// --decoded-image-working-set-budget-bytes switch.
+BASE_FEATURE(kCobaltImageCacheBudget,
+             "CobaltImageCacheBudget",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltImageCacheBudgetMb{
+    &kCobaltImageCacheBudget, "CobaltImageCacheBudget:mb", 24};
+
 }  // namespace features
