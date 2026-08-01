@@ -233,6 +233,23 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltUsingAndroidOverlay);
 #endif  // BUILDFLAG(IS_ANDROID)
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltBypassMojoForMedia);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltUseExternalMediaMemoryPool);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltMediaPoolSmallInitialCapacity);
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolInitialCapacityBytes;
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltMediaPoolDecommit);
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitBlockSizeBytes;
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitRetainBlocks;
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitConservativeDecommitBlocks;
+MEDIA_EXPORT extern const base::FeatureParam<bool>
+    kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend;
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltGlibAlwaysMalloc);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltWesterosLowMemMode);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltGstSmallQueues);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltMallocTrim);
+MEDIA_EXPORT extern const base::FeatureParam<int> kCobaltMallocTrimIntervalS;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #if BUILDFLAG(IS_CHROMEOS)
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCrOSSystemAEC);

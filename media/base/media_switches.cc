@@ -522,6 +522,80 @@ BASE_FEATURE(kCobaltBypassMojoForMedia,
 BASE_FEATURE(kCobaltUseExternalMediaMemoryPool,
              "CobaltUseExternalMediaMemoryPool",
              base::FEATURE_DISABLED_BY_DEFAULT);
+// Memory experiment features below are strict no-ops unless explicitly
+// enabled (e.g. via h5vcc.experiments.setExperimentState()).
+//
+// Note on the FeatureParam name strings: params set through
+// h5vcc.experiments.setExperimentState() flow verbatim from the web app's
+// featureParams dict keys to base::AssociateFieldTrialParams():
+// blink's ParseConfigToDictionary() (experiments_utils.cc) copies the keys
+// unchanged (stringifying numeric/bool values, e.g. 2097152 -> "2097152",
+// true -> "true"), H5vccExperimentsImpl::SetExperimentState() persists the
+// dict unchanged, and SetUpCobaltFeaturesAndParams()
+// (cobalt_content_browser_client.cc) associates the flat key/value map
+// as-is with the shared CobaltExperiment/CobaltGroup field trial. Since all
+// Cobalt features share that single trial, the harness namespaces param
+// keys with a "FeatureName:" prefix (e.g.
+// "CobaltMediaPoolDecommit:block_size_bytes") and the prefix is NOT
+// stripped anywhere, so the FeatureParam names below must include it.
+// FeatureParam::Get() falls back to the defaults below when a feature is
+// enabled without params; the defaults are the intended treatment values.
+
+// When enabled, overrides the decoder buffer pool's initial capacity with
+// |initial_capacity_bytes| (only takes effect if applied before the pool's
+// allocation strategy is created).
+BASE_FEATURE(kCobaltMediaPoolSmallInitialCapacity,
+             "CobaltMediaPoolSmallInitialCapacity",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltMediaPoolInitialCapacityBytes{
+    &kCobaltMediaPoolSmallInitialCapacity,
+    "CobaltMediaPoolSmallInitialCapacity:initial_capacity_bytes",
+    2 * 1024 * 1024};
+// When enabled, switches the decoder buffer pool to the configurable
+// decommit strategy (see
+// DecoderBufferAllocator::EnableConfigurableDecommitStrategy()).
+BASE_FEATURE(kCobaltMediaPoolDecommit,
+             "CobaltMediaPoolDecommit",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltMediaPoolDecommitBlockSizeBytes{
+    &kCobaltMediaPoolDecommit, "CobaltMediaPoolDecommit:block_size_bytes",
+    4 * 1024 * 1024};
+const base::FeatureParam<int> kCobaltMediaPoolDecommitRetainBlocks{
+    &kCobaltMediaPoolDecommit, "CobaltMediaPoolDecommit:retain_blocks", 1};
+const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitConservativeDecommitBlocks{
+        &kCobaltMediaPoolDecommit,
+        "CobaltMediaPoolDecommit:conservative_decommit_blocks", 2};
+const base::FeatureParam<bool>
+    kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend{
+        &kCobaltMediaPoolDecommit,
+        "CobaltMediaPoolDecommit:aggressive_decommit_on_suspend", false};
+// When enabled, sets G_SLICE=always-malloc before GStreamer (and thus GLib's
+// slice allocator) is initialized by the in-process SbPlayer.
+BASE_FEATURE(kCobaltGlibAlwaysMalloc,
+             "CobaltGlibAlwaysMalloc",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, sets WESTEROS_SINK_LOW_MEM_MODE=1 before the in-process
+// SbPlayer creates its first GStreamer pipeline, halving westeros-sink's
+// V4L2 compressed-input buffers (4x4MB -> 4x1MB).
+BASE_FEATURE(kCobaltWesterosLowMemMode,
+             "CobaltWesterosLowMemMode",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, sets COBALT_GST_SMALL_QUEUES=1 before the in-process
+// SbPlayer creates its first GStreamer pipeline. The RDK Starboard player
+// reads it at pipeline construction and shrinks the video appsrc max-bytes
+// (8MB -> 2MB) and the injected queue's max-size-buffers (60 -> 20);
+// encoded data held in-process (third copy of media bytes).
+BASE_FEATURE(kCobaltGstSmallQueues,
+             "CobaltGstSmallQueues",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// When enabled, periodically calls malloc_trim(0) on the renderer main
+// thread every |interval_s| seconds. glibc builds only; a no-op elsewhere.
+BASE_FEATURE(kCobaltMallocTrim,
+             "CobaltMallocTrim",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltMallocTrimIntervalS{
+    &kCobaltMallocTrim, "CobaltMallocTrim:interval_s", 60};
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
 #if BUILDFLAG(IS_CHROMEOS)

@@ -281,4 +281,31 @@ BASE_FEATURE_PARAM(base::TimeDelta,
                    "max_animation_duration",
                    base::Milliseconds(700));
 
+// Cobalt memory experiment: strict no-op unless explicitly enabled (e.g. via
+// h5vcc.experiments.setExperimentState()). All Cobalt features share a
+// single CobaltExperiment/CobaltGroup field trial, so the experiment harness
+// namespaces param keys with a "FeatureName:" prefix that is NOT stripped
+// anywhere; the FeatureParam names below must include it verbatim.
+// FeatureParam::Get() falls back to the defaults below when the feature is
+// enabled without params; the defaults are the intended treatment values.
+BASE_FEATURE(kCobaltTightCompositorMemory,
+             "CobaltTightCompositorMemory",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// Cap on ManagedMemoryPolicy::bytes_limit_when_visible, in MiB. Applied as
+// min(current limit, cap) in GenerateLayerTreeSettings().
+const base::FeatureParam<int> kCobaltTightCompositorMemoryCapMb{
+    &kCobaltTightCompositorMemory, "CobaltTightCompositorMemory:cap_mb", 40};
+// Replacement for ResourcePool::kDefaultExpirationDelay (5s), in
+// milliseconds.
+const base::FeatureParam<int> kCobaltTightCompositorMemoryPoolExpiryMs{
+    &kCobaltTightCompositorMemory,
+    "CobaltTightCompositorMemory:pool_expiry_ms", 1500};
+
+// Cobalt memory experiment: strict no-op unless explicitly enabled (e.g. via
+// h5vcc.experiments.setExperimentState()). When enabled, raster tiles use
+// RGBA_4444 instead of RGBA_8888, halving tile bytes.
+BASE_FEATURE(kCobaltRGBA4444Tiles,
+             "CobaltRGBA4444Tiles",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 }  // namespace features

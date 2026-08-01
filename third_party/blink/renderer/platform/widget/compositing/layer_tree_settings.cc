@@ -577,6 +577,28 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   settings.memory_policy = GetGpuMemoryPolicy(defaults, initial_screen_size,
                                               initial_device_scale_factor);
 
+  // Cobalt memory experiment (default-off, see cc/base/features.cc): clamp
+  // the compositor's visible memory limit. Only ever lowers the limit
+  // computed above, and only when the feature is enabled via h5vcc
+  // experiments.
+  if (base::FeatureList::IsEnabled(::features::kCobaltTightCompositorMemory)) {
+    const size_t cap_in_bytes =
+        static_cast<size_t>(
+            ::features::kCobaltTightCompositorMemoryCapMb.Get()) *
+        1024 * 1024;
+    settings.memory_policy.bytes_limit_when_visible = std::min(
+        settings.memory_policy.bytes_limit_when_visible, cap_in_bytes);
+  }
+
+  // Cobalt memory experiment (default-off, see cc/base/features.cc): raster
+  // tiles in RGBA_4444.
+  if (base::FeatureList::IsEnabled(::features::kCobaltRGBA4444Tiles)) {
+    // Halves GPU raster tile bytes (RGBA_8888 -> RGBA_4444). The Mali
+    // user-space allocator never returns freed pages to the OS, so reducing
+    // allocation size (not lifetime) is what lowers the RSS high-water mark.
+    settings.use_rgba_4444 = true;
+  }
+
   settings.disallow_non_exact_resource_reuse =
       cmd.HasSwitch(::switches::kDisallowNonExactResourceReuse);
 #if BUILDFLAG(IS_ANDROID)

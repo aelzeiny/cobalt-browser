@@ -254,6 +254,19 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kCubicBezierY2);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
                                           kMaxAnimtionDuration);
 
+// Cobalt memory experiment (default-off): when enabled, clamps the
+// compositor's gpu memory policy visible limit and shortens the ResourcePool
+// idle-resource expiration delay.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltTightCompositorMemory);
+CC_BASE_EXPORT extern const base::FeatureParam<int>
+    kCobaltTightCompositorMemoryCapMb;
+CC_BASE_EXPORT extern const base::FeatureParam<int>
+    kCobaltTightCompositorMemoryPoolExpiryMs;
+
+// Cobalt memory experiment (default-off): when enabled, raster tiles use
+// RGBA_4444 instead of RGBA_8888, halving raster tile memory.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltRGBA4444Tiles);
+
 }  // namespace features
 
 #endif  // CC_BASE_FEATURES_H_

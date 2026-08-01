@@ -14,12 +14,24 @@
 
 #include "cobalt/renderer/cobalt_content_renderer_client.h"
 
+#include <stdlib.h>
+
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
+
 #include <memory>
 #include <string>
 #include <variant>
 
+#include "base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.h"
+#include "base/feature_list.h"
+#include "base/functional/bind.h"
+#include "base/metrics/field_trial_params.h"
+#include "base/no_destructor.h"
 #include "base/task/bind_post_task.h"
 #include "base/time/time.h"
+#include "base/timer/timer.h"
 #include "cobalt/media/service/mojom/platform_window_provider.mojom.h"
 #include "cobalt/renderer/cobalt_render_frame_observer.h"
 #include "cobalt/shell/common/url_constants.h"
@@ -34,6 +46,7 @@
 #include "media/base/renderer_factory.h"
 #include "media/base/starboard/experimental_features.h"
 #include "media/mojo/clients/starboard/starboard_renderer_client_factory.h"
+#include "media/starboard/decoder_buffer_allocator.h"
 #include "media/starboard/starboard_media_external_memory_allocator.h"
 #include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "starboard/media.h"
@@ -52,6 +65,30 @@ namespace {
 using ::media::ExperimentalFeatures;
 
 const char kWidevineL3KeySystem[] = "com.youtube.widevine.l3";
+
+// Memory experiment feature: strict no-op unless explicitly enabled (e.g.
+// via h5vcc.experiments.setExperimentState()).
+//
+// Note on the FeatureParam name string: params set through
+// h5vcc.experiments.setExperimentState() flow verbatim from the web app's
+// featureParams dict keys to base::AssociateFieldTrialParams(). Since all
+// Cobalt features share a single CobaltExperiment/CobaltGroup field trial,
+// the harness namespaces param keys with a "FeatureName:" prefix (e.g.
+// "CobaltAggressivePAReclaim:interval_s") and the prefix is NOT stripped
+// anywhere, so the FeatureParam name below must include it.
+// FeatureParam::Get() falls back to the default below when the feature is
+// enabled without params; the default is the intended treatment value.
+
+// When enabled, periodically calls
+// ::partition_alloc::MemoryReclaimer::ReclaimAll() on the renderer main
+// thread. The stock reclaimer only runs as a (best-effort) idle task and
+// starves under continuous scrolling, letting empty PartitionAlloc pages
+// accumulate.
+BASE_FEATURE(kCobaltAggressivePAReclaim,
+             "CobaltAggressivePAReclaim",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltAggressivePAReclaimIntervalS{
+    &kCobaltAggressivePAReclaim, "CobaltAggressivePAReclaim:interval_s", 10};
 
 ExperimentalFeatures ParseH5vccSettings(mojom::SettingsPtr settings) {
   ExperimentalFeatures::Map h5vcc_settings;
@@ -216,6 +253,102 @@ void CobaltContentRendererClient::RenderThreadStarted() {
   // Register h5vcc scheme for renders to use Fetch API.
   blink::WebSecurityPolicy::RegisterURLSchemeAsSupportingFetchAPI(
       blink::WebString::FromASCII(content::kH5vccEmbeddedScheme));
+
+  // Apply the default-off PartitionAlloc reclaim experiment. The FeatureList
+  // is initialized well before the render thread starts, so the check is
+  // reliable here, and kCobaltAggressivePAReclaim is
+  // FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless it is
+  // enabled via h5vcc experiments.
+  if (base::FeatureList::IsEnabled(kCobaltAggressivePAReclaim)) {
+    const base::TimeDelta interval =
+        base::Seconds(kCobaltAggressivePAReclaimIntervalS.Get());
+    // Intentionally leaked: the timer lives for the renderer process
+    // lifetime and is started, fired and (never) destroyed on the renderer
+    // main thread only.
+    static base::NoDestructor<base::RepeatingTimer> reclaim_timer;
+    reclaim_timer->Start(FROM_HERE, interval, base::BindRepeating([]() {
+                           ::partition_alloc::MemoryReclaimer::Instance()
+                               ->ReclaimAll();
+                         }));
+    LOG(INFO) << "CobaltAggressivePAReclaim: reclaiming PartitionAlloc memory"
+              << " every " << interval;
+  }
+
+#if defined(__GLIBC__)
+  // Apply the default-off malloc_trim experiment. Param-gated last resort:
+  // releases glibc arena slack (brk top + madvise of free interior pages).
+  // API call, not a glibc tunable; in-tree precedent application_rdk.cc:424.
+  // kCobaltMallocTrim is FEATURE_DISABLED_BY_DEFAULT, so this is a strict
+  // no-op unless it is enabled via h5vcc experiments.
+  if (base::FeatureList::IsEnabled(::media::kCobaltMallocTrim)) {
+    const base::TimeDelta interval =
+        base::Seconds(::media::kCobaltMallocTrimIntervalS.Get());
+    // Intentionally leaked: the timer lives for the renderer process
+    // lifetime and is started, fired and (never) destroyed on the renderer
+    // main thread only.
+    static base::NoDestructor<base::RepeatingTimer> trim_timer;
+    trim_timer->Start(FROM_HERE, interval,
+                      base::BindRepeating([]() { malloc_trim(0); }));
+    LOG(INFO) << "CobaltMallocTrim: calling malloc_trim(0) every " << interval;
+  }
+#endif  // defined(__GLIBC__)
+
+  // Apply default-off memory experiment features. This point is after
+  // FeatureList initialization and before any playback can start: the
+  // DecoderBufferAllocator singleton already exists (created with the
+  // MediaClient during RenderThreadImpl::InitializeWebKit(), which runs
+  // before ContentRendererClient::RenderThreadStarted() is invoked in
+  // RenderThreadImpl::Init()), but its allocation strategy has not been
+  // created yet on allocate-on-demand platforms, and no GStreamer pipeline
+  // has been created by the in-process SbPlayer. RenderThreadStarted() runs
+  // once per renderer process, but keep a static latch for safety. All
+  // features below are FEATURE_DISABLED_BY_DEFAULT, so this is a strict
+  // no-op unless they are enabled via h5vcc experiments.
+  static bool memory_experiments_applied = false;
+  if (!memory_experiments_applied) {
+    memory_experiments_applied = true;
+    // If both pool features are enabled, the decommit strategy wins; it
+    // replaces the allocation strategy and ignores the initial capacity.
+    if (base::FeatureList::IsEnabled(
+            ::media::kCobaltMediaPoolSmallInitialCapacity)) {
+      ::media::DecoderBufferAllocator::OverrideInitialCapacity(
+          ::media::kCobaltMediaPoolInitialCapacityBytes.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltMediaPoolDecommit)) {
+      ::media::DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
+          ::media::kCobaltMediaPoolDecommitBlockSizeBytes.Get(),
+          ::media::kCobaltMediaPoolDecommitRetainBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitConservativeDecommitBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltGlibAlwaysMalloc)) {
+      // Must be set before GStreamer initializes GLib's slice allocator,
+      // which happens when the in-process SbPlayer creates its first
+      // pipeline.
+      setenv("G_SLICE", "always-malloc", 1);
+      LOG(INFO) << "CobaltGlibAlwaysMalloc: set G_SLICE=always-malloc.";
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltWesterosLowMemMode)) {
+      // Halves westeros-sink's V4L2 compressed-input buffers (4x4MB -> 4x1MB).
+      // The sink reads this env at element creation, which happens after this
+      // point (first pipeline setup by the in-process SbPlayer).
+      setenv("WESTEROS_SINK_LOW_MEM_MODE", "1", 1);
+      // Private handshake read by the RDK Starboard player to additionally
+      // set the westerossink "low-memory" property directly, for sink forks
+      // that ignore the env var.
+      setenv("COBALT_WESTEROS_LOW_MEM", "1", 1);
+      LOG(INFO) << "CobaltWesterosLowMemMode: set WESTEROS_SINK_LOW_MEM_MODE=1"
+                << " and COBALT_WESTEROS_LOW_MEM=1.";
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltGstSmallQueues)) {
+      // Private handshake read by the RDK Starboard player at pipeline
+      // construction, which happens after this point (first pipeline setup
+      // by the in-process SbPlayer): shrinks the video appsrc max-bytes
+      // (8MB -> 2MB) and the injected queue's max-size-buffers (60 -> 20).
+      setenv("COBALT_GST_SMALL_QUEUES", "1", 1);
+      LOG(INFO) << "CobaltGstSmallQueues: set COBALT_GST_SMALL_QUEUES=1.";
+    }
+  }
 }
 
 void AddStarboardCmaKeySystems(::media::KeySystemInfos* key_system_infos) {
@@ -357,6 +490,10 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
           std::make_unique<::media::StarboardMediaExternalMemoryAllocator>();
     }
   }
+
+  // Note: default-off memory experiment features (media pool overrides,
+  // G_SLICE, westeros low-mem) are applied in RenderThreadStarted(), which
+  // runs at renderer init, before any playback can reach this point.
 }
 
 void CobaltContentRendererClient::PostSandboxInitialized() {
