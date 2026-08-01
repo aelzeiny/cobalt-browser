@@ -569,6 +569,19 @@ bool ParkableStringManager::IsPaused() const {
     return true;
   }
 
+  // Cobalt memory experiment (default-off): a TV renderer is never
+  // backgrounded, so with kLessAggressiveParkableString enabled the check
+  // below reports "paused" permanently. When this feature is enabled, never
+  // pause, so the regular aging tick keeps running in the foreground. The
+  // feature state is constant for the process lifetime, so there is no
+  // paused -> unpaused transition to catch here: even though
+  // ScheduleAgingTaskIfNeeded() bails while paused and aging stops when it
+  // makes no progress, Add() calls ScheduleAgingTaskIfNeeded() for every new
+  // string, so a dynamic page re-triggers scheduling (acceptable).
+  if (base::FeatureList::IsEnabled(features::kCobaltParkableStringAging)) {
+    return false;
+  }
+
   if (!base::FeatureList::IsEnabled(features::kLessAggressiveParkableString)) {
     return false;
   }

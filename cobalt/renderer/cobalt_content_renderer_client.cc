@@ -18,8 +18,14 @@
 #include <string>
 #include <variant>
 
+#include "base/allocator/partition_allocator/src/partition_alloc/memory_reclaimer.h"
+#include "base/feature_list.h"
+#include "base/functional/bind.h"
+#include "base/metrics/field_trial_params.h"
+#include "base/no_destructor.h"
 #include "base/task/bind_post_task.h"
 #include "base/time/time.h"
+#include "base/timer/timer.h"
 #include "cobalt/media/service/mojom/platform_window_provider.mojom.h"
 #include "cobalt/renderer/cobalt_render_frame_observer.h"
 #include "cobalt/shell/common/url_constants.h"
@@ -52,6 +58,30 @@ namespace {
 using ::media::ExperimentalFeatures;
 
 const char kWidevineL3KeySystem[] = "com.youtube.widevine.l3";
+
+// Memory experiment feature: strict no-op unless explicitly enabled (e.g.
+// via h5vcc.experiments.setExperimentState()).
+//
+// Note on the FeatureParam name string: params set through
+// h5vcc.experiments.setExperimentState() flow verbatim from the web app's
+// featureParams dict keys to base::AssociateFieldTrialParams(). Since all
+// Cobalt features share a single CobaltExperiment/CobaltGroup field trial,
+// the harness namespaces param keys with a "FeatureName:" prefix (e.g.
+// "CobaltAggressivePAReclaim:interval_s") and the prefix is NOT stripped
+// anywhere, so the FeatureParam name below must include it.
+// FeatureParam::Get() falls back to the default below when the feature is
+// enabled without params; the default is the intended treatment value.
+
+// When enabled, periodically calls
+// ::partition_alloc::MemoryReclaimer::ReclaimAll() on the renderer main
+// thread. The stock reclaimer only runs as a (best-effort) idle task and
+// starves under continuous scrolling, letting empty PartitionAlloc pages
+// accumulate.
+BASE_FEATURE(kCobaltAggressivePAReclaim,
+             "CobaltAggressivePAReclaim",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltAggressivePAReclaimIntervalS{
+    &kCobaltAggressivePAReclaim, "CobaltAggressivePAReclaim:interval_s", 10};
 
 ExperimentalFeatures ParseH5vccSettings(mojom::SettingsPtr settings) {
   ExperimentalFeatures::Map h5vcc_settings;
@@ -216,6 +246,26 @@ void CobaltContentRendererClient::RenderThreadStarted() {
   // Register h5vcc scheme for renders to use Fetch API.
   blink::WebSecurityPolicy::RegisterURLSchemeAsSupportingFetchAPI(
       blink::WebString::FromASCII(content::kH5vccEmbeddedScheme));
+
+  // Apply the default-off PartitionAlloc reclaim experiment. The FeatureList
+  // is initialized well before the render thread starts, so the check is
+  // reliable here, and kCobaltAggressivePAReclaim is
+  // FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless it is
+  // enabled via h5vcc experiments.
+  if (base::FeatureList::IsEnabled(kCobaltAggressivePAReclaim)) {
+    const base::TimeDelta interval =
+        base::Seconds(kCobaltAggressivePAReclaimIntervalS.Get());
+    // Intentionally leaked: the timer lives for the renderer process
+    // lifetime and is started, fired and (never) destroyed on the renderer
+    // main thread only.
+    static base::NoDestructor<base::RepeatingTimer> reclaim_timer;
+    reclaim_timer->Start(FROM_HERE, interval, base::BindRepeating([]() {
+                           ::partition_alloc::MemoryReclaimer::Instance()
+                               ->ReclaimAll();
+                         }));
+    LOG(INFO) << "CobaltAggressivePAReclaim: reclaiming PartitionAlloc memory"
+              << " every " << interval;
+  }
 }
 
 void AddStarboardCmaKeySystems(::media::KeySystemInfos* key_system_infos) {
