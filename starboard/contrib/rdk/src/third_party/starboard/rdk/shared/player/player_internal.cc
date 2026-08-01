@@ -1948,6 +1948,15 @@ void PlayerImpl::SetupElement(GstElement* pipeline,
         GST_INFO_OBJECT(pipeline, "Setting westerossink zoom-mode to 0");
         g_object_set(element, "zoom-mode", 0, nullptr);
       }
+      // Private handshake set by CobaltContentRendererClient when the
+      // CobaltWesterosLowMemMode feature is enabled. Set the sink property
+      // directly in addition to WESTEROS_SINK_LOW_MEM_MODE, for sink forks
+      // that ignore the env var.
+      if (getenv("COBALT_WESTEROS_LOW_MEM") &&
+          g_object_class_find_property(G_OBJECT_GET_CLASS(element), "low-memory")) {
+        GST_INFO_OBJECT(pipeline, "Setting westerossink low-memory to TRUE");
+        g_object_set(element, "low-memory", TRUE, nullptr);
+      }
       g_signal_connect_swapped(
         G_OBJECT(element), "buffer-underflow-callback",
         G_CALLBACK(OnVideoBufferUnderflow), self);
@@ -2962,6 +2971,13 @@ void PlayerImpl::ConfigureLimitedVideo() {
         }
         else {
           GST_WARNING_OBJECT(pipeline_, "'westerossink' has no 'res-usage' property, secondary video may steal decoder");
+        }
+        // Private handshake set by CobaltContentRendererClient when the
+        // CobaltWesterosLowMemMode feature is enabled.
+        if (getenv("COBALT_WESTEROS_LOW_MEM") &&
+            g_object_class_find_property(G_OBJECT_GET_CLASS(video_sink), "low-memory")) {
+          GST_INFO_OBJECT(pipeline_, "Setting westerossink low-memory to TRUE");
+          g_object_set(video_sink, "low-memory", TRUE, nullptr);
         }
         g_object_set(pipeline_, "video-sink", video_sink, nullptr);
       }

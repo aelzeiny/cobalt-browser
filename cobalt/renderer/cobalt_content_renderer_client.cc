@@ -269,6 +269,55 @@ void CobaltContentRendererClient::RenderThreadStarted() {
     LOG(INFO) << "CobaltAggressivePAReclaim: reclaiming PartitionAlloc memory"
               << " every " << interval;
   }
+
+  // Apply default-off memory experiment features. This point is after
+  // FeatureList initialization and before any playback can start: the
+  // DecoderBufferAllocator singleton already exists (created with the
+  // MediaClient during RenderThreadImpl::InitializeWebKit(), which runs
+  // before ContentRendererClient::RenderThreadStarted() is invoked in
+  // RenderThreadImpl::Init()), but its allocation strategy has not been
+  // created yet on allocate-on-demand platforms, and no GStreamer pipeline
+  // has been created by the in-process SbPlayer. RenderThreadStarted() runs
+  // once per renderer process, but keep a static latch for safety. All
+  // features below are FEATURE_DISABLED_BY_DEFAULT, so this is a strict
+  // no-op unless they are enabled via h5vcc experiments.
+  static bool memory_experiments_applied = false;
+  if (!memory_experiments_applied) {
+    memory_experiments_applied = true;
+    // If both pool features are enabled, the decommit strategy wins; it
+    // replaces the allocation strategy and ignores the initial capacity.
+    if (base::FeatureList::IsEnabled(
+            ::media::kCobaltMediaPoolSmallInitialCapacity)) {
+      ::media::DecoderBufferAllocator::OverrideInitialCapacity(
+          ::media::kCobaltMediaPoolInitialCapacityBytes.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltMediaPoolDecommit)) {
+      ::media::DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
+          ::media::kCobaltMediaPoolDecommitBlockSizeBytes.Get(),
+          ::media::kCobaltMediaPoolDecommitRetainBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitConservativeDecommitBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend.Get());
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltGlibAlwaysMalloc)) {
+      // Must be set before GStreamer initializes GLib's slice allocator,
+      // which happens when the in-process SbPlayer creates its first
+      // pipeline.
+      setenv("G_SLICE", "always-malloc", 1);
+      LOG(INFO) << "CobaltGlibAlwaysMalloc: set G_SLICE=always-malloc.";
+    }
+    if (base::FeatureList::IsEnabled(::media::kCobaltWesterosLowMemMode)) {
+      // Halves westeros-sink's V4L2 compressed-input buffers (4x4MB -> 4x1MB).
+      // The sink reads this env at element creation, which happens after this
+      // point (first pipeline setup by the in-process SbPlayer).
+      setenv("WESTEROS_SINK_LOW_MEM_MODE", "1", 1);
+      // Private handshake read by the RDK Starboard player to additionally
+      // set the westerossink "low-memory" property directly, for sink forks
+      // that ignore the env var.
+      setenv("COBALT_WESTEROS_LOW_MEM", "1", 1);
+      LOG(INFO) << "CobaltWesterosLowMemMode: set WESTEROS_SINK_LOW_MEM_MODE=1"
+                << " and COBALT_WESTEROS_LOW_MEM=1.";
+    }
+  }
 }
 
 void AddStarboardCmaKeySystems(::media::KeySystemInfos* key_system_infos) {
@@ -411,48 +460,9 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
     }
   }
 
-  // Apply default-off memory experiment features. This point is after
-  // FeatureList initialization and before the first playback starts: the
-  // DecoderBufferAllocator singleton already exists (created with the
-  // MediaClient during RenderThreadImpl::InitializeWebKit(), before any
-  // ContentRendererClient media hooks run), but its allocation strategy has
-  // not been created yet on allocate-on-demand platforms, and no GStreamer
-  // pipeline has been created by the in-process SbPlayer. Guarded to run only
-  // once since this function is called for every playback. All features below
-  // are FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless they
-  // are enabled via h5vcc experiments.
-  static bool memory_experiments_applied = false;
-  if (!memory_experiments_applied) {
-    memory_experiments_applied = true;
-    // If both pool features are enabled, the decommit strategy wins; it
-    // replaces the allocation strategy and ignores the initial capacity.
-    if (base::FeatureList::IsEnabled(
-            ::media::kCobaltMediaPoolSmallInitialCapacity)) {
-      ::media::DecoderBufferAllocator::OverrideInitialCapacity(
-          ::media::kCobaltMediaPoolInitialCapacityBytes.Get());
-    }
-    if (base::FeatureList::IsEnabled(::media::kCobaltMediaPoolDecommit)) {
-      ::media::DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
-          ::media::kCobaltMediaPoolDecommitBlockSizeBytes.Get(),
-          ::media::kCobaltMediaPoolDecommitRetainBlocks.Get(),
-          ::media::kCobaltMediaPoolDecommitConservativeDecommitBlocks.Get(),
-          ::media::kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend.Get());
-    }
-    if (base::FeatureList::IsEnabled(::media::kCobaltGlibAlwaysMalloc)) {
-      // Must be set before GStreamer initializes GLib's slice allocator,
-      // which happens when the in-process SbPlayer creates its first
-      // pipeline.
-      setenv("G_SLICE", "always-malloc", 1);
-      LOG(INFO) << "CobaltGlibAlwaysMalloc: set G_SLICE=always-malloc.";
-    }
-    if (base::FeatureList::IsEnabled(::media::kCobaltWesterosLowMemMode)) {
-      // Halves westeros-sink's V4L2 compressed-input buffers (4x4MB -> 4x1MB).
-      // The sink reads this env at element creation, which happens after this
-      // point (first pipeline setup by the in-process SbPlayer).
-      setenv("WESTEROS_SINK_LOW_MEM_MODE", "1", 1);
-      LOG(INFO) << "CobaltWesterosLowMemMode: set WESTEROS_SINK_LOW_MEM_MODE=1.";
-    }
-  }
+  // Note: default-off memory experiment features (media pool overrides,
+  // G_SLICE, westeros low-mem) are applied in RenderThreadStarted(), which
+  // runs at renderer init, before any playback can reach this point.
 }
 
 void CobaltContentRendererClient::PostSandboxInitialized() {
