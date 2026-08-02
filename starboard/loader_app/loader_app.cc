@@ -322,7 +322,12 @@ void SbEventHandle(const SbEvent* event) {
       if (!v || v[0] == '\0') {
         v = getenv("COBALT_MEM_EXP_ALL");
       }
-      use_memory_mapped_file = v && v[0] == '1';
+      // campaign3 TREATMENT BUILD: default ON (opt out with
+      // COBALT_MEM_EXP_MMAP_ELF=0). The bench harness cannot deliver loader
+      // switches or loader-process env per arm, so the mmap treatment is
+      // encoded as a build default; the control arm uses the sibling build
+      // without this commit. Do not merge this default to a ship branch.
+      use_memory_mapped_file = !v || v[0] != '0';
     }
     SB_LOG(INFO) << "use_memory_mapped_file=" << use_memory_mapped_file;
 
