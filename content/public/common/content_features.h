@@ -65,6 +65,12 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kCacheControlNoStoreEnterBackForwardCache);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kCapturedSurfaceControlKillswitch);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(
     kClearCrossSiteCrossBrowsingContextGroupWindowName);
+// Cobalt memory experiment (default-off): cap SkResourceCache at |mb| MB in
+// InitializeSkia() when --skia-resource-cache-limit-mb is absent. See
+// content_features.cc and content/common/skia_utils.cc.
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kCobaltSkiaResourceCacheCap);
+CONTENT_EXPORT extern const base::FeatureParam<int>
+    kCobaltSkiaResourceCacheCapMb;
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kCompositeBGColorAnimation);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kCookieDeprecationFacilitatedTesting);
 CONTENT_EXPORT extern const base::FeatureParam<bool>

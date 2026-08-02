@@ -481,6 +481,20 @@ BASE_FEATURE(kCobaltParkableStringAging,
              "CobaltParkableStringAging",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Cobalt memory experiment: when enabled, ImageDecodingStore's heap limit
+// (normally the hardcoded 32 MB kDefaultMaxTotalSizeOfHeapEntries) is set to
+// |mb| MB at construction. The store is created lazily on first use, well
+// after FeatureList initialization in the renderer. Strict no-op unless
+// explicitly enabled (e.g. via h5vcc.experiments.setExperimentState()).
+BASE_FEATURE(kCobaltImageDecodingStoreBudget,
+             "CobaltImageDecodingStoreBudget",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int,
+                   kCobaltImageDecodingStoreBudgetMb,
+                   &kCobaltImageDecodingStoreBudget,
+                   "CobaltImageDecodingStoreBudget:mb",
+                   8);
+
 // Limits maximum capacity of disk data allocator per renderer process.
 // DiskDataAllocator and its clients(ParkableString, ParkableImage) will try
 // to keep the limitation.

@@ -10,6 +10,7 @@
 #include "base/system/sys_info.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
+#include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "skia/ext/event_tracer_impl.h"
 #include "skia/ext/skia_memory_dump_provider.h"
@@ -56,6 +57,22 @@ void InitializeSkia() {
             cmd.GetSwitchValueASCII(switches::kSkiaResourceCacheLimitMb),
             &resource_cache_limit)) {
       SkGraphics::SetResourceCacheTotalByteLimit(resource_cache_limit * kMB);
+    }
+  } else if (base::FeatureList::IsEnabled(
+                 features::kCobaltSkiaResourceCacheCap)) {
+    // Cobalt memory experiment: cap SkResourceCache when the switch is
+    // absent (the switch takes precedence). InitializeSkia() runs after
+    // FeatureList initialization in every process that calls it (browser:
+    // CobaltMainDelegate::PostEarlyInitialization creates the FeatureList
+    // in ContentMainRunnerImpl::RunBrowser, before BrowserMainLoop;
+    // renderer/GPU: InitializeFieldTrialAndFeatureList() runs in
+    // ContentMainRunnerImpl::Run before RunOtherNamedProcessTypeMain).
+    // kCobaltSkiaResourceCacheCap is FEATURE_DISABLED_BY_DEFAULT, so this
+    // is a strict no-op unless it is enabled via h5vcc experiments.
+    const int mb = features::kCobaltSkiaResourceCacheCapMb.Get();
+    if (mb >= 0) {
+      SkGraphics::SetResourceCacheTotalByteLimit(static_cast<size_t>(mb) *
+                                                 kMB);
     }
   }
 #endif

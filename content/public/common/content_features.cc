@@ -202,6 +202,18 @@ BASE_FEATURE(kClearCrossSiteCrossBrowsingContextGroupWindowName,
              "ClearCrossSiteCrossBrowsingContextGroupWindowName",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Cobalt memory experiment: when enabled and --skia-resource-cache-limit-mb
+// is absent (the switch takes precedence), caps SkResourceCache
+// (SkGraphics::SetResourceCacheTotalByteLimit) at |mb| MB in
+// InitializeSkia(). Cobalt never passes the switch, so the cache is
+// otherwise left at Skia's default. Strict no-op unless explicitly enabled
+// (e.g. via h5vcc.experiments.setExperimentState()).
+BASE_FEATURE(kCobaltSkiaResourceCacheCap,
+             "CobaltSkiaResourceCacheCap",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kCobaltSkiaResourceCacheCapMb{
+    &kCobaltSkiaResourceCacheCap, "CobaltSkiaResourceCacheCap:mb", 8};
+
 BASE_FEATURE(kCompositeBGColorAnimation,
              "CompositeBGColorAnimation",
              base::FEATURE_DISABLED_BY_DEFAULT);

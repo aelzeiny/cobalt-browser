@@ -242,6 +242,14 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(int,
                                                kMaxDiskDataAllocatorCapacityMB);
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kLessAggressiveParkableString);
 
+// Cobalt memory experiment (default-off): when enabled, sets the
+// ImageDecodingStore heap limit to |mb| MB instead of the hardcoded 32 MB.
+// See features.cc and ImageDecodingStore's constructor.
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kCobaltImageDecodingStoreBudget);
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(
+    int,
+    kCobaltImageDecodingStoreBudgetMb);
+
 // Cobalt memory experiment (default-off): un-pause parkable string aging on
 // never-backgrounded TV renderers. See features.cc and
 // ParkableStringManager::IsPaused().

@@ -27,8 +27,10 @@
 
 #include <memory>
 
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/synchronization/lock.h"
+#include "third_party/blink/public/common/features.h"
 #include "third_party/blink/renderer/platform/graphics/image_frame_generator.h"
 #include "third_party/blink/renderer/platform/instrumentation/tracing/trace_event.h"
 #include "third_party/blink/renderer/platform/wtf/threading.h"
@@ -47,7 +49,24 @@ ImageDecodingStore::ImageDecodingStore()
       memory_pressure_listener_(
           FROM_HERE,
           base::BindRepeating(&ImageDecodingStore::OnMemoryPressure,
-                              base::Unretained(this))) {}
+                              base::Unretained(this))) {
+  // Cobalt memory experiment: override the hardcoded 32 MB heap limit with
+  // the feature param. Instance() is created lazily on first use (first
+  // image decode via ImageDecoderWrapper, a memory-pressure notification,
+  // or WebImageCache::Clear()), all well after FeatureList initialization
+  // in the renderer; the GetInstance() null-check keeps any earlier or
+  // FeatureList-less (test) construction safe. kCobaltImageDecodingStoreBudget
+  // is FEATURE_DISABLED_BY_DEFAULT, so this is a strict no-op unless the
+  // feature is explicitly enabled via h5vcc experiments.
+  if (base::FeatureList::GetInstance() &&
+      base::FeatureList::IsEnabled(
+          features::kCobaltImageDecodingStoreBudget)) {
+    const int mb = features::kCobaltImageDecodingStoreBudgetMb.Get();
+    if (mb >= 0) {
+      heap_limit_in_bytes_ = static_cast<size_t>(mb) * 1024 * 1024;
+    }
+  }
+}
 
 ImageDecodingStore::~ImageDecodingStore() {
 #if DCHECK_IS_ON()
