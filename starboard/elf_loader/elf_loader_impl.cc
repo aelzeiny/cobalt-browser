@@ -78,10 +78,16 @@ bool ElfLoaderImpl::Load(const char* name,
         strcmp(memory_mapped_file_extension->name,
                kCobaltExtensionMemoryMappedFileName) != 0 ||
         memory_mapped_file_extension->version < 1) {
-      SB_LOG(ERROR) << "CobaltExtensionMemoryMappedFileApi not implemented";
-      return false;
+      // Memory mapping is an optimization (file-backed, demand-paged
+      // segments); a platform without the extension can still load the
+      // binary the classic way. Degrade instead of failing so that enabling
+      // the mmap gate on such a platform cannot brick the app.
+      SB_LOG(WARNING) << "CobaltExtensionMemoryMappedFileApi not implemented; "
+                      << "falling back to loading without memory mapping";
+      program_table_.reset(new ProgramTable(nullptr));
+    } else {
+      program_table_.reset(new ProgramTable(memory_mapped_file_extension));
     }
-    program_table_.reset(new ProgramTable(memory_mapped_file_extension));
   } else {
     program_table_.reset(new ProgramTable(nullptr));
   }

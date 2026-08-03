@@ -49,14 +49,27 @@ class LibraryLoader {
   virtual void* Resolve(const std::string& symbol) = 0;
 };
 
+// Ensures that a valid uncompressed, memory-mappable copy of the LZ4
+// compressed library at |compressed_lib_path| exists at |cache_path|,
+// reusing a previously written cache when it still matches the compressed
+// library and (re)building it atomically otherwise. Returns true if a valid
+// cache is present at |cache_path| on return. Used for loading compressed
+// libraries as memory mapped files; see LoadSlotManagedLibrary() for the
+// update-slot flow and loader_app.cc for the system-image flow.
+bool EnsureUncompressedCache(const std::string& compressed_lib_path,
+                             const std::string& cache_path);
+
 // Load the library for the app specified by |app_key| and manage the
 // current slot selection by rolling forward or back based on the slot status.
 // The actual loading from the slot is performed by the |library_loader|.
 // An alternative content can be used by specifying non-empty
 // |alternative_content_path| with the full path to the content.
 // If |use_memory_mapped_file| is true the library would be loaded as a memory
-// mapped file. It should not be enabled if the library selected may be
-// compressed since compression and memory mapping are incompatible.
+// mapped file. If the selected library is LZ4 compressed it is first
+// decompressed, once per installed binary, to an uncompressed cache file in
+// the slot's lib directory and the cache is memory mapped instead. If no
+// uncompressed library can be obtained the library is loaded with in-memory
+// decompression, as if |use_memory_mapped_file| were false.
 // Returns a pointer to the |SbEventHandle| symbol in the library.
 void* LoadSlotManagedLibrary(const std::string& app_key,
                              const std::string& alternative_content_path,
