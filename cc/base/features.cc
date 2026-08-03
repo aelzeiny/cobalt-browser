@@ -281,4 +281,11 @@ BASE_FEATURE_PARAM(base::TimeDelta,
                    "max_animation_duration",
                    base::Milliseconds(700));
 
+// Cobalt memory experiment: strict no-op unless explicitly enabled (e.g. via
+// h5vcc.experiments.setExperimentState()). When enabled, raster tiles use
+// RGBA_4444 instead of RGBA_8888, halving tile bytes.
+BASE_FEATURE(kCobaltRGBA4444Tiles,
+             "CobaltRGBA4444Tiles",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 }  // namespace features
