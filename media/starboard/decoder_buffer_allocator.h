@@ -88,15 +88,20 @@ class DecoderBufferAllocator : public DecoderBuffer::Allocator,
   static base::expected<void, std::string> SetSetting(const std::string& name,
                                                       int value);
 
- private:
-  // Utility functions for h5vcc settings.
-  // TODO(b/460292554): To be deprecated with h5vcc settings.
+  // Public so the kCobaltMediaPoolDecommit feature
+  // (CobaltContentRendererClient::GetStarboardRendererFactoryTraits()) can
+  // pass exact byte-granular parameters; the SetSetting() encoding above only
+  // supports whole-MB block sizes.
   static void EnableConfigurableDecommitStrategy(
       int block_size,
       int retain_blocks,
       int conservative_decommit_blocks,
       bool aggressive_decommit_on_suspend,
       bool allocate_with_page_alignment);
+
+ private:
+  // Utility functions for h5vcc settings.
+  // TODO(b/460292554): To be deprecated with h5vcc settings.
   static void EnableMediaBufferPoolStrategy();
   static void EnableReleaseIdleMemory();
 

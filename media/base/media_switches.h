@@ -233,6 +233,15 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltUsingAndroidOverlay);
 #endif  // BUILDFLAG(IS_ANDROID)
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltBypassMojoForMedia);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltUseExternalMediaMemoryPool);
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltMediaPoolDecommit);
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitBlockSizeBytes;
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitRetainBlocks;
+MEDIA_EXPORT extern const base::FeatureParam<int>
+    kCobaltMediaPoolDecommitConservativeDecommitBlocks;
+MEDIA_EXPORT extern const base::FeatureParam<bool>
+    kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #if BUILDFLAG(IS_CHROMEOS)
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCrOSSystemAEC);

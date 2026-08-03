@@ -18,6 +18,7 @@
 #include <string>
 #include <variant>
 
+#include "base/feature_list.h"
 #include "base/task/bind_post_task.h"
 #include "base/time/time.h"
 #include "cobalt/media/service/mojom/platform_window_provider.mojom.h"
@@ -34,6 +35,7 @@
 #include "media/base/renderer_factory.h"
 #include "media/base/starboard/experimental_features.h"
 #include "media/mojo/clients/starboard/starboard_renderer_client_factory.h"
+#include "media/starboard/decoder_buffer_allocator.h"
 #include "media/starboard/starboard_media_external_memory_allocator.h"
 #include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "starboard/media.h"
@@ -351,6 +353,27 @@ void CobaltContentRendererClient::GetStarboardRendererFactoryTraits(
     if (is_external_memory_pool_enabled_ && !media_memory_allocator_) {
       media_memory_allocator_ =
           std::make_unique<::media::StarboardMediaExternalMemoryAllocator>();
+    }
+  }
+
+  // Apply the default-off CobaltMediaPoolDecommit memory experiment feature.
+  // This point is after FeatureList initialization and before the first
+  // playback starts: the DecoderBufferAllocator singleton already exists
+  // (created with the MediaClient during RenderThreadImpl::InitializeWebKit(),
+  // before any ContentRendererClient media hooks run), but no media buffers
+  // have been allocated yet. Guarded to run only once since this function is
+  // called for every playback. The feature is FEATURE_DISABLED_BY_DEFAULT, so
+  // this is a strict no-op unless it is enabled via h5vcc experiments.
+  static bool media_pool_decommit_applied = false;
+  if (!media_pool_decommit_applied) {
+    media_pool_decommit_applied = true;
+    if (base::FeatureList::IsEnabled(::media::kCobaltMediaPoolDecommit)) {
+      ::media::DecoderBufferAllocator::EnableConfigurableDecommitStrategy(
+          ::media::kCobaltMediaPoolDecommitBlockSizeBytes.Get(),
+          ::media::kCobaltMediaPoolDecommitRetainBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitConservativeDecommitBlocks.Get(),
+          ::media::kCobaltMediaPoolDecommitAggressiveDecommitOnSuspend.Get(),
+          /*allocate_with_page_alignment=*/true);
     }
   }
 }
