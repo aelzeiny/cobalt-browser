@@ -15,12 +15,28 @@
 #include "starboard/media.h"
 
 #include "starboard/common/log.h"
+#include "starboard/shared/starboard/features.h"
+#include "starboard/shared/starboard/media/resolutions.h"
 
 int SbMediaGetVideoBufferBudget(SbMediaVideoCodec codec,
                                 int resolution_width,
                                 int resolution_height,
                                 int bits_per_pixel) {
   SB_UNREFERENCED_PARAMETER(codec);
+
+  if (starboard::features::FeatureList::IsEnabled(
+          starboard::features::kAreaBasedVideoBufferBudget)) {
+    starboard::Size resolution(resolution_width, resolution_height);
+    if (resolution.IsEmpty() ||
+        resolution.GetArea() <= starboard::Resolution::k1080p.GetArea()) {
+      return 30 * 1024 * 1024;
+    }
+    if (resolution.GetArea() <= starboard::Resolution::k4k.GetArea()) {
+      return bits_per_pixel <= 8 ? 100 * 1024 * 1024 : 160 * 1024 * 1024;
+    }
+    return 300 * 1024 * 1024;
+  }
+
   if ((resolution_width <= 1920 && resolution_height <= 1080) ||
       resolution_width == kSbMediaVideoResolutionDimensionInvalid ||
       resolution_height == kSbMediaVideoResolutionDimensionInvalid) {

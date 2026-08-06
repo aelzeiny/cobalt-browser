@@ -37,8 +37,10 @@
 #include "starboard/common/log.h"
 #include "starboard/extension/configuration.h"
 #include "starboard/extension/crash_handler.h"
+#include "starboard/extension/features.h"
 #include "starboard/extension/loader_app_metrics.h"
 #include "starboard/extension/graphics.h"
+#include "starboard/shared/starboard/feature_list.h"
 #include "third_party/starboard/rdk/shared/graphics.h"
 #include "starboard/extension/platform_service.h"
 #include "third_party/starboard/rdk/shared/accessibility_extension.h"
@@ -54,6 +56,26 @@
 #include "starboard/extension/native_stability.h"
 #include "starboard/shared/starboard/native_stability.h"
 #endif
+
+namespace {
+
+// Extension function to receive the features and parameters passed
+// down from Cobalt and hand them to Starboard's FeatureList.
+void InitializeStarboardFeatures(const SbFeature* features,
+                                 size_t number_of_features,
+                                 const SbFeatureParam* params,
+                                 size_t number_of_params) {
+  starboard::features::FeatureList::InitializeFeatureList(
+      features, number_of_features, params, number_of_params);
+}
+
+constexpr StarboardExtensionFeaturesApi kFeaturesApi = {
+    kStarboardExtensionFeaturesName,
+    1u,
+    &InitializeStarboardFeatures,
+};
+
+}  // namespace
 
 const void* SbSystemGetExtension(const char* name) {
 #if BUILDFLAG(IS_STARBOARD)
@@ -89,6 +111,9 @@ const void* SbSystemGetExtension(const char* name) {
   }
   if (strcmp(name, kStarboardExtensionAccessibilityName) == 0) {
     return starboard::GetAccessibilityApi();
+  }
+  if (strcmp(name, kStarboardExtensionFeaturesName) == 0) {
+    return &kFeaturesApi;
   }
   return NULL;
 }

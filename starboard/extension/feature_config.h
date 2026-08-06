@@ -100,13 +100,13 @@ FEATURE_LIST_START
 //   STARBOARD_FEATURE(kCobaltVideoDebug, "CobaltVideoDebug", false)
 // #endif // BUILDFLAG(IS_ANDROID) && (SB_API_VERSION >= 17)
 
-#if BUILDFLAG(IS_ANDROID) && (SB_API_VERSION >= 17)
-// keep-sorted start newline_separated=yes
 // Set to true to enable area-based video buffer budget calculation.
 STARBOARD_FEATURE(kAreaBasedVideoBufferBudget,
                   "AreaBasedVideoBufferBudget",
                   false)
 
+#if BUILDFLAG(IS_ANDROID) && (SB_API_VERSION >= 17)
+// keep-sorted start newline_separated=yes
 // Set the following variable to true to enable av1 startup optimization.
 STARBOARD_FEATURE(kEnableAv1StartupOptimization,
                   "EnableAv1StartupOptimization",
