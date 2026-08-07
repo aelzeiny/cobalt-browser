@@ -864,11 +864,12 @@ class CONTENT_EXPORT RenderProcessHostImpl
   }
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
-  // Notifies the renderer process of memory pressure level.
+  // Notifies the renderer process of memory pressure level. Upstream gates
+  // this to Android; un-gated for RDK so the browser-side forwarding shim in
+  // CreateMemoryPressureMonitor can reach renderers (Linux otherwise has no
+  // path that ever delivers pressure to a renderer).
   void NotifyMemoryPressureToRenderer(
       base::MemoryPressureListener::MemoryPressureLevel level);
-#endif
 
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
   using VideoDecoderFactoryCreationCB = base::RepeatingCallback<void(

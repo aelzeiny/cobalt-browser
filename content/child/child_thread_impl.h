@@ -171,11 +171,10 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
 
   bool IsInBrowserProcess() const;
 
-#if BUILDFLAG(IS_ANDROID)
   // Received memory pressure signal sent by the browser process.
+  // RDK shim: un-gated from IS_ANDROID (mojom method likewise).
   virtual void OnMemoryPressureFromBrowserReceived(
       base::MemoryPressureListener::MemoryPressureLevel level);
-#endif
 
  private:
   class IOThreadState;

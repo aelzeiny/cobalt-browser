@@ -458,7 +458,7 @@ class ChildThreadImpl::IOThreadState
   }
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+  // RDK shim: un-gated from IS_ANDROID (mojom method likewise).
   void OnMemoryPressure(
       base::MemoryPressureListener::MemoryPressureLevel level) override {
     main_thread_task_runner_->PostTask(
@@ -466,7 +466,6 @@ class ChildThreadImpl::IOThreadState
         base::BindOnce(&ChildThreadImpl::OnMemoryPressureFromBrowserReceived,
                        weak_main_thread_, level));
   }
-#endif
 
   void SetBatterySaverMode(bool battery_saver_mode_enabled) override {
     if (battery_saver_mode_enabled) {
@@ -993,7 +992,7 @@ bool ChildThreadImpl::IsInBrowserProcess() const {
   return static_cast<bool>(browser_process_io_runner_);
 }
 
-#if BUILDFLAG(IS_ANDROID)
+// RDK shim: un-gated from IS_ANDROID.
 void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
     base::MemoryPressureListener::MemoryPressureLevel level) {
   // Generate no memory pressure signals when --single-process is specified.
@@ -1005,6 +1004,5 @@ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
   // Forward the notification to the registry of MemoryPressureListeners.
   base::MemoryPressureListener::NotifyMemoryPressure(level);
 }
-#endif
 
 }  // namespace content

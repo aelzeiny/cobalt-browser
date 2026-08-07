@@ -120,7 +120,8 @@ interface ChildProcess {
   // This method is only for an experimental feature, and may be removed
   // shortly. Other code should not use this method.
   // See https://crbug.com/1393283 for details.
-  [EnableIf=is_android]
+  // RDK shim: EnableIf=is_android removed so the browser->renderer pressure
+  // forwarding path exists on Linux (see the shim in browser_main_loop.cc).
   OnMemoryPressure(mojo_base.mojom.MemoryPressureLevel memory_pressure_level);
 
   // Asks the child process to modify its internal settings to bias towards
