@@ -380,6 +380,44 @@ std::unique_ptr<base::MemoryPressureMonitor> CreateMemoryPressureMonitor(
   if (monitor)
     monitor->MaybeStartPlatformVoter();
 
+#if !BUILDFLAG(IS_ANDROID)
+  // RDK shim: forward browser-process memory pressure notifications to every
+  // live renderer, mirroring what Android's
+  // UserLevelMemoryPressureSignalGenerator does. Without this no renderer on
+  // Linux ever receives a pressure signal -- organic or simulated (CDP
+  // Memory.simulatePressureNotification only notifies browser-process
+  // listeners) -- so renderer pressure handling such as
+  // RenderThreadImpl::OnSyncMemoryPressure is dead code. Registered on the
+  // UI thread; the async callback runs there, where AllHostsIterator is
+  // valid.
+  static base::NoDestructor<base::MemoryPressureListener>
+      renderer_pressure_forwarder(
+          FROM_HERE,
+          base::BindRepeating(
+              [](base::MemoryPressureListener::MemoryPressureLevel level) {
+                int forwarded = 0;
+                for (RenderProcessHost::iterator iter =
+                         RenderProcessHost::AllHostsIterator();
+                     !iter.IsAtEnd(); iter.Advance()) {
+                  RenderProcessHost* host = iter.GetCurrentValue();
+                  if (!host || !host->IsInitializedAndNotDead())
+                    continue;
+                  if (!host->GetProcess().IsValid())
+                    continue;
+                  static_cast<RenderProcessHostImpl*>(host)
+                      ->NotifyMemoryPressureToRenderer(level);
+                  ++forwarded;
+                }
+                // Delivery canary: the bench harness greps this line from
+                // the device console log to verify the pressure event
+                // actually reached renderers (see the exp-8e34a883
+                // dead-code postmortem before trusting any pressure A/B
+                // without it).
+                LOG(INFO) << "RDK-PRESSURE-SHIM: forwarded level " << level
+                          << " to " << forwarded << " renderer(s)";
+              }));
+#endif
+
   return monitor;
 }
 
