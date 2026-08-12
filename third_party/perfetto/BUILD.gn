@@ -14,6 +14,7 @@
 
 import("gn/perfetto.gni")
 import("gn/test.gni")
+import("//starboard/build/config/rdk_perfetto.gni")
 
 
 
@@ -377,7 +378,9 @@ if (build_with_chromium) {
   }
 }
 
-group("heapprofd_glibc_preload_clang") {
-  deps = [ "src/profiling/memory:heapprofd_glibc_preload(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target_clang)" ]
+if (rdk_build_perfetto_native_tools) {
+  group("heapprofd_glibc_preload_clang") {
+    deps = [ "src/profiling/memory:heapprofd_glibc_preload(//starboard/contrib/rdk/src/third_party/starboard/rdk/arm/toolchain:native_target_clang)" ]
+  }
 }
 
