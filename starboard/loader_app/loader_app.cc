@@ -279,12 +279,9 @@ void SbEventHandle(const SbEvent* event) {
         command_line.GetSwitchValue(loader_app::kContent);
     SB_LOG(INFO) << "alternative_content=" << alternative_content;
 
-    bool use_compressed_updates =
-        !is_evergreen_lite &&
-        !command_line.HasSwitch(loader_app::kUseUncompressedUpdates);
+    bool use_compressed_updates = false;
 
-    bool use_memory_mapped_file =
-        command_line.HasSwitch(loader_app::kLoaderUseMemoryMappedFile);
+    bool use_memory_mapped_file = true;
     SB_LOG(INFO) << "use_memory_mapped_file=" << use_memory_mapped_file;
 
     if (use_compressed_updates && use_memory_mapped_file) {
