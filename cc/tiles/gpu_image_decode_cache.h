@@ -742,6 +742,13 @@ class CC_EXPORT GpuImageDecodeCache
   void UnrefImageDecode(const DrawImage& draw_image,
                         const InUseCacheKey& cache_key)
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
+#if BUILDFLAG(IS_COBALT)
+  // Ref-counting helpers for in-process image transfer caching where only
+  // `ImageData*` is available, keeping the underlying decoded memory pinned
+  // until texture upload completes on the GPU thread.
+  void RefImageDecode(ImageData* image_data) EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void UnrefImageDecode(ImageData* image_data) EXCLUSIVE_LOCKS_REQUIRED(lock_);
+#endif  // BUILDFLAG(IS_COBALT)
   void RefImage(const DrawImage& draw_image, const InUseCacheKey& cache_key)
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
   void UnrefImageInternal(const DrawImage& draw_image,
@@ -752,6 +759,10 @@ class CC_EXPORT GpuImageDecodeCache
   // to ref-count or to orphaned status.
   void OwnershipChanged(const DrawImage& draw_image, ImageData* image_data)
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
+#if BUILDFLAG(IS_COBALT)
+  void OwnershipChanged(ImageData* image_data)
+      EXCLUSIVE_LOCKS_REQUIRED(lock_);
+#endif  // BUILDFLAG(IS_COBALT)
 
   // Ensures that the working set can hold an element of |required_size|,
   // freeing unreferenced cache entries to make room.
@@ -763,6 +774,10 @@ class CC_EXPORT GpuImageDecodeCache
   void InsertTransferCacheEntry(
       const ClientImageTransferCacheEntry& image_entry,
       ImageData* image_data) EXCLUSIVE_LOCKS_REQUIRED(lock_);
+#if BUILDFLAG(IS_COBALT)
+  void OnInProcessImageTransferCompleted(
+      scoped_refptr<ImageData> image_data);
+#endif  // BUILDFLAG(IS_COBALT)
   bool NeedsDarkModeFilter(const DrawImage& draw_image, ImageData* image_data);
   void DecodeImageAndGenerateDarkModeFilterIfNecessary(
       const DrawImage& draw_image,
@@ -1006,6 +1021,14 @@ class CC_EXPORT GpuImageDecodeCache
 
   std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
   base::WeakPtrFactory<GpuImageDecodeCache> weak_ptr_factory_{this};
+#if BUILDFLAG(IS_COBALT)
+  // `weak_ptr_factory_.GetWeakPtr()` must be called on the sequence that
+  // created the factory (the compositor thread) to avoid sequence checker
+  // assertions. Pre-creating `weak_ptr_` in the constructor allows worker
+  // threads to safely copy and pass it to in-process image transfer completion
+  // callbacks.
+  base::WeakPtr<GpuImageDecodeCache> weak_ptr_;
+#endif  // BUILDFLAG(IS_COBALT)
 };
 
 }  // namespace cc
