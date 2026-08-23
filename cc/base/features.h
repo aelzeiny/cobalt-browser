@@ -14,6 +14,10 @@
 
 namespace features {
 
+#if BUILDFLAG(IS_COBALT)
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltInProcessImageTransferCache);
+#endif  // BUILDFLAG(IS_COBALT)
+
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kAlignSurfaceLayerImplToPixelGrid);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kSynchronizedScrolling);
 
