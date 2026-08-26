@@ -22,6 +22,17 @@ std::atomic<bool> s_is_eligible_for_throttle_main_frame_to_60hz = false;
 BASE_FEATURE(kCobaltInProcessImageTransferCache,
              "CobaltInProcessImageTransferCache",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+// See cc/base/features.h for why each limit is read under two param names.
+BASE_FEATURE(kCobaltImageDecodeCacheLimit,
+             "CobaltImageDecodeCacheLimit",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+const base::FeatureParam<int> kCobaltImageDecodeCacheLimitMb{
+    &kCobaltImageDecodeCacheLimit, "mb", -1};
+
+const base::FeatureParam<int> kCobaltImageDecodeCacheLimitItems{
+    &kCobaltImageDecodeCacheLimit, "items", -1};
 #endif  // BUILDFLAG(IS_COBALT)
 
 // When enabled, this forces composited textures for SurfaceLayerImpls to be

@@ -16,6 +16,21 @@ namespace features {
 
 #if BUILDFLAG(IS_COBALT)
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltInProcessImageTransferCache);
+
+// Bounds the GpuImageDecodeCache persistent cache from the experiment config,
+// so the limits can be set per-run through
+// h5vcc.experiments.setExperimentState() instead of only at build time.
+//
+// Both params are read under two spellings, because Cobalt writes field-trial
+// params two different ways: the bare name registered by
+// --enable-features=CobaltImageDecodeCacheLimit:mb/4, and the "Feature:param"
+// key that setExperimentState() stores in the shared CobaltExperiment trial.
+// A negative value means "unset": fall back to the command-line switch.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltImageDecodeCacheLimit);
+CC_BASE_EXPORT extern const base::FeatureParam<int>
+    kCobaltImageDecodeCacheLimitMb;
+CC_BASE_EXPORT extern const base::FeatureParam<int>
+    kCobaltImageDecodeCacheLimitItems;
 #endif  // BUILDFLAG(IS_COBALT)
 
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kAlignSurfaceLayerImplToPixelGrid);

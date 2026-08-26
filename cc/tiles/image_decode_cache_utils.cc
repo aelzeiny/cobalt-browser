@@ -10,8 +10,14 @@
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_COBALT)
+#include <optional>
+#include <string>
+
 #include "base/command_line.h"
+#include "base/feature_list.h"
+#include "base/metrics/field_trial_params.h"
 #include "base/strings/string_number_conversions.h"
+#include "cc/base/features.h"
 #include "cc/base/switches.h"
 #endif
 
@@ -79,9 +85,47 @@ size_t ImageDecodeCacheUtils::GetWorkingSetBytesForImageDecode(
 }
 
 #if BUILDFLAG(IS_COBALT)
+namespace {
+
+// Reads one integer param of kCobaltImageDecodeCacheLimit. Tries the bare param
+// name first (registered by --enable-features=CobaltImageDecodeCacheLimit:mb/4)
+// and then the "Feature:param" key that h5vcc.experiments.setExperimentState()
+// writes into the shared CobaltExperiment trial. Returns nullopt when the
+// feature is off, the param is unset, or the value does not parse -- callers
+// then fall back to their command-line switch.
+std::optional<int> GetImageDecodeCacheLimitParam(
+    const base::FeatureParam<int>& param,
+    const char* joined_param_name) {
+  // These accessors can run before the FeatureList exists; the command-line
+  // fallback is safe there, querying a feature is not.
+  if (!base::FeatureList::GetInstance() ||
+      !base::FeatureList::IsEnabled(features::kCobaltImageDecodeCacheLimit)) {
+    return std::nullopt;
+  }
+  const int bare_value = param.Get();
+  if (bare_value >= 0) {
+    return bare_value;
+  }
+  const std::string joined_value = base::GetFieldTrialParamValueByFeature(
+      features::kCobaltImageDecodeCacheLimit, joined_param_name);
+  int parsed_value = 0;
+  if (!joined_value.empty() &&
+      base::StringToInt(joined_value, &parsed_value) && parsed_value >= 0) {
+    return parsed_value;
+  }
+  return std::nullopt;
+}
+
+}  // namespace
+
 // static
 size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetCount() {
   static const size_t cobalt_decoded_image_persistent_cache_budget_count = []() {
+    if (std::optional<int> items = GetImageDecodeCacheLimitParam(
+            features::kCobaltImageDecodeCacheLimitItems,
+            "CobaltImageDecodeCacheLimit:items")) {
+      return static_cast<size_t>(*items);
+    }
     size_t budget = 2000; // kNormalMaxItemsInCacheForGpu default
     auto* command_line = base::CommandLine::ForCurrentProcess();
     if (command_line->HasSwitch(switches::kCCImageCacheLimitItems)) {
@@ -100,6 +144,11 @@ size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetCount() {
 // static
 size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetBytes() {
   static const size_t cobalt_decoded_image_persistent_cache_budget_bytes = []() {
+    if (std::optional<int> mb = GetImageDecodeCacheLimitParam(
+            features::kCobaltImageDecodeCacheLimitMb,
+            "CobaltImageDecodeCacheLimit:mb")) {
+      return static_cast<size_t>(*mb) * 1024 * 1024;
+    }
     size_t budget = std::numeric_limits<size_t>::max();
     auto* command_line = base::CommandLine::ForCurrentProcess();
     if (command_line->HasSwitch(switches::kCCImageCacheLimitMbs)) {
