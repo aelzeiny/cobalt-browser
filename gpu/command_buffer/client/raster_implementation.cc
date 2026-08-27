@@ -1619,6 +1619,19 @@ void RasterImplementation::RasterCHROMIUM(
   }
 
 #if BUILDFLAG(IS_COBALT)
+  {
+    // [cobalt-exp] Logged once per process so the harness console shows which
+    // raster path this run actually took, in both the ON and the OFF state.
+    [[maybe_unused]] static const bool logged = [] {
+      const bool on =
+          base::FeatureList::IsEnabled(features::kCobaltInProcessDirectRaster);
+      LOG(INFO) << "[cobalt-exp] CobaltInProcessDirectRaster="
+                << (on ? "ON" : "OFF") << ": RasterCHROMIUM uses the "
+                << (on ? "in-process direct raster path (pointer payload)"
+                       : "serialized PaintOp path");
+      return true;
+    }();
+  }
   if (base::FeatureList::IsEnabled(features::kCobaltInProcessDirectRaster)) {
     RasterCHROMIUMInProcess(list, provider, content_size, full_raster_rect,
                             playback_rect, post_translate, post_scale,

@@ -3117,6 +3117,14 @@ error::Error RasterDecoderImpl::DoRasterCHROMIUM(GLuint raster_shm_id,
     if (in_process_payload &&
         InProcessRasterPayloadRegistry::GetInstance().Take(
             in_process_payload)) {
+      // [cobalt-exp] The service side actually received a pointer payload:
+      // the direct raster path is live end-to-end (client -> service).
+      [[maybe_unused]] static const bool logged = [] {
+        LOG(INFO) << "[cobalt-exp] RasterDecoder: received an in-process "
+                     "raster payload -- CobaltInProcessDirectRaster is active "
+                     "end-to-end";
+        return true;
+      }();
       return DoRasterCHROMIUMInProcess(
           base::WrapUnique(in_process_payload));
     }

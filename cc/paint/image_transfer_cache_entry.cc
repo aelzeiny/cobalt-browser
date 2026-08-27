@@ -795,6 +795,14 @@ bool ServiceImageTransferCacheEntry::Deserialize(
   if (base::FeatureList::IsEnabled(
           features::kCobaltInProcessImageTransferCache) &&
       data.size() == sizeof(InProcessImageTransferCachePayload*)) {
+    // [cobalt-exp] The service side actually received a pointer payload: the
+    // in-process image transfer path is live end-to-end.
+    [[maybe_unused]] static const bool logged = [] {
+      LOG(INFO) << "[cobalt-exp] ServiceImageTransferCacheEntry: deserializing "
+                   "an in-process image payload -- "
+                   "CobaltInProcessImageTransferCache is active end-to-end";
+      return true;
+    }();
     return DeserializeInProcess(gr_context, data);
   }
 #endif  // BUILDFLAG(IS_COBALT)

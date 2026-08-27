@@ -14,6 +14,7 @@
 #include <string>
 
 #include "base/command_line.h"
+#include "base/logging.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/strings/string_number_conversions.h"
@@ -124,6 +125,9 @@ size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetCount() {
     if (std::optional<int> items = GetImageDecodeCacheLimitParam(
             features::kCobaltImageDecodeCacheLimitItems,
             "CobaltImageDecodeCacheLimit:items")) {
+      LOG(INFO) << "[cobalt-exp] CobaltImageDecodeCacheLimit=ON: persistent "
+                   "decoded-image cache item budget="
+                << *items << " (from the experiment param 'items')";
       return static_cast<size_t>(*items);
     }
     size_t budget = 2000; // kNormalMaxItemsInCacheForGpu default
@@ -136,6 +140,10 @@ size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetCount() {
         budget = static_cast<size_t>(parsed_value);
       }
     }
+    LOG(INFO) << "[cobalt-exp] CobaltImageDecodeCacheLimit items param unset "
+                 "(feature OFF or no 'items'): persistent decoded-image cache "
+                 "item budget="
+              << budget << " (command line/default)";
     return budget;
   }();
   return cobalt_decoded_image_persistent_cache_budget_count;
@@ -147,6 +155,9 @@ size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetBytes() {
     if (std::optional<int> mb = GetImageDecodeCacheLimitParam(
             features::kCobaltImageDecodeCacheLimitMb,
             "CobaltImageDecodeCacheLimit:mb")) {
+      LOG(INFO) << "[cobalt-exp] CobaltImageDecodeCacheLimit=ON: persistent "
+                   "decoded-image cache byte budget="
+                << *mb << " MB (from the experiment param 'mb')";
       return static_cast<size_t>(*mb) * 1024 * 1024;
     }
     size_t budget = std::numeric_limits<size_t>::max();
@@ -159,6 +170,13 @@ size_t ImageDecodeCacheUtils::GetPersistentCacheBudgetBytes() {
         budget = static_cast<size_t>(parsed_value) * 1024 * 1024;
       }
     }
+    LOG(INFO) << "[cobalt-exp] CobaltImageDecodeCacheLimit mb param unset "
+                 "(feature OFF or no 'mb'): persistent decoded-image cache "
+                 "byte budget="
+              << (budget == std::numeric_limits<size_t>::max()
+                      ? std::string("unlimited")
+                      : base::NumberToString(budget / (1024 * 1024)) + " MB")
+              << " (command line/default)";
     return budget;
   }();
   return cobalt_decoded_image_persistent_cache_budget_bytes;

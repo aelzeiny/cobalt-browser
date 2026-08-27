@@ -2514,6 +2514,21 @@ void GpuImageDecodeCache::InsertTransferCacheEntry(
     use_in_process_transfer = true;
     size = image_entry.SerializedSizeInProcess();
   }
+  {
+    // [cobalt-exp] Logged once per process: which image upload path this run
+    // takes, in both the ON and the OFF state.
+    [[maybe_unused]] static const bool logged = [](bool on, bool in_process) {
+      LOG(INFO) << "[cobalt-exp] CobaltInProcessImageTransferCache="
+                << (on ? "ON" : "OFF") << ": image transfer cache entries "
+                << (in_process
+                        ? "bypass serialization (in-process pointer payload)"
+                        : "use the serialized upload path")
+                << (on && !in_process ? " (feature on, but no task runner)"
+                                      : "");
+      return true;
+    }(base::FeatureList::IsEnabled(features::kCobaltInProcessImageTransferCache),
+      use_in_process_transfer);
+  }
 #endif  // BUILDFLAG(IS_COBALT)
 
   void* data = context_->ContextSupport()->MapTransferCacheEntry(size);
