@@ -254,6 +254,44 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kCubicBezierY2);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
                                           kMaxAnimtionDuration);
 
+#if BUILDFLAG(IS_COBALT)
+// When enabled, some or all SDR tiles are rasterized into 16-bit formats
+// (RGBA_4444 / BGR_565) instead of a 32-bit format, halving cc tile memory
+// for the affected tiles. Intended to be controlled per-device via
+// h5vcc.experiments.
+//
+// Params (note: Cobalt experiment params share a single field trial, so the
+// names are prefixed to keep them unique across features):
+//   low_bit_depth_tiles_mode:
+//     "all" (default) - every SDR tile is demoted to RGBA_4444.
+//     "no-text" - only tiles whose content contains no draw-text ops are
+//         demoted; tiles with text keep full precision for crisp antialiased
+//         edges (4-bit alpha quantizes text edge coverage).
+//     "none" - no 4444 demotion (useful to run the opaque-565 policy alone).
+//   low_bit_depth_tiles_opaque_565:
+//     When true, tiles from layers with opaque contents use BGR_565 instead
+//     (5/6-bit color, no alpha), which bands noticeably less than 4444. Takes
+//     precedence over the 4444 mode for those tiles.
+//   low_bit_depth_tiles_dither:
+//     When true (default), demoted tiles are rasterized at 8888 and
+//     downconverted with dithering. Rasterizing directly at low bit depth
+//     quantizes gradients with no dithering, which is the artifact that
+//     historically made RGBA_4444 tiles unshippable.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltLowBitDepthTiles);
+
+// Parsed, cached param values for kCobaltLowBitDepthTiles. Safe to call from
+// any thread after FeatureList initialization (values are computed once).
+struct CC_BASE_EXPORT CobaltLowBitDepthTilesConfig {
+  enum class Rgba4444Mode { kNone, kAll, kNoText };
+  bool enabled = false;
+  Rgba4444Mode rgba_4444_mode = Rgba4444Mode::kNone;
+  bool opaque_565 = false;
+  bool dither = true;
+};
+CC_BASE_EXPORT const CobaltLowBitDepthTilesConfig&
+GetCobaltLowBitDepthTilesConfig();
+#endif  // BUILDFLAG(IS_COBALT)
+
 }  // namespace features
 
 #endif  // CC_BASE_FEATURES_H_

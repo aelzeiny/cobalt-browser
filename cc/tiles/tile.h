@@ -43,7 +43,14 @@ class CC_EXPORT Tile {
     bool can_use_lcd_text = false;
   };
 
-  enum TileRasterFlags { USE_PICTURE_ANALYSIS = 1 << 0, IS_OPAQUE = 1 << 1 };
+  enum TileRasterFlags {
+    USE_PICTURE_ANALYSIS = 1 << 0,
+    IS_OPAQUE = 1 << 1,
+    // Set when the tile's layer-space rect intersects draw-text ops. Only
+    // computed when a tile format policy needs it (see
+    // features::kCobaltLowBitDepthTiles); otherwise never set.
+    HAS_DRAW_TEXT = 1 << 2
+  };
 
   typedef uint64_t Id;
 
@@ -75,6 +82,8 @@ class CC_EXPORT Tile {
   }
 
   bool is_opaque() const { return !!(flags_ & IS_OPAQUE); }
+
+  bool has_draw_text() const { return !!(flags_ & HAS_DRAW_TEXT); }
 
   void AsValueInto(base::trace_event::TracedValue* value) const;
 

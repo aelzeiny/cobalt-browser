@@ -8,6 +8,8 @@
 
 #include "base/notreached.h"
 #include "base/trace_event/trace_event.h"
+#include "build/build_config.h"
+#include "cc/base/features.h"
 #include "cc/raster/raster_buffer.h"
 #include "cc/raster/raster_source.h"
 #include "components/viz/common/resources/platform_color.h"
@@ -37,6 +39,7 @@ bool IsSupportedPlaybackToMemoryFormat(viz::SharedImageFormat format) {
   return (format == viz::SinglePlaneFormat::kRGBA_4444) ||
          (format == viz::SinglePlaneFormat::kRGBA_8888) ||
          (format == viz::SinglePlaneFormat::kBGRA_8888) ||
+         (format == viz::SinglePlaneFormat::kBGR_565) ||
          (format == viz::SinglePlaneFormat::kRGBA_F16);
 }
 
@@ -60,10 +63,15 @@ void RasterBufferProvider::PlaybackToMemory(
   DCHECK(IsSupportedPlaybackToMemoryFormat(format)) << format.ToString();
 
   SkColorType color_type = ToClosestSkColorType(format);
-  // Uses kPremul_SkAlphaType since the result is not known to be opaque.
-  SkImageInfo info = SkImageInfo::Make(size.width(), size.height(), color_type,
-                                       kPremul_SkAlphaType,
-                                       target_color_space.ToSkColorSpace());
+  // Uses kPremul_SkAlphaType since the result is not known to be opaque,
+  // except for BGR_565, which has no alpha channel and is only used for tiles
+  // known to be opaque.
+  SkAlphaType alpha_type = (color_type == kRGB_565_SkColorType)
+                               ? kOpaque_SkAlphaType
+                               : kPremul_SkAlphaType;
+  SkImageInfo info =
+      SkImageInfo::Make(size.width(), size.height(), color_type, alpha_type,
+                        target_color_space.ToSkColorSpace());
 
   // Use unknown pixel geometry to disable LCD text.
   SkSurfaceProps surface_props(0, kUnknown_SkPixelGeometry);
@@ -93,22 +101,33 @@ void RasterBufferProvider::PlaybackToMemory(
     return;
   }
 
-  if (format == viz::SinglePlaneFormat::kRGBA_4444) {
-    sk_sp<SkSurface> surface = SkSurfaces::Raster(info, &surface_props);
+  if (format == viz::SinglePlaneFormat::kRGBA_4444 ||
+      format == viz::SinglePlaneFormat::kBGR_565) {
+#if BUILDFLAG(IS_COBALT)
+    const bool dither = features::GetCobaltLowBitDepthTilesConfig().dither;
+#else
+    const bool dither = false;
+#endif
+    // With dithering enabled, rasterize into a full-precision intermediate and
+    // dither in the conversion below. Rasterizing directly at low bit depth
+    // would quantize gradients with no dithering, causing visible banding.
+    SkImageInfo raster_info =
+        dither ? info.makeColorType(kN32_SkColorType) : info;
+    sk_sp<SkSurface> surface = SkSurfaces::Raster(raster_info, &surface_props);
+    CHECK(surface);
     // TODO(reveman): Improve partial raster support by reducing the size of
     // playback rect passed to PlaybackToCanvas. crbug.com/519070
     raster_source->PlaybackToCanvas(surface->getCanvas(), content_size,
                                     canvas_bitmap_rect, canvas_bitmap_rect,
                                     transform, playback_settings);
 
-    TRACE_EVENT0("cc",
-                 "RasterBufferProvider::PlaybackToMemory::ConvertRGBA4444");
-    SkImageInfo dst_info = info.makeColorType(color_type);
+    TRACE_EVENT0(
+        "cc", "RasterBufferProvider::PlaybackToMemory::ConvertLowBitDepth");
     auto dst_canvas =
-        SkCanvas::MakeRasterDirect(dst_info, memory, stride, &surface_props);
+        SkCanvas::MakeRasterDirect(info, memory, stride, &surface_props);
     DCHECK(dst_canvas);
     SkPaint paint;
-    paint.setDither(true);
+    paint.setDither(dither);
     paint.setBlendMode(SkBlendMode::kSrc);
     surface->draw(dst_canvas.get(), 0, 0, SkSamplingOptions(), &paint);
     return;

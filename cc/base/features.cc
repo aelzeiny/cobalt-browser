@@ -281,4 +281,44 @@ BASE_FEATURE_PARAM(base::TimeDelta,
                    "max_animation_duration",
                    base::Milliseconds(700));
 
+#if BUILDFLAG(IS_COBALT)
+BASE_FEATURE(kCobaltLowBitDepthTiles,
+             "CobaltLowBitDepthTiles",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+namespace {
+
+const base::FeatureParam<std::string> kCobaltLowBitDepthTilesMode{
+    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_mode", "all"};
+const base::FeatureParam<bool> kCobaltLowBitDepthTilesOpaque565{
+    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_opaque_565", false};
+const base::FeatureParam<bool> kCobaltLowBitDepthTilesDither{
+    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_dither", true};
+
+}  // namespace
+
+const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
+  static const CobaltLowBitDepthTilesConfig cached_config = [] {
+    CobaltLowBitDepthTilesConfig config;
+    if (!base::FeatureList::IsEnabled(kCobaltLowBitDepthTiles)) {
+      return config;
+    }
+    config.enabled = true;
+    const std::string mode = kCobaltLowBitDepthTilesMode.Get();
+    if (mode == "no-text") {
+      config.rgba_4444_mode =
+          CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText;
+    } else if (mode == "none") {
+      config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNone;
+    } else {
+      config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll;
+    }
+    config.opaque_565 = kCobaltLowBitDepthTilesOpaque565.Get();
+    config.dither = kCobaltLowBitDepthTilesDither.Get();
+    return config;
+  }();
+  return cached_config;
+}
+#endif  // BUILDFLAG(IS_COBALT)
+
 }  // namespace features

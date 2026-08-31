@@ -1025,6 +1025,21 @@ std::unique_ptr<Tile> PictureLayerImpl::CreateTile(
   if (contents_opaque())
     flags |= Tile::IS_OPAQUE;
 
+#if BUILDFLAG(IS_COBALT)
+  // The low-bit-depth tile policy keeps full precision for tiles containing
+  // text. Compute the flag once per tile creation (a single rtree query)
+  // rather than on every scheduling pass in TileManager.
+  if (features::GetCobaltLowBitDepthTilesConfig().rgba_4444_mode ==
+      features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText) {
+    const scoped_refptr<const DisplayItemList>& display_list =
+        GetRasterSource()->GetDisplayItemList();
+    if (display_list &&
+        display_list->AreaOfDrawText(info.enclosing_layer_rect) > 0) {
+      flags |= Tile::HAS_DRAW_TEXT;
+    }
+  }
+#endif  // BUILDFLAG(IS_COBALT)
+
   return layer_tree_impl()->tile_manager()->CreateTile(
       info, id(), layer_tree_impl()->source_frame_number(), flags);
 }

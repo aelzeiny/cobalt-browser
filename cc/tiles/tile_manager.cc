@@ -990,7 +990,7 @@ TileManager::PrioritizedWorkToSchedule TileManager::AssignGpuMemoryToTiles() {
     MemoryUsage memory_required_by_tile_to_be_scheduled;
     if (!tile->raster_task_.get()) {
       memory_required_by_tile_to_be_scheduled = MemoryUsage::FromConfig(
-          tile->desired_texture_size(), client_->GetTileFormat());
+          tile->desired_texture_size(), DetermineTileFormat(tile));
     }
 
     bool tile_is_needed_now = priority.priority_bin == TilePriority::NOW;
@@ -1433,6 +1433,39 @@ void TileManager::ScheduleTasks(PrioritizedWorkToSchedule work_to_schedule) {
                                       ScheduledTasksStateAsValue());
 }
 
+viz::SharedImageFormat TileManager::DetermineTileFormat(
+    const Tile* tile) const {
+  viz::SharedImageFormat format = client_->GetTileFormat();
+#if BUILDFLAG(IS_COBALT)
+  const features::CobaltLowBitDepthTilesConfig& config =
+      features::GetCobaltLowBitDepthTilesConfig();
+  if (!config.enabled) {
+    return format;
+  }
+  // Only demote default 32-bit SDR formats; leave any platform-specific
+  // format choice (e.g. F16) alone.
+  if (format != viz::SinglePlaneFormat::kRGBA_8888 &&
+      format != viz::SinglePlaneFormat::kBGRA_8888) {
+    return format;
+  }
+  if (config.opaque_565 && tile->is_opaque()) {
+    return viz::SinglePlaneFormat::kBGR_565;
+  }
+  switch (config.rgba_4444_mode) {
+    case features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll:
+      return viz::SinglePlaneFormat::kRGBA_4444;
+    case features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText:
+      if (!tile->has_draw_text()) {
+        return viz::SinglePlaneFormat::kRGBA_4444;
+      }
+      break;
+    case features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNone:
+      break;
+  }
+#endif  // BUILDFLAG(IS_COBALT)
+  return format;
+}
+
 scoped_refptr<TileTask> TileManager::CreateRasterTask(
     const PrioritizedTile& prioritized_tile,
     const TargetColorParams& target_color_params,
@@ -1450,7 +1483,7 @@ scoped_refptr<TileTask> TileManager::CreateRasterTask(
   //
   // TODO(crbug.com/40128725): Once we have access to the display's buffer
   // format via gfx::DisplayColorSpaces, we should also do this for HBD images.
-  auto format = client_->GetTileFormat();
+  auto format = DetermineTileFormat(tile);
   if (target_color_params.color_space.IsHDR() &&
       GetContentColorUsageForPrioritizedTile(prioritized_tile) ==
           gfx::ContentColorUsage::kHDR) {
@@ -1481,6 +1514,15 @@ scoped_refptr<TileTask> TileManager::CreateRasterTask(
                                  percentage_invalidated);
       }
     }
+  }
+
+  // The desired format can change between rasters of the same tile (e.g. the
+  // low-bit-depth tile policy decided differently after an invalidation
+  // changed the tile's content). A resource with the old format can't be
+  // partially rastered into; fall back to a full raster.
+  if (resource && resource.format() != format) {
+    resource_pool_->ReleaseResource(std::move(resource));
+    invalidated_rect = tile->invalidated_content_rect();
   }
 
   bool partial_tile_decode = false;
