@@ -265,11 +265,17 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
 // in the shared Cobalt field trial under its full "Feature:param" key, and
 // the lookups below also accept the plain name for --enable-features use):
 //   mode:
-//     "all" (default) - every SDR tile is demoted to RGBA_4444.
+//     "all" (default) - every eligible SDR tile is demoted to RGBA_4444.
 //     "no-text" - only tiles whose content contains no draw-text ops are
 //         demoted; tiles with text keep full precision for crisp antialiased
 //         edges (4-bit alpha quantizes text edge coverage).
 //     "none" - no 4444 demotion (useful to run the opaque-565 policy alone).
+//   allow_non_opaque:
+//     When false (default), only tiles from layers with opaque contents are
+//     eligible for demotion. Translucent content needs 8-bit alpha: video
+//     shows through scrims/controls rendered by non-opaque tiles, and their
+//     4-bit alpha bands while the rgb dither pattern - frozen between
+//     rasters - reads as static noise over the moving video underneath.
 //   opaque_565:
 //     When true, tiles from layers with opaque contents use BGR_565 instead
 //     (5/6-bit color, no alpha), which bands noticeably less than 4444. Takes
@@ -287,6 +293,7 @@ struct CC_BASE_EXPORT CobaltLowBitDepthTilesConfig {
   enum class Rgba4444Mode { kNone, kAll, kNoText };
   bool enabled = false;
   Rgba4444Mode rgba_4444_mode = Rgba4444Mode::kNone;
+  bool allow_non_opaque = false;
   bool opaque_565 = false;
   bool dither = true;
 };

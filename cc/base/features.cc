@@ -335,6 +335,8 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
     } else {
       config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll;
     }
+    config.allow_non_opaque =
+        GetLowBitDepthTilesBoolParam("allow_non_opaque", false);
     config.opaque_565 = GetLowBitDepthTilesBoolParam("opaque_565", false);
     config.dither = GetLowBitDepthTilesBoolParam("dither", true);
     return config;
