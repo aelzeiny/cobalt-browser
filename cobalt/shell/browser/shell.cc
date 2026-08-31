@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -28,6 +29,7 @@
 #include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/metrics/field_trial_params.h"
 #include "base/no_destructor.h"
 #include "base/run_loop.h"
 #include "base/strings/escape.h"
@@ -210,6 +212,37 @@ constexpr int kSplashTimeoutMs = 1500;
 // static constructor/destructor.
 // Acquired in Shell::Init(), released in Shell::Shutdown().
 ShellPlatformDelegate* g_platform = nullptr;
+
+// Reads one integer param of kCobaltDefaultViewportSize. Tries the bare param
+// name first (registered by
+// --enable-features=CobaltDefaultViewportSize:width/1280) and then the
+// "Feature:param" key that h5vcc.experiments.setExperimentState() writes into
+// the shared CobaltExperiment trial. Returns nullopt when the feature is off,
+// the param is unset, or the value does not parse -- the caller then falls
+// back to the command-line switches.
+std::optional<int> GetDefaultViewportSizeParam(
+    const base::FeatureParam<int>& param,
+    const char* joined_param_name) {
+  // This accessor can run before the FeatureList exists; the command-line
+  // fallback is safe there, querying a feature is not.
+  if (!base::FeatureList::GetInstance() ||
+      !base::FeatureList::IsEnabled(
+          cobalt::features::kCobaltDefaultViewportSize)) {
+    return std::nullopt;
+  }
+  const int bare_value = param.Get();
+  if (bare_value > 0) {
+    return bare_value;
+  }
+  const std::string joined_value = base::GetFieldTrialParamValueByFeature(
+      cobalt::features::kCobaltDefaultViewportSize, joined_param_name);
+  int parsed_value = 0;
+  if (!joined_value.empty() && base::StringToInt(joined_value, &parsed_value) &&
+      parsed_value > 0) {
+    return parsed_value;
+  }
+  return std::nullopt;
+}
 }  // namespace
 
 std::vector<Shell*> Shell::windows_;
@@ -1108,6 +1141,31 @@ gfx::Size Shell::GetShellDefaultSize() {
 
   if (!default_shell_size.IsEmpty()) {
     return default_shell_size;
+  }
+
+  // The CobaltDefaultViewportSize experiment overrides the command-line
+  // switches (--window-size / --content-shell-host-window-size) when it
+  // supplies both dimensions.
+  const std::optional<int> viewport_width = GetDefaultViewportSizeParam(
+      cobalt::features::kCobaltDefaultViewportWidth,
+      "CobaltDefaultViewportSize:width");
+  const std::optional<int> viewport_height = GetDefaultViewportSizeParam(
+      cobalt::features::kCobaltDefaultViewportHeight,
+      "CobaltDefaultViewportSize:height");
+  if (viewport_width && viewport_height) {
+    default_shell_size = gfx::Size(*viewport_width, *viewport_height);
+    LOG(INFO) << "[cobalt-exp] CobaltDefaultViewportSize=ON: default viewport "
+              << default_shell_size.ToString()
+              << " (from the experiment params 'width'/'height', overriding "
+                 "the command line)";
+    return default_shell_size;
+  }
+  if (base::FeatureList::GetInstance() &&
+      base::FeatureList::IsEnabled(
+          cobalt::features::kCobaltDefaultViewportSize)) {
+    LOG(WARNING) << "[cobalt-exp] CobaltDefaultViewportSize is enabled but "
+                    "'width'/'height' did not both parse to positive "
+                    "integers; falling back to the command line.";
   }
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();

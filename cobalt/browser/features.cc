@@ -85,6 +85,18 @@ BASE_FEATURE(kEnablePictureInPicture,
 #endif  // BUILDFLAG(IS_ANDROID)
 );
 
+// See cobalt/browser/features.h for why each param is read under two
+// spellings.
+BASE_FEATURE(kCobaltDefaultViewportSize,
+             "CobaltDefaultViewportSize",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+const base::FeatureParam<int> kCobaltDefaultViewportWidth{
+    &kCobaltDefaultViewportSize, "width", -1};
+
+const base::FeatureParam<int> kCobaltDefaultViewportHeight{
+    &kCobaltDefaultViewportSize, "height", -1};
+
 BASE_FEATURE(kCobaltNativeMemoryAblation,
              "CobaltNativeMemoryAblation",
              base::FEATURE_DISABLED_BY_DEFAULT);
