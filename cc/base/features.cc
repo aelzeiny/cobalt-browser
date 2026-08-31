@@ -288,12 +288,34 @@ BASE_FEATURE(kCobaltLowBitDepthTiles,
 
 namespace {
 
-const base::FeatureParam<std::string> kCobaltLowBitDepthTilesMode{
-    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_mode", "all"};
-const base::FeatureParam<bool> kCobaltLowBitDepthTilesOpaque565{
-    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_opaque_565", false};
-const base::FeatureParam<bool> kCobaltLowBitDepthTilesDither{
-    &kCobaltLowBitDepthTiles, "low_bit_depth_tiles_dither", true};
+// The h5vcc.experiments pipeline registers every feature param in the shared
+// Cobalt field trial under its full "Feature:param" key (the renderer stores
+// featureParams keys verbatim and CobaltContentBrowserClient applies them
+// verbatim; getFeatureParam reads them back by the same full key), while
+// --enable-features associates the plain param name. Accept both, preferring
+// the h5vcc form.
+std::string GetLowBitDepthTilesParam(const char* name) {
+  std::string value = base::GetFieldTrialParamValueByFeature(
+      kCobaltLowBitDepthTiles,
+      std::string(kCobaltLowBitDepthTiles.name) + ":" + name);
+  if (value.empty()) {
+    value =
+        base::GetFieldTrialParamValueByFeature(kCobaltLowBitDepthTiles, name);
+  }
+  return value;
+}
+
+// h5vcc feature params always arrive stringified ("true"/"false" for bools).
+bool GetLowBitDepthTilesBoolParam(const char* name, bool default_value) {
+  const std::string value = GetLowBitDepthTilesParam(name);
+  if (value == "true") {
+    return true;
+  }
+  if (value == "false") {
+    return false;
+  }
+  return default_value;
+}
 
 }  // namespace
 
@@ -304,7 +326,7 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
       return config;
     }
     config.enabled = true;
-    const std::string mode = kCobaltLowBitDepthTilesMode.Get();
+    const std::string mode = GetLowBitDepthTilesParam("mode");
     if (mode == "no-text") {
       config.rgba_4444_mode =
           CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText;
@@ -313,8 +335,8 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
     } else {
       config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll;
     }
-    config.opaque_565 = kCobaltLowBitDepthTilesOpaque565.Get();
-    config.dither = kCobaltLowBitDepthTilesDither.Get();
+    config.opaque_565 = GetLowBitDepthTilesBoolParam("opaque_565", false);
+    config.dither = GetLowBitDepthTilesBoolParam("dither", true);
     return config;
   }();
   return cached_config;

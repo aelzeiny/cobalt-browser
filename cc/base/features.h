@@ -260,19 +260,21 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
 // for the affected tiles. Intended to be controlled per-device via
 // h5vcc.experiments.
 //
-// Params (note: Cobalt experiment params share a single field trial, so the
-// names are prefixed to keep them unique across features):
-//   low_bit_depth_tiles_mode:
+// Params (set via the h5vcc experiments native-flag syntax, e.g.
+// "CobaltLowBitDepthTiles:mode=no-text"; the pipeline registers each param
+// in the shared Cobalt field trial under its full "Feature:param" key, and
+// the lookups below also accept the plain name for --enable-features use):
+//   mode:
 //     "all" (default) - every SDR tile is demoted to RGBA_4444.
 //     "no-text" - only tiles whose content contains no draw-text ops are
 //         demoted; tiles with text keep full precision for crisp antialiased
 //         edges (4-bit alpha quantizes text edge coverage).
 //     "none" - no 4444 demotion (useful to run the opaque-565 policy alone).
-//   low_bit_depth_tiles_opaque_565:
+//   opaque_565:
 //     When true, tiles from layers with opaque contents use BGR_565 instead
 //     (5/6-bit color, no alpha), which bands noticeably less than 4444. Takes
 //     precedence over the 4444 mode for those tiles.
-//   low_bit_depth_tiles_dither:
+//   dither:
 //     When true (default), demoted tiles are rasterized at 8888 and
 //     downconverted with dithering. Rasterizing directly at low bit depth
 //     quantizes gradients with no dithering, which is the artifact that
