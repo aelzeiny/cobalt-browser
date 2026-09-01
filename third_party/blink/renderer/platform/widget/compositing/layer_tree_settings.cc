@@ -578,12 +578,12 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   // Clamp GPU-raster tile dimensions (viewport-width strips by default).
   // AdjustGpuTileSize() only applies a non-empty max size, so an axis left
   // unset gets a no-op clamp instead of 0.
-  if (base::FeatureList::IsEnabled(features::kCobaltTileSize)) {
+  if (base::FeatureList::IsEnabled(::features::kCobaltTileSize)) {
     constexpr int kUnclamped = 8192;
-    const int width = features::GetCobaltFeatureParamAsInt(
-        features::kCobaltTileSize, "width", 0);
-    const int height = features::GetCobaltFeatureParamAsInt(
-        features::kCobaltTileSize, "height", 0);
+    const int width = ::features::GetCobaltFeatureParamAsInt(
+        ::features::kCobaltTileSize, "width", 0);
+    const int height = ::features::GetCobaltFeatureParamAsInt(
+        ::features::kCobaltTileSize, "height", 0);
     if (width > 0 || height > 0) {
       settings.max_gpu_raster_tile_size =
           gfx::Size(width > 0 ? width : kUnclamped,
