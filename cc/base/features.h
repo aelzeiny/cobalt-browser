@@ -368,6 +368,30 @@ CC_BASE_EXPORT base::TimeDelta GetCobaltTilePoolExpirationDelay(
 // Params: width, height (pixels; a missing/zero param leaves that axis
 // unclamped).
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltTileSize);
+
+// When enabled, reduces composited-layer creation in blink's compositing
+// decisions. Every composited layer tiles independently (full-layer-width
+// strips), so speculative and animation-driven layers are a top
+// tile-memory driver; collapsing them lands the same pixels in shared
+// viewport-width strips.
+// Params:
+//   ignore_will_change (default true): will-change hints no longer force
+//     layers. Kills standing speculative layers that exist while nothing is
+//     animating; a later JS-driven animation repaints on the main thread
+//     until promoted for another reason.
+//   main_thread_animations (default false): active CSS transform/opacity/
+//     filter animations no longer force layers either; they fall back to
+//     blink's main-thread animation path with a repaint per frame - cheaper
+//     standing memory, more raster work while animating.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltLimitLayerCompositing);
+
+struct CC_BASE_EXPORT CobaltLimitLayerCompositingConfig {
+  bool enabled = false;
+  bool ignore_will_change = true;
+  bool main_thread_animations = false;
+};
+CC_BASE_EXPORT const CobaltLimitLayerCompositingConfig&
+GetCobaltLimitLayerCompositingConfig();
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace features

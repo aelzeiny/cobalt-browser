@@ -4,6 +4,10 @@
 
 #include "third_party/blink/renderer/core/paint/compositing/compositing_reason_finder.h"
 
+#include "build/build_config.h"
+#if BUILDFLAG(IS_COBALT)
+#include "cc/base/features.h"
+#endif
 #include "third_party/blink/renderer/core/css/css_property_names.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/node.h"
@@ -69,6 +73,15 @@ CompositingReasons BackfaceInvisibility3DAncestorReason(
 
 CompositingReasons CompositingReasonsForWillChange(const ComputedStyle& style) {
   CompositingReasons reasons = CompositingReason::kNone;
+#if BUILDFLAG(IS_COBALT)
+  // Every composited layer tiles independently, so standing will-change
+  // hints (e.g. on every carousel item) are a top tile-memory driver. Under
+  // the experiment, the hints no longer force layers; content is promoted
+  // only when another reason applies.
+  if (::features::GetCobaltLimitLayerCompositingConfig().ignore_will_change) {
+    return reasons;
+  }
+#endif
   if (style.SubtreeWillChangeContents())
     return reasons;
 
@@ -464,6 +477,15 @@ CompositingReasonFinder::PotentialCompositingReasonsFor3DTransform(
 CompositingReasons CompositingReasonFinder::CompositingReasonsForAnimation(
     const LayoutObject& object) {
   CompositingReasons reasons = CompositingReason::kNone;
+#if BUILDFLAG(IS_COBALT)
+  // Under the experiment, active CSS animations no longer force layers;
+  // CompositorAnimations then falls back to the main-thread animation path
+  // (repaint per frame while animating, no standing composited layer).
+  if (::features::GetCobaltLimitLayerCompositingConfig()
+          .main_thread_animations) {
+    return reasons;
+  }
+#endif
   const auto& style = object.StyleRef();
   if (style.SubtreeWillChangeContents())
     return reasons;

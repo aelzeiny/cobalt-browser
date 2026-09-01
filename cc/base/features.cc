@@ -408,6 +408,28 @@ base::TimeDelta GetCobaltTilePoolExpirationDelay(base::TimeDelta default_delay) 
 BASE_FEATURE(kCobaltTileSize,
              "CobaltTileSize",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCobaltLimitLayerCompositing,
+             "CobaltLimitLayerCompositing",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+const CobaltLimitLayerCompositingConfig&
+GetCobaltLimitLayerCompositingConfig() {
+  static const CobaltLimitLayerCompositingConfig cached_config = [] {
+    CobaltLimitLayerCompositingConfig config;
+    if (!base::FeatureList::IsEnabled(kCobaltLimitLayerCompositing)) {
+      config.ignore_will_change = false;
+      return config;
+    }
+    config.enabled = true;
+    config.ignore_will_change = GetCobaltFeatureParamAsBool(
+        kCobaltLimitLayerCompositing, "ignore_will_change", true);
+    config.main_thread_animations = GetCobaltFeatureParamAsBool(
+        kCobaltLimitLayerCompositing, "main_thread_animations", false);
+    return config;
+  }();
+  return cached_config;
+}
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace features
