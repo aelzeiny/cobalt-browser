@@ -299,6 +299,64 @@ struct CC_BASE_EXPORT CobaltLowBitDepthTilesConfig {
 };
 CC_BASE_EXPORT const CobaltLowBitDepthTilesConfig&
 GetCobaltLowBitDepthTilesConfig();
+
+// Generic param lookups for Cobalt experiment features. The h5vcc experiments
+// pipeline registers params in the shared Cobalt field trial under their full
+// "Feature:param" key; --enable-features associates plain names. These accept
+// both, preferring the h5vcc form. Values from h5vcc always arrive
+// stringified ("true"/"false" for bools).
+CC_BASE_EXPORT std::string GetCobaltFeatureParam(const base::Feature& feature,
+                                                 const char* param_name);
+CC_BASE_EXPORT bool GetCobaltFeatureParamAsBool(const base::Feature& feature,
+                                                const char* param_name,
+                                                bool default_value);
+CC_BASE_EXPORT int GetCobaltFeatureParamAsInt(const base::Feature& feature,
+                                              const char* param_name,
+                                              int default_value);
+
+// When enabled, opaque images decode to BGR_565 (2 bytes/px instead of 4) in
+// the GPU image decode cache, halving the decoded-pixel bytes in flight —
+// the dominant image cost on Cobalt, where nothing decoded is cached and the
+// binding ceiling is the global discardable limit. Non-opaque images keep the
+// full-precision format (565 has no alpha channel). The downconvert happens
+// on the CPU decode path, so dithering works here.
+// Param: dither (default true) - dither the N32->565 downconvert.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltLowBitDepthImages);
+
+struct CC_BASE_EXPORT CobaltLowBitDepthImagesConfig {
+  bool enabled = false;
+  bool dither = true;
+};
+CC_BASE_EXPORT const CobaltLowBitDepthImagesConfig&
+GetCobaltLowBitDepthImagesConfig();
+
+// When enabled, images drawn with a clipping src_rect (fcrop64 thumbnails,
+// storyboard sprite cells) are still decoded at their mip-scaled drawn size
+// instead of at full source size. Equivalent to --enable-scaling-clipped-
+// images, but reachable through h5vcc experiments. The upstream caveat is
+// minor edge color-bleeding on scaled sprite-sheet cells.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltScaleClippedImages);
+
+// When enabled, overrides how long freed tile backings stay in the
+// ResourcePool before expiring (default 5s upstream). Motion holds a
+// measured 1x-3.5x (median ~2.3x) of live tile bytes as pool slack, which a
+// shorter hold drains sooner at the cost of more reallocation during
+// sustained scrolling.
+// Param: ms (default 5000) - expiration delay in milliseconds.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltTilePoolExpiration);
+
+// Returns the tile ResourcePool expiration delay: |default_delay| unless
+// kCobaltTilePoolExpiration overrides it.
+CC_BASE_EXPORT base::TimeDelta GetCobaltTilePoolExpirationDelay(
+    base::TimeDelta default_delay);
+
+// When enabled, clamps the GPU-raster tile size (viewport-width strips by
+// default, e.g. 1920x288 at 1080p) via LayerTreeSettings::
+// max_gpu_raster_tile_size. Smaller tiles cost more quads but give the
+// solid-color-analysis gate and pool eviction finer granularity.
+// Params: width, height (pixels; a missing/zero param leaves that axis
+// unclamped).
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltTileSize);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace features

@@ -56,6 +56,7 @@
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
@@ -228,6 +229,38 @@ bool DrawAndScaleImageRGB(const DrawImage& draw_image,
                           AuxImage aux_image,
                           SkPixmap& target_pixmap,
                           PaintImage::GeneratorClientId client_id) {
+#if BUILDFLAG(IS_COBALT)
+  if (target_pixmap.colorType() == kRGB_565_SkColorType) {
+    // The underlying decoders can't produce 565 directly. Decode at N32
+    // through the regular path below, then downconvert into the caller's
+    // 565 memory - with dithering, since straight quantization to 5/6-bit
+    // bands on smooth gradients.
+    SkBitmap n32_bitmap;
+    if (!n32_bitmap.tryAllocPixels(target_pixmap.info()
+                                       .makeColorType(kN32_SkColorType)
+                                       .makeAlphaType(kPremul_SkAlphaType))) {
+      DLOG(ERROR) << "Failed to allocate N32 bitmap for 565 decode.";
+      return false;
+    }
+    SkPixmap n32_pixmap = n32_bitmap.pixmap();
+    if (!DrawAndScaleImageRGB(draw_image, aux_image, n32_pixmap, client_id)) {
+      return false;
+    }
+    auto canvas = SkCanvas::MakeRasterDirect(target_pixmap.info(),
+                                             target_pixmap.writable_addr(),
+                                             target_pixmap.rowBytes());
+    if (!canvas) {
+      DLOG(ERROR) << "Failed to wrap 565 target for downconvert.";
+      return false;
+    }
+    SkPaint paint;
+    paint.setDither(features::GetCobaltLowBitDepthImagesConfig().dither);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    canvas->drawImage(SkImages::RasterFromPixmap(n32_pixmap, nullptr, nullptr),
+                      0, 0, SkSamplingOptions(), &paint);
+    return true;
+  }
+#endif  // BUILDFLAG(IS_COBALT)
   const PaintImage& paint_image = draw_image.paint_image();
   const bool is_original_size_decode =
       paint_image.GetSkISize(aux_image) == target_pixmap.dimensions();
@@ -1239,7 +1272,11 @@ GpuImageDecodeCache::GpuImageDecodeCache(
       generator_client_id_(PaintImage::GetNextGeneratorClientId()),
       enable_clipped_image_scaling_(
           base::CommandLine::ForCurrentProcess()->HasSwitch(
-              switches::kEnableClippedImageScaling)),
+              switches::kEnableClippedImageScaling)
+#if BUILDFLAG(IS_COBALT)
+          || base::FeatureList::IsEnabled(features::kCobaltScaleClippedImages)
+#endif
+              ),
       persistent_cache_(PersistentCache::NO_AUTO_EVICT),
       max_working_set_bytes_(max_working_set_bytes),
       max_working_set_items_(kMaxItemsInWorkingSet),
@@ -3304,8 +3341,24 @@ std::tuple<SkImageInfo, int> GpuImageDecodeCache::CreateImageInfoForDrawImage(
     color_type = kRGBA_F16_SkColorType;
   }
 
+  SkAlphaType alpha_type = kPremul_SkAlphaType;
+#if BUILDFLAG(IS_COBALT)
+  // Decode opaque images to 565 (2 bytes/px), halving decoded-pixel bytes.
+  // Only demote images that would otherwise use the cache's default 32-bit
+  // type (never the F16/HDR override above), and only opaque ones - 565 has
+  // no alpha channel.
+  if (color_type == color_type_ &&
+      (color_type == kRGBA_8888_SkColorType ||
+       color_type == kBGRA_8888_SkColorType) &&
+      features::GetCobaltLowBitDepthImagesConfig().enabled &&
+      draw_image.paint_image().IsOpaque()) {
+    color_type = kRGB_565_SkColorType;
+    alpha_type = kOpaque_SkAlphaType;
+  }
+#endif  // BUILDFLAG(IS_COBALT)
+
   return {SkImageInfo::Make(mip_size.width(), mip_size.height(), color_type,
-                            kPremul_SkAlphaType),
+                            alpha_type),
           upload_scale_mip_level};
 }
 

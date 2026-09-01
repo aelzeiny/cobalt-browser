@@ -4540,9 +4540,17 @@ bool LayerTreeHostImpl::InitializeFrameSink(
     pending_tree_->set_needs_update_draw_properties();
 
   if (!settings_.trees_in_viz_in_viz_process) {
+#if BUILDFLAG(IS_COBALT)
+    const base::TimeDelta pool_expiration_delay =
+        features::GetCobaltTilePoolExpirationDelay(
+            ResourcePool::kDefaultExpirationDelay);
+#else
+    const base::TimeDelta pool_expiration_delay =
+        ResourcePool::kDefaultExpirationDelay;
+#endif
     resource_pool_ = std::make_unique<ResourcePool>(
         resource_provider_.get(), layer_tree_frame_sink_->context_provider(),
-        GetTaskRunner(), ResourcePool::kDefaultExpirationDelay,
+        GetTaskRunner(), pool_expiration_delay,
         settings_.disallow_non_exact_resource_reuse);
 
     CreateTileManagerResources();

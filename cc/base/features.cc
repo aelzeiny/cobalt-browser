@@ -10,6 +10,11 @@
 #include "base/feature_list.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_COBALT)
+#include "base/numerics/safe_conversions.h"
+#include "base/strings/string_number_conversions.h"
+#endif
+
 namespace features {
 
 namespace {
@@ -286,28 +291,27 @@ BASE_FEATURE(kCobaltLowBitDepthTiles,
              "CobaltLowBitDepthTiles",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-namespace {
-
 // The h5vcc.experiments pipeline registers every feature param in the shared
 // Cobalt field trial under its full "Feature:param" key (the renderer stores
 // featureParams keys verbatim and CobaltContentBrowserClient applies them
 // verbatim; getFeatureParam reads them back by the same full key), while
 // --enable-features associates the plain param name. Accept both, preferring
 // the h5vcc form.
-std::string GetLowBitDepthTilesParam(const char* name) {
+std::string GetCobaltFeatureParam(const base::Feature& feature,
+                                  const char* param_name) {
   std::string value = base::GetFieldTrialParamValueByFeature(
-      kCobaltLowBitDepthTiles,
-      std::string(kCobaltLowBitDepthTiles.name) + ":" + name);
+      feature, std::string(feature.name) + ":" + param_name);
   if (value.empty()) {
-    value =
-        base::GetFieldTrialParamValueByFeature(kCobaltLowBitDepthTiles, name);
+    value = base::GetFieldTrialParamValueByFeature(feature, param_name);
   }
   return value;
 }
 
 // h5vcc feature params always arrive stringified ("true"/"false" for bools).
-bool GetLowBitDepthTilesBoolParam(const char* name, bool default_value) {
-  const std::string value = GetLowBitDepthTilesParam(name);
+bool GetCobaltFeatureParamAsBool(const base::Feature& feature,
+                                 const char* param_name,
+                                 bool default_value) {
+  const std::string value = GetCobaltFeatureParam(feature, param_name);
   if (value == "true") {
     return true;
   }
@@ -317,7 +321,15 @@ bool GetLowBitDepthTilesBoolParam(const char* name, bool default_value) {
   return default_value;
 }
 
-}  // namespace
+int GetCobaltFeatureParamAsInt(const base::Feature& feature,
+                               const char* param_name,
+                               int default_value) {
+  int value = 0;
+  if (base::StringToInt(GetCobaltFeatureParam(feature, param_name), &value)) {
+    return value;
+  }
+  return default_value;
+}
 
 const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
   static const CobaltLowBitDepthTilesConfig cached_config = [] {
@@ -326,7 +338,8 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
       return config;
     }
     config.enabled = true;
-    const std::string mode = GetLowBitDepthTilesParam("mode");
+    const std::string mode =
+        GetCobaltFeatureParam(kCobaltLowBitDepthTiles, "mode");
     if (mode == "no-text") {
       config.rgba_4444_mode =
           CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText;
@@ -335,14 +348,56 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
     } else {
       config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll;
     }
-    config.allow_non_opaque =
-        GetLowBitDepthTilesBoolParam("allow_non_opaque", false);
-    config.opaque_565 = GetLowBitDepthTilesBoolParam("opaque_565", false);
-    config.dither = GetLowBitDepthTilesBoolParam("dither", true);
+    config.allow_non_opaque = GetCobaltFeatureParamAsBool(
+        kCobaltLowBitDepthTiles, "allow_non_opaque", false);
+    config.opaque_565 = GetCobaltFeatureParamAsBool(kCobaltLowBitDepthTiles,
+                                                    "opaque_565", false);
+    config.dither =
+        GetCobaltFeatureParamAsBool(kCobaltLowBitDepthTiles, "dither", true);
     return config;
   }();
   return cached_config;
 }
+
+BASE_FEATURE(kCobaltLowBitDepthImages,
+             "CobaltLowBitDepthImages",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+const CobaltLowBitDepthImagesConfig& GetCobaltLowBitDepthImagesConfig() {
+  static const CobaltLowBitDepthImagesConfig cached_config = [] {
+    CobaltLowBitDepthImagesConfig config;
+    if (!base::FeatureList::IsEnabled(kCobaltLowBitDepthImages)) {
+      return config;
+    }
+    config.enabled = true;
+    config.dither =
+        GetCobaltFeatureParamAsBool(kCobaltLowBitDepthImages, "dither", true);
+    return config;
+  }();
+  return cached_config;
+}
+
+BASE_FEATURE(kCobaltScaleClippedImages,
+             "CobaltScaleClippedImages",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCobaltTilePoolExpiration,
+             "CobaltTilePoolExpiration",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+base::TimeDelta GetCobaltTilePoolExpirationDelay(base::TimeDelta default_delay) {
+  if (!base::FeatureList::IsEnabled(kCobaltTilePoolExpiration)) {
+    return default_delay;
+  }
+  const int ms = GetCobaltFeatureParamAsInt(
+      kCobaltTilePoolExpiration, "ms",
+      base::checked_cast<int>(default_delay.InMilliseconds()));
+  return ms > 0 ? base::Milliseconds(ms) : default_delay;
+}
+
+BASE_FEATURE(kCobaltTileSize,
+             "CobaltTileSize",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace features
