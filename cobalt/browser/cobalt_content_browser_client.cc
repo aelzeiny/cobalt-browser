@@ -751,6 +751,48 @@ void CobaltContentBrowserClient::CreateFeatureListAndFieldTrials() {
   SetUpCobaltFeaturesAndParams(feature_list.get());
 
   base::FeatureList::SetInstance(std::move(feature_list));
+
+  // Bridge the CobaltDefaultViewportSize experiment to the ozone platform
+  // window. Shell::GetShellDefaultSize() is a dead knob on Starboard ports:
+  // the rendered viewport is the SbWindow size, which the out-of-tree port
+  // derives from its own --viewport argument and which SbWindowGetSize()
+  // snaps the platform window back to. platform_window_starboard.cc consumes
+  // this switch (string literal mirrored there) at SbWindow creation, the one
+  // place the override actually takes effect.
+  if (base::FeatureList::IsEnabled(features::kCobaltDefaultViewportSize)) {
+    auto get_viewport_param = [](const base::FeatureParam<int>& param,
+                                 const char* joined_name) {
+      int value = param.Get();
+      if (value > 0) {
+        return value;
+      }
+      // h5vcc.experiments registers params under their full "Feature:param"
+      // key in the shared Cobalt trial.
+      if (base::StringToInt(
+              base::GetFieldTrialParamValueByFeature(
+                  features::kCobaltDefaultViewportSize, joined_name),
+              &value) &&
+          value > 0) {
+        return value;
+      }
+      return -1;
+    };
+    const int viewport_width =
+        get_viewport_param(features::kCobaltDefaultViewportWidth,
+                           "CobaltDefaultViewportSize:width");
+    const int viewport_height =
+        get_viewport_param(features::kCobaltDefaultViewportHeight,
+                           "CobaltDefaultViewportSize:height");
+    if (viewport_width > 0 && viewport_height > 0) {
+      const std::string value = base::NumberToString(viewport_width) + "x" +
+                                base::NumberToString(viewport_height);
+      base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
+          "cobalt-experiment-viewport", value);
+      LOG(INFO) << "[cobalt-exp] CobaltDefaultViewportSize -> "
+                << "--cobalt-experiment-viewport=" << value;
+    }
+  }
+
   UMA_HISTOGRAM_BOOLEAN(
       "Cobalt.Features.TestFinchFeature",
       base::FeatureList::IsEnabled(features::kTestFinchFeature));

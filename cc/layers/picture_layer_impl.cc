@@ -35,6 +35,7 @@
 #include "cc/trees/effect_node.h"
 #include "cc/trees/layer_tree_impl.h"
 #include "cc/trees/occlusion.h"
+#include "cc/trees/property_tree.h"
 #include "cc/trees/transform_node.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/quads/debug_border_draw_quad.h"
@@ -612,6 +613,12 @@ bool PictureLayerImpl::UpdateTiles() {
 
   UpdateIdealScales();
 
+#if BUILDFLAG(IS_COBALT)
+  // Must run before the tiling updates below, which create tiles that read
+  // cobalt_surface_overlap_rect_. Draw properties are valid here.
+  UpdateCobaltSurfaceOverlapRect();
+#endif
+
   const bool should_adjust_raster_scale = ShouldAdjustRasterScale();
   if (should_adjust_raster_scale)
     RecalculateRasterScales();
@@ -1009,6 +1016,44 @@ Region PictureLayerImpl::GetInvalidationRegionForDebugging() {
   return IntersectRegions(invalidation_, update_rect());
 }
 
+#if BUILDFLAG(IS_COBALT)
+void PictureLayerImpl::UpdateCobaltSurfaceOverlapRect() {
+  if (features::GetCobaltLowBitDepthTilesConfig().gate !=
+      features::CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap) {
+    return;
+  }
+  cobalt_surface_overlap_rect_ = gfx::Rect();
+  gfx::Transform screen_to_layer;
+  if (!draw_properties().screen_space_transform.GetInverse(&screen_to_layer)) {
+    // Not mappable: conservatively protect every tile of this layer.
+    cobalt_surface_overlap_rect_ = gfx::Rect(bounds());
+    return;
+  }
+  const TransformTree& transform_tree = GetTransformTree();
+  for (LayerImpl* layer : *layer_tree_impl()) {
+    if (!layer->is_surface_layer()) {
+      continue;
+    }
+    // Bounds-guard the index: tree sync states can leave indices the
+    // property-tree accessors CHECK on.
+    const int transform_index = layer->transform_tree_index();
+    if (transform_index <= kInvalidPropertyNodeId ||
+        transform_index >= static_cast<int>(transform_tree.size())) {
+      cobalt_surface_overlap_rect_ = gfx::Rect(bounds());
+      return;
+    }
+    gfx::Transform to_screen =
+        gfx::Transform::MakeTranslation(layer->offset_to_transform_parent().x(),
+                                        layer->offset_to_transform_parent().y());
+    to_screen.PostConcat(transform_tree.ToScreen(transform_index));
+    const gfx::Rect surface_screen_rect = MathUtil::MapEnclosingClippedRect(
+        to_screen, gfx::Rect(layer->bounds()));
+    cobalt_surface_overlap_rect_.Union(MathUtil::MapEnclosingClippedRect(
+        screen_to_layer, surface_screen_rect));
+  }
+}
+#endif  // BUILDFLAG(IS_COBALT)
+
 std::unique_ptr<Tile> PictureLayerImpl::CreateTile(
     const Tile::CreateInfo& info) {
   SetNeedsPushProperties();
@@ -1040,25 +1085,16 @@ std::unique_ptr<Tile> PictureLayerImpl::CreateTile(
       flags |= Tile::HAS_DRAW_TEXT;
     }
   }
-  // The video gate keeps full precision for tiles whose screen rect
-  // intersects a surface layer (the video underlay on this port), so
-  // translucent scrims/controls never blend a demoted tile over moving
-  // video. Cobalt embeds no other surfaces, so surface layer == video.
+  // The video gate keeps full precision for tiles whose rect intersects a
+  // surface layer (the video underlay on this port), so translucent
+  // scrims/controls never blend a demoted tile over moving video. The
+  // layer-space overlap rect is precomputed in UpdateTiles(): CreateTile can
+  // run outside the draw-property update (e.g. image-invalidation tile
+  // creation), where transform lookups trap on property-tree bounds CHECKs.
   if (low_bit_depth_config.gate ==
-      features::CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap) {
-    const gfx::Rect tile_screen_rect = MathUtil::MapEnclosingClippedRect(
-        ScreenSpaceTransform(), info.enclosing_layer_rect);
-    for (LayerImpl* layer : *layer_tree_impl()) {
-      if (!layer->is_surface_layer()) {
-        continue;
-      }
-      const gfx::Rect surface_screen_rect = MathUtil::MapEnclosingClippedRect(
-          layer->ScreenSpaceTransform(), gfx::Rect(layer->bounds()));
-      if (surface_screen_rect.Intersects(tile_screen_rect)) {
-        flags |= Tile::OVERLAPS_SURFACE;
-        break;
-      }
-    }
+          features::CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap &&
+      cobalt_surface_overlap_rect_.Intersects(info.enclosing_layer_rect)) {
+    flags |= Tile::OVERLAPS_SURFACE;
   }
 #endif  // BUILDFLAG(IS_COBALT)
 
