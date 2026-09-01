@@ -1451,12 +1451,22 @@ viz::SharedImageFormat TileManager::DetermineTileFormat(
   if (config.opaque_565 && tile->is_opaque()) {
     return viz::SinglePlaneFormat::kBGR_565;
   }
-  // Translucent content needs 8-bit alpha: video shows through scrims and
-  // controls rendered by non-opaque tiles, where 4-bit alpha bands and the
-  // rgb dither pattern - frozen between rasters - reads as static noise over
-  // the moving video underneath.
-  if (!tile->is_opaque() && !config.allow_non_opaque) {
-    return format;
+  // Protect the tiles where low bit depth is visually hazardous: translucent
+  // pixels blending a demoted tile over the moving video underlay (4-bit
+  // alpha bands; the frozen dither pattern reads as static).
+  switch (config.gate) {
+    case features::CobaltLowBitDepthTilesConfig::Gate::kOpaque:
+      if (!tile->is_opaque()) {
+        return format;
+      }
+      break;
+    case features::CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap:
+      if (tile->overlaps_surface()) {
+        return format;
+      }
+      break;
+    case features::CobaltLowBitDepthTilesConfig::Gate::kNone:
+      break;
   }
   switch (config.rgba_4444_mode) {
     case features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll:

@@ -348,8 +348,18 @@ const CobaltLowBitDepthTilesConfig& GetCobaltLowBitDepthTilesConfig() {
     } else {
       config.rgba_4444_mode = CobaltLowBitDepthTilesConfig::Rgba4444Mode::kAll;
     }
-    config.allow_non_opaque = GetCobaltFeatureParamAsBool(
-        kCobaltLowBitDepthTiles, "allow_non_opaque", false);
+    const std::string gate =
+        GetCobaltFeatureParam(kCobaltLowBitDepthTiles, "gate");
+    if (gate == "video") {
+      config.gate = CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap;
+    } else if (gate == "none" ||
+               (gate.empty() &&
+                GetCobaltFeatureParamAsBool(kCobaltLowBitDepthTiles,
+                                            "allow_non_opaque", false))) {
+      config.gate = CobaltLowBitDepthTilesConfig::Gate::kNone;
+    } else {
+      config.gate = CobaltLowBitDepthTilesConfig::Gate::kOpaque;
+    }
     config.opaque_565 = GetCobaltFeatureParamAsBool(kCobaltLowBitDepthTiles,
                                                     "opaque_565", false);
     config.dither =

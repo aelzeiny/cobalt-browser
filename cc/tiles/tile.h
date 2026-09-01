@@ -49,7 +49,11 @@ class CC_EXPORT Tile {
     // Set when the tile's layer-space rect intersects draw-text ops. Only
     // computed when a tile format policy needs it (see
     // features::kCobaltLowBitDepthTiles); otherwise never set.
-    HAS_DRAW_TEXT = 1 << 2
+    HAS_DRAW_TEXT = 1 << 2,
+    // Set when the tile's screen-space rect intersects a surface layer (the
+    // video underlay on Cobalt ports). Only computed when the low-bit-depth
+    // tile policy's video gate needs it; otherwise never set.
+    OVERLAPS_SURFACE = 1 << 3
   };
 
   typedef uint64_t Id;
@@ -84,6 +88,8 @@ class CC_EXPORT Tile {
   bool is_opaque() const { return !!(flags_ & IS_OPAQUE); }
 
   bool has_draw_text() const { return !!(flags_ & HAS_DRAW_TEXT); }
+
+  bool overlaps_surface() const { return !!(flags_ & OVERLAPS_SURFACE); }
 
   void AsValueInto(base::trace_event::TracedValue* value) const;
 

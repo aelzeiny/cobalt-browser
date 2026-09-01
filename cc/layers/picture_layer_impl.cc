@@ -1029,13 +1029,35 @@ std::unique_ptr<Tile> PictureLayerImpl::CreateTile(
   // The low-bit-depth tile policy keeps full precision for tiles containing
   // text. Compute the flag once per tile creation (a single rtree query)
   // rather than on every scheduling pass in TileManager.
-  if (features::GetCobaltLowBitDepthTilesConfig().rgba_4444_mode ==
+  const features::CobaltLowBitDepthTilesConfig& low_bit_depth_config =
+      features::GetCobaltLowBitDepthTilesConfig();
+  if (low_bit_depth_config.rgba_4444_mode ==
       features::CobaltLowBitDepthTilesConfig::Rgba4444Mode::kNoText) {
     const scoped_refptr<const DisplayItemList>& display_list =
         GetRasterSource()->GetDisplayItemList();
     if (display_list &&
         display_list->AreaOfDrawText(info.enclosing_layer_rect) > 0) {
       flags |= Tile::HAS_DRAW_TEXT;
+    }
+  }
+  // The video gate keeps full precision for tiles whose screen rect
+  // intersects a surface layer (the video underlay on this port), so
+  // translucent scrims/controls never blend a demoted tile over moving
+  // video. Cobalt embeds no other surfaces, so surface layer == video.
+  if (low_bit_depth_config.gate ==
+      features::CobaltLowBitDepthTilesConfig::Gate::kVideoOverlap) {
+    const gfx::Rect tile_screen_rect = MathUtil::MapEnclosingClippedRect(
+        ScreenSpaceTransform(), info.enclosing_layer_rect);
+    for (LayerImpl* layer : *layer_tree_impl()) {
+      if (!layer->is_surface_layer()) {
+        continue;
+      }
+      const gfx::Rect surface_screen_rect = MathUtil::MapEnclosingClippedRect(
+          layer->ScreenSpaceTransform(), gfx::Rect(layer->bounds()));
+      if (surface_screen_rect.Intersects(tile_screen_rect)) {
+        flags |= Tile::OVERLAPS_SURFACE;
+        break;
+      }
     }
   }
 #endif  // BUILDFLAG(IS_COBALT)

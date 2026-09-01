@@ -270,12 +270,22 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
 //         demoted; tiles with text keep full precision for crisp antialiased
 //         edges (4-bit alpha quantizes text edge coverage).
 //     "none" - no 4444 demotion (useful to run the opaque-565 policy alone).
+//   gate:
+//     Which tiles are protected from demotion (kept at full precision).
+//     "opaque" (default) - only tiles from layers with opaque contents may
+//         demote. Measured to protect nearly everything on Kabuki (whose
+//         composited layers are almost never contents_opaque), keeping ~10%
+//         of the all-tiles win.
+//     "video" - tiles whose screen rect intersects a surface layer (the
+//         video underlay on this port) keep full precision; everything else
+//         demotes. This targets the actual hazard - translucent pixels
+//         blending over the video plane, where 4-bit alpha bands and the
+//         frozen dither pattern reads as static over moving video - without
+//         sacrificing pages that have no video at all.
+//     "none" - demote everything (the arm that showed video static).
 //   allow_non_opaque:
-//     When false (default), only tiles from layers with opaque contents are
-//     eligible for demotion. Translucent content needs 8-bit alpha: video
-//     shows through scrims/controls rendered by non-opaque tiles, and their
-//     4-bit alpha bands while the rgb dither pattern - frozen between
-//     rasters - reads as static noise over the moving video underneath.
+//     Legacy alias: true behaves as gate=none when no explicit gate param
+//     is set.
 //   opaque_565:
 //     When true, tiles from layers with opaque contents use BGR_565 instead
 //     (5/6-bit color, no alpha), which bands noticeably less than 4444. Takes
@@ -291,9 +301,10 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltLowBitDepthTiles);
 // any thread after FeatureList initialization (values are computed once).
 struct CC_BASE_EXPORT CobaltLowBitDepthTilesConfig {
   enum class Rgba4444Mode { kNone, kAll, kNoText };
+  enum class Gate { kOpaque, kVideoOverlap, kNone };
   bool enabled = false;
   Rgba4444Mode rgba_4444_mode = Rgba4444Mode::kNone;
-  bool allow_non_opaque = false;
+  Gate gate = Gate::kOpaque;
   bool opaque_565 = false;
   bool dither = true;
 };
