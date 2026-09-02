@@ -254,6 +254,35 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kCubicBezierY2);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
                                           kMaxAnimtionDuration);
 
+#if BUILDFLAG(IS_COBALT)
+// Generic param lookups for Cobalt experiment features. The h5vcc experiments
+// pipeline registers params in the shared Cobalt field trial under their full
+// "Feature:param" key; --enable-features associates plain names. These accept
+// both, preferring the h5vcc form. Values from h5vcc always arrive
+// stringified ("true"/"false" for bools).
+CC_BASE_EXPORT std::string GetCobaltFeatureParam(const base::Feature& feature,
+                                                 const char* param_name);
+CC_BASE_EXPORT bool GetCobaltFeatureParamAsBool(const base::Feature& feature,
+                                                const char* param_name,
+                                                bool default_value);
+CC_BASE_EXPORT int GetCobaltFeatureParamAsInt(const base::Feature& feature,
+                                              const char* param_name,
+                                              int default_value);
+
+// When enabled, overrides how long freed tile backings stay in the
+// ResourcePool before expiring (default 5s upstream). Motion holds a
+// measured 1x-3.5x (median ~2.3x) of live tile bytes as pool slack, which a
+// shorter hold drains sooner at the cost of more reallocation during
+// sustained scrolling.
+// Param: ms (default 5000) - expiration delay in milliseconds.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltTilePoolExpiration);
+
+// Returns the tile ResourcePool expiration delay: |default_delay| unless
+// kCobaltTilePoolExpiration overrides it.
+CC_BASE_EXPORT base::TimeDelta GetCobaltTilePoolExpirationDelay(
+    base::TimeDelta default_delay);
+#endif  // BUILDFLAG(IS_COBALT)
+
 }  // namespace features
 
 #endif  // CC_BASE_FEATURES_H_
