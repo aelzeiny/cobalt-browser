@@ -15,10 +15,14 @@
 #include "ui/ozone/platform/starboard/platform_window_starboard.h"
 
 #include <memory>
+#include <optional>
 
+#include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/strings/string_split.h"
 #include "build/build_config.h"
 #include "starboard/event.h"
 #include "ui/events/event.h"
@@ -33,6 +37,36 @@
 namespace ui {
 
 namespace {
+
+// "WxH" override appended to the command line at startup by
+// CobaltContentBrowserClient when the CobaltDefaultViewportSize experiment
+// supplies both dimensions (the string literal is mirrored there). The
+// out-of-tree port sizes the SbWindow from its own --viewport argument and
+// SbWindowGetSize() below snaps bounds_ back to it, so the experiment must be
+// honored here - in the creation options AND by keeping the requested bounds
+// - to actually change the rendered viewport.
+constexpr char kCobaltExperimentViewportSwitch[] = "cobalt-experiment-viewport";
+
+std::optional<gfx::Size> GetExperimentViewportSize() {
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (!command_line->HasSwitch(kCobaltExperimentViewportSwitch)) {
+    return std::nullopt;
+  }
+  const std::vector<std::string> parts = base::SplitString(
+      command_line->GetSwitchValueASCII(kCobaltExperimentViewportSwitch), "x",
+      base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
+  int width = 0;
+  int height = 0;
+  if (parts.size() != 2 || !base::StringToInt(parts[0], &width) ||
+      !base::StringToInt(parts[1], &height) || width <= 0 || height <= 0) {
+    LOG(WARNING) << "[cobalt-exp] Ignoring unparsable "
+                 << kCobaltExperimentViewportSwitch << " value.";
+    return std::nullopt;
+  }
+  return gfx::Size(width, height);
+}
+
 std::unique_ptr<PlatformWindowStarboard::WindowCreatedCallback>
     g_created_callback =
         std::make_unique<PlatformWindowStarboard::WindowCreatedCallback>(
@@ -160,6 +194,13 @@ void PlatformWindowStarboard::Show(bool inactive) {
     options.size.width = bounds_.width();
     options.size.height = bounds_.height();
 
+    const std::optional<gfx::Size> experiment_size =
+        GetExperimentViewportSize();
+    if (experiment_size) {
+      options.size.width = experiment_size->width();
+      options.size.height = experiment_size->height();
+    }
+
     sb_window_ = SbWindowCreate(&options);
     CHECK(SbWindowIsValid(sb_window_));
 
@@ -169,6 +210,12 @@ void PlatformWindowStarboard::Show(bool inactive) {
     } else {
       LOG(WARNING)
           << "PlatformWindowStarboard::Show(): SbWindowGetSize failed.";
+    }
+    if (experiment_size) {
+      LOG(INFO) << "[cobalt-exp] viewport override "
+                << experiment_size->ToString() << " (SbWindow reports "
+                << bounds_.size().ToString() << ")";
+      bounds_.set_size(*experiment_size);
     }
 
     (*g_created_callback).Run(sb_window_);
@@ -252,6 +299,13 @@ void PlatformWindowStarboard::Restore() {
     options.size.width = bounds_.width();
     options.size.height = bounds_.height();
 
+    const std::optional<gfx::Size> experiment_size =
+        GetExperimentViewportSize();
+    if (experiment_size) {
+      options.size.width = experiment_size->width();
+      options.size.height = experiment_size->height();
+    }
+
     sb_window_ = SbWindowCreate(&options);
     CHECK(SbWindowIsValid(sb_window_));
 
@@ -261,6 +315,12 @@ void PlatformWindowStarboard::Restore() {
     } else {
       LOG(WARNING)
           << "PlatformWindowStarboard::Restore(): SbWindowGetSize failed.";
+    }
+    if (experiment_size) {
+      LOG(INFO) << "[cobalt-exp] viewport override "
+                << experiment_size->ToString() << " (SbWindow reports "
+                << bounds_.size().ToString() << ")";
+      bounds_.set_size(*experiment_size);
     }
 
     (*g_created_callback).Run(sb_window_);

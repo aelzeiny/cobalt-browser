@@ -76,6 +76,26 @@ extern const base::Feature kForceVideoSplashScreen;
 // Enables video Picture-in-Picture support.
 extern const base::Feature kEnablePictureInPicture;
 
+// Overrides the default viewport (shell window) size on launch. When this
+// feature is enabled and both params hold a positive value, the launch
+// viewport is width x height and the command-line switches (--window-size and
+// --content-shell-host-window-size) are ignored, so the size can be set per
+// run through h5vcc.experiments.setExperimentState().
+//
+// Each param is read under two spellings, because Cobalt writes field-trial
+// params two different ways: the bare name registered by
+// --enable-features=CobaltDefaultViewportSize:width/1280, and the
+// "Feature:param" key that setExperimentState() stores in the shared
+// CobaltExperiment trial. A non-positive value means "unset": fall back to
+// the command-line switches.
+extern const base::Feature kCobaltDefaultViewportSize;
+
+// Viewport width in pixels.
+extern const base::FeatureParam<int> kCobaltDefaultViewportWidth;
+
+// Viewport height in pixels.
+extern const base::FeatureParam<int> kCobaltDefaultViewportHeight;
+
 // Enables native memory ablation study to verify Finch and memory metrics.
 extern const base::Feature kCobaltNativeMemoryAblation;
 
