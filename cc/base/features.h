@@ -254,6 +254,78 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kCubicBezierY2);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(base::TimeDelta,
                                           kMaxAnimtionDuration);
 
+#if BUILDFLAG(IS_COBALT)
+// When enabled, some or all SDR tiles are rasterized into 16-bit formats
+// (RGBA_4444 / BGR_565) instead of a 32-bit format, halving cc tile memory
+// for the affected tiles. Intended to be controlled per-device via
+// h5vcc.experiments.
+//
+// Params (set via the h5vcc experiments native-flag syntax, e.g.
+// "CobaltLowBitDepthTiles:mode=no-text"; the pipeline registers each param
+// in the shared Cobalt field trial under its full "Feature:param" key, and
+// the lookups below also accept the plain name for --enable-features use):
+//   mode:
+//     "all" (default) - every eligible SDR tile is demoted to RGBA_4444.
+//     "no-text" - only tiles whose content contains no draw-text ops are
+//         demoted; tiles with text keep full precision for crisp antialiased
+//         edges (4-bit alpha quantizes text edge coverage).
+//     "none" - no 4444 demotion (useful to run the opaque-565 policy alone).
+//   gate:
+//     Which tiles are protected from demotion (kept at full precision).
+//     "opaque" (default) - only tiles from layers with opaque contents may
+//         demote. Measured to protect nearly everything on Kabuki (whose
+//         composited layers are almost never contents_opaque), keeping ~10%
+//         of the all-tiles win.
+//     "video" - tiles whose screen rect intersects a surface layer (the
+//         video underlay on this port) keep full precision; everything else
+//         demotes. This targets the actual hazard - translucent pixels
+//         blending over the video plane, where 4-bit alpha bands and the
+//         frozen dither pattern reads as static over moving video - without
+//         sacrificing pages that have no video at all.
+//     "none" - demote everything (the arm that showed video static).
+//   allow_non_opaque:
+//     Legacy alias: true behaves as gate=none when no explicit gate param
+//     is set.
+//   opaque_565:
+//     When true, tiles from layers with opaque contents use BGR_565 instead
+//     (5/6-bit color, no alpha), which bands noticeably less than 4444. Takes
+//     precedence over the 4444 mode for those tiles.
+//   dither:
+//     When true (default), demoted tiles are rasterized at 8888 and
+//     downconverted with dithering. Rasterizing directly at low bit depth
+//     quantizes gradients with no dithering, which is the artifact that
+//     historically made RGBA_4444 tiles unshippable.
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltLowBitDepthTiles);
+
+// Parsed, cached param values for kCobaltLowBitDepthTiles. Safe to call from
+// any thread after FeatureList initialization (values are computed once).
+struct CC_BASE_EXPORT CobaltLowBitDepthTilesConfig {
+  enum class Rgba4444Mode { kNone, kAll, kNoText };
+  enum class Gate { kOpaque, kVideoOverlap, kNone };
+  bool enabled = false;
+  Rgba4444Mode rgba_4444_mode = Rgba4444Mode::kNone;
+  Gate gate = Gate::kOpaque;
+  bool opaque_565 = false;
+  bool dither = true;
+};
+CC_BASE_EXPORT const CobaltLowBitDepthTilesConfig&
+GetCobaltLowBitDepthTilesConfig();
+
+// Generic param lookups for Cobalt experiment features. The h5vcc experiments
+// pipeline registers params in the shared Cobalt field trial under their full
+// "Feature:param" key; --enable-features associates plain names. These accept
+// both, preferring the h5vcc form. Values from h5vcc always arrive
+// stringified ("true"/"false" for bools).
+CC_BASE_EXPORT std::string GetCobaltFeatureParam(const base::Feature& feature,
+                                                 const char* param_name);
+CC_BASE_EXPORT bool GetCobaltFeatureParamAsBool(const base::Feature& feature,
+                                                const char* param_name,
+                                                bool default_value);
+CC_BASE_EXPORT int GetCobaltFeatureParamAsInt(const base::Feature& feature,
+                                              const char* param_name,
+                                              int default_value);
+#endif  // BUILDFLAG(IS_COBALT)
+
 }  // namespace features
 
 #endif  // CC_BASE_FEATURES_H_

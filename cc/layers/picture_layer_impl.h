@@ -225,6 +225,9 @@ class CC_EXPORT PictureLayerImpl
   float MinimumContentsScale() const;
   float MaximumContentsScale() const;
   void UpdateViewportRectForTilePriorityInContentSpace();
+  // Refreshes cobalt_surface_overlap_rect_; only does work when the
+  // low-bit-depth tile policy's video gate is active.
+  void UpdateCobaltSurfaceOverlapRect();
   PictureLayerImpl* GetRecycledTwinLayer() const;
   bool ShouldDirectlyCompositeImage(float raster_scale) const;
 
@@ -352,6 +355,14 @@ class CC_EXPORT PictureLayerImpl
   // Use this instead of |visible_layer_rect()| for tiling calculations. This
   // takes external viewport and transform for tile priority into account.
   gfx::Rect viewport_rect_for_tile_priority_in_content_space_;
+
+  // Layer-space union of the screen rects of the tree's surface layers (the
+  // video underlay on Cobalt ports), refreshed in UpdateTiles() where draw
+  // properties are valid. CreateTile() intersects against this instead of
+  // computing transforms itself: transform lookups outside the draw-property
+  // update (e.g. image-invalidation tile creation) can hit property-tree
+  // state whose bounds CHECKs trap. See features::kCobaltLowBitDepthTiles.
+  gfx::Rect cobalt_surface_overlap_rect_;
 
   gfx::Size gpu_raster_max_texture_size_;
 

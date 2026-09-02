@@ -309,6 +309,12 @@ class CC_EXPORT TileManager : CheckerImageTrackerClient,
       const TargetColorParams& target_color_params,
       PrioritizedWorkToSchedule* work_to_schedule);
 
+  // The format the given tile should be rasterized into. This is the client's
+  // tile format, except when a low-bit-depth tile policy demotes the tile to
+  // a 16-bit format (see features::kCobaltLowBitDepthTiles). HDR content is
+  // handled separately in CreateRasterTask.
+  viz::SharedImageFormat DetermineTileFormat(const Tile* tile) const;
+
   std::unique_ptr<EvictionTilePriorityQueue>
   FreeTileResourcesUntilUsageIsWithinLimit(
       std::unique_ptr<EvictionTilePriorityQueue> eviction_priority_queue,
