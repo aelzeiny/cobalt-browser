@@ -33,4 +33,10 @@ declare_args() {
   # Whether to enable the custom Dial Web APIs for second-screen use cases
   # (currently only enabled on tvOS).
   enable_in_app_dial = false
+
+  # Default maximum pre-raster distance in screen pixels.
+  cobalt_max_preraster_distance_in_screen_pixels = 1000
+
+  # Default display lock viewport margin percentage.
+  cobalt_display_lock_margin_percentage = 150
 }

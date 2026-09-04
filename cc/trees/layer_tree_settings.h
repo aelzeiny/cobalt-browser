@@ -19,6 +19,10 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/geometry/size.h"
 
+#ifndef COBALT_DEFAULT_MAX_PRERASTER_DISTANCE_IN_SCREEN_PIXELS
+#define COBALT_DEFAULT_MAX_PRERASTER_DISTANCE_IN_SCREEN_PIXELS 1000
+#endif
+
 namespace cc {
 
 class CC_EXPORT LayerTreeSettings {
@@ -120,7 +124,7 @@ class CC_EXPORT LayerTreeSettings {
   size_t decoded_image_persistent_cache_budget_bytes =
       ImageDecodeCacheUtils::GetPersistentCacheBudgetBytes();
 #endif
-  int max_preraster_distance_in_screen_pixels = 1000;
+  int max_preraster_distance_in_screen_pixels = COBALT_DEFAULT_MAX_PRERASTER_DISTANCE_IN_SCREEN_PIXELS;
   bool use_rgba_4444 = false;
 
   // If set to true, the compositor may selectively defer image decodes to the
