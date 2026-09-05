@@ -45,6 +45,8 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "cc/base/devtools_instrumentation.h"
+#include "base/metrics/field_trial_params.h"
+#include "base/strings/string_number_conversions.h"
 #include "cc/base/features.h"
 #include "cc/base/histograms.h"
 #include "cc/base/math_util.h"
@@ -4540,9 +4542,27 @@ bool LayerTreeHostImpl::InitializeFrameSink(
     pending_tree_->set_needs_update_draw_properties();
 
   if (!settings_.trees_in_viz_in_viz_process) {
+    // The free-list expiration delay is a feature param so the tile-pool
+    // retention can be tuned per device (Chromium default 5 s).
+    base::TimeDelta pool_expiration = ResourcePool::kDefaultExpirationDelay;
+    if (base::FeatureList::IsEnabled(
+            features::kConfigureResourcePoolExpiration)) {
+      int expiration_ms = features::kResourcePoolExpirationMs.Get();
+      // h5vcc.experiments registers params under their verbatim
+      // "Feature:param" key; honour that spelling when it is present.
+      const std::string full_key_value = base::GetFieldTrialParamValueByFeature(
+          features::kConfigureResourcePoolExpiration,
+          "ConfigureResourcePoolExpiration:expiration_ms");
+      if (!full_key_value.empty()) {
+        base::StringToInt(full_key_value, &expiration_ms);
+      }
+      if (expiration_ms >= 0) {
+        pool_expiration = base::Milliseconds(expiration_ms);
+      }
+    }
     resource_pool_ = std::make_unique<ResourcePool>(
         resource_provider_.get(), layer_tree_frame_sink_->context_provider(),
-        GetTaskRunner(), ResourcePool::kDefaultExpirationDelay,
+        GetTaskRunner(), pool_expiration,
         settings_.disallow_non_exact_resource_reuse);
 
     CreateTileManagerResources();

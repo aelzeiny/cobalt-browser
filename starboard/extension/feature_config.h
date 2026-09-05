@@ -180,6 +180,11 @@ STARBOARD_FEATURE(kConfigureMaxPrerasterDistance,
 STARBOARD_FEATURE(kConfigureDisplayLockMargin,
                   "ConfigureDisplayLockMargin",
                   true)
+
+// Tile-pool free-list retention (cc::ResourcePool expiration delay)
+STARBOARD_FEATURE(kConfigureResourcePoolExpiration,
+                  "ConfigureResourcePoolExpiration",
+                  true)
 FEATURE_LIST_END
 
 // To add a parameter to Starboard, use the macro:
@@ -277,4 +282,14 @@ STARBOARD_FEATURE_PARAM(double,
                         kConfigureDisplayLockMargin,
                         "margin_percentage",
                         COBALT_DEFAULT_DISPLAY_LOCK_MARGIN_PERCENTAGE)
+
+#ifndef COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS
+#define COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS 5000
+#endif
+
+STARBOARD_FEATURE_PARAM(int,
+                        kResourcePoolExpirationMs,
+                        kConfigureResourcePoolExpiration,
+                        "expiration_ms",
+                        COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS)
 FEATURE_PARAM_LIST_END

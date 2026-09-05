@@ -247,6 +247,9 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kConfigureMaxPrerasterDistance);
 CC_BASE_EXPORT extern const base::FeatureParam<int>
     kMaxPrerasterDistanceInScreenPixels;
 
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kConfigureResourcePoolExpiration);
+CC_BASE_EXPORT extern const base::FeatureParam<int> kResourcePoolExpirationMs;
+
 // When enabled, the default programmatic scroll animation curve can be
 // overridden with extra params.
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kProgrammaticScrollAnimationOverride);

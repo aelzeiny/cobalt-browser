@@ -260,6 +260,20 @@ const base::FeatureParam<int> kMaxPrerasterDistanceInScreenPixels{
     &kConfigureMaxPrerasterDistance, "distance_in_pixels",
     COBALT_DEFAULT_MAX_PRERASTER_DISTANCE_IN_SCREEN_PIXELS};
 
+#ifndef COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS
+#define COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS 5000
+#endif
+
+// How long cc::ResourcePool keeps released tile resources on its free-list
+// before evicting them (Chromium default 5 s). Lets the tile-pool retention be
+// tuned per device.
+BASE_FEATURE(kConfigureResourcePoolExpiration,
+             "ConfigureResourcePoolExpiration",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kResourcePoolExpirationMs{
+    &kConfigureResourcePoolExpiration, "expiration_ms",
+    COBALT_DEFAULT_RESOURCE_POOL_EXPIRATION_MS};
+
 BASE_FEATURE(kProgrammaticScrollAnimationOverride,
              "ProgrammaticScrollAnimationOverride",
              base::FEATURE_DISABLED_BY_DEFAULT);
