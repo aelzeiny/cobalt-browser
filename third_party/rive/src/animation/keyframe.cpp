@@ -1,0 +1,26 @@
+#include "third_party/rive/include/rive/animation/keyframe.hpp"
+#include "third_party/rive/include/rive/animation/cubic_interpolator.hpp"
+#include "third_party/rive/include/rive/animation/keyed_property.hpp"
+#include "third_party/rive/include/rive/core_context.hpp"
+#include "third_party/rive/include/rive/importers/import_stack.hpp"
+#include "third_party/rive/include/rive/importers/keyed_property_importer.hpp"
+
+using namespace rive;
+
+void KeyFrame::computeSeconds(int fps) { m_seconds = frame() / (float)fps; }
+
+// `KeyFrame::frameChanged` lives in
+// `editor_native/native/src/editor/animation/keyframe_editor.cpp`
+// — see the matching comment in `keyed_property.cpp`.
+
+StatusCode KeyFrame::import(ImportStack& importStack)
+{
+  auto importer = importStack.latest<KeyedPropertyImporter>(
+      KeyedProperty::typeKey);
+  if (importer == nullptr)
+  {
+    return StatusCode::MissingObject;
+  }
+  importer->addKeyFrame(std::unique_ptr<KeyFrame>(this));
+  return Super::import(importStack);
+}

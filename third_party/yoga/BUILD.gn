@@ -1,0 +1,39 @@
+config("yoga_config") {
+  include_dirs = [ "." ]
+  cflags_cc = [ "-Wno-bitwise-instead-of-logical", "-Wno-deprecated-copy" ]
+}
+
+source_set("yoga") {
+  sources = [
+    "yoga/BitUtils.h",
+    "yoga/CompactValue.h",
+    "yoga/Utils.cpp",
+    "yoga/Utils.h",
+    "yoga/YGConfig.cpp",
+    "yoga/YGConfig.h",
+    "yoga/YGEnums.cpp",
+    "yoga/YGEnums.h",
+    "yoga/YGFloatOptional.h",
+    "yoga/YGLayout.cpp",
+    "yoga/YGLayout.h",
+    "yoga/YGMacros.h",
+    "yoga/YGNode.cpp",
+    "yoga/YGNode.h",
+    "yoga/YGNodePrint.cpp",
+    "yoga/YGNodePrint.h",
+    "yoga/YGStyle.cpp",
+    "yoga/YGStyle.h",
+    "yoga/YGValue.cpp",
+    "yoga/YGValue.h",
+    "yoga/Yoga-internal.h",
+    "yoga/Yoga.cpp",
+    "yoga/Yoga.h",
+    "yoga/event/event.cpp",
+    "yoga/event/event.h",
+    "yoga/log.cpp",
+    "yoga/log.h",
+  ]
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  public_configs = [ ":yoga_config" ]
+}

@@ -561,6 +561,12 @@ blink_core_sources_html = [
   "trust_token_attribute_parsing.h",
   "window_name_collection.cc",
   "window_name_collection.h",
+  "rive/html_rive_element.cc",
+  "rive/html_rive_element.h",
+  "rive/layout_rive.cc",
+  "rive/layout_rive.h",
+  "rive/rive_paint_canvas_renderer.cc",
+  "rive/rive_paint_canvas_renderer.h",
   "$root_gen_dir/third_party/blink/renderer/core/html/html_permission_element_strings_map.cc",
 ]
 
@@ -741,6 +747,7 @@ blink_core_tests_html = [
   "parser/html_view_source_parser_test.cc",
   "parser/text_resource_decoder_builder_test.cc",
   "parser/text_resource_decoder_test.cc",
+  "rive/html_rive_element_test.cc",
   "shadow/progress_shadow_element_test.cc",
   "time_ranges_test.cc",
   "track/text_track_list_test.cc",

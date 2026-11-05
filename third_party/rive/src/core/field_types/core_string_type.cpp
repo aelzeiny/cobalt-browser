@@ -1,0 +1,17 @@
+#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
+#include "third_party/rive/include/rive/core/binary_reader.hpp"
+
+using namespace rive;
+
+std::string CoreStringType::deserialize(BinaryReader& reader)
+{
+  return reader.readString();
+}
+
+#ifdef WITH_RIVE_TOOLS
+std::string CoreStringType::deserializeRev(BinaryReader& reader)
+{
+  size_t length = reader.lengthInBytes();
+  return reader.readString(length);
+}
+#endif

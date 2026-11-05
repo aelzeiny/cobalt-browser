@@ -1,0 +1,29 @@
+#include "third_party/rive/include/rive/inputs/gamepad_input.hpp"
+#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_gamepad.hpp"
+#include "third_party/rive/include/rive/generated/animation/listener_types/listener_input_type_gamepad_base.hpp"
+#include "third_party/rive/include/rive/generated/artboard_base.hpp"
+#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
+#include "third_party/rive/include/rive/importers/listener_input_type_gamepad_importer.hpp"
+
+using namespace rive;
+
+StatusCode GamepadInput::import(ImportStack& importStack)
+{
+  auto* litImporter = importStack.latest<ListenerInputTypeGamepadImporter>(
+      ListenerInputTypeGamepadBase::typeKey);
+  if (litImporter == nullptr)
+  {
+    return StatusCode::MissingObject;
+  }
+  litImporter->listenerInputTypeGamepad()->addGamepadInput(this);
+
+  // File::readObjects already put this in the artboard's object list (see
+  // UserInput::claimsArtboardSlot), which owns it.
+  auto artboardImporter = importStack.latest<ArtboardImporter>(
+      ArtboardBase::typeKey);
+  if (artboardImporter == nullptr)
+  {
+    return StatusCode::MissingObject;
+  }
+  return Super::import(importStack);
+}

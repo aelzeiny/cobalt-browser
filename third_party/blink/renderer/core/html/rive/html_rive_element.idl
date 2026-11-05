@@ -1,0 +1,59 @@
+// Copyright 2026 The Cobalt Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+[
+    Exposed=Window,
+    HTMLConstructor
+] interface HTMLRiveElement : HTMLElement {
+    [CEReactions] attribute USVString src;
+    [CEReactions] attribute DOMString artboard;
+    [CEReactions] attribute DOMString stateMachine;
+    [CEReactions] attribute DOMString animation;
+    [CEReactions] attribute DOMString fit;
+    [CEReactions] attribute DOMString alignment;
+    [CEReactions] attribute DOMString viewModel;
+    [CEReactions] attribute boolean autoplay;
+
+    readonly attribute boolean paused;
+    readonly attribute boolean loaded;
+    readonly attribute double artboardWidth;
+    readonly attribute double artboardHeight;
+    readonly attribute DOMString lastEventName;
+
+    readonly attribute FrozenArray<DOMString> artboardNames;
+    readonly attribute FrozenArray<DOMString> stateMachineNames;
+    readonly attribute FrozenArray<DOMString> animationNames;
+    readonly attribute FrozenArray<DOMString> inputNames;
+
+    void play();
+    void pause();
+    void stop();
+    boolean advance(double seconds);
+
+    boolean loadFromBuffer(ArrayBuffer data);
+
+    // State Machine inputs
+    boolean setBooleanInput(DOMString name, boolean value);
+    boolean getBooleanInput(DOMString name);
+    boolean setNumberInput(DOMString name, double value);
+    double getNumberInput(DOMString name);
+    boolean fireTrigger(DOMString name);
+
+    // Text runs
+    boolean setTextRun(DOMString name, DOMString value);
+    DOMString getTextRun(DOMString name);
+
+    // ViewModel data binding
+    boolean setViewModelNumber(DOMString path, double value);
+    double getViewModelNumber(DOMString path);
+    boolean setViewModelBoolean(DOMString path, boolean value);
+    boolean getViewModelBoolean(DOMString path);
+    boolean setViewModelString(DOMString path, DOMString value);
+    DOMString getViewModelString(DOMString path);
+    boolean setViewModelColor(DOMString path, long argb);
+    long getViewModelColor(DOMString path);
+    boolean setViewModelEnum(DOMString path, DOMString value);
+    DOMString getViewModelEnum(DOMString path);
+    boolean fireViewModelTrigger(DOMString path);
+};

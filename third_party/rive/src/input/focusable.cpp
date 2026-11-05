@@ -1,0 +1,29 @@
+#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
+#include "third_party/rive/include/rive/input/focusable.hpp"
+#include "third_party/rive/include/rive/nested_artboard.hpp"
+#include "third_party/rive/include/rive/text/text_input.hpp"
+
+using namespace rive;
+
+bool Focusable::gamepadDispatch(const ListenerInvocation&, ScriptedDrawable**)
+{
+  return false;
+}
+
+Focusable* Focusable::from(Core* object)
+{
+  if (object == nullptr)
+  {
+    return nullptr;
+  }
+
+  if (object->is<TextInput>())
+  {
+    return object->as<TextInput>();
+  }
+  if (object->is<NestedArtboard>())
+  {
+    return object->as<NestedArtboard>();
+  }
+  return nullptr;
+}

@@ -123,6 +123,10 @@ def set_elements_cpp_mapping(all_known):
         if cppname.startswith("fe") and cppname != "fencedframe":
             cppname = "FE" + cppname[2:]
         cppname = cppname[0].upper() + cppname[1:]
+        while '-' in cppname:
+            pos = cppname.index("-")
+            cppname = cppname[0:pos] + cppname[pos + 1].upper() + cppname[pos +
+                                                                          2:]
         ELEMENT_CPP_MAP[(elem["namespace"], elem["name"])] = (
             "%s_names::k%sTag" % (elem["cppnamespace"].lower(), cppname))
 
