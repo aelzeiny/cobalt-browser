@@ -31,6 +31,8 @@
 
 namespace blink {
 
+class KeyboardEvent;
+
 class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
                                           public ThreadableLoaderClient {
   DEFINE_WRAPPERTYPEINFO();
@@ -107,6 +109,12 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   String getViewModelEnum(const String& path) const;
   bool fireViewModelTrigger(const String& path);
 
+  // IDL Focus and navigation
+  bool hasFocusNodes() const;
+  bool hasRiveFocus() const;
+  bool moveFocus(const String& direction);
+  void clearFocus();
+
   // Called by LayoutRive
   gfx::SizeF ArtboardSize() const;
   void PaintRive(cc::PaintCanvas* canvas, const gfx::SizeF& box_size);
@@ -124,6 +132,9 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
       ContainerNode& insertion_point) override;
   void RemovedFrom(ContainerNode& insertion_point) override;
   void DefaultEventHandler(Event& event) override;
+  FocusableState SupportsFocus(UpdateBehavior update_behavior) const override;
+  int DefaultTabIndex() const override;
+  void SetFocused(bool received, mojom::blink::FocusType type) override;
 
   // ThreadableLoaderClient overrides
   void DidReceiveData(base::span<const char> data) override;
@@ -139,6 +150,8 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   void ScheduleAnimationIfNeeded();
   void CancelScheduledAnimation();
   void InvalidateRivePaint();
+  bool HandleKeyboardEvent(const KeyboardEvent& event);
+  void OnRiveFocusChanged();
 
   rive::Fit GetRiveFit() const;
   rive::Alignment GetRiveAlignment() const;

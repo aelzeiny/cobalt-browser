@@ -56,4 +56,12 @@
     boolean setViewModelEnum(DOMString path, DOMString value);
     DOMString getViewModelEnum(DOMString path);
     boolean fireViewModelTrigger(DOMString path);
+
+    // Focus and navigation within the artboard. moveFocus() accepts "left",
+    // "right", "up", "down", "next" or "previous" and returns false when there
+    // is nothing to move to in that direction.
+    readonly attribute boolean hasFocusNodes;
+    readonly attribute boolean hasRiveFocus;
+    boolean moveFocus(DOMString direction);
+    void clearFocus();
 };

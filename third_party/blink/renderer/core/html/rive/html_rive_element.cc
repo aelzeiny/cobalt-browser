@@ -5,6 +5,7 @@
 #include "third_party/blink/renderer/core/html/rive/html_rive_element.h"
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include "services/network/public/mojom/fetch_api.mojom-blink.h"
@@ -12,9 +13,10 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/events/event.h"
 #include "third_party/blink/renderer/core/dom/frame_request_callback_collection.h"
+#include "third_party/blink/renderer/core/event_type_names.h"
+#include "third_party/blink/renderer/core/events/keyboard_event.h"
 #include "third_party/blink/renderer/core/events/mouse_event.h"
 #include "third_party/blink/renderer/core/events/pointer_event.h"
-#include "third_party/blink/renderer/core/event_type_names.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/html/rive/rive_paint_canvas_renderer.h"
@@ -95,6 +97,49 @@ const QualifiedName& ViewModelAttrName() {
   DEFINE_STATIC_LOCAL(QualifiedName, attr,
                       (g_null_atom, AtomicString("view-model"), g_null_atom));
   return attr;
+}
+
+// Maps a KeyboardEvent.key value to the rive key it corresponds to, if any.
+std::optional<rive::Key> ToRiveKey(const String& key) {
+  if (key == "ArrowLeft") {
+    return rive::Key::left;
+  }
+  if (key == "ArrowRight") {
+    return rive::Key::right;
+  }
+  if (key == "ArrowUp") {
+    return rive::Key::up;
+  }
+  if (key == "ArrowDown") {
+    return rive::Key::down;
+  }
+  if (key == "Enter") {
+    return rive::Key::enter;
+  }
+  if (key == "Tab") {
+    return rive::Key::tab;
+  }
+  if (key == "Escape") {
+    return rive::Key::escape;
+  }
+  if (key == "Backspace") {
+    return rive::Key::backspace;
+  }
+  if (key == " ") {
+    return rive::Key::space;
+  }
+  if (key.length() == 1) {
+    // rive uses the uppercase ASCII code for letters and the ASCII code for
+    // digits.
+    const UChar c = key[0];
+    if (IsASCIIAlpha(c)) {
+      return static_cast<rive::Key>(ToASCIIUpper(c));
+    }
+    if (IsASCIIDigit(c)) {
+      return static_cast<rive::Key>(c);
+    }
+  }
+  return std::nullopt;
 }
 
 }  // namespace
@@ -497,6 +542,57 @@ bool HTMLRiveElement::fireViewModelTrigger(const String& path) {
   return true;
 }
 
+bool HTMLRiveElement::hasFocusNodes() const {
+  // hasFocusNodes() is non-const in rive but only reads a cached flag.
+  return state_machine_ &&
+         const_cast<rive::StateMachineInstance*>(state_machine_.get())
+             ->hasFocusNodes();
+}
+
+bool HTMLRiveElement::hasRiveFocus() const {
+  const rive::FocusManager* focus_manager =
+      state_machine_ ? state_machine_->focusManager() : nullptr;
+  return focus_manager && focus_manager->primaryFocusPtr();
+}
+
+bool HTMLRiveElement::moveFocus(const String& direction) {
+  if (!hasFocusNodes()) {
+    return false;
+  }
+  bool moved = false;
+  // Directional moves need a starting point, so they enter at the first node
+  // when nothing inside the artboard is focused yet.
+  const bool entering = !hasRiveFocus();
+  if (EqualIgnoringASCIICase(direction, "next")) {
+    moved = state_machine_->focusNext();
+  } else if (EqualIgnoringASCIICase(direction, "previous")) {
+    moved = state_machine_->focusPrevious();
+  } else if (EqualIgnoringASCIICase(direction, "left")) {
+    moved =
+        entering ? state_machine_->focusNext() : state_machine_->focusLeft();
+  } else if (EqualIgnoringASCIICase(direction, "right")) {
+    moved =
+        entering ? state_machine_->focusNext() : state_machine_->focusRight();
+  } else if (EqualIgnoringASCIICase(direction, "up")) {
+    moved = entering ? state_machine_->focusNext() : state_machine_->focusUp();
+  } else if (EqualIgnoringASCIICase(direction, "down")) {
+    moved =
+        entering ? state_machine_->focusNext() : state_machine_->focusDown();
+  } else {
+    return false;
+  }
+  OnRiveFocusChanged();
+  return moved;
+}
+
+void HTMLRiveElement::clearFocus() {
+  if (!state_machine_) {
+    return;
+  }
+  state_machine_->clearFocus();
+  OnRiveFocusChanged();
+}
+
 gfx::SizeF HTMLRiveElement::ArtboardSize() const {
   if (artboard_ && artboard_->width() > 0 && artboard_->height() > 0) {
     return gfx::SizeF(artboard_->width(), artboard_->height());
@@ -593,6 +689,11 @@ void HTMLRiveElement::RemovedFrom(ContainerNode& insertion_point) {
 }
 
 void HTMLRiveElement::DefaultEventHandler(Event& event) {
+  if (event.IsKeyboardEvent() &&
+      HandleKeyboardEvent(To<KeyboardEvent>(event))) {
+    event.SetDefaultHandled();
+    return;
+  }
   if (state_machine_ && event.IsMouseEvent()) {
     auto* mouse_event = To<MouseEvent>(&event);
     rive::Vec2D artboard_point;
@@ -634,6 +735,106 @@ void HTMLRiveElement::DefaultEventHandler(Event& event) {
   HTMLElement::DefaultEventHandler(event);
 }
 
+FocusableState HTMLRiveElement::SupportsFocus(
+    UpdateBehavior update_behavior) const {
+  if (hasFocusNodes()) {
+    return FocusableState::kFocusable;
+  }
+  return HTMLElement::SupportsFocus(update_behavior);
+}
+
+int HTMLRiveElement::DefaultTabIndex() const {
+  // -1 matches Element's default for elements outside the tab order.
+  return hasFocusNodes() ? 0 : -1;
+}
+
+void HTMLRiveElement::SetFocused(bool received, mojom::blink::FocusType type) {
+  HTMLElement::SetFocused(received, type);
+  if (!received) {
+    if (hasRiveFocus()) {
+      clearFocus();
+    }
+    return;
+  }
+  // Entering by keyboard or script lands on the first node (or the last one
+  // for Shift+Tab). Mouse presses pick their node via the state machine.
+  if (type != mojom::blink::FocusType::kMouse && hasFocusNodes() &&
+      !hasRiveFocus()) {
+    moveFocus(type == mojom::blink::FocusType::kBackward ? "previous" : "next");
+  }
+}
+
+bool HTMLRiveElement::HandleKeyboardEvent(const KeyboardEvent& event) {
+  if (!hasFocusNodes()) {
+    return false;
+  }
+  const bool is_down = event.type() == event_type_names::kKeydown;
+  if (!is_down && event.type() != event_type_names::kKeyup) {
+    return false;
+  }
+
+  // The focused node (and its ancestors) get the first chance at the key.
+  const String& key = event.key();
+  if (hasRiveFocus()) {
+    if (std::optional<rive::Key> rive_key = ToRiveKey(key)) {
+      rive::KeyModifiers modifiers = rive::KeyModifiers::none;
+      if (event.shiftKey()) {
+        modifiers = modifiers | rive::KeyModifiers::shift;
+      }
+      if (event.ctrlKey()) {
+        modifiers = modifiers | rive::KeyModifiers::ctrl;
+      }
+      if (event.altKey()) {
+        modifiers = modifiers | rive::KeyModifiers::alt;
+      }
+      if (event.metaKey()) {
+        modifiers = modifiers | rive::KeyModifiers::meta;
+      }
+      if (state_machine_->keyInput(*rive_key, modifiers, is_down,
+                                   event.repeat())) {
+        OnRiveFocusChanged();
+        return true;
+      }
+    }
+  }
+
+  // Otherwise arrows and Tab navigate. When there is nothing to move to, the
+  // key is left unhandled so the page can move focus out of the player.
+  if (!is_down) {
+    return false;
+  }
+  if (key == "Tab") {
+    return moveFocus(event.shiftKey() ? "previous" : "next");
+  }
+  if (key == "ArrowLeft") {
+    return moveFocus("left");
+  }
+  if (key == "ArrowRight") {
+    return moveFocus("right");
+  }
+  if (key == "ArrowUp") {
+    return moveFocus("up");
+  }
+  if (key == "ArrowDown") {
+    return moveFocus("down");
+  }
+  return false;
+}
+
+void HTMLRiveElement::OnRiveFocusChanged() {
+  if (!state_machine_) {
+    return;
+  }
+  // Focus and blur listeners run during advance, so make sure one happens. A
+  // paused player doesn't tick, so apply them right away.
+  state_machine_->markNeedsAdvance();
+  if (paused_) {
+    AdvanceInternal(0.0f);
+  }
+  ScheduleAnimationIfNeeded();
+  InvalidateRivePaint();
+}
+
 void HTMLRiveElement::DidReceiveData(base::span<const char> data) {
   pending_bytes_.AppendSpan(base::as_bytes(data));
 }
@@ -649,8 +850,7 @@ void HTMLRiveElement::DidFinishLoading(uint64_t identifier) {
   }
 }
 
-void HTMLRiveElement::DidFail(uint64_t identifier,
-                              const ResourceError& error) {
+void HTMLRiveElement::DidFail(uint64_t identifier, const ResourceError& error) {
   loader_ = nullptr;
   pending_bytes_.clear();
   if (!error.IsCancellation()) {
@@ -710,9 +910,9 @@ bool HTMLRiveElement::LoadFromBytes(base::span<const uint8_t> bytes) {
   }
 
   rive::ImportResult result = rive::ImportResult::malformed;
-  rive_file_ = rive::File::import(
-      rive::Span<const uint8_t>(bytes.data(), bytes.size()),
-      &RivePaintCanvasFactory::Instance(), &result);
+  rive_file_ =
+      rive::File::import(rive::Span<const uint8_t>(bytes.data(), bytes.size()),
+                         &RivePaintCanvasFactory::Instance(), &result);
   if (!rive_file_ || result != rive::ImportResult::success) {
     rive_file_.reset();
     return false;
@@ -791,6 +991,11 @@ void HTMLRiveElement::InstantiateArtboardAndScene() {
 
   // Advance by 0s to apply the initial frame pose.
   AdvanceInternal(0.0f);
+
+  // If the player was focused before the file finished loading, enter it now.
+  if (IsFocused() && hasFocusNodes()) {
+    moveFocus("next");
+  }
 
   if (auto* layout_rive = static_cast<LayoutRive*>(GetLayoutObject())) {
     layout_rive->IntrinsicSizeChanged();

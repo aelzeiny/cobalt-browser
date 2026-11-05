@@ -13,7 +13,10 @@
 #include "cc/paint/paint_op_buffer.h"
 #include "cc/paint/record_paint_canvas.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_keyboard_event_init.h"
 #include "third_party/blink/renderer/core/dom/document.h"
+#include "third_party/blink/renderer/core/event_type_names.h"
+#include "third_party/blink/renderer/core/events/keyboard_event.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
@@ -28,7 +31,8 @@ namespace {
 base::FilePath GetTestDataPath(const char* filename) {
   base::FilePath src_root;
   base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &src_root);
-  return src_root.AppendASCII("third_party/blink/renderer/core/html/rive/testdata")
+  return src_root
+      .AppendASCII("third_party/blink/renderer/core/html/rive/testdata")
       .AppendASCII(filename);
 }
 
@@ -138,6 +142,150 @@ TEST_F(HTMLRiveElementTest, LoadsAndRendersListsDemoRiv) {
   paint_record.Playback(&sk_canvas);
 
   EXPECT_GT(CountNonTransparentPixels(bitmap), 500u);
+}
+
+class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
+ protected:
+  // Loads focus_nodes_list_order.riv: four focusable buttons stacked
+  // vertically.
+  HTMLRiveElement* LoadFocusFixture() {
+    SetBodyInnerHTML(R"HTML(
+      <button id="before">before</button>
+      <rive-player id="player" style="width: 500px; height: 500px;">
+      </rive-player>
+      <button id="after">after</button>
+    )HTML");
+    UpdateAllLifecyclePhasesForTest();
+    auto* rive_elem = static_cast<HTMLRiveElement*>(GetElementById("player"));
+    std::optional<std::vector<uint8_t>> bytes =
+        base::ReadFileToBytes(GetTestDataPath("focus_nodes_list_order.riv"));
+    EXPECT_TRUE(bytes.has_value());
+    EXPECT_TRUE(rive_elem->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+    UpdateAllLifecyclePhasesForTest();
+    return rive_elem;
+  }
+
+  // Dispatches a trusted keydown and returns whether the player handled it.
+  bool PressKey(HTMLRiveElement* rive_elem, const char* key) {
+    auto* init = KeyboardEventInit::Create();
+    init->setKey(key);
+    init->setBubbles(true);
+    init->setCancelable(true);
+    auto* event =
+        MakeGarbageCollected<KeyboardEvent>(event_type_names::kKeydown, init);
+    event->SetTrusted(true);
+    rive_elem->DispatchEvent(*event);
+    return event->DefaultHandled();
+  }
+
+  // Moves in `direction` until it fails and returns how many moves succeeded.
+  int CountMoves(HTMLRiveElement* rive_elem, const char* direction) {
+    int moves = 0;
+    while (moves < 10 && rive_elem->moveFocus(direction)) {
+      ++moves;
+    }
+    return moves;
+  }
+};
+
+TEST_F(HTMLRiveElementFocusTest, NotFocusableWithoutFocusNodes) {
+  SetBodyInnerHTML(R"HTML(<rive-player id="player"></rive-player>)HTML");
+  UpdateAllLifecyclePhasesForTest();
+  auto* rive_elem = static_cast<HTMLRiveElement*>(GetElementById("player"));
+  EXPECT_FALSE(rive_elem->hasFocusNodes());
+  EXPECT_FALSE(rive_elem->IsFocusable());
+  EXPECT_FALSE(rive_elem->moveFocus("next"));
+}
+
+TEST_F(HTMLRiveElementFocusTest, FocusableWhenFileHasFocusNodes) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  EXPECT_TRUE(rive_elem->hasFocusNodes());
+  EXPECT_TRUE(rive_elem->IsFocusable());
+  EXPECT_EQ(rive_elem->tabIndex(), 0);
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+}
+
+TEST_F(HTMLRiveElementFocusTest, DomFocusEntersAndBlurClears) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  rive_elem->Focus();
+  EXPECT_TRUE(rive_elem->IsFocused());
+  EXPECT_TRUE(rive_elem->hasRiveFocus());
+
+  GetElementById("after")->Focus();
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+}
+
+TEST_F(HTMLRiveElementFocusTest, DirectionalMovesStopAtEdges) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  EXPECT_FALSE(rive_elem->moveFocus("sideways"));
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+
+  // The first directional move enters the artboard.
+  EXPECT_TRUE(rive_elem->moveFocus("down"));
+  EXPECT_TRUE(rive_elem->hasRiveFocus());
+
+  // Four stacked buttons: three moves from one end to the other.
+  CountMoves(rive_elem, "up");
+  EXPECT_EQ(CountMoves(rive_elem, "down"), 3);
+  EXPECT_EQ(CountMoves(rive_elem, "up"), 3);
+  EXPECT_FALSE(rive_elem->moveFocus("left"));
+  EXPECT_TRUE(rive_elem->hasRiveFocus());
+
+  rive_elem->clearFocus();
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+}
+
+TEST_F(HTMLRiveElementFocusTest, ArrowKeysNavigateAndReleaseAtEdges) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  rive_elem->Focus();
+  ASSERT_TRUE(rive_elem->hasRiveFocus());
+
+  // Go to the top, then walk down with the arrow key.
+  CountMoves(rive_elem, "up");
+  EXPECT_FALSE(PressKey(rive_elem, "ArrowUp"));
+  EXPECT_TRUE(PressKey(rive_elem, "ArrowDown"));
+  EXPECT_TRUE(PressKey(rive_elem, "ArrowDown"));
+  EXPECT_TRUE(PressKey(rive_elem, "ArrowDown"));
+  // At the bottom edge the key is left for the page to handle.
+  EXPECT_FALSE(PressKey(rive_elem, "ArrowDown"));
+  EXPECT_TRUE(rive_elem->hasRiveFocus());
+
+  // Keys with no meaning to the file are not swallowed.
+  EXPECT_FALSE(PressKey(rive_elem, "F5"));
+}
+
+TEST_F(HTMLRiveElementFocusTest, MovingFocusChangesRenderedFrame) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  auto render = [&]() {
+    rive_elem->advance(0.5);
+    cc::RecordPaintCanvas record_canvas;
+    rive_elem->PaintRive(&record_canvas, gfx::SizeF(500.0f, 500.0f));
+    SkBitmap bitmap;
+    bitmap.allocN32Pixels(500, 500);
+    bitmap.eraseColor(SK_ColorTRANSPARENT);
+    SkCanvas sk_canvas(bitmap);
+    record_canvas.ReleaseAsRecord().Playback(&sk_canvas);
+    return bitmap;
+  };
+  auto differing_pixels = [](const SkBitmap& a, const SkBitmap& b) {
+    size_t count = 0;
+    for (int y = 0; y < a.height(); ++y) {
+      for (int x = 0; x < a.width(); ++x) {
+        if (a.getColor(x, y) != b.getColor(x, y)) {
+          ++count;
+        }
+      }
+    }
+    return count;
+  };
+
+  SkBitmap unfocused = render();
+  ASSERT_TRUE(rive_elem->moveFocus("next"));
+  SkBitmap first = render();
+  ASSERT_TRUE(rive_elem->moveFocus("next"));
+  SkBitmap second = render();
+  EXPECT_GT(differing_pixels(unfocused, first), 0u);
+  EXPECT_GT(differing_pixels(first, second), 0u);
 }
 
 }  // namespace blink
