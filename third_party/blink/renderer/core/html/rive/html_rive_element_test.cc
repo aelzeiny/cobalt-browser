@@ -146,6 +146,161 @@ TEST_F(HTMLRiveElementTest, LoadsAndRendersListsDemoRiv) {
   EXPECT_GT(CountNonTransparentPixels(bitmap), 500u);
 }
 
+// focus_like.riv: a thumbs-up whose "Like" layer animates motion only and
+// whose "Focus" layer animates colour only (white unfocused, black focused).
+// Generated with the Rive CLI from RML.
+TEST_F(HTMLRiveElementTest, FocusColorSwapsWithoutDisturbingLikeAnimation) {
+  SetBodyInnerHTML(R"HTML(
+    <rive-player id="a" style="width: 96px; height: 96px;"></rive-player>
+    <rive-player id="b" style="width: 96px; height: 96px;"></rive-player>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+  std::optional<std::vector<uint8_t>> bytes =
+      base::ReadFileToBytes(GetTestDataPath("focus_like.riv"));
+  ASSERT_TRUE(bytes.has_value());
+  auto* a = static_cast<HTMLRiveElement*>(GetElementById("a"));
+  auto* b = static_cast<HTMLRiveElement*>(GetElementById("b"));
+  ASSERT_TRUE(a->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+  ASSERT_TRUE(b->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+
+  auto render = [](HTMLRiveElement* elem) {
+    cc::RecordPaintCanvas record_canvas;
+    elem->PaintRive(&record_canvas, gfx::SizeF(96.0f, 96.0f));
+    SkBitmap bitmap;
+    bitmap.allocN32Pixels(96, 96);
+    bitmap.eraseColor(SK_ColorTRANSPARENT);
+    SkCanvas sk_canvas(bitmap);
+    record_canvas.ReleaseAsRecord().Playback(&sk_canvas);
+    return bitmap;
+  };
+  // Counts fully opaque pixels that are white-ish and black-ish.
+  auto count_colors = [](const SkBitmap& bitmap, size_t* white, size_t* black) {
+    *white = *black = 0;
+    for (int y = 0; y < bitmap.height(); ++y) {
+      for (int x = 0; x < bitmap.width(); ++x) {
+        SkColor c = bitmap.getColor(x, y);
+        if (SkColorGetA(c) != 255) {
+          continue;
+        }
+        if (SkColorGetR(c) > 230 && SkColorGetG(c) > 230 &&
+            SkColorGetB(c) > 230) {
+          ++*white;
+        } else if (SkColorGetR(c) < 40 && SkColorGetG(c) < 40 &&
+                   SkColorGetB(c) < 40) {
+          ++*black;
+        }
+      }
+    }
+  };
+  auto same_shape = [](const SkBitmap& x, const SkBitmap& y) {
+    for (int j = 0; j < x.height(); ++j) {
+      for (int i = 0; i < x.width(); ++i) {
+        if (SkColorGetA(x.getColor(i, j)) != SkColorGetA(y.getColor(i, j))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  auto step = [&](int frames) {
+    for (int i = 0; i < frames; ++i) {
+      a->advance(1.0 / 60);
+      b->advance(1.0 / 60);
+    }
+  };
+
+  size_t white, black;
+  step(1);
+  SkBitmap idle = render(a);
+  count_colors(idle, &white, &black);
+  EXPECT_GT(white, 0u);
+  EXPECT_EQ(black, 0u);
+
+  // Start liking both, then focus only `b` partway through the animation.
+  ASSERT_TRUE(a->setViewModelBoolean("liked", true));
+  ASSERT_TRUE(b->setViewModelBoolean("liked", true));
+  step(5);
+  ASSERT_TRUE(b->setViewModelBoolean("focused", true));
+  step(8);
+
+  SkBitmap a_mid = render(a);
+  SkBitmap b_mid = render(b);
+  // Still animating: the pose differs from idle.
+  EXPECT_FALSE(same_shape(idle, a_mid));
+  // Focus changed only the colour: the shapes match pixel for pixel.
+  EXPECT_TRUE(same_shape(a_mid, b_mid));
+  count_colors(a_mid, &white, &black);
+  EXPECT_GT(white, 0u);
+  EXPECT_EQ(black, 0u);
+  count_colors(b_mid, &white, &black);
+  EXPECT_GT(black, 0u);
+  EXPECT_EQ(white, 0u);
+
+  // Unfocus after the animation settles: back to white, same liked pose.
+  step(120);
+  ASSERT_TRUE(b->setViewModelBoolean("focused", false));
+  step(10);
+  SkBitmap a_end = render(a);
+  SkBitmap b_end = render(b);
+  EXPECT_TRUE(same_shape(a_end, b_end));
+  count_colors(b_end, &white, &black);
+  EXPECT_GT(white, 0u);
+  EXPECT_EQ(black, 0u);
+}
+
+// The icon sits idle (no frames scheduled) most of the time. A focus change
+// must show the new colour on the very first frame, which advances by zero
+// because the frame clock restarts, or it flickers against the page.
+TEST_F(HTMLRiveElementTest, FocusColorAppliesOnFirstFrameWhenIdle) {
+  SetBodyInnerHTML(R"HTML(
+    <rive-player id="icon" style="width: 96px; height: 96px;"></rive-player>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+  std::optional<std::vector<uint8_t>> bytes =
+      base::ReadFileToBytes(GetTestDataPath("focus_like.riv"));
+  ASSERT_TRUE(bytes.has_value());
+  auto* icon = static_cast<HTMLRiveElement*>(GetElementById("icon"));
+  ASSERT_TRUE(icon->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+  icon->advance(1.0);
+
+  auto opaque_colors = [&](size_t* white, size_t* black) {
+    cc::RecordPaintCanvas record_canvas;
+    icon->PaintRive(&record_canvas, gfx::SizeF(96.0f, 96.0f));
+    SkBitmap bitmap;
+    bitmap.allocN32Pixels(96, 96);
+    bitmap.eraseColor(SK_ColorTRANSPARENT);
+    SkCanvas sk_canvas(bitmap);
+    record_canvas.ReleaseAsRecord().Playback(&sk_canvas);
+    *white = *black = 0;
+    for (int y = 0; y < 96; ++y) {
+      for (int x = 0; x < 96; ++x) {
+        SkColor c = bitmap.getColor(x, y);
+        if (SkColorGetA(c) != 255) {
+          continue;
+        }
+        if (SkColorGetR(c) > 230) {
+          ++*white;
+        } else if (SkColorGetR(c) < 40) {
+          ++*black;
+        }
+      }
+    }
+  };
+
+  size_t white, black;
+  ASSERT_TRUE(icon->setViewModelBoolean("focused", true));
+  icon->OnAnimationFrame(1000.0);  // First frame after idle: zero elapsed.
+  opaque_colors(&white, &black);
+  EXPECT_GT(black, 0u);
+  EXPECT_EQ(white, 0u);
+
+  ASSERT_TRUE(icon->setViewModelBoolean("focused", false));
+  icon->OnAnimationFrame(2000.0);
+  opaque_colors(&white, &black);
+  EXPECT_GT(white, 0u);
+  EXPECT_EQ(black, 0u);
+}
+
 class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
  protected:
   // Loads focus_nodes_list_order.riv: four focusable buttons stacked
