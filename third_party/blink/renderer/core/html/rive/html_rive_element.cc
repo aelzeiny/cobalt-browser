@@ -615,8 +615,14 @@ bool HTMLRiveElement::EnterRiveFocusFromEdge(rive::Direction direction) {
       continue;
     }
     rive::AABB bounds;
+    rive::Vec2D position;
     if (focusable && focusable->worldBounds(bounds)) {
       stops.emplace_back(node, bounds);
+    } else if (focusable && focusable->worldPosition(position)) {
+      // Nodes outside a layout only report a point, as in rive's own
+      // directional traversal.
+      stops.emplace_back(
+          node, rive::AABB(position.x, position.y, position.x, position.y));
     } else if (node->hasWorldBounds()) {
       stops.emplace_back(node, node->worldBounds());
     }
@@ -796,6 +802,7 @@ void HTMLRiveElement::DefaultEventHandler(Event& event) {
         handled = true;
       }
       if (handled) {
+        DispatchReportedRiveEvents();
         ScheduleAnimationIfNeeded();
         InvalidateRivePaint();
       }
@@ -863,6 +870,7 @@ bool HTMLRiveElement::HandleKeyboardEvent(const KeyboardEvent& event) {
       }
       if (state_machine_->keyInput(*rive_key, modifiers, is_down,
                                    event.repeat())) {
+        DispatchReportedRiveEvents();
         OnRiveFocusChanged();
         return true;
       }
@@ -1085,14 +1093,9 @@ bool HTMLRiveElement::AdvanceInternal(float elapsed_seconds) {
 
   if (state_machine_) {
     bool keep_going = state_machine_->advanceAndApply(elapsed_seconds);
-    const size_t event_count = state_machine_->reportedEventCount();
-    for (size_t i = 0; i < event_count; ++i) {
-      const rive::EventReport report = state_machine_->reportedEventAt(i);
-      if (report.event()) {
-        last_event_name_ = String::FromUTF8(report.event()->name());
-        DispatchEvent(*Event::CreateBubble(AtomicString("riveevent")));
-      }
-    }
+    // Advancing rebuilds the reported list, so everything in it is new.
+    reported_events_seen_ = 0;
+    DispatchReportedRiveEvents();
     return keep_going;
   }
 
@@ -1104,6 +1107,24 @@ bool HTMLRiveElement::AdvanceInternal(float elapsed_seconds) {
   }
 
   return artboard_->advance(elapsed_seconds);
+}
+
+// Input handlers (pointer, keys) can report events synchronously, and the next
+// advance clears them before they are read, so they are dispatched both after
+// input and after advancing. Only events past those already dispatched fire.
+void HTMLRiveElement::DispatchReportedRiveEvents() {
+  if (!state_machine_) {
+    return;
+  }
+  const size_t event_count = state_machine_->reportedEventCount();
+  for (size_t i = reported_events_seen_; i < event_count; ++i) {
+    const rive::EventReport report = state_machine_->reportedEventAt(i);
+    if (report.event()) {
+      last_event_name_ = String::FromUTF8(report.event()->name());
+      DispatchEvent(*Event::CreateBubble(AtomicString("riveevent")));
+    }
+  }
+  reported_events_seen_ = event_count;
 }
 
 void HTMLRiveElement::ScheduleAnimationIfNeeded() {

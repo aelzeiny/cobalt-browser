@@ -150,6 +150,7 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   void ScheduleAnimationIfNeeded();
   void CancelScheduledAnimation();
   void InvalidateRivePaint();
+  void DispatchReportedRiveEvents();
   bool HandleKeyboardEvent(const KeyboardEvent& event);
   bool EnterRiveFocusFromEdge(rive::Direction direction);
   void EnterRiveFocusIfNeeded(mojom::blink::FocusType type);
@@ -175,6 +176,7 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   int raf_callback_id_ = 0;
   double last_frame_time_ms_ = 0.0;
   String last_event_name_;
+  size_t reported_events_seen_ = 0;
 };
 
 }  // namespace blink

@@ -1,0 +1,572 @@
+<Rive version="1" kind="fragment">
+    <Artboard defaultStateMachineId="0:7" viewModelId="0:40" viewModelInstanceId="0:41" styleId="0:5" width="640" height="360" name="Focus Grid" id="0:2">
+        <LayoutComponentStyle name="Artboard Style" id="0:5"/>
+        <Fill name="Background" id="0:209">
+            <SolidColor colorValue="FF202124" name="Color" id="0:210"/>
+        </Fill>
+        <Shape x="120" y="110" name="Card 0" id="0:100">
+            <FocusData id="0:211"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:212"/>
+            <Fill name="Fill" id="0:213">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:101"/>
+            </Fill>
+        </Shape>
+        <Shape x="320" y="110" name="Card 1" id="0:120">
+            <FocusData id="0:214"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:215"/>
+            <Fill name="Fill" id="0:216">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:121"/>
+            </Fill>
+        </Shape>
+        <Shape x="520" y="110" name="Card 2" id="0:140">
+            <FocusData id="0:217"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:218"/>
+            <Fill name="Fill" id="0:219">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:141"/>
+            </Fill>
+        </Shape>
+        <Shape x="120" y="250" name="Card 3" id="0:160">
+            <FocusData id="0:220"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:221"/>
+            <Fill name="Fill" id="0:222">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:161"/>
+            </Fill>
+        </Shape>
+        <Shape x="320" y="250" name="Card 4" id="0:180">
+            <FocusData id="0:223"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:224"/>
+            <Fill name="Fill" id="0:225">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:181"/>
+            </Fill>
+        </Shape>
+        <Shape x="520" y="250" name="Card 5" id="0:200">
+            <FocusData id="0:226"/>
+            <Rectangle width="160" height="100" cornerRadiusTL="12" name="Path" id="0:227"/>
+            <Fill name="Fill" id="0:228">
+                <SolidColor colorValue="FF3C4043" name="Color" id="0:201"/>
+            </Fill>
+        </Shape>
+        <Event name="select-0" id="0:102"/>
+        <Event name="select-1" id="0:122"/>
+        <Event name="select-2" id="0:142"/>
+        <Event name="select-3" id="0:162"/>
+        <Event name="select-4" id="0:182"/>
+        <Event name="select-5" id="0:202"/>
+        <StateMachine name="Focus Grid" id="0:7">
+        <StateMachineListener targetId="0:100" name="Card 0 Focus" id="0:229">
+            <ListenerInputType listenerTypeValue="focus" id="0:230"/>
+            <ListenerViewModelChange id="0:231">
+                <BindablePropertyBoolean propertyValue="true" id="0:232">
+                    <DataBindContext sourcePathIds="0:40-0:103" propertyKey="634" direction="true" id="0:233"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:100" name="Card 0 Blur" id="0:234">
+            <ListenerInputType listenerTypeValue="blur" id="0:235"/>
+            <ListenerViewModelChange id="0:236">
+                <BindablePropertyBoolean propertyValue="false" id="0:237">
+                    <DataBindContext sourcePathIds="0:40-0:103" propertyKey="634" direction="true" id="0:238"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:100" name="Card 0 Select" id="0:239">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:240">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:241"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:102" id="0:242"/>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:120" name="Card 1 Focus" id="0:243">
+            <ListenerInputType listenerTypeValue="focus" id="0:244"/>
+            <ListenerViewModelChange id="0:245">
+                <BindablePropertyBoolean propertyValue="true" id="0:246">
+                    <DataBindContext sourcePathIds="0:40-0:123" propertyKey="634" direction="true" id="0:247"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:120" name="Card 1 Blur" id="0:248">
+            <ListenerInputType listenerTypeValue="blur" id="0:249"/>
+            <ListenerViewModelChange id="0:250">
+                <BindablePropertyBoolean propertyValue="false" id="0:251">
+                    <DataBindContext sourcePathIds="0:40-0:123" propertyKey="634" direction="true" id="0:252"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:120" name="Card 1 Select" id="0:253">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:254">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:255"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:122" id="0:256"/>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:140" name="Card 2 Focus" id="0:257">
+            <ListenerInputType listenerTypeValue="focus" id="0:258"/>
+            <ListenerViewModelChange id="0:259">
+                <BindablePropertyBoolean propertyValue="true" id="0:260">
+                    <DataBindContext sourcePathIds="0:40-0:143" propertyKey="634" direction="true" id="0:261"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:140" name="Card 2 Blur" id="0:262">
+            <ListenerInputType listenerTypeValue="blur" id="0:263"/>
+            <ListenerViewModelChange id="0:264">
+                <BindablePropertyBoolean propertyValue="false" id="0:265">
+                    <DataBindContext sourcePathIds="0:40-0:143" propertyKey="634" direction="true" id="0:266"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:140" name="Card 2 Select" id="0:267">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:268">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:269"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:142" id="0:270"/>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:160" name="Card 3 Focus" id="0:271">
+            <ListenerInputType listenerTypeValue="focus" id="0:272"/>
+            <ListenerViewModelChange id="0:273">
+                <BindablePropertyBoolean propertyValue="true" id="0:274">
+                    <DataBindContext sourcePathIds="0:40-0:163" propertyKey="634" direction="true" id="0:275"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:160" name="Card 3 Blur" id="0:276">
+            <ListenerInputType listenerTypeValue="blur" id="0:277"/>
+            <ListenerViewModelChange id="0:278">
+                <BindablePropertyBoolean propertyValue="false" id="0:279">
+                    <DataBindContext sourcePathIds="0:40-0:163" propertyKey="634" direction="true" id="0:280"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:160" name="Card 3 Select" id="0:281">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:282">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:283"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:162" id="0:284"/>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:180" name="Card 4 Focus" id="0:285">
+            <ListenerInputType listenerTypeValue="focus" id="0:286"/>
+            <ListenerViewModelChange id="0:287">
+                <BindablePropertyBoolean propertyValue="true" id="0:288">
+                    <DataBindContext sourcePathIds="0:40-0:183" propertyKey="634" direction="true" id="0:289"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:180" name="Card 4 Blur" id="0:290">
+            <ListenerInputType listenerTypeValue="blur" id="0:291"/>
+            <ListenerViewModelChange id="0:292">
+                <BindablePropertyBoolean propertyValue="false" id="0:293">
+                    <DataBindContext sourcePathIds="0:40-0:183" propertyKey="634" direction="true" id="0:294"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:180" name="Card 4 Select" id="0:295">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:296">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:297"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:182" id="0:298"/>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:200" name="Card 5 Focus" id="0:299">
+            <ListenerInputType listenerTypeValue="focus" id="0:300"/>
+            <ListenerViewModelChange id="0:301">
+                <BindablePropertyBoolean propertyValue="true" id="0:302">
+                    <DataBindContext sourcePathIds="0:40-0:203" propertyKey="634" direction="true" id="0:303"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:200" name="Card 5 Blur" id="0:304">
+            <ListenerInputType listenerTypeValue="blur" id="0:305"/>
+            <ListenerViewModelChange id="0:306">
+                <BindablePropertyBoolean propertyValue="false" id="0:307">
+                    <DataBindContext sourcePathIds="0:40-0:203" propertyKey="634" direction="true" id="0:308"/>
+                </BindablePropertyBoolean>
+            </ListenerViewModelChange>
+        </StateMachineListener>
+        <StateMachineListener targetId="0:200" name="Card 5 Select" id="0:309">
+            <ListenerInputTypeKeyboard listenerTypeValue="keyboard" id="0:310">
+                <KeyboardInput keyType="enter" keyPhase="1" id="0:311"/>
+            </ListenerInputTypeKeyboard>
+            <ListenerFireEvent eventId="0:202" id="0:312"/>
+        </StateMachineListener>
+            <StateMachineLayer name="Card 0" id="0:106">
+                <AnyState x="0" y="-120" id="0:313"/>
+                <ExitState x="120" y="-120" id="0:314"/>
+                <EntryState id="0:315">
+                    <StateTransition stateToId="0:107" id="0:316"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:104" id="0:107">
+                    <StateTransition stateToId="0:108" duration="150" id="0:317">
+                    <TransitionViewModelCondition id="0:318">
+                        <TransitionPropertyViewModelComparator id="0:319">
+                            <BindablePropertyBoolean id="0:320">
+                                <DataBindContext sourcePathIds="0:40-0:103" propertyKey="634" id="0:321"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:322"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:105" id="0:108">
+                    <StateTransition stateToId="0:107" duration="150" id="0:323">
+                    <TransitionViewModelCondition id="0:324">
+                        <TransitionPropertyViewModelComparator id="0:325">
+                            <BindablePropertyBoolean id="0:326">
+                                <DataBindContext sourcePathIds="0:40-0:103" propertyKey="634" id="0:327"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:328"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+            <StateMachineLayer name="Card 1" id="0:126">
+                <AnyState x="0" y="-120" id="0:329"/>
+                <ExitState x="120" y="-120" id="0:330"/>
+                <EntryState id="0:331">
+                    <StateTransition stateToId="0:127" id="0:332"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:124" id="0:127">
+                    <StateTransition stateToId="0:128" duration="150" id="0:333">
+                    <TransitionViewModelCondition id="0:334">
+                        <TransitionPropertyViewModelComparator id="0:335">
+                            <BindablePropertyBoolean id="0:336">
+                                <DataBindContext sourcePathIds="0:40-0:123" propertyKey="634" id="0:337"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:338"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:125" id="0:128">
+                    <StateTransition stateToId="0:127" duration="150" id="0:339">
+                    <TransitionViewModelCondition id="0:340">
+                        <TransitionPropertyViewModelComparator id="0:341">
+                            <BindablePropertyBoolean id="0:342">
+                                <DataBindContext sourcePathIds="0:40-0:123" propertyKey="634" id="0:343"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:344"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+            <StateMachineLayer name="Card 2" id="0:146">
+                <AnyState x="0" y="-120" id="0:345"/>
+                <ExitState x="120" y="-120" id="0:346"/>
+                <EntryState id="0:347">
+                    <StateTransition stateToId="0:147" id="0:348"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:144" id="0:147">
+                    <StateTransition stateToId="0:148" duration="150" id="0:349">
+                    <TransitionViewModelCondition id="0:350">
+                        <TransitionPropertyViewModelComparator id="0:351">
+                            <BindablePropertyBoolean id="0:352">
+                                <DataBindContext sourcePathIds="0:40-0:143" propertyKey="634" id="0:353"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:354"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:145" id="0:148">
+                    <StateTransition stateToId="0:147" duration="150" id="0:355">
+                    <TransitionViewModelCondition id="0:356">
+                        <TransitionPropertyViewModelComparator id="0:357">
+                            <BindablePropertyBoolean id="0:358">
+                                <DataBindContext sourcePathIds="0:40-0:143" propertyKey="634" id="0:359"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:360"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+            <StateMachineLayer name="Card 3" id="0:166">
+                <AnyState x="0" y="-120" id="0:361"/>
+                <ExitState x="120" y="-120" id="0:362"/>
+                <EntryState id="0:363">
+                    <StateTransition stateToId="0:167" id="0:364"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:164" id="0:167">
+                    <StateTransition stateToId="0:168" duration="150" id="0:365">
+                    <TransitionViewModelCondition id="0:366">
+                        <TransitionPropertyViewModelComparator id="0:367">
+                            <BindablePropertyBoolean id="0:368">
+                                <DataBindContext sourcePathIds="0:40-0:163" propertyKey="634" id="0:369"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:370"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:165" id="0:168">
+                    <StateTransition stateToId="0:167" duration="150" id="0:371">
+                    <TransitionViewModelCondition id="0:372">
+                        <TransitionPropertyViewModelComparator id="0:373">
+                            <BindablePropertyBoolean id="0:374">
+                                <DataBindContext sourcePathIds="0:40-0:163" propertyKey="634" id="0:375"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:376"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+            <StateMachineLayer name="Card 4" id="0:186">
+                <AnyState x="0" y="-120" id="0:377"/>
+                <ExitState x="120" y="-120" id="0:378"/>
+                <EntryState id="0:379">
+                    <StateTransition stateToId="0:187" id="0:380"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:184" id="0:187">
+                    <StateTransition stateToId="0:188" duration="150" id="0:381">
+                    <TransitionViewModelCondition id="0:382">
+                        <TransitionPropertyViewModelComparator id="0:383">
+                            <BindablePropertyBoolean id="0:384">
+                                <DataBindContext sourcePathIds="0:40-0:183" propertyKey="634" id="0:385"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:386"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:185" id="0:188">
+                    <StateTransition stateToId="0:187" duration="150" id="0:387">
+                    <TransitionViewModelCondition id="0:388">
+                        <TransitionPropertyViewModelComparator id="0:389">
+                            <BindablePropertyBoolean id="0:390">
+                                <DataBindContext sourcePathIds="0:40-0:183" propertyKey="634" id="0:391"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:392"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+            <StateMachineLayer name="Card 5" id="0:206">
+                <AnyState x="0" y="-120" id="0:393"/>
+                <ExitState x="120" y="-120" id="0:394"/>
+                <EntryState id="0:395">
+                    <StateTransition stateToId="0:207" id="0:396"/>
+                </EntryState>
+                <AnimationState x="200" animationId="0:204" id="0:207">
+                    <StateTransition stateToId="0:208" duration="150" id="0:397">
+                    <TransitionViewModelCondition id="0:398">
+                        <TransitionPropertyViewModelComparator id="0:399">
+                            <BindablePropertyBoolean id="0:400">
+                                <DataBindContext sourcePathIds="0:40-0:203" propertyKey="634" id="0:401"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="true" id="0:402"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="400" animationId="0:205" id="0:208">
+                    <StateTransition stateToId="0:207" duration="150" id="0:403">
+                    <TransitionViewModelCondition id="0:404">
+                        <TransitionPropertyViewModelComparator id="0:405">
+                            <BindablePropertyBoolean id="0:406">
+                                <DataBindContext sourcePathIds="0:40-0:203" propertyKey="634" id="0:407"/>
+                            </BindablePropertyBoolean>
+                        </TransitionPropertyViewModelComparator>
+                        <TransitionValueBooleanComparator value="false" id="0:408"/>
+                    </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+            </StateMachineLayer>
+        </StateMachine>
+        <LinearAnimation duration="1" name="Card 0 Rest" id="0:104">
+            <KeyedObject objectId="0:100" id="0:409">
+                <KeyedProperty property="scaleX" id="0:410">
+                    <KeyFrameDouble value="1" frame="0" id="0:411"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:412">
+                    <KeyFrameDouble value="1" frame="0" id="0:413"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:101" id="0:414">
+                <KeyedProperty property="colorValue" id="0:415">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:416"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 0 Focused" id="0:105">
+            <KeyedObject objectId="0:100" id="0:417">
+                <KeyedProperty property="scaleX" id="0:418">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:419"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:420">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:421"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:101" id="0:422">
+                <KeyedProperty property="colorValue" id="0:423">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:424"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 1 Rest" id="0:124">
+            <KeyedObject objectId="0:120" id="0:425">
+                <KeyedProperty property="scaleX" id="0:426">
+                    <KeyFrameDouble value="1" frame="0" id="0:427"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:428">
+                    <KeyFrameDouble value="1" frame="0" id="0:429"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:121" id="0:430">
+                <KeyedProperty property="colorValue" id="0:431">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:432"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 1 Focused" id="0:125">
+            <KeyedObject objectId="0:120" id="0:433">
+                <KeyedProperty property="scaleX" id="0:434">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:435"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:436">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:437"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:121" id="0:438">
+                <KeyedProperty property="colorValue" id="0:439">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:440"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 2 Rest" id="0:144">
+            <KeyedObject objectId="0:140" id="0:441">
+                <KeyedProperty property="scaleX" id="0:442">
+                    <KeyFrameDouble value="1" frame="0" id="0:443"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:444">
+                    <KeyFrameDouble value="1" frame="0" id="0:445"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:141" id="0:446">
+                <KeyedProperty property="colorValue" id="0:447">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:448"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 2 Focused" id="0:145">
+            <KeyedObject objectId="0:140" id="0:449">
+                <KeyedProperty property="scaleX" id="0:450">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:451"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:452">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:453"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:141" id="0:454">
+                <KeyedProperty property="colorValue" id="0:455">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:456"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 3 Rest" id="0:164">
+            <KeyedObject objectId="0:160" id="0:457">
+                <KeyedProperty property="scaleX" id="0:458">
+                    <KeyFrameDouble value="1" frame="0" id="0:459"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:460">
+                    <KeyFrameDouble value="1" frame="0" id="0:461"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:161" id="0:462">
+                <KeyedProperty property="colorValue" id="0:463">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:464"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 3 Focused" id="0:165">
+            <KeyedObject objectId="0:160" id="0:465">
+                <KeyedProperty property="scaleX" id="0:466">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:467"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:468">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:469"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:161" id="0:470">
+                <KeyedProperty property="colorValue" id="0:471">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:472"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 4 Rest" id="0:184">
+            <KeyedObject objectId="0:180" id="0:473">
+                <KeyedProperty property="scaleX" id="0:474">
+                    <KeyFrameDouble value="1" frame="0" id="0:475"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:476">
+                    <KeyFrameDouble value="1" frame="0" id="0:477"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:181" id="0:478">
+                <KeyedProperty property="colorValue" id="0:479">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:480"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 4 Focused" id="0:185">
+            <KeyedObject objectId="0:180" id="0:481">
+                <KeyedProperty property="scaleX" id="0:482">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:483"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:484">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:485"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:181" id="0:486">
+                <KeyedProperty property="colorValue" id="0:487">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:488"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 5 Rest" id="0:204">
+            <KeyedObject objectId="0:200" id="0:489">
+                <KeyedProperty property="scaleX" id="0:490">
+                    <KeyFrameDouble value="1" frame="0" id="0:491"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:492">
+                    <KeyFrameDouble value="1" frame="0" id="0:493"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:201" id="0:494">
+                <KeyedProperty property="colorValue" id="0:495">
+                    <KeyFrameColor value="FF3C4043" frame="0" id="0:496"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="Card 5 Focused" id="0:205">
+            <KeyedObject objectId="0:200" id="0:497">
+                <KeyedProperty property="scaleX" id="0:498">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:499"/>
+                </KeyedProperty>
+                <KeyedProperty property="scaleY" id="0:500">
+                    <KeyFrameDouble value="1.12" frame="0" id="0:501"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:201" id="0:502">
+                <KeyedProperty property="colorValue" id="0:503">
+                    <KeyFrameColor value="FF8AB4F8" frame="0" id="0:504"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+    </Artboard>
+    <ViewModel defaultInstanceId="0:41" name="FocusGrid" id="0:40">
+        <ViewModelPropertyBoolean name="card0Focused" id="0:103"/>
+        <ViewModelPropertyBoolean name="card1Focused" id="0:123"/>
+        <ViewModelPropertyBoolean name="card2Focused" id="0:143"/>
+        <ViewModelPropertyBoolean name="card3Focused" id="0:163"/>
+        <ViewModelPropertyBoolean name="card4Focused" id="0:183"/>
+        <ViewModelPropertyBoolean name="card5Focused" id="0:203"/>
+        <ViewModelInstance exports="true" name="Default" id="0:41">
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:103" id="0:505"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:123" id="0:506"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:143" id="0:507"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:163" id="0:508"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:183" id="0:509"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:203" id="0:510"/>
+        </ViewModelInstance>
+    </ViewModel>
+</Rive>

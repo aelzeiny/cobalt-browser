@@ -150,7 +150,8 @@ class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
  protected:
   // Loads focus_nodes_list_order.riv: four focusable buttons stacked
   // vertically.
-  HTMLRiveElement* LoadFocusFixture() {
+  HTMLRiveElement* LoadFocusFixture(
+      const char* filename = "focus_nodes_list_order.riv") {
     SetBodyInnerHTML(R"HTML(
       <button id="before">before</button>
       <rive-player id="player" style="width: 500px; height: 500px;">
@@ -160,7 +161,7 @@ class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
     UpdateAllLifecyclePhasesForTest();
     auto* rive_elem = static_cast<HTMLRiveElement*>(GetElementById("player"));
     std::optional<std::vector<uint8_t>> bytes =
-        base::ReadFileToBytes(GetTestDataPath("focus_nodes_list_order.riv"));
+        base::ReadFileToBytes(GetTestDataPath(filename));
     EXPECT_TRUE(bytes.has_value());
     EXPECT_TRUE(rive_elem->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
     UpdateAllLifecyclePhasesForTest();
@@ -324,6 +325,41 @@ TEST_F(HTMLRiveElementFocusTest, MovingFocusChangesRenderedFrame) {
   SkBitmap second = render();
   EXPECT_GT(differing_pixels(unfocused, first), 0u);
   EXPECT_GT(differing_pixels(first, second), 0u);
+}
+
+// focus_grid.riv: a 3x2 grid of cards that highlight while focused and fire
+// "select-<n>" on Enter. Generated with the Rive CLI from RML.
+TEST_F(HTMLRiveElementFocusTest, GridNavigatesInTwoDimensionsAndSelects) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture("focus_grid.riv");
+  ASSERT_TRUE(rive_elem->hasFocusNodes());
+
+  // Entering from above lands in the top row; walk the grid's edges.
+  EXPECT_TRUE(rive_elem->moveFocus("down"));
+  EXPECT_FALSE(rive_elem->moveFocus("up"));
+  CountMoves(rive_elem, "left");
+  EXPECT_EQ(CountMoves(rive_elem, "right"), 2);
+  EXPECT_EQ(CountMoves(rive_elem, "down"), 1);
+  EXPECT_EQ(CountMoves(rive_elem, "left"), 2);
+  EXPECT_EQ(CountMoves(rive_elem, "up"), 1);
+
+  // Now on the top-left card (card 0). Enter goes to the focused card.
+  rive_elem->Focus();
+  EXPECT_TRUE(PressKey(rive_elem, "Enter"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->lastEventName(), "select-0");
+
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  EXPECT_TRUE(PressKey(rive_elem, "Enter"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->lastEventName(), "select-1");
+
+  // Entering from below lands in the bottom row, on its leftmost card.
+  rive_elem->clearFocus();
+  EXPECT_TRUE(rive_elem->moveFocus("up"));
+  EXPECT_FALSE(rive_elem->moveFocus("down"));
+  EXPECT_FALSE(rive_elem->moveFocus("left"));
+  EXPECT_TRUE(PressKey(rive_elem, "Enter"));
+  EXPECT_EQ(rive_elem->lastEventName(), "select-3");
 }
 
 }  // namespace blink
