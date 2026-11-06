@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "services/network/public/mojom/fetch_api.mojom-blink.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-blink.h"
@@ -17,13 +18,17 @@
 #include "third_party/blink/renderer/core/events/keyboard_event.h"
 #include "third_party/blink/renderer/core/events/mouse_event.h"
 #include "third_party/blink/renderer/core/events/pointer_event.h"
+#include "third_party/blink/renderer/core/execution_context/agent.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/html/rive/rive_paint_canvas_renderer.h"
 #include "third_party/blink/renderer/core/html_names.h"
 #include "third_party/blink/renderer/platform/graphics/paint_invalidation_reason.h"
+#include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_loader_options.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
+#include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
+#include "third_party/blink/renderer/platform/wtf/functional.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wignored-qualifiers"
@@ -560,29 +565,93 @@ bool HTMLRiveElement::moveFocus(const String& direction) {
     return false;
   }
   bool moved = false;
-  // Directional moves need a starting point, so they enter at the first node
-  // when nothing inside the artboard is focused yet.
+  // With nothing focused yet, a directional move enters at the edge it is
+  // coming from, e.g. moving up enters at the bottom-most node.
   const bool entering = !hasRiveFocus();
   if (EqualIgnoringASCIICase(direction, "next")) {
     moved = state_machine_->focusNext();
   } else if (EqualIgnoringASCIICase(direction, "previous")) {
     moved = state_machine_->focusPrevious();
   } else if (EqualIgnoringASCIICase(direction, "left")) {
-    moved =
-        entering ? state_machine_->focusNext() : state_machine_->focusLeft();
+    moved = entering ? EnterRiveFocusFromEdge(rive::Direction::left)
+                     : state_machine_->focusLeft();
   } else if (EqualIgnoringASCIICase(direction, "right")) {
-    moved =
-        entering ? state_machine_->focusNext() : state_machine_->focusRight();
+    moved = entering ? EnterRiveFocusFromEdge(rive::Direction::right)
+                     : state_machine_->focusRight();
   } else if (EqualIgnoringASCIICase(direction, "up")) {
-    moved = entering ? state_machine_->focusNext() : state_machine_->focusUp();
+    moved = entering ? EnterRiveFocusFromEdge(rive::Direction::up)
+                     : state_machine_->focusUp();
   } else if (EqualIgnoringASCIICase(direction, "down")) {
-    moved =
-        entering ? state_machine_->focusNext() : state_machine_->focusDown();
+    moved = entering ? EnterRiveFocusFromEdge(rive::Direction::down)
+                     : state_machine_->focusDown();
   } else {
     return false;
   }
   OnRiveFocusChanged();
   return moved;
+}
+
+bool HTMLRiveElement::EnterRiveFocusFromEdge(rive::Direction direction) {
+  rive::FocusManager* focus_manager = state_machine_->focusManager();
+  // Collect focus stops the same way rive's own traversal does: traversable,
+  // focusable, and still eligible (e.g. not hidden).
+  std::vector<std::pair<rive::FocusNode*, rive::AABB>> stops;
+  std::vector<rive::FocusNode*> pending;
+  for (const auto& root : focus_manager->rootNodes()) {
+    pending.push_back(root.get());
+  }
+  while (!pending.empty()) {
+    rive::FocusNode* node = pending.back();
+    pending.pop_back();
+    for (const auto& child : node->children()) {
+      pending.push_back(child.get());
+    }
+    if (!node->canTraverse() || !node->canFocus()) {
+      continue;
+    }
+    rive::Focusable* focusable = node->focusable();
+    if (focusable ? !focusable->isEligibleForFocusTraversal()
+                  : node->hadFocusable()) {
+      continue;
+    }
+    rive::AABB bounds;
+    if (focusable && focusable->worldBounds(bounds)) {
+      stops.emplace_back(node, bounds);
+    } else if (node->hasWorldBounds()) {
+      stops.emplace_back(node, node->worldBounds());
+    }
+  }
+  if (stops.empty()) {
+    return state_machine_->focusNext();
+  }
+
+  // Lower score wins: distance from the entry edge, then position along it.
+  auto score = [direction](const rive::AABB& b) {
+    if (direction == rive::Direction::up) {
+      return std::make_pair(-b.maxY, b.minX);
+    }
+    if (direction == rive::Direction::down) {
+      return std::make_pair(b.minY, b.minX);
+    }
+    if (direction == rive::Direction::left) {
+      return std::make_pair(-b.maxX, b.minY);
+    }
+    return std::make_pair(b.minX, b.minY);
+  };
+  auto best = std::min_element(stops.begin(), stops.end(),
+                               [&score](const auto& a, const auto& b) {
+                                 return score(a.second) < score(b.second);
+                               });
+  focus_manager->setFocus(rive::ref_rcp(best->first));
+  return true;
+}
+
+void HTMLRiveElement::EnterRiveFocusIfNeeded(mojom::blink::FocusType type) {
+  // The page may already have entered (e.g. focus() then moveFocus("up")).
+  if (!IsFocused() || !hasFocusNodes() || hasRiveFocus()) {
+    return;
+  }
+  moveFocus(type == mojom::blink::FocusType::kBackward ? "previous" : "next");
 }
 
 void HTMLRiveElement::clearFocus() {
@@ -756,11 +825,13 @@ void HTMLRiveElement::SetFocused(bool received, mojom::blink::FocusType type) {
     }
     return;
   }
-  // Entering by keyboard or script lands on the first node (or the last one
-  // for Shift+Tab). Mouse presses pick their node via the state machine.
-  if (type != mojom::blink::FocusType::kMouse && hasFocusNodes() &&
-      !hasRiveFocus()) {
-    moveFocus(type == mojom::blink::FocusType::kBackward ? "previous" : "next");
+  // Mouse presses pick their node via the state machine. Otherwise enter at
+  // the end of the current task, which lets a page that moves focus from
+  // script pick the entry edge first, e.g. focus() then moveFocus("up").
+  if (type != mojom::blink::FocusType::kMouse && hasFocusNodes()) {
+    GetDocument().GetAgent().event_loop()->EnqueueMicrotask(
+        WTF::BindOnce(&HTMLRiveElement::EnterRiveFocusIfNeeded,
+                      WrapWeakPersistent(this), type));
   }
 }
 

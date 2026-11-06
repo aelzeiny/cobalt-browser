@@ -17,9 +17,11 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/event_type_names.h"
 #include "third_party/blink/renderer/core/events/keyboard_event.h"
+#include "third_party/blink/renderer/core/execution_context/agent.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
+#include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -186,6 +188,10 @@ class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
     }
     return moves;
   }
+
+  void RunMicrotasks() {
+    GetDocument().GetAgent().event_loop()->PerformMicrotaskCheckpoint();
+  }
 };
 
 TEST_F(HTMLRiveElementFocusTest, NotFocusableWithoutFocusNodes) {
@@ -209,10 +215,41 @@ TEST_F(HTMLRiveElementFocusTest, DomFocusEntersAndBlurClears) {
   HTMLRiveElement* rive_elem = LoadFocusFixture();
   rive_elem->Focus();
   EXPECT_TRUE(rive_elem->IsFocused());
+  // Entry waits for the end of the current task.
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+  RunMicrotasks();
   EXPECT_TRUE(rive_elem->hasRiveFocus());
+  // Default entry is the first node, which is the top button.
+  EXPECT_FALSE(rive_elem->moveFocus("up"));
 
   GetElementById("after")->Focus();
   EXPECT_FALSE(rive_elem->hasRiveFocus());
+}
+
+TEST_F(HTMLRiveElementFocusTest, DirectionalEntryStartsAtNearEdge) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+
+  // Coming up from below lands on the bottom button.
+  EXPECT_TRUE(rive_elem->moveFocus("up"));
+  EXPECT_FALSE(rive_elem->moveFocus("down"));
+  EXPECT_EQ(CountMoves(rive_elem, "up"), 3);
+
+  // Coming down from above lands on the top button.
+  rive_elem->clearFocus();
+  EXPECT_TRUE(rive_elem->moveFocus("down"));
+  EXPECT_FALSE(rive_elem->moveFocus("up"));
+  EXPECT_EQ(CountMoves(rive_elem, "down"), 3);
+}
+
+TEST_F(HTMLRiveElementFocusTest, ScriptCanPickEntryEdgeAfterFocus) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture();
+  // What a page's D-pad handler does when moving up into the player.
+  rive_elem->Focus();
+  EXPECT_TRUE(rive_elem->moveFocus("up"));
+  RunMicrotasks();
+  // Still on the bottom button: the deferred default entry didn't override it.
+  EXPECT_FALSE(rive_elem->moveFocus("down"));
+  EXPECT_EQ(CountMoves(rive_elem, "up"), 3);
 }
 
 TEST_F(HTMLRiveElementFocusTest, DirectionalMovesStopAtEdges) {
@@ -238,6 +275,7 @@ TEST_F(HTMLRiveElementFocusTest, DirectionalMovesStopAtEdges) {
 TEST_F(HTMLRiveElementFocusTest, ArrowKeysNavigateAndReleaseAtEdges) {
   HTMLRiveElement* rive_elem = LoadFocusFixture();
   rive_elem->Focus();
+  RunMicrotasks();
   ASSERT_TRUE(rive_elem->hasRiveFocus());
 
   // Go to the top, then walk down with the arrow key.

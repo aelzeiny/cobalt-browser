@@ -151,6 +151,8 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   void CancelScheduledAnimation();
   void InvalidateRivePaint();
   bool HandleKeyboardEvent(const KeyboardEvent& event);
+  bool EnterRiveFocusFromEdge(rive::Direction direction);
+  void EnterRiveFocusIfNeeded(mojom::blink::FocusType type);
   void OnRiveFocusChanged();
 
   rive::Fit GetRiveFit() const;
