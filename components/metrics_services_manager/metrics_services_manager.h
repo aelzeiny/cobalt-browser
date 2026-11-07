@@ -7,8 +7,6 @@
 
 #include <memory>
 
-#include "build/build_config.h"
-
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/threading/thread_checker.h"

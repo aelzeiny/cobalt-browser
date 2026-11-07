@@ -1,4 +1,3 @@
-#include "build/build_config.h"
 // Copyright 2025 The Cobalt Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
+
 #include <memory>
 #include <utility>
 
@@ -24,7 +25,6 @@
 #include "build/build_config.h"
 #include "cobalt/browser/metrics/cobalt_enabled_state_provider.h"
 #include "cobalt/browser/metrics/cobalt_metrics_service_client.h"
-#include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
 #include "cobalt/shell/common/shell_paths.h"
 #include "components/metrics/file_metrics_provider.h"
 #include "components/metrics/metrics_pref_names.h"
