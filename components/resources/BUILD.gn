@@ -38,9 +38,13 @@ group("resources") {
     "../gcm_driver/resources:resources",
     "../net_log/resources",
     "../signin/core/browser/resources",
-    "../translate/translate_internals:resources",
     "../webui:resources",
   ]
+
+  # Cobalt: client never translates web pages; prune translate_internals WebUI.
+  if (!is_cobalt) {
+    public_deps += [ "../translate/translate_internals:resources" ]
+  }
 
   if (is_ios) {
     public_deps += [ "../management/resources:resources" ]

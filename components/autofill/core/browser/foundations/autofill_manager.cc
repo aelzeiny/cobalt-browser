@@ -33,9 +33,13 @@
 #include "components/autofill/core/common/autofill_internals/logging_scope.h"
 #include "components/autofill/core/common/autofill_payments_features.h"
 #include "components/autofill/core/common/autofill_switches.h"
-#include "components/language_detection/core/constants.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/language_detection/core/constants.h"  // nogncheck
+#endif
 #include "components/optimization_guide/machine_learning_tflite_buildflags.h"
-#include "components/translate/core/common/language_detection_details.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/translate/core/common/language_detection_details.h"  // nogncheck
+#endif
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "ui/gfx/geometry/rect_f.h"
 
@@ -148,13 +152,17 @@ void GetMlPredictionsIfNeeded(
 
 AutofillManager::AutofillManager(AutofillDriver* driver)
     : driver_(CHECK_DEREF(driver)) {
+#if !BUILDFLAG(IS_COBALT)
   if (auto* translate_driver = client().GetTranslateDriver()) {
     translate_observation_.Observe(translate_driver);
   }
+#endif
 }
 
 AutofillManager::~AutofillManager() {
+#if !BUILDFLAG(IS_COBALT)
   translate_observation_.Reset();
+#endif
 }
 
 void AutofillManager::OnAutofillDriverLifecycleStateChanged(
@@ -175,6 +183,7 @@ void AutofillManager::Reset() {
   form_structures_.clear();
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void AutofillManager::OnLanguageDetermined(
     const translate::LanguageDetectionDetails& details) {
   if (!base::FeatureList::IsEnabled(features::kAutofillPageLanguageDetection)) {
@@ -210,13 +219,18 @@ void AutofillManager::OnTranslateDriverDestroyed(
     translate::TranslateDriver* translate_driver) {
   translate_observation_.Reset();
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 LanguageCode AutofillManager::GetCurrentPageLanguage() {
+#if !BUILDFLAG(IS_COBALT)
   const translate::LanguageState* language_state = client().GetLanguageState();
   if (!language_state) {
     return LanguageCode();
   }
   return LanguageCode(language_state->current_language());
+#else
+  return LanguageCode();
+#endif  // !BUILDFLAG(IS_COBALT)
 }
 
 void AutofillManager::OnDidFillAutofillFormData(

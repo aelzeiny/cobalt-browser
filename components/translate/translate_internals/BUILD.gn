@@ -19,6 +19,7 @@ source_set("translate_internals") {
     "//services/network/public/cpp:cpp",
     "//ui/base",
   ]
+  public_deps = [ ":resources" ]
 }
 
 build_webui("build") {

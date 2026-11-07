@@ -903,8 +903,13 @@ static_library("browser") {
   ]
 
   if (is_cobalt) {
-    deps -= [ "//components/language_detection/core" ]
-    deps += [ "//components/language_detection/core:constants" ]
+    # Cobalt: InnerTube delivers pre-translated strings. Remove translate
+    # and language_detection.
+    public_deps -= [ "//components/translate/core/browser" ]
+    deps -= [
+      "//components/language_detection/core",
+      "//components/translate/core/common",
+    ]
   }
 
   if (!is_fuchsia) {
