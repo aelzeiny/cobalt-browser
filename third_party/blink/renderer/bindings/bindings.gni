@@ -279,6 +279,7 @@ if (is_cobalt) {
     "*v8_remote_playback*",
     "*v8_union_dommatrix_float32array_float64array*",
     "*v8_union_string_unsignedlong*",
+    "*v8_gamepad*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.

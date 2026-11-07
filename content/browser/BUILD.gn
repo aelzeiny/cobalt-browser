@@ -3807,6 +3807,10 @@ source_set("browser") {
   }
 
   if (is_cobalt) {
+    deps -= [
+      # Cobalt: Gamepad is dead code on Living Room TV.
+      "//device/gamepad",
+    ]
     sources -= [
       # Cobalt: Built-in AI / Echo AI is not supported on TV devices.
       "ai/echo_ai_language_model.cc",

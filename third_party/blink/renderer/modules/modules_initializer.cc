@@ -83,7 +83,9 @@
 #include "third_party/blink/renderer/modules/file_system_access/bucket_file_system_agent.h"
 #include "third_party/blink/renderer/modules/filesystem/dragged_isolated_file_system_impl.h"
 #include "third_party/blink/renderer/modules/filesystem/file_system_dispatcher.h"
-#include "third_party/blink/renderer/modules/gamepad/navigator_gamepad.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/gamepad/navigator_gamepad.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/image_downloader/image_downloader_impl.h"
 #if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/indexed_db_names.h"  // nogncheck
@@ -379,7 +381,9 @@ void ModulesInitializer::OnClearWindowObjectInMainWorld(
   DeviceMotionController::From(window);
   DeviceOrientationController::From(window);
   DeviceOrientationAbsoluteController::From(window);
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
   NavigatorGamepad::From(*window.navigator());
+#endif
 
   // TODO(nhiroki): Figure out why ServiceWorkerContainer needs to be eagerly
   // initialized.

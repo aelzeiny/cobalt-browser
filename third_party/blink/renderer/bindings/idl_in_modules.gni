@@ -1448,6 +1448,14 @@ if (is_cobalt) {
           ])
   static_idl_files_in_modules = []
   static_idl_files_in_modules = _filtered_static_idl_hardware
+
+  # Cobalt: Gamepad is dead code on Living Room TV.
+  _filtered_static_idl_gamepad =
+      filter_exclude(
+          static_idl_files_in_modules,
+          [ "//third_party/blink/renderer/modules/gamepad/*" ])
+  static_idl_files_in_modules = []
+  static_idl_files_in_modules = _filtered_static_idl_gamepad
 }
 
 if (!use_webrtc_peer_connection) {
