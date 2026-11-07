@@ -15,9 +15,12 @@
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
-#include "services/device/geolocation/geolocation_provider.h"
-#include "services/device/geolocation/geolocation_provider_impl.h"
-#include "services/device/geolocation/public_ip_address_geolocation_provider.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: geolocation provider headers are pruned on Starboard.
+#include "services/device/geolocation/geolocation_provider.h"        // nogncheck
+#include "services/device/geolocation/geolocation_provider_impl.h"   // nogncheck
+#include "services/device/geolocation/public_ip_address_geolocation_provider.h"  // nogncheck
+#endif
 #include "services/device/public/cpp/compute_pressure/buildflags.h"
 #include "services/device/public/mojom/battery_monitor.mojom.h"
 #include "services/device/public/mojom/device_service.mojom.h"
@@ -35,13 +38,19 @@
 #include "services/device/public/mojom/usb_manager_test.mojom.h"
 #include "services/device/public/mojom/vibration_manager.mojom.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
-#if !BUILDFLAG(IS_COBALT)
+#if BUILDFLAG(IS_STARBOARD)
+// Cobalt: include real LocationProvider header to avoid ODR hazards.
+#include "services/device/public/cpp/geolocation/location_provider.h"
+#endif
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: USB mojo and wake lock headers are pruned on Starboard.
 #include "services/device/usb/mojo/device_manager_impl.h"  // nogncheck
 #include "services/device/usb/mojo/device_manager_test.h"  // nogncheck
+#include "services/device/wake_lock/wake_lock_context.h"   // nogncheck
+#include "services/device/wake_lock/wake_lock_provider.h"  // nogncheck
 #endif
-#include "services/device/wake_lock/wake_lock_context.h"
-#include "services/device/wake_lock/wake_lock_provider.h"
 #include "services/service_manager/public/cpp/interface_provider.h"
+#include "ui/gfx/native_widget_types.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -73,7 +82,13 @@ class SharedURLLoaderFactory;
 
 namespace device {
 
-#if !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_STARBOARD)
+using CustomLocationProviderCallback =
+    base::RepeatingCallback<std::unique_ptr<LocationProvider>()>;
+using WakeLockContextCallback = base::RepeatingCallback<gfx::NativeView(int)>;
+#endif
+
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_STARBOARD)
 class HidManagerImpl;
 #endif
 
@@ -87,9 +102,12 @@ class SerialPortManagerImpl;
 
 class DeviceService;
 class GeolocationSystemPermissionManager;
+// Cobalt: pruned device subsystem classes on Starboard.
+#if !BUILDFLAG(IS_STARBOARD)
 class PowerMonitorMessageBroadcaster;
 class PublicIpAddressLocationNotifier;
 class SensorProviderImpl;
+#endif
 class TimeZoneMonitor;
 
 // NOTE: See the comments on the definitions of PublicIpAddressLocationNotifier,
@@ -132,8 +150,11 @@ class DeviceService : public mojom::DeviceService {
 
   void AddReceiver(mojo::PendingReceiver<mojom::DeviceService> receiver);
 
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: sensor provider is pruned on Starboard.
   void SetSensorProviderImplForTesting(
       std::unique_ptr<SensorProviderImpl> sensor_provider);
+#endif
 
   // Supports global override of GeolocationContext binding within the service.
   using GeolocationContextBinder = base::RepeatingCallback<void(
@@ -241,13 +262,16 @@ class DeviceService : public mojom::DeviceService {
       mojo::PendingReceiver<mojom::UsbDeviceManagerTest> receiver) override;
 
   mojo::ReceiverSet<mojom::DeviceService> receivers_;
+  // Cobalt: pruned device subsystem members on Starboard.
+#if !BUILDFLAG(IS_STARBOARD)
   std::unique_ptr<PowerMonitorMessageBroadcaster>
       power_monitor_message_broadcaster_;
   std::unique_ptr<PublicIpAddressGeolocationProvider>
       public_ip_address_geolocation_provider_;
   std::unique_ptr<SensorProviderImpl> sensor_provider_;
+#endif
   std::unique_ptr<TimeZoneMonitor> time_zone_monitor_;
-#if !BUILDFLAG(IS_COBALT)
+#if !BUILDFLAG(IS_STARBOARD)
   std::unique_ptr<usb::DeviceManagerImpl> usb_device_manager_;
   std::unique_ptr<usb::DeviceManagerTest> usb_device_manager_test_;
 #endif
@@ -258,7 +282,9 @@ class DeviceService : public mojom::DeviceService {
 
   const std::string geolocation_api_key_;
   WakeLockContextCallback wake_lock_context_callback_;
+#if !BUILDFLAG(IS_STARBOARD)
   WakeLockProvider wake_lock_provider_;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // Binds |java_interface_provider_| to an interface registry that exposes
@@ -272,7 +298,7 @@ class DeviceService : public mojom::DeviceService {
   bool java_interface_provider_initialized_ = false;
 
   base::android::ScopedJavaGlobalRef<jobject> java_nfc_delegate_;
-#else
+#elif !BUILDFLAG(IS_STARBOARD)
   std::unique_ptr<HidManagerImpl> hid_manager_;
 #endif
 

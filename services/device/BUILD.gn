@@ -91,7 +91,27 @@ source_set("lib") {
     defines = [ "IS_SERIAL_ENABLED_PLATFORM" ]
   }
 
-  if (is_cobalt) {
+  if (is_starboard) {
+    # Cobalt: Prune dead device services on Starboard (keep time_zone_monitor).
+    deps -= [
+      "//services/device/battery",
+      "//services/device/fingerprint",
+      "//services/device/generic_sensor",
+      "//services/device/geolocation",
+      "//services/device/hid",
+      "//services/device/power_monitor",
+      "//services/device/public/mojom:geolocation_internals",
+      "//services/device/screen_orientation",
+      "//services/device/usb/mojo",
+      "//services/device/vibration",
+      "//services/device/wake_lock",
+    ]
+    deps += [
+      "//services/device/public/cpp/geolocation",
+      "//services/network/public/cpp",
+    ]
+  } else if (is_cobalt) {
+    # Upstream Cobalt base removal on non-Starboard (e.g. Android/tvOS).
     deps -= [
       "//services/device/usb/mojo",
     ]
