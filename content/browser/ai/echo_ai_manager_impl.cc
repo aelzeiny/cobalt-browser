@@ -7,8 +7,11 @@
 #include "base/no_destructor.h"
 #include "base/supports_user_data.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "components/language/core/common/locale_util.h"
-#include "components/optimization_guide/core/optimization_guide_features.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/optimization_guide/core/optimization_guide_features.h"  // nogncheck
+#endif
 #include "content/browser/ai/echo_ai_language_model.h"
 #include "content/browser/ai/echo_ai_rewriter.h"
 #include "content/browser/ai/echo_ai_summarizer.h"
@@ -208,11 +211,19 @@ void EchoAIManagerImpl::GetLanguageModelParams(
     GetLanguageModelParamsCallback callback) {
   std::move(callback).Run(blink::mojom::AILanguageModelParams::New(
       blink::mojom::AILanguageModelSamplingParams::New(
+#if BUILDFLAG(IS_COBALT)
+          /*default_top_k=*/3,
+          /*default_temperature=*/1.0f),
+      blink::mojom::AILanguageModelSamplingParams::New(
+          /*max_top_k=*/128,
+          /*temperature=*/2.0f)));
+#else
           optimization_guide::features::GetOnDeviceModelDefaultTopK(),
           optimization_guide::features::GetOnDeviceModelDefaultTemperature()),
       blink::mojom::AILanguageModelSamplingParams::New(
           optimization_guide::features::GetOnDeviceModelMaxTopK(),
           /*temperature=*/2.0f)));
+#endif
 }
 
 void EchoAIManagerImpl::CanCreateWriter(
@@ -326,9 +337,15 @@ void EchoAIManagerImpl::ReturnAILanguageModelCreationResult(
       sampling_params
           ? std::move(sampling_params)
           : blink::mojom::AILanguageModelSamplingParams::New(
+#if BUILDFLAG(IS_COBALT)
+                /*default_top_k=*/3,
+                /*default_temperature=*/1.0f
+#else
                 optimization_guide::features::GetOnDeviceModelDefaultTopK(),
                 optimization_guide::features::
-                    GetOnDeviceModelDefaultTemperature());
+                    GetOnDeviceModelDefaultTemperature()
+#endif
+            );
 
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<EchoAILanguageModel>(model_sampling_params->Clone(),

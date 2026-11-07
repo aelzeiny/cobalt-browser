@@ -115,7 +115,9 @@
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "services/tracing/public/cpp/tracing_features.h"
 #include "third_party/blink/public/common/origin_trials/trial_token_validator.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/tflite/buildflags.h"
+#endif
 #include "tools/v8_context_snapshot/buildflags.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/ui_base_switches.h"
@@ -199,8 +201,10 @@
 #include "base/fuchsia/system_info.h"
 #endif
 
+#if !BUILDFLAG(IS_COBALT)
 #if BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
 #include "third_party/cpuinfo/src/include/cpuinfo.h"
+#endif
 #endif
 
 #if defined(ADDRESS_SANITIZER)
@@ -450,11 +454,13 @@ void PreSandboxInit() {
 #endif
   InitializeWebRtcModuleBeforeSandbox();
 
+#if !BUILDFLAG(IS_COBALT)
 #if BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
   // cpuinfo needs to parse /proc/cpuinfo, or its equivalent.
   if (!cpuinfo_initialize()) {
     LOG(ERROR) << "Failed to initialize cpuinfo";
   }
+#endif
 #endif
 
   // Preload and cache the results since the methods may use the prlimit64

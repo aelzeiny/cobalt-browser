@@ -130,8 +130,6 @@ source_set("browser") {
     "//components/network_session_configurator/browser",
     "//components/offline_pages/buildflags",
     "//components/offline_pages/core/request_header",
-    "//components/optimization_guide/core:features",
-    "//components/optimization_guide/public/mojom",
     "//components/os_crypt/sync",
     "//components/payments/content/icon",
     "//components/payments/mojom",
@@ -353,6 +351,12 @@ source_set("browser") {
 
   if (is_cobalt) {
     deps -= [ "//components/language_detection/content/common" ]
+  } else {
+    # Cobalt: optimization_guide is dead on Living Room TV.
+    deps += [
+      "//components/optimization_guide/core:features",
+      "//components/optimization_guide/public/mojom",
+    ]
   }
 
   public_deps = [
