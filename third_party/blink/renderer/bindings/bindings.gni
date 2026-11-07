@@ -274,29 +274,10 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
-    # Cobalt: Prune WebGPU bindings.
-    "*v8_canvas_2d_gpu_*",
-    "*v8_gpu.*",
-    "*v8_gpu_*",
-    "*v8_union_*gpu*",
-    "*v8_sync_iterator_gpu*",
-    "*v8_xr_gpu*",
-    "*v8_*wgsl*",
-    "*v8_union_htmlvideoelement_videoframe*",
-    "*v8_union_htmlcanvaselement_*videoframe*",
-    "*v8_union_undefined_unsignedlonglongenforcerange*",
-    "*v8_webgl*rendering_context_webgpu*",
-    # Cobalt: Prune imagecapture and mediacapturefromelement bindings.
-    "*v8_image_capture*",
-    "*v8_fill_light_mode*",
-    "*v8_metering_mode*",
-    "*v8_red_eye_reduction*",
-    "*v8_photo_capabilities*",
-    "*v8_photo_settings*",
-    "*v8_canvas_capture_media_stream_track*",
     # Cobalt: Living Room is a 2nd-screen receiver, not a sender.
     "*v8_presentation*",
     "*v8_remote_playback*",
+    "*v8_union_dommatrix_float32array_float64array*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.
@@ -324,6 +305,34 @@ if (is_cobalt) {
     "*v8_usb.*",
     "*v8_usb_*",
     "*v8_watch_advertisements_options*",
+  ]
+
+  # Cobalt: Sensor, breakout_box, and NFC exclusion patterns.
+  cobalt_sensors_exclude_patterns = [
+    # Sensor
+    "*v8_absolute_orientation_sensor*",
+    "*v8_accelerometer*",
+    "*v8_ambient_light_sensor*",
+    "*v8_create_virtual_sensor_options*",
+    "*v8_gravity_sensor*",
+    "*v8_gyroscope*",
+    "*v8_linear_acceleration_sensor*",
+    "*v8_local_coordinate_system*",
+    "*v8_magnetometer*",
+    "*v8_orientation_sensor*",
+    "*v8_relative_orientation_sensor*",
+    "*v8_sensor*",
+    "*v8_spatial_sensor_options*",
+    "*v8_virtual_sensor_*",
+
+    # Breakout Box
+    "*v8_media_stream_track_generator*",
+    "*v8_media_stream_track_processor*",
+    "*v8_video_track_generator*",
+
+    # NFC
+    "*v8_ndef*",
+    "*v8_union_arraybuffer_arraybufferview_ndefmessageinit_string*",
   ]
 
   cobalt_webgpu_exclude_patterns = [

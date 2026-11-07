@@ -207,6 +207,8 @@ component("modules") {
       "//third_party/blink/renderer/modules/webusb",
       # Cobalt: IndexedDB is unused on Living Room TV.
       "//third_party/blink/renderer/modules/indexeddb",
+      "//third_party/blink/renderer/modules/sensor",  # Cobalt: Exclude sensor
+      "//third_party/blink/renderer/modules/breakout_box",  # Cobalt: Exclude breakout_box
     ]
     sub_modules += [
       "//third_party/blink/renderer/modules/cobalt:h_5_vcc",
@@ -355,6 +357,13 @@ source_set("modules_testing") {
     sources -= [
       "accessibility/testing/internals_accessibility.cc",
       "accessibility/testing/internals_accessibility.h",
+    ]
+  }
+
+  if (is_cobalt) {
+    sources -= [
+      "sensor/testing/internals_sensor.cc",
+      "sensor/testing/internals_sensor.h",
     ]
   }
 
@@ -921,6 +930,7 @@ source_set("unit_tests") {
   if (is_cobalt) {
     deps += [ "//third_party/blink/renderer/modules/cobalt/h5vcc_experiments:experiments_utils" ]
     deps -= [
+      "//third_party/blink/renderer/modules/breakout_box:unit_tests",
       "//third_party/blink/renderer/modules/hid:unit_tests",
       "//third_party/blink/renderer/modules/ml:unit_tests",
       "//third_party/blink/renderer/modules/webgpu:unit_tests",

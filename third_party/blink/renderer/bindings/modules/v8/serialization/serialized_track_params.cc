@@ -4,8 +4,8 @@
 
 #include "third_party/blink/renderer/bindings/modules/v8/serialization/serialized_track_params.h"
 #include "build/build_config.h"
-#include "third_party/blink/renderer/modules/breakout_box/media_stream_track_generator.h"
 #if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/breakout_box/media_stream_track_generator.h"  // nogncheck
 #include "third_party/blink/renderer/modules/mediacapturefromelement/canvas_capture_media_stream_track.h"
 #endif
 #include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
@@ -56,9 +56,9 @@ SerializedTrackImplSubtype SerializeTrackImplSubtype(
 #if !BUILDFLAG(IS_COBALT)
   } else if (dispatcher.ToMostDerived<CanvasCaptureMediaStreamTrack>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeCanvasCapture;
-#endif
   } else if (dispatcher.ToMostDerived<MediaStreamTrackGenerator>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeGenerator;
+#endif
   } else if (dispatcher.ToMostDerived<BrowserCaptureMediaStreamTrack>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeBrowserCapture;
   }
@@ -111,7 +111,11 @@ const WrapperTypeInfo* DeserializeTrackImplSubtype(
       return CanvasCaptureMediaStreamTrack::GetStaticWrapperTypeInfo();
 #endif
     case SerializedTrackImplSubtype::kTrackImplSubtypeGenerator:
+#if !BUILDFLAG(IS_COBALT)
       return MediaStreamTrackGenerator::GetStaticWrapperTypeInfo();
+#else
+      return nullptr;
+#endif
     case SerializedTrackImplSubtype::kTrackImplSubtypeBrowserCapture:
       return BrowserCaptureMediaStreamTrack::GetStaticWrapperTypeInfo();
   }
