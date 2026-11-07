@@ -1734,6 +1734,12 @@ mojom("mojom_modules") {
     },
   ]
 
+  # Cobalt: IndexedDB (modules/indexeddb) is not built; drop its blink typemaps
+  # so mojom-blink does not reference indexed_db_blink_mojom_traits.h.
+  if (is_cobalt) {
+    blink_cpp_typemaps = []
+  }
+
   cpp_typemaps = [
     {
       types = [

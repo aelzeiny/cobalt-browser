@@ -1359,6 +1359,14 @@ if (is_cobalt) {
             ],
             "abspath")
   }
+
+  # Cobalt: IndexedDB is unused on Living Room TV. Exclude all IndexedDB IDLs.
+  _filtered_static_idl_idb =
+      filter_exclude(
+          static_idl_files_in_modules,
+          [ "//third_party/blink/renderer/modules/indexeddb/*" ])
+  static_idl_files_in_modules = []
+  static_idl_files_in_modules = _filtered_static_idl_idb
 }
 
 if (!use_webrtc_peer_connection) {

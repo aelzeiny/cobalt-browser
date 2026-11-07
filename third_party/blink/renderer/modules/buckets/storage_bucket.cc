@@ -5,6 +5,7 @@
 #include "third_party/blink/renderer/modules/buckets/storage_bucket.h"
 
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/renderer/bindings/core/v8/active_script_wrappable_creation_key.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
@@ -18,7 +19,9 @@
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage.h"
 #include "third_party/blink/renderer/modules/cache_storage/global_cache_storage.h"
 #include "third_party/blink/renderer/modules/file_system_access/storage_manager_file_system_access.h"
-#include "third_party/blink/renderer/modules/indexeddb/idb_factory.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/indexeddb/idb_factory.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/locks/lock_manager.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 
@@ -161,6 +164,8 @@ ScriptPromise<IDLNullable<IDLDOMHighResTimeStamp>> StorageBucket::expires(
   return promise;
 }
 
+// Cobalt: IndexedDB is disabled on Cobalt TV.
+#if !BUILDFLAG(IS_COBALT)
 IDBFactory* StorageBucket::indexedDB() {
   if (!idb_factory_) {
     idb_factory_ = MakeGarbageCollected<IDBFactory>(GetExecutionContext());
@@ -170,6 +175,7 @@ IDBFactory* StorageBucket::indexedDB() {
   }
   return idb_factory_.Get();
 }
+#endif
 
 LockManager* StorageBucket::locks() {
   if (!lock_manager_) {
@@ -218,7 +224,10 @@ void StorageBucket::GetDirectoryForDevTools(
 
 void StorageBucket::Trace(Visitor* visitor) const {
   visitor->Trace(remote_);
+  // Cobalt: IndexedDB is disabled on Cobalt TV.
+#if !BUILDFLAG(IS_COBALT)
   visitor->Trace(idb_factory_);
+#endif
   visitor->Trace(lock_manager_);
   visitor->Trace(navigator_base_);
   visitor->Trace(caches_);

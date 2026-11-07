@@ -74,8 +74,10 @@
 #include "third_party/blink/renderer/modules/filesystem/file_system_dispatcher.h"
 #include "third_party/blink/renderer/modules/gamepad/navigator_gamepad.h"
 #include "third_party/blink/renderer/modules/image_downloader/image_downloader_impl.h"
-#include "third_party/blink/renderer/modules/indexed_db_names.h"
-#include "third_party/blink/renderer/modules/indexeddb/inspector_indexed_db_agent.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/indexed_db_names.h"  // nogncheck
+#include "third_party/blink/renderer/modules/indexeddb/inspector_indexed_db_agent.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/installation/installation_service_impl.h"
 #include "third_party/blink/renderer/modules/launch/web_launch_service_impl.h"
 #include "third_party/blink/renderer/modules/manifest/manifest_manager.h"
@@ -189,7 +191,11 @@ void ModulesInitializer::Initialize() {
   // Strings must be initialized before calling CoreInitializer::init().
   const unsigned kModulesStaticStringsCount =
       event_interface_names::kModulesNamesCount +
-      event_target_names::kModulesNamesCount + indexed_db_names::kNamesCount;
+      event_target_names::kModulesNamesCount
+#if !BUILDFLAG(IS_COBALT)
+      + indexed_db_names::kNamesCount
+#endif
+      ;
   StringImpl::ReserveStaticStringsCapacityForSize(
       kModulesStaticStringsCount + StringImpl::AllStaticStrings().size());
 
@@ -197,7 +203,9 @@ void ModulesInitializer::Initialize() {
   event_target_names::InitModules();
   Document::RegisterEventFactory(EventModulesFactory::Create());
   ModuleBindingsInitializer::Init();
+#if !BUILDFLAG(IS_COBALT)
   indexed_db_names::Init();
+#endif
   media_capabilities_names::Init();
   AXObjectCache::Init(AXObjectCacheImpl::Create);
   DraggedIsolatedFileSystem::Init(
@@ -318,8 +326,10 @@ void ModulesInitializer::InitInspectorAgentSession(
     InspectedFrames* inspected_frames,
     Page* page) const {
 #if BUILDFLAG(ENABLE_DEVTOOLS_BACKEND)
+#if !BUILDFLAG(IS_COBALT)
   session->CreateAndAppend<InspectorIndexedDBAgent>(inspected_frames,
                                                     session->V8Session());
+#endif
   session->CreateAndAppend<DeviceOrientationInspectorAgent>(inspected_frames);
   session->CreateAndAppend<InspectorDOMStorageAgent>(inspected_frames);
   session->CreateAndAppend<InspectorAccessibilityAgent>(inspected_frames,
