@@ -37,7 +37,9 @@
 #include "components/autofill/core/common/mojom/autofill_types.mojom.h"
 #include "components/autofill/core/common/signatures.h"
 #include "components/autofill/core/common/unique_ids.h"
-#include "components/translate/core/browser/translate_driver.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/translate/core/browser/translate_driver.h"  // nogncheck
+#endif
 
 namespace autofill {
 
@@ -62,7 +64,10 @@ class FormInteractionsUkmLogger;
 //
 // It is owned by the AutofillDriver.
 class AutofillManager
-    : public translate::TranslateDriver::LanguageDetectionObserver {
+#if !BUILDFLAG(IS_COBALT)
+    : public translate::TranslateDriver::LanguageDetectionObserver
+#endif
+{
  public:
   using LifecycleState = AutofillDriver::LifecycleState;
 
@@ -215,7 +220,11 @@ class AutofillManager
   AutofillManager(const AutofillManager&) = delete;
   AutofillManager& operator=(const AutofillManager&) = delete;
 
+#if !BUILDFLAG(IS_COBALT)
   ~AutofillManager() override;
+#else
+  virtual ~AutofillManager();
+#endif
 
   // Notifies `Observer`s and calls Reset() if applicable.
   void OnAutofillDriverLifecycleStateChanged(
@@ -272,6 +281,7 @@ class AutofillManager
 
   virtual void ReportAutofillWebOTPMetrics(bool used_web_otp) = 0;
 
+#if !BUILDFLAG(IS_COBALT)
   // translate::TranslateDriver::LanguageDetectionObserver:
   void OnTranslateDriverDestroyed(
       translate::TranslateDriver* translate_driver) override;
@@ -282,6 +292,7 @@ class AutofillManager
   // language, its predictions are not recomputed.
   void OnLanguageDetermined(
       const translate::LanguageDetectionDetails& details) override;
+#endif
 
   // Fills `form_structure` and `autofill_field` with the cached elements
   // corresponding to `form_id` and `field_id`.  This might have the side-effect
@@ -501,10 +512,12 @@ class AutofillManager
   // `*driver_` owns this object.
   const raw_ref<AutofillDriver> driver_;
 
+#if !BUILDFLAG(IS_COBALT)
   // Observer needed to re-run heuristics when the language has been detected.
   base::ScopedObservation<translate::TranslateDriver,
                           translate::TranslateDriver::LanguageDetectionObserver>
       translate_observation_{this};
+#endif
 
   // Our copy of the form data.
   std::map<FormGlobalId, std::unique_ptr<FormStructure>> form_structures_;

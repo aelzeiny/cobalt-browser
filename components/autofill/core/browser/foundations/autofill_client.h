@@ -41,7 +41,15 @@
 #include "components/device_reauth/device_authenticator.h"
 #include "components/profile_metrics/browser_profile_type.h"
 #include "components/security_state/core/security_state.h"
-#include "components/translate/core/browser/language_state.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/translate/core/browser/language_state.h"  // nogncheck
+#else
+// Cobalt: client never translates web pages; forward-declare translate classes.
+namespace translate {
+class LanguageState;
+class TranslateDriver;
+}  // namespace translate
+#endif
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "ui/base/window_open_disposition.h"
