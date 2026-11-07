@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//media/media_options.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
 
 blink_modules_sources("mediastream") {
@@ -146,6 +147,16 @@ blink_modules_sources("mediastream") {
     sources -= [
       "remote_media_stream_track_adapter.cc",
       "remote_media_stream_track_adapter.h",
+    ]
+  }
+
+  if (is_cobalt && !chrome_wide_echo_cancellation_supported) {
+    # Cobalt: Remove WebRTC APM from mediastream. Voice search uses raw mic audio.
+    sources -= [
+      "media_stream_audio_processor.cc",
+      "media_stream_audio_processor.h",
+      "processed_local_audio_source.cc",
+      "processed_local_audio_source.h",
     ]
   }
 }
