@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "build/build_config.h"
 #include "cobalt/browser/metrics/cobalt_enabled_state_provider.h"
 #include "cobalt/browser/metrics/cobalt_metrics_service_client.h"
 #include "components/metrics/metrics_state_manager.h"
@@ -43,8 +44,10 @@ class CobaltMetricsServicesManagerClient
   std::unique_ptr<::metrics::MetricsServiceClient> CreateMetricsServiceClient(
       variations::SyntheticTrialRegistry* synthetic_trial_registry) override;
 
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<variations::VariationsService> CreateVariationsService(
       variations::SyntheticTrialRegistry* synthetic_trial_registry) override;
+#endif
 
   // Returns whether there are any Incognito browsers/tabs open. Cobalt has no
   // icognito mode.

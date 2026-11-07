@@ -24,6 +24,7 @@ constexpr char kVariationsBeaconFilename[] = "Variations";
 
 // Variations preference keys.
 constexpr char kVariationsCrashStreak[] = "variations_crash_streak";
+constexpr char kVariationsLastFetchTime[] = "variations_last_fetch_time";
 constexpr char kStabilityExitedCleanly[] =
     "user_experience_metrics.stability.exited_cleanly";
 constexpr char kLastLoggedProcessExitTimestampMs[] =

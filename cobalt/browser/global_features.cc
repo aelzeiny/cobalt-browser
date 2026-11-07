@@ -37,7 +37,6 @@
 #include "components/prefs/pref_registry.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
-#include "components/variations/pref_names.h"
 #include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 
 namespace cobalt {
@@ -256,8 +255,8 @@ void GlobalFeatures::RegisterPrefs(PrefRegistrySimple* registry) {
   registry->RegisterDictionaryPref(kSafeConfigFeatures);
   registry->RegisterDictionaryPref(kSafeConfigFeatureParams);
   registry->RegisterStringPref(kSafeConfigMinVersion, std::string());
-  registry->RegisterTimePref(variations::prefs::kVariationsLastFetchTime,
-                             base::Time(), PrefRegistry::LOSSY_PREF);
+  registry->RegisterTimePref(kVariationsLastFetchTime, base::Time(),
+                             PrefRegistry::LOSSY_PREF);
 }
 
 }  // namespace cobalt

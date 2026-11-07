@@ -61,15 +61,6 @@
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service_factory.h"
 #include "components/prefs/scoped_user_pref_update.h"
-#include "components/variations/platform_field_trials.h"
-#include "components/variations/pref_names.h"
-#include "components/variations/service/safe_seed_manager.h"
-#include "components/variations/service/variations_field_trial_creator.h"
-#include "components/variations/service/variations_service.h"
-#include "components/variations/service/variations_service_client.h"
-#include "components/variations/synthetic_trial_registry.h"
-#include "components/variations/variations_safe_seed_store_local_state.h"
-#include "components/variations/variations_switches.h"
 #include "content/public/browser/client_certificate_delegate.h"
 #include "content/public/browser/login_delegate.h"
 #include "content/public/browser/navigation_throttle.h"
@@ -106,7 +97,6 @@
 #include "base/android/apk_assets.h"
 #include "base/android/path_utils.h"
 #include "cobalt/shell/android/shell_descriptors.h"
-#include "components/variations/android/variations_seed_bridge.h"
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -154,35 +144,6 @@ int GetCrashSignalFD(const base::CommandLine& command_line) {
 }
 
 #endif
-
-// TODO(crbug/1219642): Consider not needing VariationsServiceClient just to use
-// VariationsFieldTrialCreator.
-class ShellVariationsServiceClient
-    : public variations::VariationsServiceClient {
- public:
-  ShellVariationsServiceClient() = default;
-  ~ShellVariationsServiceClient() override = default;
-
-  // variations::VariationsServiceClient:
-  base::Version GetVersionForSimulation() override { return base::Version(); }
-  scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory()
-      override {
-    return nullptr;
-  }
-  network_time::NetworkTimeTracker* GetNetworkTimeTracker() override {
-    return nullptr;
-  }
-  version_info::Channel GetChannel() override {
-    return version_info::Channel::UNKNOWN;
-  }
-  bool OverridesRestrictParameter(std::string* parameter) override {
-    return false;
-  }
-  bool IsEnterprise() override { return false; }
-  // Profiles aren't supported, so nothing to do here.
-  void RemoveGoogleGroupsFromPrefsForDeletedProfiles(
-      PrefService* local_state) override {}
-};
 
 void BindNetworkHintsHandler(
     content::RenderFrameHost* frame_host,

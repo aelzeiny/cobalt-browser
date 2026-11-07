@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "build/build_config.h"
+
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/threading/thread_checker.h"
@@ -185,8 +187,10 @@ class MetricsServicesManager {
   // The MetricsServiceClient. Owns the MetricsService.
   std::unique_ptr<metrics::MetricsServiceClient> metrics_service_client_;
 
+#if !BUILDFLAG(IS_COBALT)
   // The VariationsService, for server-side experiments infrastructure.
   std::unique_ptr<variations::VariationsService> variations_service_;
+#endif
 
   base::WeakPtrFactory<MetricsServicesManager> weak_ptr_factory_{this};
 };
