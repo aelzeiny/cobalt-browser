@@ -14,8 +14,6 @@ static_library("search_engines") {
     "choice_made_location.h",
     "default_search_manager.cc",
     "default_search_manager.h",
-    "enterprise/default_search_policy_handler.cc",
-    "enterprise/default_search_policy_handler.h",
     "enterprise/enterprise_search_manager.cc",
     "enterprise/enterprise_search_manager.h",
     "keyword_table.cc",
@@ -58,6 +56,14 @@ static_library("search_engines") {
     "util.h",
   ]
 
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    sources += [
+      "enterprise/default_search_policy_handler.cc",
+      "enterprise/default_search_policy_handler.h",
+    ]
+  }
+
   public_deps = [
     ":search_engine_pref_names",
     ":search_engine_type",
@@ -84,8 +90,6 @@ static_library("search_engines") {
     "//components/lens/proto/server:proto",
     "//components/metrics",
     "//components/omnibox/common",
-    "//components/policy:generated",
-    "//components/policy/core/browser",
     "//components/pref_registry",
     "//components/regional_capabilities",
     "//components/regional_capabilities:country_access_reason",
@@ -94,6 +98,7 @@ static_library("search_engines") {
     "//components/strings",
     "//components/url_formatter",
     "//components/variations",
+    "//components/version_info",
     "//google_apis",
     "//net",
     "//services/data_decoder/public/cpp",
@@ -108,7 +113,8 @@ static_library("search_engines") {
     "//url",
   ]
 
-  if (!is_fuchsia) {
+  # Cobalt: does not use variations service.
+  if (!is_fuchsia && !is_cobalt) {
     deps += [ "//components/variations/service" ]
   }
 
@@ -141,7 +147,16 @@ static_library("search_engines") {
     }
   }
 
-  if (is_linux || is_win || is_mac || is_chromeos) {
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [
+      "//components/policy:generated",
+      "//components/policy/core/browser",
+    ]
+  }
+
+  if ((is_linux || is_win || is_mac || is_chromeos) && !is_cobalt) {
+    # Cobalt: enterprise policy deadcode
     sources += [
       "enterprise/search_aggregator_policy_handler.cc",
       "enterprise/search_aggregator_policy_handler.h",

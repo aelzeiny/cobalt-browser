@@ -69,9 +69,14 @@ static_library("browser") {
   ]
 
   if (use_blink) {
+    if (!is_cobalt) {
+      # Cobalt: enterprise policy deadcode
+      deps += [
+        "//components/policy:generated",
+        "//components/policy/core/browser",
+      ]
+    }
     deps += [
-      "//components/policy:generated",
-      "//components/policy/core/browser",
       "//components/privacy_sandbox:privacy_sandbox_prefs",
     ]
   }
@@ -85,7 +90,8 @@ source_set("cookie_settings") {
     "cookie_settings.h",
   ]
 
-  if (!is_ios) {
+  if (!is_ios && !is_cobalt) {
+    # Cobalt: enterprise policy deadcode
     sources += [
       "cookie_settings_policy_handler.cc",
       "cookie_settings_policy_handler.h",
@@ -98,7 +104,6 @@ source_set("cookie_settings") {
     "//build:blink_buildflags",
     "//components/content_settings/core/common",
     "//components/keyed_service/core",
-    "//components/policy/core/browser",
     "//components/pref_registry:pref_registry",
     "//components/prefs",
     "//components/privacy_sandbox:features",
@@ -109,6 +114,11 @@ source_set("cookie_settings") {
     "//net",
     "//url",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [ "//components/policy/core/browser" ]
+  }
 }
 
 source_set("unit_tests") {

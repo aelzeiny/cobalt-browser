@@ -44,11 +44,16 @@ static_library("core") {
     sources += [
       "blocked_interception_ui.cc",
       "blocked_interception_ui.h",
-      "https_only_mode_policy_handler.cc",
-      "https_only_mode_policy_handler.h",
       "mitm_software_ui.cc",
       "mitm_software_ui.h",
     ]
+    if (!is_cobalt) {
+      # Cobalt: enterprise policy deadcode
+      sources += [
+        "https_only_mode_policy_handler.cc",
+        "https_only_mode_policy_handler.h",
+      ]
+    }
   }
 
   deps = [
@@ -59,8 +64,6 @@ static_library("core") {
     "//components/google/core/common",
     "//components/history/core/browser",
     "//components/metrics",
-    "//components/policy/core/browser",
-    "//components/policy/core/common",
     "//components/prefs",
     "//components/resources",
     "//components/safe_browsing/core/common:common",
@@ -71,6 +74,14 @@ static_library("core") {
     "//third_party/zlib/google:compression_utils",
     "//ui/base",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [
+      "//components/policy/core/browser",
+      "//components/policy/core/common",
+    ]
+  }
 
   public_deps = [ "//components/security_interstitials/core/common/mojom" ]
 

@@ -16,7 +16,11 @@ static_library("metrics_services_manager") {
     "//components/metrics/structured",
     "//components/ukm",
     "//components/variations",
-    "//components/variations/service",
     "//services/network/public/cpp:cpp",
   ]
+
+  # Cobalt: does not use Finch variations service.
+  if (!is_cobalt) {
+    deps += [ "//components/variations/service" ]
+  }
 }

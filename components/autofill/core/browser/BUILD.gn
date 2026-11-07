@@ -784,10 +784,15 @@ static_library("browser") {
     sources += [
       "payments/credit_card_fido_authenticator.cc",
       "payments/credit_card_fido_authenticator.h",
-      "permissions/autofill_policy_handler.cc",
-      "permissions/autofill_policy_handler.h",
       "strike_databases/payments/fido_authentication_strike_database.h",
     ]
+    if (!is_cobalt) {
+      # Cobalt: enterprise policy deadcode
+      sources += [
+        "permissions/autofill_policy_handler.cc",
+        "permissions/autofill_policy_handler.h",
+      ]
+    }
   }
 
   if (!is_android) {
@@ -871,8 +876,6 @@ static_library("browser") {
     "//components/optimization_guide/proto:optimization_guide_proto",
     "//components/os_crypt/async/common",
     "//components/payments/core:currency_formatter",
-    "//components/policy/core/browser",
-    "//components/policy/core/common",
     "//components/pref_registry",
     "//components/prefs",
     "//components/profile_metrics",
@@ -907,8 +910,17 @@ static_library("browser") {
     deps += [ "//components/language_detection/core:constants" ]
   }
 
-  if (!is_fuchsia) {
+  # Cobalt: does not use variations service.
+  if (!is_fuchsia && !is_cobalt) {
     deps += [ "//components/variations/service" ]
+  }
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [
+      "//components/policy/core/browser",
+      "//components/policy/core/common",
+    ]
   }
 
   if (use_blink) {

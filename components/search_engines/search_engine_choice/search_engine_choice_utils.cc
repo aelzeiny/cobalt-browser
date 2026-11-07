@@ -23,9 +23,13 @@
 #include "base/version.h"
 #include "base/version_info/version_info.h"
 #include "build/branding_buildflags.h"
+#include "build/build_config.h"
 #include "components/country_codes/country_codes.h"
-#include "components/policy/core/common/policy_service.h"
-#include "components/policy/policy_constants.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/common/policy_service.h"  // nogncheck
+#include "components/policy/policy_constants.h"            // nogncheck
+#endif
 #include "components/prefs/pref_service.h"
 #include "components/search_engines/choice_made_location.h"
 #include "components/search_engines/search_engine_type.h"

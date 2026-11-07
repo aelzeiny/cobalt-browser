@@ -7,12 +7,16 @@
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "components/content_settings/core/browser/host_content_settings_map.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "components/content_settings/core/common/features.h"
 #include "components/content_settings/core/common/pref_names.h"
-#include "components/policy/core/common/management/platform_management_service.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/common/management/platform_management_service.h"  // nogncheck
+#endif
 #include "components/prefs/pref_change_registrar.h"
 #include "components/prefs/pref_service.h"
 #include "components/privacy_sandbox/privacy_sandbox_features.h"
@@ -150,6 +154,10 @@ bool TrackingProtectionSettings::HasTrackingProtectionException(
 }
 
 bool TrackingProtectionSettings::IsIpProtectionDisabledForEnterprise() {
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: enterprise policy deadcode
+  return false;
+#else
   if (pref_service_->IsManagedPreference(prefs::kIpProtectionEnabled)) {
     return !pref_service_->GetBoolean(prefs::kIpProtectionEnabled);
   }
@@ -160,6 +168,7 @@ bool TrackingProtectionSettings::IsIpProtectionDisabledForEnterprise() {
            policy::PlatformManagementService::GetInstance()->IsManaged();
   }
   return false;
+#endif
 }
 
 // TODO(https://b/333527273): Delete with Mode B cleanup

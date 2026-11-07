@@ -89,7 +89,6 @@ source_set("common") {
 
   deps = [
     "//base",
-    "//components/policy/core/browser:browser",
     "//components/prefs:prefs",
     "//components/safe_browsing:buildflags",
     "//components/safe_browsing/core/browser/db:hit_report",
@@ -99,9 +98,15 @@ source_set("common") {
     "//crypto:crypto",
     "//ipc",
     "//net",
+    "//services/network/public/cpp",
     "//services/network/public/mojom",
     "//url/ipc:url_ipc",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [ "//components/policy/core/browser:browser" ]
+  }
 
   public_deps = [
     ":features",

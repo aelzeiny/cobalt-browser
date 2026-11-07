@@ -396,8 +396,10 @@ class SyncServiceImpl : public SyncService,
   // The class that handles getting, setting, and persisting sync preferences.
   SyncPrefs sync_prefs_;
 
+#if !BUILDFLAG(IS_COBALT)
   // The class that updates SyncPrefs when a policy is applied.
   std::unique_ptr<SyncPrefsPolicyHandler> sync_prefs_policy_handler_;
+#endif
 
   // Encapsulates user signin - used to set/get the user's authenticated
   // email address and sign-out upon error.

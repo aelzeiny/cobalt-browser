@@ -22,6 +22,7 @@
 #include "base/path_service.h"
 #include "base/test/scoped_path_override.h"
 #include "base/test/task_environment.h"
+#include "build/build_config.h"
 #include "cobalt/browser/metrics/cobalt_enabled_state_provider.h"
 #include "cobalt/browser/metrics/cobalt_metrics_service_client.h"
 #include "cobalt/shell/common/shell_paths.h"
@@ -32,7 +33,6 @@
 #include "components/metrics/metrics_switches.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
-#include "components/variations/service/variations_service.h"
 #include "components/variations/synthetic_trial_registry.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -245,12 +245,8 @@ TEST_F(CobaltMetricsServicesManagerClientTest,
             manager_client_->metrics_service_client());
 }
 
-TEST_F(CobaltMetricsServicesManagerClientTest,
-       CreateVariationsServiceReturnsNullAndDoesNotCrash) {
-  EXPECT_THAT(
-      manager_client_->CreateVariationsService(synthetic_trial_registry_.get()),
-      IsNull());
-}
+// Cobalt: CreateVariationsService removed along with variations/service
+// deadcode.
 
 TEST_F(CobaltMetricsServicesManagerClientTest,
        GetEnabledStateProviderReturnsProviderWithCorrectState) {

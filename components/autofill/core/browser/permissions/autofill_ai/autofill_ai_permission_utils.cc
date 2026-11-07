@@ -23,9 +23,9 @@
 #include "components/signin/public/identity_manager/identity_manager.h"
 #include "components/sync/base/account_pref_utils.h"
 
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_COBALT)
 #include "components/variations/service/google_groups_manager.h"  // nogncheck
-#endif  // !BUILDFLAG(IS_FUCHSIA)
+#endif  // !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_COBALT)
 
 namespace autofill {
 
@@ -227,12 +227,12 @@ using FeatureCheck = base::FunctionRef<bool(const base::Feature&)>;
 
 bool MayPerformAutofillAiAction(const AutofillClient& client,
                                 AutofillAiAction action) {
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_COBALT)
   const GoogleGroupsManager* const google_groups_manager =
       client.GetGoogleGroupsManager();
 #endif
   auto feature_check = [&](const base::Feature& feature) {
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_COBALT)
     return google_groups_manager
                ? google_groups_manager->IsFeatureEnabledForProfile(feature)
                : base::FeatureList::IsEnabled(feature);

@@ -13,7 +13,10 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "components/policy/core/browser/browser_policy_connector.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/browser/browser_policy_connector.h"  // nogncheck
+#endif
 #include "components/prefs/pref_service.h"
 #include "components/safe_browsing/core/browser/db/hit_report.h"
 #include "components/safe_browsing/core/common/features.h"

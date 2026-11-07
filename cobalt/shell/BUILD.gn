@@ -91,7 +91,6 @@ group("cobalt_shell_lib_deps") {
     "//components/url_formatter",
     "//components/url_matcher",
     "//components/variations",
-    "//components/variations/service",
     "//components/web_cache/renderer",
     "//content:content_resources",
     "//content/public/app",
