@@ -84,8 +84,11 @@
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/renderer_ppapi_host.h"
 #include "content/public/renderer/window_features_converter.h"
-#include "content/renderer/accessibility/ax_tree_snapshotter_impl.h"
-#include "content/renderer/accessibility/render_accessibility_impl.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Living Room TV has no C++ AXTree; snapshotter and impl omitted.
+#include "content/renderer/accessibility/ax_tree_snapshotter_impl.h"  // nogncheck
+#include "content/renderer/accessibility/render_accessibility_impl.h"  // nogncheck
+#endif
 #include "content/renderer/accessibility/render_accessibility_manager.h"
 #include "content/renderer/agent_scheduling_group.h"
 #include "content/renderer/background_resource_fetch_assets.h"
@@ -2346,10 +2349,15 @@ void RenderFrameImpl::UndoCommitNavigation(
 void RenderFrameImpl::SnapshotAccessibilityTree(
     mojom::SnapshotAccessibilityTreeParamsPtr params,
     SnapshotAccessibilityTreeCallback callback) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return empty response.
+  std::move(callback).Run(ui::AXTreeUpdate());
+#else
   ui::AXTreeUpdate response;
   AXTreeSnapshotterImpl snapshotter(this, ui::AXMode(params->ax_mode));
   snapshotter.Snapshot(params->max_nodes, params->timeout, &response);
   std::move(callback).Run(response);
+#endif
 }
 
 void RenderFrameImpl::GetSerializedHtmlWithLocalLinks(
@@ -2406,12 +2414,22 @@ RenderFrame* RenderFrameImpl::GetMainRenderFrame() {
 }
 
 RenderAccessibility* RenderFrameImpl::GetRenderAccessibility() {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return nullptr.
+  return nullptr;
+#else
   return render_accessibility_manager_->GetRenderAccessibilityImpl();
+#endif
 }
 
 std::unique_ptr<AXTreeSnapshotter> RenderFrameImpl::CreateAXTreeSnapshotter(
     ui::AXMode ax_mode) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return nullptr.
+  return nullptr;
+#else
   return std::make_unique<AXTreeSnapshotterImpl>(this, ax_mode);
+#endif
 }
 
 #if BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
@@ -4886,11 +4904,13 @@ bool RenderFrameImpl::AllowContentInitiatedDataUrlNavigations(
 }
 
 void RenderFrameImpl::PostAccessibilityEvent(const ui::AXEvent& event) {
+#if !BUILDFLAG(IS_STARBOARD)
   if (!IsAccessibilityEnabled())
     return;
 
   render_accessibility_manager_->GetRenderAccessibilityImpl()->HandleAXEvent(
       event);
+#endif
 }
 
 bool RenderFrameImpl::SendAccessibilitySerialization(
@@ -4898,6 +4918,10 @@ bool RenderFrameImpl::SendAccessibilitySerialization(
     std::vector<ui::AXEvent> events,
     ui::AXLocationAndScrollUpdates location_and_scroll_updates,
     bool had_load_complete_messages) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; serialization is disabled.
+  return false;
+#else
   // This function should never be called from a11y unless it's enabled.
   CHECK(IsAccessibilityEnabled());
 
@@ -4905,6 +4929,7 @@ bool RenderFrameImpl::SendAccessibilitySerialization(
       ->SendAccessibilitySerialization(std::move(updates), std::move(events),
                                        std::move(location_and_scroll_updates),
                                        had_load_complete_messages);
+#endif
 }
 
 void RenderFrameImpl::AddObserver(RenderFrameObserver* observer) {

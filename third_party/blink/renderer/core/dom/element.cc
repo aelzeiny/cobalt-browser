@@ -3008,6 +3008,9 @@ const AtomicString& Element::computedRole() {
     return g_null_atom;
   }
   AXContext ax_context(document, ui::kAXModeBasic);
+  if (!document.ExistingAXObjectCache()) {
+    return g_null_atom;
+  }
   document.View()->UpdateAllLifecyclePhasesExceptPaint(
       DocumentUpdateReason::kJavaScript);
   return ax_context.GetAXObjectCache().ComputedRoleForNode(this);
@@ -3025,6 +3028,9 @@ const AtomicString& Element::ComputedRoleNoLifecycleUpdate() {
     return g_null_atom;
   }
   AXContext ax_context(document, ui::kAXModeBasic);
+  if (!document.ExistingAXObjectCache()) {
+    return g_null_atom;
+  }
   // Allocating the AXContext needs to not change lifecycle states.
   DCHECK_GE(document.Lifecycle().GetState(), DocumentLifecycle::kPrePaintClean)
       << " State was: " << document.Lifecycle().GetState();
@@ -3037,6 +3043,9 @@ String Element::computedName() {
     return String();
   }
   AXContext ax_context(document, ui::kAXModeBasic);
+  if (!document.ExistingAXObjectCache()) {
+    return String();
+  }
   document.View()->UpdateAllLifecyclePhasesExceptPaint(
       DocumentUpdateReason::kJavaScript);
   return ax_context.GetAXObjectCache().ComputedNameForNode(this);
@@ -3054,6 +3063,9 @@ String Element::ComputedNameNoLifecycleUpdate() {
     return g_null_atom;
   }
   AXContext ax_context(document, ui::kAXModeBasic);
+  if (!document.ExistingAXObjectCache()) {
+    return String();
+  }
   // Allocating the AXContext needs to not change lifecycle states.
   DCHECK_GE(document.Lifecycle().GetState(), DocumentLifecycle::kPrePaintClean)
       << " State was: " << document.Lifecycle().GetState();

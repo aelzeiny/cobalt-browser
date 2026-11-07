@@ -12,6 +12,7 @@
 #include "base/functional/bind.h"
 #include "skia/ext/image_operations.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-blink.h"
+#include "build/build_config.h"
 #include "third_party/blink/public/platform/interface_registry.h"
 #include "third_party/blink/public/platform/web_data.h"
 #include "third_party/blink/public/platform/web_string.h"
@@ -20,8 +21,11 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
-#include "third_party/blink/renderer/modules/accessibility/ax_object-inl.h"
-#include "third_party/blink/renderer/modules/accessibility/ax_object.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Living Room TV has no C++ AXTree; AXObject omitted.
+#include "third_party/blink/renderer/modules/accessibility/ax_object-inl.h"  // nogncheck
+#include "third_party/blink/renderer/modules/accessibility/ax_object.h"      // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/image_downloader/multi_resolution_image_resource_fetcher.h"
 #include "third_party/blink/renderer/platform/heap/visitor.h"
 #include "third_party/blink/renderer/platform/network/network_utils.h"
@@ -214,6 +218,11 @@ void ImageDownloaderImpl::DownloadImageFromAxNode(
     uint32_t max_bitmap_size,
     bool bypass_cache,
     DownloadImageCallback callback) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; report not found.
+  const int NOT_FOUND = 404;
+  std::move(callback).Run(NOT_FOUND, {}, {});
+#else
   LocalFrame* frame = GetSupplementable();
   CHECK(frame);
   auto* document = frame->GetDocument();
@@ -241,6 +250,7 @@ void ImageDownloaderImpl::DownloadImageFromAxNode(
   KURL url(obj->ImageDataUrl(gfx::Size()));
   DownloadImage(url, /*is_favicon=*/false, preferred_size, max_bitmap_size,
                 bypass_cache, std::move(callback));
+#endif
 }
 
 void ImageDownloaderImpl::DidDownloadImage(

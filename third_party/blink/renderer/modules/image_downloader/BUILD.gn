@@ -13,4 +13,8 @@ blink_modules_sources("image_downloader") {
   ]
 
   deps = [ "//third_party/blink/renderer/modules/accessibility:accessibility" ]
+  if (is_starboard) {
+    # Cobalt: Chromium AXTree not used on TV; image downloader does not use AXID.
+    deps -= [ "//third_party/blink/renderer/modules/accessibility:accessibility" ]
+  }
 }

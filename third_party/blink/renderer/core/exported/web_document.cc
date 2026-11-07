@@ -397,6 +397,9 @@ void WebDocument::SnapshotAccessibilityTree(
   // of nodes.
   Member<blink::AXObjectCache> cache =
       blink::AXObjectCache::CreateSnapshotter(*Unwrap<Document>(), mode);
+  if (!cache) {
+    return;
+  }
   cache->SerializeEntireTreeAndDispose(max_nodes, timeout, response, out_error);
 }
 

@@ -2950,7 +2950,7 @@ source_set("browser") {
     deps += [ "//sandbox" ]
   }
 
-  if (is_linux) {
+  if (is_linux && !is_cobalt) {
     sources += [ "accessibility/browser_accessibility_state_impl_auralinux.cc" ]
   }
 

@@ -59,7 +59,6 @@ component("modules") {
   sub_modules = [
     ":modules_generated",
     "//third_party/blink/renderer/bindings/modules/v8",
-    "//third_party/blink/renderer/modules/accessibility",
     "//third_party/blink/renderer/modules/ad_auction",
     "//third_party/blink/renderer/modules/ai",
     "//third_party/blink/renderer/modules/animationworklet",
@@ -174,6 +173,11 @@ component("modules") {
     "//third_party/blink/renderer/modules/worklet",
     "//third_party/blink/renderer/modules/xr",
   ]
+
+  if (!is_starboard) {
+    # Cobalt: Chromium AXTree not used on TV; Kabuki uses JS TTS screen reader.
+    sub_modules += [ "//third_party/blink/renderer/modules/accessibility" ]
+  }
 
   # If in the future privacy sandbox components are removed from the code base, ignore this if block.
   if (!enable_privacy_sandbox_apis) {
@@ -333,6 +337,13 @@ source_set("modules_testing") {
     "webaudio/testing/internals_web_audio.cc",
     "webaudio/testing/internals_web_audio.h",
   ]
+
+  if (is_starboard) {
+    sources -= [
+      "accessibility/testing/internals_accessibility.cc",
+      "accessibility/testing/internals_accessibility.h",
+    ]
+  }
 
   # If in the future privacy sandbox components are removed from the code base, ignore this if block.
   if (!enable_privacy_sandbox_apis) {
@@ -771,6 +782,8 @@ source_set("unit_tests") {
 
   if (is_cobalt) {
     sources -= filter_include(sources, [ "mediarecorder/*" ])
+    sources -= filter_include(sources, [ "accessibility/*" ])
+    sources -= [ "content_extraction/ai_page_content_agent_unittest.cc" ]
     sources += [
       "cobalt/h5vcc_accessibility/h_5_vcc_accessibility_test.cc",
       "cobalt/h5vcc_experiments/experiments_utils_test.cc",

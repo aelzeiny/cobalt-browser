@@ -34,6 +34,8 @@
 #include <optional>
 #include <utility>
 
+#include "build/build_config.h"
+
 #include "base/auto_reset.h"
 #include "base/containers/adapters.h"
 #include "base/containers/contains.h"
@@ -3308,6 +3310,10 @@ size_t g_ax_object_cache_count = 0;
 }  // namespace
 
 void Document::AddAXContext(AXContext* context) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; do not track AXContexts or create AXObjectCache.
+  return;
+#else
   DCHECK(IsMainThread());
   // The only case when |&cache_owner| is not |this| is when this is a
   // popup. We want popups to share the AXObjectCache of their parent
@@ -3338,6 +3344,7 @@ void Document::AddAXContext(AXContext* context) {
             style_change_reason::kAccessibility));
     g_ax_object_cache_count++;
   }
+#endif
 }
 
 void Document::AXContextModeChanged() {
