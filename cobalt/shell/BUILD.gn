@@ -27,7 +27,7 @@ if (is_ios) {
 }
 
 # Cobalt: TV platforms use pure Aura/Ozone delegate; views is desktop-only.
-shell_use_toolkit_views = false
+shell_use_toolkit_views = toolkit_views && !is_castos && !is_starboard
 
 support_web_tests =
     !is_android && !(is_ios && target_platform == "tvos") && !is_starboard
@@ -127,7 +127,8 @@ group("cobalt_shell_lib_deps") {
     public_deps += [ "//media/mojo/services" ]
   }
 
-  if (is_linux) {
+  # Cobalt: Desktop Linux theme/toolkit factory is unused on Starboard and links //ui/views.
+  if (is_linux && !is_starboard && toolkit_views) {
     public_deps += [ "//ui/linux:linux_ui_factory" ]
   }
 
