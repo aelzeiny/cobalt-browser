@@ -144,7 +144,11 @@ class MODULES_EXPORT MediaStreamTrackImpl : public MediaStreamTrack,
   void TransferAudioFrameStatsTo(
       MediaStreamTrackPlatform::AudioFrameStats& destination);
 
+#if !BUILDFLAG(IS_COBALT)
   ImageCapture* GetImageCapture() override { return image_capture_.Get(); }
+#else
+  ImageCapture* GetImageCapture() override { return nullptr; }
+#endif
 
   std::optional<const MediaStreamDevice> device() const override;
 
@@ -225,7 +229,9 @@ class MODULES_EXPORT MediaStreamTrackImpl : public MediaStreamTrack,
   HeapHashSet<Member<SpeechRecognitionMediaStreamAudioSink>> registered_sinks_;
   bool is_iterating_registered_media_streams_ = false;
   const Member<MediaStreamComponent> component_;
+#if !BUILDFLAG(IS_COBALT)
   Member<ImageCapture> image_capture_;
+#endif
   WeakMember<ExecutionContext> execution_context_;
   HeapHashSet<WeakMember<MediaStreamTrack::Observer>> observers_;
   bool muted_ = false;

@@ -1010,14 +1010,11 @@ IN_PROC_BROWSER_TEST_F(WebRtcGetUserMediaBrowserTest,
   EXPECT_TRUE(ExecJs(shell(), "concurrentGetUserMediaStop()"));
 }
 
+// Cobalt: HTMLMediaElement.captureStream (mediacapturefromelement) is removed
+// from the build.
 // TODO(crbug.com/1087081) : Flaky on all platforms.
-#if BUILDFLAG(IS_ANDROIDTV)
-#define MAYBE_GetUserMediaAfterStopElementCapture \
-  GetUserMediaAfterStopElementCapture
-#else
 #define MAYBE_GetUserMediaAfterStopElementCapture \
   DISABLED_GetUserMediaAfterStopElementCapture
-#endif
 IN_PROC_BROWSER_TEST_F(WebRtcGetUserMediaBrowserTest,
                        MAYBE_GetUserMediaAfterStopElementCapture) {
   ASSERT_TRUE(embedded_test_server()->Start());

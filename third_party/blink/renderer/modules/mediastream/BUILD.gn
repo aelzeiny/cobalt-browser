@@ -150,6 +150,15 @@ blink_modules_sources("mediastream") {
     ]
   }
 
+  if (is_cobalt) {
+    # Cobalt: Remove imagecapture dependency
+    deps -= [
+      "//third_party/blink/renderer/modules/imagecapture:imagecapture",
+    ]
+    allow_circular_includes_from -=
+        [ "//third_party/blink/renderer/modules/imagecapture:imagecapture" ]
+  }
+
   if (is_cobalt && !chrome_wide_echo_cancellation_supported) {
     # Cobalt: Remove WebRTC APM from mediastream. Voice search uses raw mic audio.
     sources -= [
