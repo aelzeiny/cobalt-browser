@@ -244,6 +244,15 @@ TEST_F(CobaltMetricsServicesManagerClientTest,
             manager_client_->metrics_service_client());
 }
 
+#if !BUILDFLAG(IS_COBALT)
+TEST_F(CobaltMetricsServicesManagerClientTest,
+       CreateVariationsServiceReturnsNullAndDoesNotCrash) {
+  EXPECT_THAT(
+      manager_client_->CreateVariationsService(synthetic_trial_registry_.get()),
+      IsNull());
+}
+#endif
+
 TEST_F(CobaltMetricsServicesManagerClientTest,
        GetEnabledStateProviderReturnsProviderWithCorrectState) {
   // Case 1: Pref is false.

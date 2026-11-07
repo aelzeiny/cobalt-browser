@@ -51,6 +51,18 @@ CobaltMetricsServicesManagerClient::CreateMetricsServiceClient(
   return metrics_service_client;
 }
 
+#if !BUILDFLAG(IS_COBALT)
+std::unique_ptr<variations::VariationsService>
+CobaltMetricsServicesManagerClient::CreateVariationsService(
+    variations::SyntheticTrialRegistry* synthetic_trial_registry) {
+  // VariationsService is not needed for Finch support in Cobalt. We don't
+  // use things like the Finch seed or client-side Field Trials. Instead,
+  // we have our own custom implementation that is driven by the server via
+  // H5vccExperiments.
+  NOTIMPLEMENTED();
+  return nullptr;
+}
+#endif
 void StoreMetricsClientInfo(const ::metrics::ClientInfo& client_info) {
   // ClientInfo is a way to get data into the metrics component, but goes unused
   // in Cobalt. Do nothing with it for now.
