@@ -191,6 +191,15 @@ component("capture_lib") {
       "video/create_video_capture_device_factory.cc",
       "video/create_video_capture_device_factory.h",
     ]
+    deps -= [
+      "//services/video_capture/public/mojom",
+    ]
+    deps += [
+      "//components/viz/common",
+      "//gpu/command_buffer/client",
+      "//media/capture/mojom:video_effects_manager",
+      "//services/video_effects/public/mojom",
+    ]
   }
 
   if (is_android && !is_cobalt) {
@@ -548,6 +557,16 @@ test("capture_unittests") {
     sources += [
       "video/linux/v4l2_capture_delegate_unittest.cc",
       "video/linux/video_capture_device_factory_v4l2_unittest.cc",
+    ]
+  }
+
+  if (is_cobalt) {
+    deps -= [
+      "//services/video_capture/public/mojom",
+    ]
+    deps += [
+      "//media/capture/mojom:video_effects_manager",
+      "//services/video_effects/public/mojom",
     ]
   }
 

@@ -546,6 +546,8 @@ source_set("browser_sources") {
       "media_player_utils.cc",
       "media_player_utils.h",
     ]
+    # Cobalt: Living Room TVs have no webcams.
+    sources -= [ "video_capture_service.h" ]
   }
 
   if (rtc_use_pipewire) {
@@ -608,6 +610,11 @@ source_set("browser_sources") {
     public_deps -= [
       "//services/on_device_model/public/cpp",
       "//services/on_device_model/public/mojom",
+      "//services/video_capture/public/mojom",
+    ]
+    public_deps += [
+      "//media/capture/mojom:video_effects_manager",
+      "//services/video_effects/public/mojom",
     ]
   }
 
