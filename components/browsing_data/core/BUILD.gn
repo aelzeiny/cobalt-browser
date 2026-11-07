@@ -49,6 +49,21 @@ static_library("core") {
     "//ui/base",
   ]
 
+  if (is_cobalt) {
+    # Cobalt: TV has no autofill or password_manager counters.
+    sources -= [
+      "counters/autofill_counter.cc",
+      "counters/autofill_counter.h",
+      "counters/passwords_counter.cc",
+      "counters/passwords_counter.h",
+    ]
+    deps -= [
+      "//components/autofill/core/browser",
+      "//components/password_manager/core/browser",
+      "//components/password_manager/core/browser/features:password_features",
+    ]
+  }
+
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 }
 

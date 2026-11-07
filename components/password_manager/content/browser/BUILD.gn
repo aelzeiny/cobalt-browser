@@ -107,6 +107,7 @@ source_set("unit_tests") {
     ":test_support",
     "//components/autofill/core/browser:test_support",
     "//components/password_manager/core/browser:test_support",
+    "//components/password_manager/core/common:features",
     "//components/prefs:test_support",
     "//components/safe_browsing:buildflags",
     "//content/test:test_support",

@@ -3576,7 +3576,6 @@ source_set("browser") {
 
     deps += [
       "//components/device_event_log",
-      "//components/password_manager/core/common",
       "//components/soda:constants",
       "//components/soda:soda",
       "//components/soda:utils",
@@ -3587,6 +3586,11 @@ source_set("browser") {
       "//media/mojo/mojom:speech_recognition",
       "//ui/base",
     ]
+
+    if (!is_cobalt) {
+      # Cobalt: TV has no password_manager.
+      deps += [ "//components/password_manager/core/common" ]
+    }
   }
 
   if (is_cobalt_hermetic_build) {

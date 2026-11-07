@@ -324,13 +324,16 @@ static_library("core") {
   public_deps = [
     ":features",
     ":model_executor",
-    "//components/autofill/core/common",
     "//components/leveldb_proto",
     "//components/optimization_guide:machine_learning_tflite_buildflags",
     "//components/optimization_guide/core:interfaces",
     "//components/optimization_guide/proto:optimization_guide_proto",
     "//third_party/re2",
   ]
+  if (!is_cobalt) {
+    # Cobalt: TV has no autofill.
+    public_deps += [ "//components/autofill/core/common" ]
+  }
   if (build_with_tflite_lib) {
     public_deps += [
       "//components/optimization_guide/core:machine_learning",
@@ -657,6 +660,11 @@ source_set("unit_tests") {
     assert(build_with_tflite_lib)
 
     deps += [ "//third_party/mediapipe" ]
+  }
+
+  if (is_cobalt) {
+    # Cobalt: TV has no autofill.
+    sources -= [ "optimization_guide_proto_util_unittest.cc" ]
   }
 }
 
