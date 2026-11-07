@@ -47,7 +47,10 @@
 #include "cc/tiles/frame_viewer_instrumentation.h"
 #include "cc/trees/layer_tree_host.h"
 #include "cc/view_transition/view_transition_request.h"
-#include "components/paint_preview/common/paint_preview_tracker.h"
+// Cobalt: paint_preview is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/paint_preview/common/paint_preview_tracker.h"  // nogncheck
+#endif
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/frame/frame.mojom-blink.h"
 #include "third_party/blink/public/mojom/frame/remote_frame.mojom-blink.h"
@@ -3908,6 +3911,9 @@ LocalFrameView::EnsurePaintControllerPersistentData() {
 bool LocalFrameView::CapturePaintPreview(
     GraphicsContext& context,
     const gfx::Vector2d& paint_offset) const {
+#if BUILDFLAG(IS_COBALT)
+  return false;
+#else
   std::optional<base::UnguessableToken> maybe_embedding_token =
       GetFrame().GetEmbeddingToken();
 
@@ -3935,6 +3941,7 @@ bool LocalFrameView::CapturePaintPreview(
   GetFrame().GetLocalFrameHostRemote().CapturePaintPreviewOfSubframe(
       FrameRect(), tracker->Guid());
   return true;
+#endif
 }
 
 void LocalFrameView::Paint(GraphicsContext& context,

@@ -16,8 +16,10 @@
 #include "base/trace_event/trace_event.h"
 #include "base/values.h"
 #include "build/build_config.h"
-#include "components/image_fetcher/core/image_decoder.h"
-#include "components/image_fetcher/core/image_fetcher_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/image_fetcher/core/image_decoder.h"  // nogncheck
+#include "components/image_fetcher/core/image_fetcher_impl.h"  // nogncheck
+#endif
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/signin/internal/identity_manager/account_capabilities_fetcher.h"
@@ -41,7 +43,9 @@ const base::TimeDelta kRefreshFromTokenServiceDelay = base::Hours(24);
 
 }  // namespace
 
+#if !BUILDFLAG(IS_COBALT)
 const char kImageFetcherUmaClient[] = "AccountFetcherService";
+#endif
 
 // This pref used to be in the AccountTrackerService, hence its string value.
 const char AccountFetcherService::kLastUpdatePref[] =
@@ -64,7 +68,9 @@ void AccountFetcherService::Initialize(
     SigninClient* signin_client,
     ProfileOAuth2TokenService* token_service,
     AccountTrackerService* account_tracker_service,
+#if !BUILDFLAG(IS_COBALT)
     std::unique_ptr<image_fetcher::ImageDecoder> image_decoder,
+#endif
     std::unique_ptr<AccountCapabilitiesFetcherFactory>
         account_capabilities_fetcher_factory) {
   DCHECK(signin_client);
@@ -78,9 +84,11 @@ void AccountFetcherService::Initialize(
   token_service_ = token_service;
   token_service_observation_.Observe(token_service_);
 
+#if !BUILDFLAG(IS_COBALT)
   DCHECK(image_decoder);
   DCHECK(!image_decoder_);
   image_decoder_ = std::move(image_decoder);
+#endif
   DCHECK(!account_capabilities_fetcher_factory_);
   DCHECK(account_capabilities_fetcher_factory);
   account_capabilities_fetcher_factory_ =
@@ -272,6 +280,7 @@ void AccountFetcherService::OnUserInfoFetchSuccess(
   user_info_requests_.erase(account_id);
 }
 
+#if !BUILDFLAG(IS_COBALT)
 image_fetcher::ImageFetcherImpl*
 AccountFetcherService::GetOrCreateImageFetcher() {
   // Lazy initialization of |image_fetcher_| because the request context might
@@ -282,8 +291,10 @@ AccountFetcherService::GetOrCreateImageFetcher() {
   }
   return image_fetcher_.get();
 }
+#endif
 
 void AccountFetcherService::FetchAccountImage(const CoreAccountId& account_id) {
+#if !BUILDFLAG(IS_COBALT)
   DCHECK(signin_client_);
   AccountInfo account_info =
       account_tracker_service_->GetAccountInfo(account_id);
@@ -333,6 +344,7 @@ void AccountFetcherService::FetchAccountImage(const CoreAccountId& account_id) {
   user_avatar_fetch_start_times_[account_id] = base::TimeTicks::Now();
   GetOrCreateImageFetcher()->FetchImage(image_url_with_size,
                                         std::move(callback), std::move(params));
+#endif
 }
 
 void AccountFetcherService::OnUserInfoFetchFailure(
@@ -397,6 +409,7 @@ void AccountFetcherService::OnRefreshTokensLoaded() {
   MaybeEnableNetworkFetches();
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void AccountFetcherService::OnImageFetched(
     const CoreAccountId& account_id,
     const std::string& image_url_with_size,
@@ -416,3 +429,4 @@ void AccountFetcherService::OnImageFetched(
     user_avatar_fetch_start_times_.erase(it);
   }
 }
+#endif

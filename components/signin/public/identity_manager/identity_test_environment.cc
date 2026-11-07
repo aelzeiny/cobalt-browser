@@ -337,7 +337,10 @@ IdentityTestEnvironment::FinishBuildIdentityManagerForTests(
   auto account_fetcher_service = std::make_unique<AccountFetcherService>();
   account_fetcher_service->Initialize(
       signin_client, token_service.get(), account_tracker_service.get(),
+      // Cobalt: image_fetcher is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
       std::make_unique<image_fetcher::FakeImageDecoder>(),
+#endif
       std::make_unique<FakeAccountCapabilitiesFetcherFactory>());
 
   std::unique_ptr<PrimaryAccountManager> primary_account_manager =

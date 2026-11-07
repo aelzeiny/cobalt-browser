@@ -23,7 +23,10 @@
 #include "components/no_state_prefetch/common/no_state_prefetch_final_status.h"
 #include "components/no_state_prefetch/common/no_state_prefetch_utils.h"
 #include "components/no_state_prefetch/common/render_frame_prerender_messages.mojom.h"
-#include "components/paint_preview/browser/paint_preview_client.h"
+// Cobalt: paint_preview is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/paint_preview/browser/paint_preview_client.h"  // nogncheck
+#endif
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -147,11 +150,13 @@ class NoStatePrefetchContents::WebContentsDelegateImpl
       const gfx::Rect& rect,
       const base::UnguessableToken& guid,
       RenderFrameHost* render_frame_host) override {
+#if !BUILDFLAG(IS_COBALT)
     auto* client =
         paint_preview::PaintPreviewClient::FromWebContents(web_contents);
     if (client) {
       client->CaptureSubframePaintPreview(guid, rect, render_frame_host);
     }
+#endif
   }
 
  private:

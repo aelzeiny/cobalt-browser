@@ -89,7 +89,10 @@ TEST_F(IdentityManagerBuilderTest, BuildIdentityManagerInitParameters) {
 
   IdentityManagerBuildParams params;
   params.account_consistency = AccountConsistencyMethod::kDisabled;
+  // Cobalt: image_fetcher is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
   params.image_decoder = std::make_unique<image_fetcher::FakeImageDecoder>();
+#endif
   params.local_state = GetPrefService();
   params.network_connection_tracker =
       network::TestNetworkConnectionTracker::GetInstance();

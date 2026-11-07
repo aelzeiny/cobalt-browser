@@ -43,6 +43,9 @@ enable_vr = false
 # Disable screen/window/tab capture (Note: live capture, not screenshots).
 enable_screen_capture = false
 
+# Disable Paint Preview (desktop/tab previews, unused on TV).
+enable_paint_preview = false
+
 # Re-enable concurrent marking to monitor via experiment.
 v8_enable_concurrent_marking = true
 v8_enable_atomic_object_field_writes = true

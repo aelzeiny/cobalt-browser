@@ -8,7 +8,10 @@
 
 #include "base/feature_list.h"
 #include "base/metrics/histogram_macros.h"
-#include "components/paint_preview/common/paint_preview_tracker.h"
+// Cobalt: paint_preview is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/paint_preview/common/paint_preview_tracker.h"  // nogncheck
+#endif
 #include "printing/buildflags/buildflags.h"
 #include "third_party/blink/public/common/frame/frame_owner_element_type.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
@@ -464,6 +467,9 @@ uint32_t RemoteFrameView::Print(const gfx::Rect& rect,
 
 uint32_t RemoteFrameView::CapturePaintPreview(const gfx::Rect& rect,
                                               cc::PaintCanvas* canvas) const {
+#if BUILDFLAG(IS_COBALT)
+  return 0;
+#else
   auto* tracker = canvas->GetPaintPreviewTracker();
   DCHECK(tracker);  // |tracker| must exist or there is a bug upstream.
 
@@ -484,6 +490,7 @@ uint32_t RemoteFrameView::CapturePaintPreview(const gfx::Rect& rect,
   remote_frame_->GetRemoteFrameHostRemote()
       .CapturePaintPreviewOfCrossProcessSubframe(rect, tracker->Guid());
   return content_id;
+#endif
 }
 
 void RemoteFrameView::Trace(Visitor* visitor) const {

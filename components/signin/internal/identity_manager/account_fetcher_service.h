@@ -38,11 +38,14 @@ namespace gfx {
 class Image;
 }
 
+// Cobalt: image_fetcher is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
 namespace image_fetcher {
 struct RequestMetadata;
 class ImageDecoder;
 class ImageFetcherImpl;
 }  // namespace image_fetcher
+#endif
 
 namespace signin {
 enum class Tribool;
@@ -67,7 +70,9 @@ class AccountFetcherService : public ProfileOAuth2TokenServiceObserver {
   void Initialize(SigninClient* signin_client,
                   ProfileOAuth2TokenService* token_service,
                   AccountTrackerService* account_tracker_service,
+#if !BUILDFLAG(IS_COBALT)
                   std::unique_ptr<image_fetcher::ImageDecoder> image_decoder,
+#endif
                   std::unique_ptr<AccountCapabilitiesFetcherFactory>
                       account_capabilities_fetcher_factory);
 
@@ -160,15 +165,19 @@ class AccountFetcherService : public ProfileOAuth2TokenServiceObserver {
       const CoreAccountId& account_id,
       const std::optional<AccountCapabilities>& account_capabilities);
 
+#if !BUILDFLAG(IS_COBALT)
   image_fetcher::ImageFetcherImpl* GetOrCreateImageFetcher();
+#endif
 
   // Called in |OnUserInfoFetchSuccess| after the account info has been fetched.
   void FetchAccountImage(const CoreAccountId& account_id);
 
+#if !BUILDFLAG(IS_COBALT)
   void OnImageFetched(const CoreAccountId& account_id,
                       const std::string& image_url_with_size,
                       const gfx::Image& image,
                       const image_fetcher::RequestMetadata& image_metadata);
+#endif
 
   raw_ptr<AccountTrackerService> account_tracker_service_ =
       nullptr;                                                  // Not owned.
@@ -194,9 +203,11 @@ class AccountFetcherService : public ProfileOAuth2TokenServiceObserver {
   base::flat_map<CoreAccountId, base::TimeTicks> user_info_fetch_start_times_;
   base::flat_map<CoreAccountId, base::TimeTicks> user_avatar_fetch_start_times_;
 
+#if !BUILDFLAG(IS_COBALT)
   // Used for fetching the account images.
   std::unique_ptr<image_fetcher::ImageFetcherImpl> image_fetcher_;
   std::unique_ptr<image_fetcher::ImageDecoder> image_decoder_;
+#endif
 
   base::ScopedObservation<ProfileOAuth2TokenService,
                           ProfileOAuth2TokenServiceObserver>

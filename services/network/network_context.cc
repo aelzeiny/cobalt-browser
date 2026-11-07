@@ -43,7 +43,10 @@
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "components/cookie_config/cookie_store_util.h"
-#include "components/domain_reliability/monitor.h"
+// Cobalt: domain_reliability is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/domain_reliability/monitor.h"  // nogncheck
+#endif
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
 #include "components/ip_protection/common/ip_protection_core_host_remote.h"  // nogncheck
 #include "components/ip_protection/common/ip_protection_core_impl_mojo.h"    // nogncheck
@@ -883,6 +886,7 @@ NetworkContext::~NetworkContext() {
     network_service_->DeregisterNetworkContext(this);
   }
 
+#if !BUILDFLAG(IS_COBALT)
   if (domain_reliability_monitor_) {
     domain_reliability_monitor_->Shutdown();
   }
@@ -894,6 +898,7 @@ NetworkContext::~NetworkContext() {
   // order, because any work calling into |domain_reliability_monitor_| at
   // shutdown would be unnecessary as the reports would be thrown out.
   domain_reliability_monitor_.reset();
+#endif
 
   if (url_request_context_ &&
       url_request_context_->transport_security_state()) {
@@ -1717,6 +1722,7 @@ void NetworkContext::ClearDomainReliability(
     mojom::ClearDataFilterPtr filter,
     DomainReliabilityClearMode mode,
     ClearDomainReliabilityCallback callback) {
+#if !BUILDFLAG(IS_COBALT)
   if (domain_reliability_monitor_) {
     domain_reliability::DomainReliabilityClearMode dr_mode;
     if (mode ==
@@ -1729,6 +1735,7 @@ void NetworkContext::ClearDomainReliability(
     domain_reliability_monitor_->ClearBrowsingData(
         dr_mode, BuildOriginFilter(std::move(filter)));
   }
+#endif
   std::move(callback).Run();
 }
 
@@ -2412,6 +2419,7 @@ void NetworkContext::AddDomainReliabilityContextForTesting(
     const url::Origin& origin,
     const GURL& upload_url,
     AddDomainReliabilityContextForTestingCallback callback) {
+#if !BUILDFLAG(IS_COBALT)
   auto config = std::make_unique<domain_reliability::DomainReliabilityConfig>();
   config->origin = origin;
   config->include_subdomains = false;
@@ -2419,12 +2427,15 @@ void NetworkContext::AddDomainReliabilityContextForTesting(
   config->success_sample_rate = 1.0;
   config->failure_sample_rate = 1.0;
   domain_reliability_monitor_->AddContextForTesting(std::move(config));
+#endif
   std::move(callback).Run();
 }
 
 void NetworkContext::ForceDomainReliabilityUploadsForTesting(
     ForceDomainReliabilityUploadsForTestingCallback callback) {
+#if !BUILDFLAG(IS_COBALT)
   domain_reliability_monitor_->ForceUploadsForTesting();
+#endif
   std::move(callback).Run();
 }
 
@@ -3074,6 +3085,7 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
   }
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
+#if !BUILDFLAG(IS_COBALT)
   if (params_->enable_domain_reliability) {
     domain_reliability_monitor_ =
         std::make_unique<domain_reliability::DomainReliabilityMonitor>(
@@ -3085,6 +3097,7 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
     domain_reliability_monitor_->SetDiscardUploads(
         params_->discard_domain_reliablity_uploads);
   }
+#endif
 
   return result;
 }

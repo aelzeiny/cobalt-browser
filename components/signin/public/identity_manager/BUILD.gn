@@ -58,13 +58,17 @@ source_set("identity_manager") {
   ]
 
   deps = [
-    "//components/image_fetcher/core",
     "//components/plus_addresses:features",
     "//components/prefs",
     "//components/signin/internal/identity_manager",
     "//components/signin/public/webdata",
     "//services/network/public/cpp",
   ]
+
+  # Cobalt: image_fetcher is unused on TV.
+  if (!is_cobalt) {
+    deps += [ "//components/image_fetcher/core" ]
+  }
 
   if (is_chromeos) {
     deps += [ "//components/user_manager" ]

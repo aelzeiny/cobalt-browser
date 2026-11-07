@@ -61,7 +61,9 @@ struct IdentityManagerBuildParams {
 
   AccountConsistencyMethod account_consistency =
       AccountConsistencyMethod::kDisabled;
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<image_fetcher::ImageDecoder> image_decoder;
+#endif
   raw_ptr<PrefService> local_state = nullptr;
   raw_ptr<network::NetworkConnectionTracker> network_connection_tracker;
   raw_ptr<PrefService> pref_service = nullptr;

@@ -445,7 +445,6 @@ component("core") {
     "//base",
     "//components/attribution_reporting",
     "//components/attribution_reporting:mojom_blink",
-    "//components/paint_preview/common",
     "//components/performance_manager/public/mojom:mojom_blink",
     "//components/shared_highlighting/core/common",
     "//components/web_package",
@@ -480,6 +479,11 @@ component("core") {
     "//ui/gfx/geometry:geometry_skia",
     "//ui/strings",
   ]
+
+  # Cobalt: paint_preview is unused on TV.
+  if (!is_cobalt) {
+    deps += [ "//components/paint_preview/common" ]
+  }
 
   if (is_mac) {
     deps += [ "//ui/base/mojom" ]

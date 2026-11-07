@@ -405,7 +405,10 @@ class AccountTrackerServiceTest : public testing::Test {
         account_capabilities_fetcher_factory.get();
     account_fetcher_->Initialize(
         signin_client(), token_service(), account_tracker_.get(),
+        // Cobalt: image_fetcher is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
         std::make_unique<image_fetcher::FakeImageDecoder>(),
+#endif
         std::move(account_capabilities_fetcher_factory));
     if (network_enabled) {
       account_fetcher_->EnableNetworkFetchesForTest();
