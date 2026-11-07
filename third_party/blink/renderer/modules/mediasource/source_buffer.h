@@ -67,7 +67,9 @@ class MediaSource;
 class MediaSourceTracer;
 class MediaSourceAttachmentSupplement;
 class ScriptState;
+#if !BUILDFLAG(IS_COBALT)
 class SourceBufferConfig;
+#endif
 class TimeRanges;
 class VideoTrackList;
 class WebSourceBuffer;
@@ -92,16 +94,20 @@ class SourceBuffer final : public EventTarget,
   void setTimestampOffset(double, ExceptionState&);
   void appendBuffer(DOMArrayBuffer* data, ExceptionState&);
   void appendBuffer(NotShared<DOMArrayBufferView> data, ExceptionState&);
+#if !BUILDFLAG(IS_COBALT)
   ScriptPromise<IDLUndefined> appendEncodedChunks(
       ScriptState* script_state,
       const V8EncodedChunks* chunks,
       ExceptionState& exception_state);
+#endif
   void abort(ExceptionState&);
   void remove(double start, double end, ExceptionState&);
   void changeType(const String& type, ExceptionState&);
+#if !BUILDFLAG(IS_COBALT)
   void ChangeTypeUsingConfig(ExecutionContext*,
                              const SourceBufferConfig*,
                              ExceptionState&);
+#endif
   double appendWindowStart() const;
   void setAppendWindowStart(double, ExceptionState&);
   double appendWindowEnd() const;
@@ -184,7 +190,9 @@ class SourceBuffer final : public EventTarget,
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
   void AppendBufferInternal(base::span<const unsigned char>, ExceptionState&);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
+#if !BUILDFLAG(IS_COBALT)
   void AppendEncodedChunksAsyncPart();
+#endif
   void AppendBufferAsyncPart();
   void AppendError(MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
 
@@ -215,11 +223,13 @@ class SourceBuffer final : public EventTarget,
       const String& type,
       ExceptionState*,
       MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
+#if !BUILDFLAG(IS_COBALT)
   void AppendEncodedChunks_Locked(
       std::unique_ptr<media::StreamParser::BufferQueue> buffer_queue,
       size_t size,
       ExceptionState* exception_state,
       MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
+#endif
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   void AppendBufferInternal_Locked(
       base::span<const unsigned char>,
@@ -232,8 +242,10 @@ class SourceBuffer final : public EventTarget,
       ExceptionState*,
       MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
+#if !BUILDFLAG(IS_COBALT)
   void AppendEncodedChunksAsyncPart_Locked(
       MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
+#endif
   void AppendBufferAsyncPart_Locked(
       MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */);
   void RemoveAsyncPart_Locked(
@@ -330,9 +342,11 @@ class SourceBuffer final : public EventTarget,
 
   // This resolver is set and valid only during the scope of synchronous and
   // asynchronous follow-up of appendEncodedChunks().
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<media::StreamParser::BufferQueue> pending_chunks_to_buffer_;
   Member<ScriptPromiseResolver<IDLUndefined>> append_encoded_chunks_resolver_;
   TaskHandle append_encoded_chunks_async_task_handle_;
+#endif
 
   // These are valid only during the scope of synchronous and asynchronous
   // follow-up of remove().

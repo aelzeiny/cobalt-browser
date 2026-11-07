@@ -30,9 +30,7 @@
 
 // https://w3c.github.io/media-source/#idl-def-sourcebuffer
 
-// This typedef is needed for MSE-for-WebCodecs. Explainer:
-// https://github.com/wolenetz/mse-for-webcodecs/blob/main/explainer.md
-typedef (sequence<(EncodedAudioChunk or EncodedVideoChunk)> or EncodedAudioChunk or EncodedVideoChunk) EncodedChunks;
+// Cobalt: WebCodecs is disabled; EncodedChunks typedef omitted.
 
 enum AppendMode {
     "segments",
@@ -74,14 +72,7 @@ enum AppendMode {
     [RaisesException] void appendBuffer(ArrayBuffer data);
     [RaisesException] void appendBuffer(ArrayBufferView data);
 
-    // Append WebCodecs structured, "containerless" media. Explainer:
-    // https://github.com/wolenetz/mse-for-webcodecs/blob/main/explainer.md
-    [
-        CallWith=ScriptState,
-        RaisesException,
-        RuntimeEnabled=MediaSourceExtensionsForWebCodecs,
-        Measure
-    ] Promise<undefined> appendEncodedChunks(EncodedChunks chunks);
+    // Cobalt: WebCodecs disabled; appendEncodedChunks is omitted.
 
     // Abort the current segment append sequence.
     [RaisesException] void abort();
@@ -92,15 +83,7 @@ enum AppendMode {
     // `Media.EnableChangeType`. See b/571981376.
     [RaisesException, Measure, RuntimeEnabled=MediaSourceChangeType] void changeType(DOMString type);
 
-    // For MSE-for-WebCodecs. Explainer:
-    // https://github.com/wolenetz/mse-for-webcodecs/blob/main/explainer.md
-    [
-      RaisesException,
-      RuntimeEnabled=MediaSourceExtensionsForWebCodecs,
-      ImplementedAs=ChangeTypeUsingConfig,
-      MeasureAs=ChangeTypeUsingConfig,
-      CallWith=ExecutionContext
-    ] void changeType(SourceBufferConfig config);
+    // Cobalt: WebCodecs disabled; changeType(SourceBufferConfig) is omitted.
 
     // Gets or sets the TrackDefaultList this SourceBuffer may consult during
     // the initialization segment algorithm.

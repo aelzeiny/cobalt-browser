@@ -1587,11 +1587,16 @@ if (!enable_privacy_sandbox_apis) {
 }
 
 if (is_cobalt) {
-  # Cobalt: Prune WebNN / ML IDLs (W3C neural net APIs; 0 callers in Kabuki).
+  # Cobalt: Prune WebNN/ML and WebCodecs/BreakoutBox IDLs.
   _filtered_static_idl_files = []
   _filtered_static_idl_files =
       filter_exclude(static_idl_files_in_modules,
-                     [ "//third_party/blink/renderer/modules/ml/*" ])
+                     [
+                       "//third_party/blink/renderer/modules/breakout_box/*",
+                       "//third_party/blink/renderer/modules/mediasource/source_buffer_config.idl",
+                       "//third_party/blink/renderer/modules/ml/*",
+                       "//third_party/blink/renderer/modules/webcodecs/*",
+                     ])
   static_idl_files_in_modules = []
   static_idl_files_in_modules = _filtered_static_idl_files
 }

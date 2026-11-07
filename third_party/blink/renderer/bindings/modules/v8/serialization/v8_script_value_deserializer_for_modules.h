@@ -5,23 +5,30 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_BINDINGS_MODULES_V8_SERIALIZATION_V8_SCRIPT_VALUE_DESERIALIZER_FOR_MODULES_H_
 #define THIRD_PARTY_BLINK_RENDERER_BINDINGS_MODULES_V8_SERIALIZATION_V8_SCRIPT_VALUE_DESERIALIZER_FOR_MODULES_H_
 
+#include "build/build_config.h"
 #include "third_party/blink/renderer/bindings/core/v8/serialization/v8_script_value_deserializer.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
 
 namespace blink {
 
+#if !BUILDFLAG(IS_COBALT)
 class AudioData;
+#endif
 class CropTarget;
 class CryptoKey;
+#if !BUILDFLAG(IS_COBALT)
 class EncodedAudioChunk;
 class EncodedVideoChunk;
+#endif
 class FileSystemHandle;
 class MediaSourceHandleImpl;
 class RestrictionTarget;
 class RTCEncodedAudioFrame;
 class RTCEncodedVideoFrame;
 class RTCDataChannel;
+#if !BUILDFLAG(IS_COBALT)
 class VideoFrame;
+#endif
 
 // Extends V8ScriptValueSerializer with support for modules/ types.
 class MODULES_EXPORT V8ScriptValueDeserializerForModules final
@@ -47,10 +54,12 @@ class MODULES_EXPORT V8ScriptValueDeserializerForModules final
   FileSystemHandle* ReadFileSystemHandle(SerializationTag tag);
   RTCEncodedAudioFrame* ReadRTCEncodedAudioFrame();
   RTCEncodedVideoFrame* ReadRTCEncodedVideoFrame();
+#if !BUILDFLAG(IS_COBALT)
   AudioData* ReadAudioData();
   VideoFrame* ReadVideoFrame();
   EncodedAudioChunk* ReadEncodedAudioChunk();
   EncodedVideoChunk* ReadEncodedVideoChunk();
+#endif
   MediaStreamTrack* ReadMediaStreamTrack();
   RTCDataChannel* ReadRTCDataChannel();
   CropTarget* ReadCropTarget();

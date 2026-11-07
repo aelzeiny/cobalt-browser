@@ -204,7 +204,13 @@ blink_modules_sources("webgl") {
   ]
 
   if (is_cobalt) {
-    deps -= [ "//third_party/blink/renderer/modules/xr:xr" ]
+    # Cobalt: XR and WebCodecs are disabled on Cobalt Living Room TV.
+    deps -= [
+      "//third_party/blink/renderer/modules/webcodecs:webcodecs",
+      "//third_party/blink/renderer/modules/xr:xr",
+    ]
+    deps += [ "//third_party/blink/renderer/modules/canvas:canvas" ]
+
     # Cobalt: WebGL-on-WebGPU is disabled (Dawn disabled).
     sources -= [
       "webgl2_rendering_context_webgpu.cc",

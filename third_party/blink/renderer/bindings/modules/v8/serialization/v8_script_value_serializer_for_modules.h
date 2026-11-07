@@ -6,6 +6,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_BINDINGS_MODULES_V8_SERIALIZATION_V8_SCRIPT_VALUE_SERIALIZER_FOR_MODULES_H_
 
 #include "base/memory/scoped_refptr.h"
+#include "build/build_config.h"
 #include "third_party/blink/public/platform/web_crypto_algorithm.h"
 #include "third_party/blink/renderer/bindings/core/v8/serialization/v8_script_value_serializer.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
@@ -24,7 +25,9 @@ class RestrictionTarget;
 class RTCEncodedAudioFrame;
 class RTCEncodedVideoFrame;
 class RTCDataChannel;
+#if !BUILDFLAG(IS_COBALT)
 class VideoFrameHandle;
+#endif
 class WebCryptoKey;
 
 // Extends V8ScriptValueSerializer with support for modules/ types.
@@ -53,10 +56,12 @@ class MODULES_EXPORT V8ScriptValueSerializerForModules final
                              FileSystemHandle* file_system_handle);
   bool WriteRTCEncodedAudioFrame(RTCEncodedAudioFrame*);
   bool WriteRTCEncodedVideoFrame(RTCEncodedVideoFrame*);
+#if !BUILDFLAG(IS_COBALT)
   bool WriteVideoFrameHandle(scoped_refptr<VideoFrameHandle>);
   bool WriteMediaAudioBuffer(scoped_refptr<media::AudioBuffer>);
   bool WriteDecoderBuffer(scoped_refptr<media::DecoderBuffer> data,
                           bool for_audio);
+#endif
   bool WriteMediaStreamTrack(MediaStreamTrack* track,
                              ScriptWrappable::TypeDispatcher& dispatcher,
                              ExceptionState& exception_state);

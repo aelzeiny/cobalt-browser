@@ -56,6 +56,7 @@ SerializedTrackImplSubtype SerializeTrackImplSubtype(
 #if !BUILDFLAG(IS_COBALT)
   } else if (dispatcher.ToMostDerived<CanvasCaptureMediaStreamTrack>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeCanvasCapture;
+#if !BUILDFLAG(IS_COBALT)
   } else if (dispatcher.ToMostDerived<MediaStreamTrackGenerator>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeGenerator;
 #endif
@@ -114,7 +115,7 @@ const WrapperTypeInfo* DeserializeTrackImplSubtype(
 #if !BUILDFLAG(IS_COBALT)
       return MediaStreamTrackGenerator::GetStaticWrapperTypeInfo();
 #else
-      return nullptr;
+      return MediaStreamTrack::GetStaticWrapperTypeInfo();
 #endif
     case SerializedTrackImplSubtype::kTrackImplSubtypeBrowserCapture:
       return BrowserCaptureMediaStreamTrack::GetStaticWrapperTypeInfo();

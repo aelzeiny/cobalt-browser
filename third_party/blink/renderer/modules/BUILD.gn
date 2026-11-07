@@ -198,6 +198,8 @@ component("modules") {
       "//third_party/blink/renderer/modules/gamepad",
       "//third_party/blink/renderer/modules/imagecapture",
       "//third_party/blink/renderer/modules/mediacapturefromelement",
+      # Cobalt: WebCodecs is disabled on Cobalt Living Room TV.
+      "//third_party/blink/renderer/modules/webcodecs",
       "//third_party/blink/renderer/modules/mediarecorder",
       "//third_party/blink/renderer/modules/ml",
       "//third_party/blink/renderer/modules/webgpu",
@@ -936,9 +938,11 @@ source_set("unit_tests") {
   if (is_cobalt) {
     deps += [ "//third_party/blink/renderer/modules/cobalt/h5vcc_experiments:experiments_utils" ]
     deps -= [
-      "//third_party/blink/renderer/modules/breakout_box:unit_tests",
       # Cobalt: Gamepad unit tests.
       "//third_party/blink/renderer/modules/gamepad:unit_tests",
+      # Cobalt: WebCodecs and Breakout Box unit tests are disabled.
+      "//third_party/blink/renderer/modules/breakout_box:unit_tests",
+      "//third_party/blink/renderer/modules/webcodecs:unit_tests",
       "//third_party/blink/renderer/modules/hid:unit_tests",
       "//third_party/blink/renderer/modules/ml:unit_tests",
       "//third_party/blink/renderer/modules/webgpu:unit_tests",
@@ -946,6 +950,11 @@ source_set("unit_tests") {
     ]
     sources -= [
       "bluetooth/bluetooth_uuid_unittest.cc",
+      "canvas/canvas2d/base_rendering_context_2d_test.cc",
+      "canvas/canvas2d/canvas_2d_recorder_context_test.cc",
+      "canvas/canvas2d/canvas_rendering_context_2d_api_test.cc",
+      "canvas/canvas2d/canvas_rendering_context_2d_test.cc",
+      "canvas/offscreencanvas2d/offscreen_canvas_rendering_context_2d_test.cc",
       "nfc/nfc_proxy_test.cc",
       "webrtc/webrtc_audio_device_impl_test.cc",
       "xr/xr_rigid_transform_test.cc",

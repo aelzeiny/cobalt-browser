@@ -641,9 +641,7 @@ interface mixin WebGLRenderingContextBase {
     [RaisesException] void texImage2D(
         GLenum target, GLint level, GLint internalformat,
         GLenum format, GLenum type, ImageBitmap bitmap);
-    [CallWith=ScriptState, RaisesException] void texImage2D(
-        GLenum target, GLint level, GLint internalformat,
-        GLenum format, GLenum type, VideoFrame frame);
+    // Cobalt: WebCodecs is disabled; VideoFrame overloads omitted.
 
     [RuntimeEnabled=CanvasDrawElement, CallWith=ScriptState, RaisesException]
     void texElement2D(GLenum target, GLint level, GLint internalformat,
@@ -671,9 +669,7 @@ interface mixin WebGLRenderingContextBase {
     [RaisesException] void texSubImage2D(
         GLenum target, GLint level, GLint xoffset, GLint yoffset,
         GLenum format, GLenum type, ImageBitmap bitmap);
-    [CallWith=ScriptState, RaisesException] void texSubImage2D(
-        GLenum target, GLint level, GLint xoffset, GLint yoffset,
-        GLenum format, GLenum type, VideoFrame frame);
+    // Cobalt: WebCodecs is disabled; VideoFrame overloads omitted.
 
     [NoAllocDirectCall] void uniform1f(WebGLUniformLocation? location, GLfloat x);
     [NoAllocDirectCall] void uniform1fv(WebGLUniformLocation? location, Float32List v);

@@ -98,7 +98,9 @@
 #include "third_party/blink/renderer/modules/canvas/canvas2d/mesh_2d_vertex_buffer.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/path_2d.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/v8_canvas_style.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/webgpu/dawn_conversions.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu.h"  // nogncheck
@@ -2335,6 +2337,7 @@ void Canvas2DRecorderContext::DrawImageInternal(
     HTMLVideoElement* video = static_cast<HTMLVideoElement*>(image_source);
     video->PaintCurrentFrame(
         c, gfx::Rect(video->videoWidth(), video->videoHeight()), &image_flags);
+#if !BUILDFLAG(IS_COBALT)
   } else if (image_source->IsVideoFrame()) {
     VideoFrame* frame = static_cast<VideoFrame*>(image_source);
     auto media_frame = frame->frame();
@@ -2360,6 +2363,7 @@ void Canvas2DRecorderContext::DrawImageInternal(
     c->translate(-corrected_src_rect.x(), -corrected_src_rect.y());
     DrawVideoFrameIntoCanvas(std::move(media_frame), c, image_flags,
                              ignore_transformation);
+#endif  // !BUILDFLAG(IS_COBALT)
   } else {
     // We always use the image-orientation property on the canvas element
     // because the alternative would result in complex rules depending on
@@ -2413,10 +2417,12 @@ void Canvas2DRecorderContext::drawImage(CanvasImageSource* image_source,
              ->HasAvailableVideoFrame()) {
       return;
     }
+#if !BUILDFLAG(IS_COBALT)
   } else if (image_source->IsVideoFrame()) {
     if (!static_cast<VideoFrame*>(image_source)->frame()) {
       return;
     }
+#endif  // !BUILDFLAG(IS_COBALT)
   } else {
     image = image_source->GetSourceImageForCanvas(
         FlushReason::kDrawImage, &source_image_status, default_object_size);

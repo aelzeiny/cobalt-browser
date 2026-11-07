@@ -50,7 +50,8 @@ blink_modules_sources("v8") {
         sources,
         cobalt_webgpu_exclude_patterns + cobalt_ai_exclude_patterns +
             cobalt_idb_exclude_patterns +
-            cobalt_canvas_exclude_patterns)
+            cobalt_canvas_exclude_patterns +
+            cobalt_webcodecs_exclude_patterns)
     sources = []
     sources = _filtered_cobalt_sources
   }

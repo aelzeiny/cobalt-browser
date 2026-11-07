@@ -55,6 +55,8 @@ blink_modules_sources("mediasource") {
     "//third_party/blink/renderer/modules/webcodecs:webcodecs",
   ]
   if (is_cobalt) {
+    # Cobalt: WebCodecs is disabled on Cobalt Living Room TV.
+    deps -= [ "//third_party/blink/renderer/modules/webcodecs:webcodecs" ]
     deps += [
       "//third_party/blink/renderer/modules/cobalt:h_5_vcc",
       "//third_party/blink/renderer/modules/cobalt/h5vcc_settings",

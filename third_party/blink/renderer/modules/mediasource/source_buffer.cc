@@ -54,6 +54,7 @@
 #include "third_party/blink/public/platform/web_source_buffer.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_throw_dom_exception.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_audio_decoder_config.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_encoded_audio_chunk.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_encoded_video_chunk.h"
@@ -61,6 +62,7 @@
 #include "third_party/blink/renderer/bindings/modules/v8/v8_union_encodedaudiochunk_encodedaudiochunkorencodedvideochunksequence_encodedvideochunk.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_union_encodedaudiochunk_encodedvideochunk.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_video_decoder_config.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/dom_exception.h"
 #include "third_party/blink/renderer/core/dom/events/event.h"
@@ -77,8 +79,10 @@
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer_view.h"
 #include "third_party/blink/renderer/modules/mediasource/media_source.h"
 #include "third_party/blink/renderer/modules/mediasource/source_buffer_track_base_supplement.h"
-#include "third_party/blink/renderer/modules/webcodecs/encoded_audio_chunk.h"
-#include "third_party/blink/renderer/modules/webcodecs/encoded_video_chunk.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/encoded_audio_chunk.h"  // nogncheck
+#include "third_party/blink/renderer/modules/webcodecs/encoded_video_chunk.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_messages.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -144,6 +148,7 @@ WTF::String WebTimeRangesToString(const WebTimeRanges& ranges) {
 // in the underlying WebCodecsEncodedChunkStreamParser, consider moving these
 // to possibly stream_parser.h. Meanwhile, must be kept in sync with similar
 // constexpr in that parser manually.
+#if !BUILDFLAG(IS_COBALT)
 constexpr media::StreamParser::TrackId kWebCodecsAudioTrackId = 1;
 constexpr media::StreamParser::TrackId kWebCodecsVideoTrackId = 2;
 
@@ -152,6 +157,7 @@ constexpr media::StreamParser::TrackId kWebCodecsVideoTrackId = 2;
 // MakeDecoderBuffer methods), that will also help enable buffering h264 where
 // bitstream conversion might be necessary during conversion.
 // Note, caller updates results further as necessary (e.g. duration, DTS, etc).
+
 scoped_refptr<media::StreamParserBuffer> MakeAudioStreamParserBuffer(
     const EncodedAudioChunk& audio_chunk) {
   // TODO(crbug.com/1144908): DecoderBuffer takes size_t size, but
@@ -203,6 +209,7 @@ scoped_refptr<media::StreamParserBuffer> MakeVideoStreamParserBuffer(
   }
   return stream_parser_buffer;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
 bool GetAppendFirstSegmentSynchronouslySetting(
@@ -738,6 +745,7 @@ void SourceBuffer::appendTransferredBuffer(NotShared<DOMArrayBufferView> data,
 // implementation. Further note, |chunks| may instead be a single audio or a
 // single video chunk as a helpful additional overload for one-chunk-at-a-time
 // append use-cases.
+#if !BUILDFLAG(IS_COBALT)
 ScriptPromise<IDLUndefined> SourceBuffer::appendEncodedChunks(
     ScriptState* script_state,
     const V8EncodedChunks* chunks,
@@ -886,6 +894,7 @@ void SourceBuffer::AppendEncodedChunks_Locked(
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN1("media", "delay", TRACE_ID_LOCAL(this),
                                     "type", "initialDelay");
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void SourceBuffer::abort(ExceptionState& exception_state) {
   DVLOG(2) << __func__ << " this=" << this;
@@ -1103,6 +1112,7 @@ void SourceBuffer::changeType(const String& type,
   }
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void SourceBuffer::ChangeTypeUsingConfig(ExecutionContext* execution_context,
                                          const SourceBufferConfig* config,
                                          ExceptionState& exception_state) {
@@ -1139,6 +1149,7 @@ void SourceBuffer::ChangeTypeUsingConfig(ExecutionContext* execution_context,
   exception_state.ThrowTypeError(
       "unimplemented - see https://crbug.com/1144908");
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void SourceBuffer::ChangeType_Locked(
     const String& type,
@@ -1257,6 +1268,7 @@ void SourceBuffer::AbortIfUpdating() {
   // 4.2. Set the updating attribute to false.
   updating_ = false;
 
+#if !BUILDFLAG(IS_COBALT)
   if (pending_chunks_to_buffer_) {
     append_encoded_chunks_async_task_handle_.Cancel();
     pending_chunks_to_buffer_.reset();
@@ -1283,6 +1295,7 @@ void SourceBuffer::AbortIfUpdating() {
   }
 
   DCHECK(!append_encoded_chunks_resolver_);
+#endif  // !BUILDFLAG(IS_COBALT)
   append_buffer_async_task_handle_.Cancel();
 
   // For the regular, non-promisified appendBuffer abort, use events to notify
@@ -1952,7 +1965,9 @@ void SourceBuffer::NotifyParseWarning(const ParseWarning warning) {
 
 bool SourceBuffer::HasPendingActivity() const {
   return updating_ || append_buffer_async_task_handle_.IsActive() ||
+#if !BUILDFLAG(IS_COBALT)
          append_encoded_chunks_async_task_handle_.IsActive() ||
+#endif
          remove_async_task_handle_.IsActive() ||
          (async_event_queue_ && async_event_queue_->HasPendingEvents());
 }
@@ -1960,9 +1975,11 @@ bool SourceBuffer::HasPendingActivity() const {
 void SourceBuffer::ContextDestroyed() {
   append_buffer_async_task_handle_.Cancel();
 
+#if !BUILDFLAG(IS_COBALT)
   append_encoded_chunks_async_task_handle_.Cancel();
   pending_chunks_to_buffer_.reset();
   append_encoded_chunks_resolver_ = nullptr;
+#endif
 
   remove_async_task_handle_.Cancel();
   pending_remove_start_ = -1;
@@ -2225,6 +2242,7 @@ void SourceBuffer::AppendBufferInternal_Locked(
                                     "type", "initialDelay");
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void SourceBuffer::AppendEncodedChunksAsyncPart() {
   // Do the async append operation only if attachment is usable and underlying
   // demuxer is protected from destruction (applicable especially for
@@ -2241,6 +2259,7 @@ void SourceBuffer::AppendEncodedChunksAsyncPart() {
              << ": Worker MediaSource attachment is closing";
   }
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void SourceBuffer::AppendBufferAsyncPart() {
   // Do the async append operation only if attachment is usable and underlying
@@ -2264,6 +2283,7 @@ void SourceBuffer::AppendBufferAsyncPart() {
   }
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void SourceBuffer::AppendEncodedChunksAsyncPart_Locked(
     MediaSourceAttachmentSupplement::ExclusiveKey pass_key) {
   DCHECK(source_);
@@ -2313,6 +2333,7 @@ void SourceBuffer::AppendEncodedChunksAsyncPart_Locked(
            << " media_time=" << GetMediaTime() << " buffered="
            << WebTimeRangesToString(web_source_buffer_->Buffered());
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void SourceBuffer::AppendBufferAsyncPart_Locked(
     MediaSourceAttachmentSupplement::ExclusiveKey pass_key) {
@@ -2446,6 +2467,7 @@ void SourceBuffer::AppendError(
   // Only schedule 'error' and 'updateend' here for the non-promisified regular
   // appendBuffer asynchronous operation error. The promisified
   // appendEncodedChunks rejection will be handled by caller.
+#if !BUILDFLAG(IS_COBALT)
   if (!append_encoded_chunks_resolver_) {
     // 3. Queue a task to fire a simple event named error at this SourceBuffer
     //    object.
@@ -2455,6 +2477,10 @@ void SourceBuffer::AppendError(
     //    SourceBuffer object.
     ScheduleEvent(event_type_names::kUpdateend);
   }
+#else
+  ScheduleEvent(event_type_names::kError);
+  ScheduleEvent(event_type_names::kUpdateend);
+#endif
 
   // 5. If decode error is true, then run the end of stream algorithm with the
   // error parameter set to "decode".
@@ -2466,7 +2492,9 @@ void SourceBuffer::Trace(Visitor* visitor) const {
   visitor->Trace(source_);
   visitor->Trace(track_defaults_);
   visitor->Trace(async_event_queue_);
+#if !BUILDFLAG(IS_COBALT)
   visitor->Trace(append_encoded_chunks_resolver_);
+#endif
   visitor->Trace(audio_tracks_);
   visitor->Trace(video_tracks_);
   EventTarget::Trace(visitor);

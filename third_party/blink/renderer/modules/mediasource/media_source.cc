@@ -26,12 +26,17 @@
 #include "third_party/blink/public/common/privacy_budget/identifiable_surface.h"
 #include "third_party/blink/public/platform/web_media_source.h"
 #include "third_party/blink/public/platform/web_source_buffer.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_audio_decoder_config.h"
+#endif
 #include "third_party/blink/renderer/bindings/modules/v8/v8_end_of_stream_error.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_source_buffer_config.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_video_decoder_config.h"
+#endif
 #include "third_party/blink/renderer/core/dom/events/event.h"
 #include "third_party/blink/renderer/core/dom/events/event_queue.h"
+#include "third_party/blink/renderer/core/dom/quota_exceeded_error.h"
 #include "third_party/blink/renderer/core/frame/deprecation/deprecation.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #include "third_party/blink/renderer/core/html/track/audio_track_list.h"
@@ -43,8 +48,10 @@
 #include "third_party/blink/renderer/modules/mediasource/same_thread_media_source_attachment.h"
 #include "third_party/blink/renderer/modules/mediasource/same_thread_media_source_tracer.h"
 #include "third_party/blink/renderer/modules/mediasource/source_buffer_track_base_supplement.h"
-#include "third_party/blink/renderer/modules/webcodecs/audio_decoder.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_decoder.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/audio_decoder.h"  // nogncheck
+#include "third_party/blink/renderer/modules/webcodecs/video_decoder.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_messages.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/blob/blob_url.h"
@@ -264,6 +271,7 @@ SourceBuffer* MediaSource::addSourceBuffer(const String& type,
   return source_buffer;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
     ExecutionContext* execution_context,
     const SourceBufferConfig* config,
@@ -385,6 +393,7 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
 
   return source_buffer;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void MediaSource::AddSourceBuffer_Locked(
     const String& type,
