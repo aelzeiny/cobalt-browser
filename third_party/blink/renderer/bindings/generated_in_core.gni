@@ -2038,6 +2038,11 @@ if (is_cobalt) {
     "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement.cc",
     "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement.h",
   ]
+  generated_union_sources_in_core -= [
+    # Cobalt: ImageBufferSource union used only by webcodecs/image_decoder_init.idl
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_arraybufferallowshared_arraybufferviewallowshared_readablestream.cc",
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_arraybufferallowshared_arraybufferviewallowshared_readablestream.h",
+  ]
 }
 
 # Generated sources for testing

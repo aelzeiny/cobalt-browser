@@ -148,15 +148,11 @@ WTF::String WebTimeRangesToString(const WebTimeRanges& ranges) {
 // in the underlying WebCodecsEncodedChunkStreamParser, consider moving these
 // to possibly stream_parser.h. Meanwhile, must be kept in sync with similar
 // constexpr in that parser manually.
+// Note, caller updates results further as necessary (e.g. duration, DTS, etc).
+#if !BUILDFLAG(IS_COBALT)
 constexpr media::StreamParser::TrackId kWebCodecsAudioTrackId = 1;
 constexpr media::StreamParser::TrackId kWebCodecsVideoTrackId = 2;
 
-// TODO(crbug.com/1144908): Move these converters into a WebCodecs decoder
-// helper abstraction. Beyond reuse (instead of copying the various
-// MakeDecoderBuffer methods), that will also help enable buffering h264 where
-// bitstream conversion might be necessary during conversion.
-// Note, caller updates results further as necessary (e.g. duration, DTS, etc).
-#if !BUILDFLAG(IS_COBALT)
 scoped_refptr<media::StreamParserBuffer> MakeAudioStreamParserBuffer(
     const EncodedAudioChunk& audio_chunk) {
   // TODO(crbug.com/1144908): DecoderBuffer takes size_t size, but
