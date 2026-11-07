@@ -13,10 +13,4 @@
     RaisesException,
     Measure
   ] Promise<MLContext> createContext(optional MLContextOptions options = {});
-
-  [
-    CallWith=ScriptState,
-    RaisesException,
-    MeasureAs=MLCreateContextGPUDevice
-  ] Promise<MLContext> createContext(GPUDevice gpuDevice);
 };

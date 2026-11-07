@@ -54,11 +54,17 @@ class SharedImageFormat;
 
 namespace blink {
 
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGPU IDLs are excluded (Dawn disabled).
 class Canvas2dGPUTransferOption;
+#endif
 class CanvasContextCreationAttributesCore;
 class CanvasRenderingContext2DSettings;
 class ExceptionState;
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGPU IDLs are excluded (Dawn disabled).
 class GPUTexture;
+#endif
 class ImageData;
 class ImageDataSettings;
 class TextCluster;
@@ -71,7 +77,10 @@ class V8CanvasTextBaseline;
 class V8CanvasDirection;
 class V8CanvasFontKerning;
 class V8CanvasFontVariantCaps;
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGPU IDLs are excluded (Dawn disabled).
 class V8GPUTextureFormat;
+#endif
 enum class PredefinedColorSpace;
 
 class MODULES_EXPORT BaseRenderingContext2D : public CanvasRenderingContext,
@@ -131,6 +140,8 @@ class MODULES_EXPORT BaseRenderingContext2D : public CanvasRenderingContext,
                     int dirty_height,
                     ExceptionState&);
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: WebGPU IDLs are excluded (Dawn disabled).
   // Transfers a canvas' existing back-buffer to a GPUTexture for use in a
   // WebGPU pipeline. The canvas' image can be used as a texture, or the texture
   // can be bound as a color attachment and modified. After its texture is
@@ -149,6 +160,7 @@ class MODULES_EXPORT BaseRenderingContext2D : public CanvasRenderingContext,
   // return. This is useful if you need to create the WebGPU render pipeline
   // before `transferToGPUTexture` is first called.
   V8GPUTextureFormat getTextureFormat() const;
+#endif
 
   virtual bool CanCreateCanvas2dResourceProvider() const = 0;
 

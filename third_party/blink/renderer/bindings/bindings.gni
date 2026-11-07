@@ -274,6 +274,18 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
+    # Cobalt: Prune WebGPU bindings.
+    "*v8_canvas_2d_gpu_*",
+    "*v8_gpu.*",
+    "*v8_gpu_*",
+    "*v8_union_*gpu*",
+    "*v8_sync_iterator_gpu*",
+    "*v8_xr_gpu*",
+    "*v8_*wgsl*",
+    "*v8_union_htmlvideoelement_videoframe*",
+    "*v8_union_htmlcanvaselement_*videoframe*",
+    "*v8_union_undefined_unsignedlonglongenforcerange*",
+    "*v8_webgl*rendering_context_webgpu*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.

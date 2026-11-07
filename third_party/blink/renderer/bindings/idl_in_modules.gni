@@ -1350,6 +1350,21 @@ if (is_cobalt) {
     "//third_party/blink/renderer/modules/mediarecorder/media_recorder.idl",
   ]
 
+  # Cobalt: Prune WebGPU IDLs (Dawn is disabled, 113 IDLs remain).
+  _filtered_static_idl_webgpu =
+      filter_exclude(static_idl_files_in_modules,
+                     [
+                       "//third_party/blink/renderer/modules/webgpu/*",
+                       "//third_party/blink/renderer/modules/canvas/canvas2d/canvas_2d_gpu_transfer.idl",
+                       "//third_party/blink/renderer/modules/canvas/canvas2d/canvas_2d_gpu_transfer_option.idl",
+                       "//third_party/blink/renderer/modules/xr/xr_gpu_binding.idl",
+                       "//third_party/blink/renderer/modules/xr/xr_gpu_sub_image.idl",
+                       "//third_party/blink/renderer/modules/webgl/webgl_rendering_context_webgpu.idl",
+                       "//third_party/blink/renderer/modules/webgl/webgl2_rendering_context_webgpu.idl",
+                     ])
+  static_idl_files_in_modules = []
+  static_idl_files_in_modules = _filtered_static_idl_webgpu
+
   if (enable_in_app_dial) {
     static_idl_files_in_modules += get_path_info(
             [
