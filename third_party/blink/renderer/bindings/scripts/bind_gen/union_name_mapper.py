@@ -45,9 +45,13 @@ class UnionNameMapper(object):
             assert (isinstance(idl_name, str))
             assert (class_name is None or isinstance(class_name, str))
             assert (file_name is None or isinstance(file_name, str))
-            idl_typedef = database.find(idl_name)
+            # Cobalt: allow entries whose IDL is excluded from the build (e.g. modules/ai).
+            try:
+                idl_typedef = database.find(idl_name)
+            except KeyError:
+                return
             if not idl_typedef:
-                raise KeyError(idl_typedef)
+                return
             idl_type = idl_typedef.idl_type.unwrap(typedef=True)
             if not idl_type.is_union:
                 raise TypeError(idl_typedef + " does not refer to a union")

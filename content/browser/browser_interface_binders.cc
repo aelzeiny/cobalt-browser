@@ -19,7 +19,9 @@
 #if !BUILDFLAG(IS_COBALT)
 #include "components/language_detection/content/common/language_detection.mojom.h"  // nogncheck
 #endif  // !BUILDFLAG(IS_COBALT)
-#include "components/optimization_guide/public/mojom/model_broker.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/optimization_guide/public/mojom/model_broker.mojom.h"  // nogncheck
+#endif
 #include "components/viz/host/gpu_client.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
 #include "content/browser/attribution_reporting/attribution_internals.mojom.h"  // nogncheck
@@ -144,7 +146,9 @@
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/features_generated.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
-#include "third_party/blink/public/mojom/ai/ai_manager.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/public/mojom/ai/ai_manager.mojom.h"  // nogncheck
+#endif
 #include "third_party/blink/public/mojom/background_fetch/background_fetch.mojom.h"
 #include "third_party/blink/public/mojom/background_sync/background_sync.mojom.h"
 #include "third_party/blink/public/mojom/blob/blob_url_store.mojom.h"
@@ -180,7 +184,9 @@
 #include "third_party/blink/public/mojom/mediastream/media_devices.mojom.h"
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 #include "third_party/blink/public/mojom/notifications/notification_service.mojom.h"
-#include "third_party/blink/public/mojom/on_device_translation/translation_manager.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/public/mojom/on_device_translation/translation_manager.mojom.h"  // nogncheck
+#endif
 #include "third_party/blink/public/mojom/origin_trials/origin_trial_state_host.mojom.h"
 #include "third_party/blink/public/mojom/payments/payment_app.mojom.h"
 #include "third_party/blink/public/mojom/payments/secure_payment_confirmation_service.mojom.h"
@@ -1148,6 +1154,7 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
                           base::Unretained(host->GetProcess())));
 #endif
 
+#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     // We take the `document_associated_data` when the callback runs because
     // RenderFrameHosts live across multiple documents. Even though the current
@@ -1174,6 +1181,7 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
         },
         base::Unretained(host)));
   }
+#endif
 
 #if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(blink::features::kLanguageDetectionAPI)) {
@@ -1333,12 +1341,14 @@ void PopulateBinderMapWithContext(
   map->Add<blink::mojom::StorageAccessHandle>(
       base::BindRepeating(&StorageAccessHandle::Create));
 
+#if !BUILDFLAG(IS_COBALT)
   map->Add<optimization_guide::mojom::ModelBroker>(base::BindRepeating(
       &EmptyBinderForFrame<optimization_guide::mojom::ModelBroker>));
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     map->Add<blink::mojom::AIManager>(
         base::BindRepeating(&EmptyBinderForFrame<blink::mojom::AIManager>));
   }
+#endif
 
   // This should be last to allow overrides of any interface.
   GetContentClient()->browser()->RegisterBrowserInterfaceBindersForFrame(host,
@@ -1474,6 +1484,7 @@ void PopulateDedicatedWorkerBinders(DedicatedWorkerHost* host,
       RenderProcessHost::NotificationServiceCreatorType::kDedicatedWorker,
       host));
 
+#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     map->Add<blink::mojom::AIManager>(
         base::BindRepeating(&ContentBrowserClient::BindAIManager,
@@ -1481,6 +1492,7 @@ void PopulateDedicatedWorkerBinders(DedicatedWorkerHost* host,
                             host->GetProcessHost()->GetBrowserContext(),
                             base::Unretained(host), /*rfh=*/nullptr));
   }
+
   if (base::FeatureList::IsEnabled(blink::features::kTranslationAPI)) {
     map->Add<blink::mojom::TranslationManager>(base::BindRepeating(
         [](DedicatedWorkerHost* host,
@@ -1491,7 +1503,7 @@ void PopulateDedicatedWorkerBinders(DedicatedWorkerHost* host,
         },
         base::Unretained(host)));
   }
-#if !BUILDFLAG(IS_COBALT)
+
   if (base::FeatureList::IsEnabled(blink::features::kLanguageDetectionAPI)) {
     map->Add<language_detection::mojom::ContentLanguageDetectionDriver>(
         base::BindRepeating(
@@ -1586,6 +1598,7 @@ void PopulateSharedWorkerBinders(SharedWorkerHost* host, mojo::BinderMap* map) {
         &BindWebNNContextProviderForWorker<SharedWorkerHost>,
         base::Unretained(host)));
   }
+#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     map->Add<blink::mojom::AIManager>(
         base::BindRepeating(&ContentBrowserClient::BindAIManager,
@@ -1593,6 +1606,7 @@ void PopulateSharedWorkerBinders(SharedWorkerHost* host, mojo::BinderMap* map) {
                             host->GetProcessHost()->GetBrowserContext(),
                             base::Unretained(host), /*rfh=*/nullptr));
   }
+
   if (base::FeatureList::IsEnabled(blink::features::kTranslationAPI)) {
     map->Add<blink::mojom::TranslationManager>(base::BindRepeating(
         [](SharedWorkerHost* host,
@@ -1603,7 +1617,7 @@ void PopulateSharedWorkerBinders(SharedWorkerHost* host, mojo::BinderMap* map) {
         },
         base::Unretained(host)));
   }
-#if !BUILDFLAG(IS_COBALT)
+
   if (base::FeatureList::IsEnabled(blink::features::kLanguageDetectionAPI)) {
     map->Add<language_detection::mojom::ContentLanguageDetectionDriver>(
         base::BindRepeating(
@@ -1774,10 +1788,12 @@ void PopulateServiceWorkerBinders(ServiceWorkerHost* host,
         &BindWebNNContextProviderForWorker<ServiceWorkerHost>,
         base::Unretained(host)));
   }
+#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     map->Add<blink::mojom::AIManager>(base::BindRepeating(
         &ServiceWorkerHost::BindAIManager, base::Unretained(host)));
   }
+
   if (base::FeatureList::IsEnabled(blink::features::kTranslationAPI)) {
     map->Add<blink::mojom::TranslationManager>(base::BindRepeating(
         [](ServiceWorkerHost* host,
@@ -1791,7 +1807,7 @@ void PopulateServiceWorkerBinders(ServiceWorkerHost* host,
         },
         base::Unretained(host)));
   }
-#if !BUILDFLAG(IS_COBALT)
+
   if (base::FeatureList::IsEnabled(blink::features::kLanguageDetectionAPI)) {
     map->Add<language_detection::mojom::ContentLanguageDetectionDriver>(
         base::BindRepeating(

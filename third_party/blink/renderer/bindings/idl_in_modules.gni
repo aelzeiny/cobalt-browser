@@ -1297,6 +1297,21 @@ if (is_cobalt && use_starboard_media && target_os_is_android) {
 }
 
 if (is_cobalt) {
+  # Cobalt: built-in AI / Gemini Nano is not supported on TV devices.
+  static_idl_files_in_modules -= [
+    "//third_party/blink/renderer/modules/ai/availability.idl",
+    "//third_party/blink/renderer/modules/ai/create_monitor.idl",
+    "//third_party/blink/renderer/modules/ai/language_model.idl",
+    "//third_party/blink/renderer/modules/ai/language_model_create_options.idl",
+    "//third_party/blink/renderer/modules/ai/language_model_params.idl",
+    "//third_party/blink/renderer/modules/ai/on_device_translation/language_detector.idl",
+    "//third_party/blink/renderer/modules/ai/on_device_translation/translator.idl",
+    "//third_party/blink/renderer/modules/ai/proofreader.idl",
+    "//third_party/blink/renderer/modules/ai/rewriter.idl",
+    "//third_party/blink/renderer/modules/ai/summarizer.idl",
+    "//third_party/blink/renderer/modules/ai/writer.idl",
+  ]
+
   static_idl_files_in_modules += get_path_info(
           [
             "//third_party/blink/renderer/modules/cobalt/crash_log/crash_log.idl",

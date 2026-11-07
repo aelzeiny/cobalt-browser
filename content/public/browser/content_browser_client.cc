@@ -26,7 +26,9 @@
 #include "components/language_detection/content/common/language_detection.mojom.h"  // nogncheck
 #include "components/language_detection/core/browser/language_detection_model_provider.h"  // nogncheck
 #endif  // !BUILDFLAG(IS_COBALT)
-#include "content/browser/ai/echo_ai_manager_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/ai/echo_ai_manager_impl.h"  // nogncheck
+#endif
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/anchor_element_preconnect_delegate.h"
 #include "content/public/browser/browser_context.h"
@@ -1904,6 +1906,7 @@ bool ContentBrowserClient::ShouldSuppressAXLoadComplete(RenderFrameHost* rfh) {
   return false;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void ContentBrowserClient::BindAIManager(
     BrowserContext* browser_context,
     base::SupportsUserData* context_user_data,
@@ -1917,6 +1920,7 @@ void ContentBrowserClient::BindTranslationManager(
     base::SupportsUserData* context_user_data,
     const url::Origin& origin,
     mojo::PendingReceiver<blink::mojom::TranslationManager> receiver) {}
+#endif
 
 #if !BUILDFLAG(IS_COBALT)
 namespace {
