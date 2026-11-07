@@ -27,8 +27,10 @@
 #include "third_party/blink/renderer/modules/cookie_store/cookie_change_event.h"
 #include "third_party/blink/renderer/modules/event_modules.h"
 #include "third_party/blink/renderer/modules/event_target_modules.h"
-#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"
-#include "third_party/blink/renderer/modules/service_worker/service_worker_registration.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"  // nogncheck
+#include "third_party/blink/renderer/modules/service_worker/service_worker_registration.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -187,9 +189,13 @@ const KURL DefaultCookieURL(ExecutionContext* execution_context) {
   if (auto* window = DynamicTo<LocalDOMWindow>(execution_context))
     return window->document()->CookieURL();
 
+#if BUILDFLAG(IS_COBALT)
+  NOTREACHED();
+#else
   return KURL(To<ServiceWorkerGlobalScope>(execution_context)
                   ->serviceWorker()
                   ->scriptURL());
+#endif
 }
 
 // Return empty KURL if and only if an exception is thrown.
@@ -212,6 +218,9 @@ KURL CookieUrlForRead(const CookieStoreGetOptions* options,
       return KURL();
     }
   } else {
+#if BUILDFLAG(IS_COBALT)
+    NOTREACHED();
+#else
     DCHECK(context->IsServiceWorkerGlobalScope());
     DCHECK_EQ(
         default_cookie_url.GetString(),
@@ -221,6 +230,7 @@ KURL CookieUrlForRead(const CookieStoreGetOptions* options,
       exception_state.ThrowTypeError("URL must be within Service Worker scope");
       return KURL();
     }
+#endif
   }
 
   return cookie_url;
@@ -232,12 +242,16 @@ net::SiteForCookies DefaultSiteForCookies(ExecutionContext* execution_context) {
   if (auto* window = DynamicTo<LocalDOMWindow>(execution_context))
     return window->document()->SiteForCookies();
 
+#if BUILDFLAG(IS_COBALT)
+  NOTREACHED();
+#else
   auto* scope = To<ServiceWorkerGlobalScope>(execution_context);
   const blink::BlinkStorageKey& key = scope->storage_key();
   if (key.IsFirstPartyContext()) {
     return net::SiteForCookies::FromUrl(GURL(scope->Url()));
   }
   return net::SiteForCookies();
+#endif
 }
 
 const scoped_refptr<const SecurityOrigin> DefaultTopFrameOrigin(
@@ -250,6 +264,9 @@ const scoped_refptr<const SecurityOrigin> DefaultTopFrameOrigin(
     return window->document()->TopFrameOrigin()->IsolatedCopy();
   }
 
+#if BUILDFLAG(IS_COBALT)
+  NOTREACHED();
+#else
   const BlinkStorageKey& key =
       To<ServiceWorkerGlobalScope>(execution_context)->storage_key();
   if (key.IsFirstPartyContext()) {
@@ -257,6 +274,7 @@ const scoped_refptr<const SecurityOrigin> DefaultTopFrameOrigin(
   }
   return SecurityOrigin::CreateFromUrlOrigin(
       url::Origin::Create(net::SchemefulSite(key.GetTopLevelSite()).GetURL()));
+#endif
 }
 
 bool IsAdTagged(ExecutionContext* context) {

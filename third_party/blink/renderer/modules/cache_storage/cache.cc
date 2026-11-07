@@ -14,6 +14,7 @@
 #include "third_party/blink/public/common/cache_storage/cache_storage_utils.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/cache_storage/cache_storage.mojom-blink.h"
+#include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/idl_types.h"
 #include "third_party/blink/renderer/bindings/core/v8/native_value_traits_impl.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_function.h"
@@ -39,7 +40,9 @@
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage_error.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage_trace_utils.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_utils.h"
-#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/bindings/v8_throw_exception.h"
@@ -69,6 +72,7 @@ bool VaryHeaderContainsAsterisk(const Response* response) {
   return false;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 bool HasJavascriptMimeType(const Response* response) {
   // Strip charset parameters from the MIME type since MIMETypeRegistry does
   // not expect them to be present.
@@ -76,6 +80,7 @@ bool HasJavascriptMimeType(const Response* response) {
       ExtractMIMETypeFromMediaType(AtomicString(response->InternalMIMEType()));
   return MIMETypeRegistry::IsSupportedJavaScriptMIMEType(mime_type);
 }
+#endif
 
 void ValidateRequestForPut(const Request* request,
                            ExceptionState& exception_state) {
@@ -93,6 +98,7 @@ void ValidateRequestForPut(const Request* request,
   DCHECK(!request->HasBody());
 }
 
+#if !BUILDFLAG(IS_COBALT)
 enum class CodeCachePolicy {
   // Use the default policy.  Currently that policy generates full code cache
   // when a script is stored during service worker install.
@@ -129,9 +135,13 @@ CodeCachePolicy GetCodeCachePolicy(ExecutionContext* context,
 
   return CodeCachePolicy::kAuto;
 }
+#endif
 
 bool ShouldGenerateV8CodeCache(ScriptState* script_state,
                                const Response* response) {
+#if BUILDFLAG(IS_COBALT)
+  return false;
+#else
   ExecutionContext* context = ExecutionContext::From(script_state);
   auto* global_scope = DynamicTo<ServiceWorkerGlobalScope>(context);
   if (!global_scope)
@@ -152,6 +162,7 @@ bool ShouldGenerateV8CodeCache(ScriptState* script_state,
     return false;
 
   return true;
+#endif
 }
 
 }  // namespace
@@ -480,6 +491,7 @@ class Cache::BarrierCallbackForPutComplete final
   // Report the script stats if this cache storage is for service worker
   // execution context and it's in installation phase.
   void MaybeReportInstalledScripts() {
+#if !BUILDFLAG(IS_COBALT)
     ExecutionContext* context = resolver_->GetExecutionContext();
     auto* global_scope = DynamicTo<ServiceWorkerGlobalScope>(context);
     if (!global_scope)
@@ -503,6 +515,7 @@ class Cache::BarrierCallbackForPutComplete final
       global_scope->CountCacheStorageInstalledScript(blob_data_handle->size(),
                                                      side_data_blob_size);
     }
+#endif
   }
 
   bool completed_ = false;
@@ -625,6 +638,7 @@ class Cache::CodeCacheHandleCallbackForPut final
   }
 
  private:
+#if !BUILDFLAG(IS_COBALT)
   ServiceWorkerGlobalScope* GetServiceWorkerGlobalScope() {
     ExecutionContext* context = ExecutionContext::From(script_state_);
     if (!context || context->IsContextDestroyed())
@@ -636,6 +650,7 @@ class Cache::CodeCacheHandleCallbackForPut final
     DCHECK(global_scope);
     return global_scope;
   }
+#endif
 
   scoped_refptr<CachedMetadata> GenerateFullCodeCache(
       DOMArrayBuffer* array_buffer) {
@@ -900,11 +915,13 @@ ScriptPromise<V8UnionResponseOrUndefined> Cache::MatchImpl(
 
   bool in_related_fetch_event = false;
   bool in_range_fetch_event = false;
+#if !BUILDFLAG(IS_COBALT)
   ExecutionContext* context = ExecutionContext::From(script_state);
   if (auto* global_scope = DynamicTo<ServiceWorkerGlobalScope>(context)) {
     in_related_fetch_event = global_scope->HasRelatedFetchEvent(request->url());
     in_range_fetch_event = global_scope->HasRangeFetchEvent(request->url());
   }
+#endif
 
   // Make sure to bind the Cache object to keep the mojo remote alive during
   // the operation. Otherwise GC might prevent the callback from ever being

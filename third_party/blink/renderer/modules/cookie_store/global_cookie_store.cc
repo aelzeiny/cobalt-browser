@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "build/build_config.h"
 #include "services/network/public/mojom/restricted_cookie_manager.mojom-blink.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
@@ -13,7 +14,9 @@
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/workers/worker_global_scope.h"
 #include "third_party/blink/renderer/modules/cookie_store/cookie_store.h"
-#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
 #include "third_party/blink/renderer/platform/supplementable.h"
@@ -83,6 +86,7 @@ CookieStore* GlobalCookieStore::cookieStore(LocalDOMWindow& window) {
       window);
 }
 
+#if !BUILDFLAG(IS_COBALT)
 // static
 CookieStore* GlobalCookieStore::cookieStore(ServiceWorkerGlobalScope& worker) {
   // ServiceWorkerGlobalScope is Supplementable<WorkerGlobalScope>, not
@@ -90,5 +94,6 @@ CookieStore* GlobalCookieStore::cookieStore(ServiceWorkerGlobalScope& worker) {
   return GlobalCookieStoreImpl<WorkerGlobalScope>::From(worker).GetCookieStore(
       worker);
 }
+#endif
 
 }  // namespace blink

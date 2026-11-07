@@ -66,4 +66,30 @@ blink_modules_sources("payments") {
     sources = _filtered_sources
     deps -= [ "//third_party/blink/renderer/modules/credentialmanagement" ]
   }
+
+  if (is_cobalt) {
+    sources -= [
+      "abort_payment_event.cc",
+      "abort_payment_event.h",
+      "abort_payment_respond_with_observer.cc",
+      "abort_payment_respond_with_observer.h",
+      "can_make_payment_event.cc",
+      "can_make_payment_event.h",
+      "can_make_payment_respond_with_observer.cc",
+      "can_make_payment_respond_with_observer.h",
+      "payment_app_service_worker_global_scope.h",
+      "payment_app_service_worker_registration.cc",
+      "payment_app_service_worker_registration.h",
+      "payment_event_data_conversion.cc",
+      "payment_event_data_conversion.h",
+      "payment_handler_utils.cc",
+      "payment_handler_utils.h",
+      "payment_manager.cc",
+      "payment_manager.h",
+      "payment_request_event.cc",
+      "payment_request_event.h",
+      "payment_request_respond_with_observer.cc",
+      "payment_request_respond_with_observer.h",
+    ]
+  }
 }

@@ -25,11 +25,14 @@
 #include "third_party/blink/renderer/core/fetch/response.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
+#include "third_party/blink/renderer/core/workers/worker_global_scope.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage_blob_client_list.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage_error.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_storage_trace_utils.h"
 #include "third_party/blink/renderer/modules/cache_storage/cache_utils.h"
-#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/service_worker/service_worker_global_scope.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
@@ -645,10 +648,12 @@ ScriptPromise<Response> CacheStorage::MatchImpl(
   ExecutionContext* context = ExecutionContext::From(script_state);
   bool in_related_fetch_event = false;
   bool in_range_fetch_event = false;
+#if !BUILDFLAG(IS_COBALT)
   if (auto* global_scope = DynamicTo<ServiceWorkerGlobalScope>(context)) {
     in_related_fetch_event = global_scope->HasRelatedFetchEvent(request->url());
     in_range_fetch_event = global_scope->HasRangeFetchEvent(request->url());
   }
+#endif
 
   TRACE_EVENT_WITH_FLOW2("CacheStorage", "CacheStorage::MatchImpl",
                          TRACE_ID_GLOBAL(trace_id), TRACE_EVENT_FLAG_FLOW_OUT,
@@ -744,6 +749,7 @@ CacheStorage::CacheStorage(
 
   if (pending_remote) {
     cache_storage_remote_.Bind(std::move(pending_remote), task_runner);
+#if !BUILDFLAG(IS_COBALT)
   } else if (auto* service_worker =
                  DynamicTo<ServiceWorkerGlobalScope>(context)) {
     // Service workers may already have a CacheStoragePtr provided as an
@@ -753,6 +759,7 @@ CacheStorage::CacheStorage(
     if (info) {
       cache_storage_remote_.Bind(std::move(info), task_runner);
     }
+#endif
   }
 
   // Otherwise wait for MaybeInit() to bind a new mojo connection.

@@ -14,6 +14,12 @@
 
 #include <utility>
 
+#include "base/notreached.h"
+#include "third_party/blink/public/common/renderer_preferences/renderer_preferences.h"  // nogncheck
+#include "third_party/blink/public/platform/modules/service_worker/web_service_worker_fetch_context.h"  // nogncheck
+#include "third_party/blink/public/platform/url_loader_throttle_provider.h"  // nogncheck
+#include "third_party/blink/public/platform/web_socket_handshake_throttle_provider.h"  // nogncheck
+#include "third_party/blink/public/web/web_embedded_worker.h"  // nogncheck
 #include "third_party/blink/renderer/modules/bluetooth/bluetooth.h"  // nogncheck
 #include "third_party/blink/renderer/modules/hid/hid.h"  // nogncheck
 #include "third_party/blink/renderer/modules/ml/navigator_ml.h"  // nogncheck
@@ -488,6 +494,40 @@ void ExternalTextureCache::Trace(Visitor* visitor) const {
 
 V8GPUTextureFormat BaseRenderingContext2D::getTextureFormat() const {
   return V8GPUTextureFormat(V8GPUTextureFormat::Enum::kR8Unorm);
+}
+
+// --- WebEmbeddedWorker and WebServiceWorkerFetchContext Stubs ---
+
+// Cobalt: blink_modules/service_worker is removed from Cobalt builds.
+// Embedded workers are disabled in Cobalt.
+std::unique_ptr<WebEmbeddedWorker> WebEmbeddedWorker::Create(
+    WebServiceWorkerContextClient* client) {
+  NOTREACHED() << "WebEmbeddedWorker is disabled in Cobalt.";
+  return nullptr;
+}
+
+// Cobalt: blink_modules/service_worker is removed from Cobalt builds.
+// Service worker fetch context is disabled in Cobalt.
+scoped_refptr<WebServiceWorkerFetchContext>
+WebServiceWorkerFetchContext::Create(
+    const RendererPreferences& renderer_preferences,
+    const WebURL& worker_script_url,
+    std::unique_ptr<network::PendingSharedURLLoaderFactory>
+        pending_url_loader_factory,
+    std::unique_ptr<network::PendingSharedURLLoaderFactory>
+        pending_script_loader_factory,
+    const WebURL& script_url_to_skip_throttling,
+    std::unique_ptr<URLLoaderThrottleProvider> throttle_provider,
+    std::unique_ptr<WebSocketHandshakeThrottleProvider>
+        websocket_handshake_throttle_provider,
+    CrossVariantMojoReceiver<mojom::RendererPreferenceWatcherInterfaceBase>
+        preference_watcher_receiver,
+    CrossVariantMojoReceiver<mojom::SubresourceLoaderUpdaterInterfaceBase>
+        pending_subresource_loader_updater,
+    const std::vector<WebString>& cors_exempt_header_list,
+    const bool is_third_party_context) {
+  NOTREACHED() << "WebServiceWorkerFetchContext is disabled in Cobalt.";
+  return nullptr;
 }
 
 }  // namespace blink

@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_COOKIE_STORE_GLOBAL_COOKIE_STORE_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_COOKIE_STORE_GLOBAL_COOKIE_STORE_H_
 
+#include "build/build_config.h"
 #include "third_party/blink/renderer/core/dom/events/event_target.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 
@@ -12,7 +13,9 @@ namespace blink {
 
 class CookieStore;
 class LocalDOMWindow;
+#if !BUILDFLAG(IS_COBALT)
 class ServiceWorkerGlobalScope;
+#endif
 
 // The "cookieStore" attribute on the Window global and SW global scope.
 class GlobalCookieStore {
@@ -20,7 +23,9 @@ class GlobalCookieStore {
 
  public:
   static CookieStore* cookieStore(LocalDOMWindow&);
+#if !BUILDFLAG(IS_COBALT)
   static CookieStore* cookieStore(ServiceWorkerGlobalScope&);
+#endif
 
   // Event listener only available on the SW global scope.
   DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(cookiechange, kCookiechange)

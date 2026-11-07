@@ -87,13 +87,17 @@
 #include "third_party/blink/renderer/modules/peerconnection/peer_connection_tracker.h"  // nogncheck
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
 #include "third_party/blink/renderer/modules/presentation/presentation.h"
-#include "third_party/blink/renderer/modules/push_messaging/push_messaging_client.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/push_messaging/push_messaging_client.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/remoteplayback/html_media_element_remote_playback.h"
 #include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"
 #include "third_party/blink/renderer/modules/screen_details/screen_details.h"
 #include "third_party/blink/renderer/modules/screen_details/window_screen_details.h"
 #include "third_party/blink/renderer/modules/screen_orientation/screen_orientation_controller.h"
-#include "third_party/blink/renderer/modules/service_worker/navigator_service_worker.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/service_worker/navigator_service_worker.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/speech/speech_synthesis.h"
 #include "third_party/blink/renderer/modules/storage/dom_window_storage.h"
 #include "third_party/blink/renderer/modules/storage/dom_window_storage_controller.h"
@@ -341,8 +345,10 @@ void ModulesInitializer::OnClearWindowObjectInMainWorld(
 
   // TODO(nhiroki): Figure out why ServiceWorkerContainer needs to be eagerly
   // initialized.
+#if !BUILDFLAG(IS_COBALT)
   if (!document.IsInitialEmptyDocument())
     NavigatorServiceWorker::From(window);
+#endif
 
   DOMWindowStorageController::From(window);
   if (RuntimeEnabledFeatures::PresentationEnabled() &&

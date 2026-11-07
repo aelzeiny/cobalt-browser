@@ -38,6 +38,10 @@ blink_modules_sources("exported") {
     deps -= [ "//third_party/blink/renderer/modules/shared_storage" ]
   }
   if (is_cobalt) {
+    sources -= [
+      "web_embedded_worker_impl.cc",
+      "web_embedded_worker_impl.h",
+    ]
     deps -= [ "//third_party/blink/renderer/modules/ai" ]
   }
 }

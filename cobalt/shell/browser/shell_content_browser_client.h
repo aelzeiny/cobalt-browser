@@ -111,6 +111,13 @@ class ShellContentBrowserClient : public ContentBrowserClient {
       content::BrowserContext* browser_context,
       const base::FilePath& partition_path,
       const base::FilePath& relative_partition_path) override;
+  AllowServiceWorkerResult AllowServiceWorker(
+      const GURL& scope,
+      const net::SiteForCookies& site_for_cookies,
+      const std::optional<url::Origin>& top_frame_origin,
+      const blink::StorageKey& storage_key,
+      const GURL& script_url,
+      content::BrowserContext* context) override;
   base::OnceClosure SelectClientCertificate(
       BrowserContext* browser_context,
       int process_id,

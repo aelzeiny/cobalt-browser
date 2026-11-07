@@ -198,6 +198,12 @@ component("modules") {
       "//third_party/blink/renderer/modules/nfc",
       "//third_party/blink/renderer/modules/serial",
       "//third_party/blink/renderer/modules/webusb",
+      # Cobalt: service_worker and satellite modules unused on Living Room TV.
+      "//third_party/blink/renderer/modules/service_worker",
+      "//third_party/blink/renderer/modules/background_fetch",
+      "//third_party/blink/renderer/modules/background_sync",
+      "//third_party/blink/renderer/modules/content_index",
+      "//third_party/blink/renderer/modules/push_messaging",
     ]
     sub_modules += [
       "//third_party/blink/renderer/modules/cobalt:h_5_vcc",
@@ -350,6 +356,13 @@ source_set("modules_testing") {
     sources += [
       "compute_pressure/testing/internals_compute_pressure.cc",
       "compute_pressure/testing/internals_compute_pressure.h",
+    ]
+  }
+
+  if (is_cobalt) {
+    sources -= [
+      "service_worker/testing/internals_service_worker.cc",
+      "service_worker/testing/internals_service_worker.h",
     ]
   }
 
@@ -771,6 +784,7 @@ source_set("unit_tests") {
 
   if (is_cobalt) {
     sources -= filter_include(sources, [ "mediarecorder/*" ])
+    sources -= filter_include(sources, [ "service_worker/*" ])
     sources += [
       "cobalt/h5vcc_accessibility/h_5_vcc_accessibility_test.cc",
       "cobalt/h5vcc_experiments/experiments_utils_test.cc",

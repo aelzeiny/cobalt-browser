@@ -458,6 +458,19 @@ ShellContentBrowserClient::CreateDevToolsManagerDelegate() {
   return std::make_unique<ShellDevToolsManagerDelegate>(browser_context());
 }
 
+AllowServiceWorkerResult ShellContentBrowserClient::AllowServiceWorker(
+    const GURL& scope,
+    const net::SiteForCookies& site_for_cookies,
+    const std::optional<url::Origin>& top_frame_origin,
+    const blink::StorageKey& storage_key,
+    const GURL& script_url,
+    content::BrowserContext* context) {
+  // Cobalt: blink_modules/service_worker is removed from Cobalt builds.
+  // Deny all service workers so ServiceWorkerControlleeRequestHandler falls
+  // back to the network and never attempts to start a worker.
+  return AllowServiceWorkerResult::No();
+}
+
 void ShellContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
     blink::AssociatedInterfaceRegistry* associated_registry,
