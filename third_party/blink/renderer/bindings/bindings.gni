@@ -278,6 +278,7 @@ if (is_cobalt) {
     "*v8_presentation*",
     "*v8_remote_playback*",
     "*v8_union_dommatrix_float32array_float64array*",
+    "*v8_union_string_unsignedlong*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.
@@ -293,19 +294,32 @@ if (is_cobalt) {
   bindings_unittest_files -=
       get_path_info([ "modules/v8/v8_binding_for_modules_test.cc" ], "abspath")
 
-  cobalt_hardware_exclude_patterns = [
+  # Cobalt: Hardware APIs (bluetooth, webusb, hid, serial, webmidi) exclusion patterns.
+  cobalt_hw_apis_exclude_patterns = [
     "*v8_bluetooth*",
+    "*v8_flow_control_type*",
     "*v8_hid.*",
     "*v8_hid_*",
-    "*v8_ndef*",
+    "*v8_midi_access*",
+    "*v8_midi_connection_event*",
+    "*v8_midi_input*",
+    "*v8_midi_message_event*",
+    "*v8_midi_options*",
+    "*v8_midi_output*",
+    "*v8_midi_port*",
+    "*v8_parity_type*",
     "*v8_request_device_options*",
     "*v8_serial.*",
     "*v8_serial_*",
-    "*v8_serial_port*",
+    "*v8_sync_iterator_bluetooth*",
+    "*v8_sync_iterator_midi*",
     "*v8_usb.*",
     "*v8_usb_*",
     "*v8_watch_advertisements_options*",
   ]
+
+  cobalt_hardware_exclude_patterns =
+      cobalt_hw_apis_exclude_patterns + [ "*v8_ndef*" ]
 
   # Cobalt: Sensor, breakout_box, and NFC exclusion patterns.
   cobalt_sensors_exclude_patterns = [

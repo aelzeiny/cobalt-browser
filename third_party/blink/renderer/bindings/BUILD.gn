@@ -285,7 +285,8 @@ generate_bindings("generate_bindings_all") {
     _filtered_cobalt_outputs =
         filter_exclude(outputs, cobalt_idb_exclude_patterns +
                                     cobalt_canvas_exclude_patterns +
-                                    cobalt_sensors_exclude_patterns)
+                                    cobalt_sensors_exclude_patterns +
+                                    cobalt_hw_apis_exclude_patterns)
     outputs = []
     outputs = _filtered_cobalt_outputs
   }
@@ -433,7 +434,8 @@ action_with_pydeps("check_generated_file_list") {
     _filtered_cobalt_file_list =
         filter_exclude(file_list, cobalt_idb_exclude_patterns +
                                       cobalt_canvas_exclude_patterns +
-                                      cobalt_sensors_exclude_patterns)
+                                      cobalt_sensors_exclude_patterns +
+                                      cobalt_hw_apis_exclude_patterns)
     file_list = []
     file_list = _filtered_cobalt_file_list
   }

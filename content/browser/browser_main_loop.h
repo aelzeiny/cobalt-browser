@@ -56,9 +56,12 @@ class DeviceMonitorLinux;
 #endif
 }  // namespace media
 
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: cut browser-side MIDI stack
 namespace midi {
 class MidiService;
 }  // namespace midi
+#endif  // !BUILDFLAG(IS_COBALT)
 
 namespace mojo {
 namespace core {
@@ -183,7 +186,10 @@ class CONTENT_EXPORT BrowserMainLoop {
   }
 #endif
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: cut browser-side MIDI stack
   midi::MidiService* midi_service() const { return midi_service_.get(); }
+#endif  // !BUILDFLAG(IS_COBALT)
 
   // Returns the task runner for tasks that that are critical to producing a new
   // CompositorFrame on resize. On Mac this will be the task runner provided by
@@ -353,7 +359,10 @@ class CONTENT_EXPORT BrowserMainLoop {
 
   std::unique_ptr<media::AudioSystem> audio_system_;
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: cut browser-side MIDI stack
   std::unique_ptr<midi::MidiService> midi_service_;
+#endif  // !BUILDFLAG(IS_COBALT)
 
   // Must be deleted on the IO thread.
   std::unique_ptr<SpeechRecognitionManagerImpl> speech_recognition_manager_;

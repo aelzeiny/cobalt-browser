@@ -54,7 +54,10 @@
 #include "content/browser/keyboard_lock/keyboard_lock_service_impl.h"
 #include "content/browser/loader/content_security_notifier.h"
 #include "content/browser/media/media_web_contents_observer.h"
-#include "content/browser/media/midi_host.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: cut browser-side MIDI stack
+#include "content/browser/media/midi_host.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "content/browser/media/session/media_session_service_impl.h"
 #include "content/browser/network/reporting_service_proxy.h"
 #include "content/browser/picture_in_picture/picture_in_picture_service_impl.h"
@@ -113,7 +116,10 @@
 #include "media/capture/mojom/image_capture.mojom.h"
 #endif
 #include "media/capture/mojom/video_capture.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: cut browser-side MIDI stack
 #include "media/midi/midi_service.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "media/mojo/mojom/interface_factory.mojom.h"
 #include "media/mojo/mojom/key_system_support.mojom.h"
 #include "media/mojo/mojom/media_metrics_provider.mojom.h"
@@ -841,6 +847,8 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       &RenderFrameHostImpl::CreateMdnsResponder, base::Unretained(host)));
 #endif  // BUILDFLAG(ENABLE_MDNS)
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: cut browser-side MIDI stack
   // BrowserMainLoop::GetInstance() may be null on unit tests.
   if (BrowserMainLoop::GetInstance()) {
     map->Add<midi::mojom::MidiSessionProvider>(
@@ -849,6 +857,7 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
                             BrowserMainLoop::GetInstance()->midi_service()),
         GetIOThreadTaskRunner({}));
   }
+#endif  // !BUILDFLAG(IS_COBALT)
 
   map->Add<media::mojom::MediaPlayerObserverClient>(base::BindRepeating(
       &BindMediaPlayerObserverClientHandler, base::Unretained(host)));

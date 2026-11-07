@@ -14,14 +14,10 @@
 
 #include <utility>
 
-#include "third_party/blink/renderer/modules/bluetooth/bluetooth.h"  // nogncheck
-#include "third_party/blink/renderer/modules/hid/hid.h"  // nogncheck
 #include "third_party/blink/renderer/modules/ml/navigator_ml.h"  // nogncheck
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
-#include "third_party/blink/renderer/modules/serial/serial.h"  // nogncheck
-#include "third_party/blink/renderer/modules/webusb/usb.h"  // nogncheck
 #include "third_party/blink/renderer/modules/xr/xr_frame_provider.h"  // nogncheck
 #include "third_party/blink/renderer/modules/xr/xr_session.h"  // nogncheck
 #include "third_party/blink/renderer/modules/xr/xr_system.h"  // nogncheck
@@ -53,45 +49,6 @@ static const WrapperTypeInfo g_dummy_wrapper_type_info = {
 #define STUB_V8_WRAPPER(ClassName) \
   class ClassName { public: static const WrapperTypeInfo wrapper_type_info_; }; \
   const WrapperTypeInfo ClassName::wrapper_type_info_ = g_dummy_wrapper_type_info;
-
-// Web Bluetooth V8 Wrappers
-STUB_V8_WRAPPER(V8Bluetooth)
-STUB_V8_WRAPPER(V8BluetoothAdvertisingEvent)
-STUB_V8_WRAPPER(V8BluetoothCharacteristicProperties)
-STUB_V8_WRAPPER(V8BluetoothDevice)
-STUB_V8_WRAPPER(V8BluetoothLEScan)
-STUB_V8_WRAPPER(V8BluetoothManufacturerDataMap)
-STUB_V8_WRAPPER(V8BluetoothRemoteGATTCharacteristic)
-STUB_V8_WRAPPER(V8BluetoothRemoteGATTDescriptor)
-STUB_V8_WRAPPER(V8BluetoothRemoteGATTServer)
-STUB_V8_WRAPPER(V8BluetoothRemoteGATTService)
-STUB_V8_WRAPPER(V8BluetoothServiceDataMap)
-STUB_V8_WRAPPER(V8BluetoothUUID)
-
-// WebUSB V8 Wrappers
-STUB_V8_WRAPPER(V8USB)
-STUB_V8_WRAPPER(V8USBAlternateInterface)
-STUB_V8_WRAPPER(V8USBConfiguration)
-STUB_V8_WRAPPER(V8USBConnectionEvent)
-STUB_V8_WRAPPER(V8USBDevice)
-STUB_V8_WRAPPER(V8USBEndpoint)
-STUB_V8_WRAPPER(V8USBInTransferResult)
-STUB_V8_WRAPPER(V8USBInterface)
-STUB_V8_WRAPPER(V8USBIsochronousInTransferPacket)
-STUB_V8_WRAPPER(V8USBIsochronousInTransferResult)
-STUB_V8_WRAPPER(V8USBIsochronousOutTransferPacket)
-STUB_V8_WRAPPER(V8USBIsochronousOutTransferResult)
-STUB_V8_WRAPPER(V8USBOutTransferResult)
-
-// WebHID V8 Wrappers
-STUB_V8_WRAPPER(V8HID)
-STUB_V8_WRAPPER(V8HIDConnectionEvent)
-STUB_V8_WRAPPER(V8HIDDevice)
-STUB_V8_WRAPPER(V8HIDInputReportEvent)
-
-// Web Serial V8 Wrappers
-STUB_V8_WRAPPER(V8Serial)
-STUB_V8_WRAPPER(V8SerialPort)
 
 // WebNN / ML V8 Wrappers
 STUB_V8_WRAPPER(V8ML)
@@ -150,29 +107,6 @@ STUB_V8_WRAPPER(V8XRWebGLSubImage)
 STUB_V8_WRAPPER(V8XRWebGLContext)
 
 #undef STUB_V8_WRAPPER
-
-// --- Web Bluetooth, WebUSB, WebHID, and Web Serial C++ Stubs ---
-
-const WrapperTypeInfo& Bluetooth::wrapper_type_info_ = g_dummy_wrapper_type_info;
-const WrapperTypeInfo& USB::wrapper_type_info_ = g_dummy_wrapper_type_info;
-const WrapperTypeInfo& HID::wrapper_type_info_ = g_dummy_wrapper_type_info;
-const WrapperTypeInfo& Serial::wrapper_type_info_ = g_dummy_wrapper_type_info;
-
-Bluetooth* Bluetooth::bluetooth(Navigator&) {
-  return nullptr;
-}
-
-USB* USB::usb(NavigatorBase&) {
-  return nullptr;
-}
-
-HID* HID::hid(NavigatorBase&) {
-  return nullptr;
-}
-
-Serial* Serial::serial(NavigatorBase&) {
-  return nullptr;
-}
 
 // --- WebNN / ML C++ Stubs ---
 
