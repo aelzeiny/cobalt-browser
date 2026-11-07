@@ -108,3 +108,7 @@ enable_media_remoting_rpc = false
 
 # Cobalt: Living Room TVs have no webcams or media capture utility process.
 enable_gpu_channel_media_capture = false
+
+# Disable Safe Browsing for Cobalt. Cobalt TV app navigates exclusively to
+# YouTube origins via CobaltSecureNavigationThrottle.
+safe_browsing_mode = 0

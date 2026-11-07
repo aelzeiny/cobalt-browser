@@ -2,13 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//components/safe_browsing/buildflags.gni")
+
 group("resources") {
   public_deps = [
     "chrome_urls/resources:resources",
     "flags/resources:resources",
     "internal_debug_pages_disabled/resources:resources",
-    "safe_browsing/resources",
     "user_actions/resources:resources",
     "version/resources:resources",
   ]
+
+  # Cobalt: safe browsing WebUI debug pages are not used on TV.
+  if (safe_browsing_mode > 0) {
+    public_deps += [ "safe_browsing/resources" ]
+  }
 }
