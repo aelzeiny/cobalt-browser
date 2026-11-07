@@ -56,7 +56,6 @@ SerializedTrackImplSubtype SerializeTrackImplSubtype(
 #if !BUILDFLAG(IS_COBALT)
   } else if (dispatcher.ToMostDerived<CanvasCaptureMediaStreamTrack>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeCanvasCapture;
-#if !BUILDFLAG(IS_COBALT)
   } else if (dispatcher.ToMostDerived<MediaStreamTrackGenerator>()) {
     return SerializedTrackImplSubtype::kTrackImplSubtypeGenerator;
 #endif
