@@ -24,7 +24,11 @@
 #include "components/optimization_guide/core/optimization_guide_util.h"
 #include "components/prefs/pref_service.h"
 #include "components/signin/public/identity_manager/account_info.h"
-#include "third_party/tflite/buildflags.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: TFLite is dead on Living Room TV.
+#include "third_party/tflite/buildflags.h"  // nogncheck
+#endif
 
 namespace optimization_guide {
 
@@ -308,6 +312,10 @@ bool ModelExecutionFeaturesController::ShouldModelExecutionBeAllowedForUser()
 
 ModelExecutionFeaturesController::SettingsVisibilityResult
 ModelExecutionFeaturesController::ShouldHideHistorySearch() const {
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: TFLite and XNNPACK on-device models are unsupported on Living Room TV.
+  return SettingsVisibilityResult::kNotVisibleHardwareUnsupported;
+#else
 #if !BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
   return SettingsVisibilityResult::kNotVisibleHardwareUnsupported;
 #else
@@ -323,7 +331,8 @@ ModelExecutionFeaturesController::ShouldHideHistorySearch() const {
     return SettingsVisibilityResult::kNotVisibleHardwareUnsupported;
   }
   return SettingsVisibilityResult::kUnknown;
-#endif
+#endif  // !BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 bool ModelExecutionFeaturesController::IsSettingVisible(

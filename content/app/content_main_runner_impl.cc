@@ -116,6 +116,7 @@
 #include "services/tracing/public/cpp/tracing_features.h"
 #include "third_party/blink/public/common/origin_trials/trial_token_validator.h"
 #if !BUILDFLAG(IS_COBALT)
+// Cobalt: TFLite is dead on Living Room TV.
 #include "third_party/tflite/buildflags.h"
 #endif
 #include "tools/v8_context_snapshot/buildflags.h"
@@ -202,6 +203,7 @@
 #endif
 
 #if !BUILDFLAG(IS_COBALT)
+// Cobalt: cpuinfo initialization for XNNPACK is unused on Living Room TV.
 #if BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
 #include "third_party/cpuinfo/src/include/cpuinfo.h"
 #endif
@@ -455,6 +457,7 @@ void PreSandboxInit() {
   InitializeWebRtcModuleBeforeSandbox();
 
 #if !BUILDFLAG(IS_COBALT)
+// Cobalt: cpuinfo initialization for XNNPACK is unused on Living Room TV.
 #if BUILDFLAG(BUILD_TFLITE_WITH_XNNPACK)
   // cpuinfo needs to parse /proc/cpuinfo, or its equivalent.
   if (!cpuinfo_initialize()) {

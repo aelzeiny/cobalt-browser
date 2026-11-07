@@ -12,6 +12,7 @@
 #include "base/time/time.h"
 #include "build/build_config.h"
 #if !BUILDFLAG(IS_COBALT)
+// Cobalt: optimization_guide is dead on Living Room TV.
 #include "components/optimization_guide/core/optimization_guide_features.h"  // nogncheck
 #endif
 #include "content/browser/ai/echo_ai_manager_impl.h"

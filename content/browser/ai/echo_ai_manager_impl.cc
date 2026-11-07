@@ -33,6 +33,20 @@ namespace {
 const int kMockDownloadPreparationTimeMillisecond = 300;
 const int kMockModelSizeBytes = 0x10000;
 
+#if BUILDFLAG(IS_COBALT)
+// Cobalt: On-device ML models are unsupported on Living Room TV; use default fallback constants.
+constexpr int kDefaultTopK = 3;
+constexpr float kDefaultTemperature = 0.8f;
+constexpr int kMaxTopK = 128;
+inline int GetDefaultTopK() { return kDefaultTopK; }
+inline float GetDefaultTemperature() { return kDefaultTemperature; }
+inline int GetMaxTopK() { return kMaxTopK; }
+#else
+inline int GetDefaultTopK() { return optimization_guide::features::GetOnDeviceModelDefaultTopK(); }
+inline float GetDefaultTemperature() { return optimization_guide::features::GetOnDeviceModelDefaultTemperature(); }
+inline int GetMaxTopK() { return optimization_guide::features::GetOnDeviceModelMaxTopK(); }
+#endif
+
 using blink::mojom::AILanguageCodePtr;
 
 // TODO(crbug.com/394109104): This is duplicated from chrome AIManager in order
@@ -211,19 +225,11 @@ void EchoAIManagerImpl::GetLanguageModelParams(
     GetLanguageModelParamsCallback callback) {
   std::move(callback).Run(blink::mojom::AILanguageModelParams::New(
       blink::mojom::AILanguageModelSamplingParams::New(
-#if BUILDFLAG(IS_COBALT)
-          /*default_top_k=*/3,
-          /*default_temperature=*/1.0f),
+          GetDefaultTopK(),
+          GetDefaultTemperature()),
       blink::mojom::AILanguageModelSamplingParams::New(
-          /*max_top_k=*/128,
+          GetMaxTopK(),
           /*temperature=*/2.0f)));
-#else
-          optimization_guide::features::GetOnDeviceModelDefaultTopK(),
-          optimization_guide::features::GetOnDeviceModelDefaultTemperature()),
-      blink::mojom::AILanguageModelSamplingParams::New(
-          optimization_guide::features::GetOnDeviceModelMaxTopK(),
-          /*temperature=*/2.0f)));
-#endif
 }
 
 void EchoAIManagerImpl::CanCreateWriter(
@@ -337,15 +343,8 @@ void EchoAIManagerImpl::ReturnAILanguageModelCreationResult(
       sampling_params
           ? std::move(sampling_params)
           : blink::mojom::AILanguageModelSamplingParams::New(
-#if BUILDFLAG(IS_COBALT)
-                /*default_top_k=*/3,
-                /*default_temperature=*/1.0f
-#else
-                optimization_guide::features::GetOnDeviceModelDefaultTopK(),
-                optimization_guide::features::
-                    GetOnDeviceModelDefaultTemperature()
-#endif
-            );
+                GetDefaultTopK(),
+                GetDefaultTemperature());
 
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<EchoAILanguageModel>(model_sampling_params->Clone(),

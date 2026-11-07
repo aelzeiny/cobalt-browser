@@ -360,9 +360,13 @@ static_library("core") {
     "//services/network/public/cpp",
     "//services/on_device_model/public/cpp",
     "//services/on_device_model/public/mojom",
-    "//third_party/tflite:buildflags",
     "//url:url",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: TFLite is dead on Living Room TV.
+    deps += [ "//third_party/tflite:buildflags" ]
+  }
 
   if (build_with_model_execution) {
     deps += [

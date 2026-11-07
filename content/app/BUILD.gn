@@ -93,7 +93,7 @@ source_set("content_main_runner_app") {
     # Cobalt: TFLite is dead on Living Room TV.
     deps += [ "//third_party/tflite:buildflags" ]
   }
-  if (build_tflite_with_xnnpack && !is_cobalt) {
+  if (build_tflite_with_xnnpack) {
     deps += [ "//third_party/cpuinfo" ]
   }
 }

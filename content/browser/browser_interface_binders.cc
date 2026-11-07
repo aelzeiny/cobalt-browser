@@ -1334,6 +1334,7 @@ void PopulateBinderMapWithContext(
       base::BindRepeating(&StorageAccessHandle::Create));
 
 #if !BUILDFLAG(IS_COBALT)
+  // Cobalt: optimization_guide ModelBroker is unused on Living Room TV.
   map->Add<optimization_guide::mojom::ModelBroker>(base::BindRepeating(
       &EmptyBinderForFrame<optimization_guide::mojom::ModelBroker>));
 #endif
