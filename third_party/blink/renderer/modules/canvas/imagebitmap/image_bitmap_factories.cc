@@ -53,7 +53,9 @@
 #include "third_party/blink/renderer/core/offscreencanvas/offscreen_canvas.h"
 #include "third_party/blink/renderer/core/svg/svg_image_element.h"
 #include "third_party/blink/renderer/core/workers/worker_global_scope.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/graphics/unaccelerated_static_bitmap_image.h"
@@ -170,10 +172,12 @@ inline ImageBitmapSource* ToImageBitmapSourceInternal(
       UMA_HISTOGRAM_ENUMERATION("Blink.Canvas.CreateImageBitmapSource",
                                 kCreateImageBitmapSourceSVGImageElement);
       return value->GetAsSVGImageElement();
+#if !BUILDFLAG(IS_COBALT)
     case V8ImageBitmapSource::ContentType::kVideoFrame:
       UMA_HISTOGRAM_ENUMERATION("Blink.Canvas.CreateImageBitmapSource",
                                 kCreateImageBitmapSourceVideoFrame);
       return value->GetAsVideoFrame();
+#endif  // !BUILDFLAG(IS_COBALT)
   }
 
   NOTREACHED();

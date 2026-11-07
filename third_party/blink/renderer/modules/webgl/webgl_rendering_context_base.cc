@@ -82,7 +82,9 @@
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer_view_helpers.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_typed_array.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/webgl/angle_instanced_arrays.h"
 #include "third_party/blink/renderer/modules/webgl/ext_blend_min_max.h"
 #include "third_party/blink/renderer/modules/webgl/ext_frag_depth.h"
@@ -6235,6 +6237,7 @@ void WebGLRenderingContextBase::TexImageHelperVideoFrame(
     TexImageParams params,
     VideoFrame* frame,
     ExceptionState& exception_state) {
+#if !BUILDFLAG(IS_COBALT)
   const char* func_name = GetTexImageFunctionName(params.function_id);
   if (isContextLost())
     return;
@@ -6271,6 +6274,10 @@ void WebGLRenderingContextBase::TexImageHelperVideoFrame(
 
   TexImageHelperMediaVideoFrame(params, texture, local_handle->frame(),
                                 nullptr);
+#else
+  // Cobalt: WebCodecs is disabled; VideoFrame texturing is not supported.
+  NOTREACHED();
+#endif
 }
 
 void WebGLRenderingContextBase::TexImageHelperMediaVideoFrame(

@@ -279,6 +279,13 @@ generate_bindings("generate_bindings_all") {
     outputs = []
     outputs = _filtered_outputs
   }
+
+  if (is_cobalt) {
+    _filtered_webcodecs_outputs =
+        filter_exclude(outputs, cobalt_webcodecs_exclude_patterns)
+    outputs = []
+    outputs = _filtered_webcodecs_outputs
+  }
 }
 
 action_with_pydeps("check_generated_file_list") {
@@ -416,6 +423,13 @@ action_with_pydeps("check_generated_file_list") {
         filter_exclude(file_list, cobalt_bindings_exclude_patterns)
     file_list = []
     file_list = _filtered_file_list
+  }
+
+  if (is_cobalt) {
+    _filtered_webcodecs_file_list =
+        filter_exclude(file_list, cobalt_webcodecs_exclude_patterns)
+    file_list = []
+    file_list = _filtered_webcodecs_file_list
   }
 
   response_file_contents = []

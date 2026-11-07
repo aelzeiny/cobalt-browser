@@ -4,6 +4,7 @@
 
 // https://webidl.spec.whatwg.org/#common
 typedef (ArrayBuffer or ArrayBufferView) BufferSource;
+typedef ([AllowShared] ArrayBuffer or [AllowShared] ArrayBufferView) AllowSharedBufferSource;
 typedef unsigned long long DOMTimeStamp;
 
 // https://webidl.spec.whatwg.org/#Function

@@ -4,6 +4,14 @@
 
 import("//third_party/blink/renderer/modules/modules.gni")
 
+if (is_cobalt) {
+  # Cobalt: Breakout Box is disabled; stub out targets so remaining references resolve cleanly.
+  group("breakout_box") {
+  }
+  source_set("unit_tests") {
+    testonly = true
+  }
+} else {
 blink_modules_sources("breakout_box") {
   sources = [
     "frame_queue.h",
@@ -65,4 +73,5 @@ source_set("unit_tests") {
     "//third_party/blink/renderer/modules:modules",
     "//third_party/blink/renderer/modules/mediastream:test_support",
   ]
+}
 }

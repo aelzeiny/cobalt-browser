@@ -30,7 +30,6 @@
 #include "third_party/blink/renderer/modules/webgpu/gpu_buffer.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_external_texture.h"  // nogncheck
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
 #include "third_party/blink/renderer/modules/webgpu/dawn_object.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/dawn_enum_conversions.h"  // nogncheck

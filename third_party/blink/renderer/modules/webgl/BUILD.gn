@@ -204,7 +204,11 @@ blink_modules_sources("webgl") {
   ]
 
   if (is_cobalt) {
-    deps -= [ "//third_party/blink/renderer/modules/xr:xr" ]
+    # Cobalt: XR and WebCodecs are disabled on Cobalt Living Room TV.
+    deps -= [
+      "//third_party/blink/renderer/modules/webcodecs:webcodecs",
+      "//third_party/blink/renderer/modules/xr:xr",
+    ]
   }
 
   allow_circular_includes_from = deps

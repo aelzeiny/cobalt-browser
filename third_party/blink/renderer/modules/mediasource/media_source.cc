@@ -43,8 +43,10 @@
 #include "third_party/blink/renderer/modules/mediasource/same_thread_media_source_attachment.h"
 #include "third_party/blink/renderer/modules/mediasource/same_thread_media_source_tracer.h"
 #include "third_party/blink/renderer/modules/mediasource/source_buffer_track_base_supplement.h"
-#include "third_party/blink/renderer/modules/webcodecs/audio_decoder.h"
-#include "third_party/blink/renderer/modules/webcodecs/video_decoder.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/audio_decoder.h"  // nogncheck
+#include "third_party/blink/renderer/modules/webcodecs/video_decoder.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_messages.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/blob/blob_url.h"
@@ -300,6 +302,7 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
   std::unique_ptr<media::VideoDecoderConfig> video_config;
   String console_message;
 
+#if !BUILDFLAG(IS_COBALT)
   if (config->hasAudioConfig()) {
     if (!AudioDecoder::IsValidAudioDecoderConfig(*(config->audioConfig()),
                                                  &console_message /* out */)) {
@@ -354,6 +357,12 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
       return nullptr;
     }
   }
+#else
+  LogAndThrowDOMException(exception_state,
+                          DOMExceptionCode::kNotSupportedError,
+                          "WebCodecs is not supported on Cobalt.");
+  return nullptr;
+#endif  // !BUILDFLAG(IS_COBALT)
 
   // If the readyState attribute is not in the "open" state then throw an
   // InvalidStateError exception and abort these steps.

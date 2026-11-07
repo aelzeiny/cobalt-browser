@@ -9,6 +9,14 @@ import("//third_party/libgav1/options.gni")
 import("//third_party/libprotobuf-mutator/fuzzable_proto_library.gni")
 import("//third_party/protobuf/proto_library.gni")
 
+if (is_cobalt) {
+  # Cobalt: WebCodecs is disabled; stub out targets so remaining references resolve cleanly.
+  group("webcodecs") {
+  }
+  source_set("unit_tests") {
+    testonly = true
+  }
+} else {
 blink_modules_sources("webcodecs") {
   sources = [
     "array_buffer_util.cc",
@@ -171,6 +179,7 @@ source_set("unit_tests") {
   ]
 
   data = [ "//third_party/blink/web_tests/images/resources/" ]
+}
 }
 
 fuzzable_proto_library("fuzzer_protos") {

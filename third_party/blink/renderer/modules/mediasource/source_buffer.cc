@@ -77,8 +77,10 @@
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer_view.h"
 #include "third_party/blink/renderer/modules/mediasource/media_source.h"
 #include "third_party/blink/renderer/modules/mediasource/source_buffer_track_base_supplement.h"
-#include "third_party/blink/renderer/modules/webcodecs/encoded_audio_chunk.h"
-#include "third_party/blink/renderer/modules/webcodecs/encoded_video_chunk.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/webcodecs/encoded_audio_chunk.h"  // nogncheck
+#include "third_party/blink/renderer/modules/webcodecs/encoded_video_chunk.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_messages.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -152,6 +154,7 @@ constexpr media::StreamParser::TrackId kWebCodecsVideoTrackId = 2;
 // MakeDecoderBuffer methods), that will also help enable buffering h264 where
 // bitstream conversion might be necessary during conversion.
 // Note, caller updates results further as necessary (e.g. duration, DTS, etc).
+#if !BUILDFLAG(IS_COBALT)
 scoped_refptr<media::StreamParserBuffer> MakeAudioStreamParserBuffer(
     const EncodedAudioChunk& audio_chunk) {
   // TODO(crbug.com/1144908): DecoderBuffer takes size_t size, but
@@ -203,6 +206,7 @@ scoped_refptr<media::StreamParserBuffer> MakeVideoStreamParserBuffer(
   }
   return stream_parser_buffer;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
 bool GetAppendFirstSegmentSynchronouslySetting(
@@ -764,6 +768,7 @@ ScriptPromise<IDLUndefined> SourceBuffer::appendEncodedChunks(
   // and require it to be populated for use with MSE. For now, all audio chunks
   // are estimated.
   DCHECK(!pending_chunks_to_buffer_);
+#if !BUILDFLAG(IS_COBALT)
   auto buffer_queue = std::make_unique<media::StreamParser::BufferQueue>();
   size_t size = 0;
 
@@ -842,6 +847,11 @@ ScriptPromise<IDLUndefined> SourceBuffer::appendEncodedChunks(
   }
 
   return promise;
+#else
+  exception_state.ThrowDOMException(DOMExceptionCode::kNotSupportedError,
+                                    "WebCodecs is not supported on Cobalt.");
+  return EmptyPromise();
+#endif  // !BUILDFLAG(IS_COBALT)
 }
 
 void SourceBuffer::AppendEncodedChunks_Locked(
@@ -849,6 +859,7 @@ void SourceBuffer::AppendEncodedChunks_Locked(
     size_t size,
     ExceptionState* exception_state,
     MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */) {
+#if !BUILDFLAG(IS_COBALT)
   DVLOG(2) << __func__ << " this=" << this << ", size=" << size;
 
   DCHECK(source_);
@@ -885,6 +896,10 @@ void SourceBuffer::AppendEncodedChunks_Locked(
 
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN1("media", "delay", TRACE_ID_LOCAL(this),
                                     "type", "initialDelay");
+#else
+  // Cobalt: WebCodecs is disabled; appendEncodedChunks is not supported.
+  NOTREACHED();
+#endif
 }
 
 void SourceBuffer::abort(ExceptionState& exception_state) {
@@ -1106,6 +1121,7 @@ void SourceBuffer::changeType(const String& type,
 void SourceBuffer::ChangeTypeUsingConfig(ExecutionContext* execution_context,
                                          const SourceBufferConfig* config,
                                          ExceptionState& exception_state) {
+#if !BUILDFLAG(IS_COBALT)
   DVLOG(2) << __func__ << " this=" << this;
 
   UseCounter::Count(execution_context,
@@ -1138,6 +1154,12 @@ void SourceBuffer::ChangeTypeUsingConfig(ExecutionContext* execution_context,
   // internals to new config, etc.
   exception_state.ThrowTypeError(
       "unimplemented - see https://crbug.com/1144908");
+#else
+  // Cobalt: WebCodecs is disabled; SourceBufferConfig is not supported.
+  MediaSource::LogAndThrowDOMException(
+      exception_state, DOMExceptionCode::kNotSupportedError,
+      "changeType with SourceBufferConfig is not supported on Cobalt.");
+#endif
 }
 
 void SourceBuffer::ChangeType_Locked(
@@ -2226,6 +2248,7 @@ void SourceBuffer::AppendBufferInternal_Locked(
 }
 
 void SourceBuffer::AppendEncodedChunksAsyncPart() {
+#if !BUILDFLAG(IS_COBALT)
   // Do the async append operation only if attachment is usable and underlying
   // demuxer is protected from destruction (applicable especially for
   // MSE-in-Worker case).
@@ -2240,6 +2263,7 @@ void SourceBuffer::AppendEncodedChunksAsyncPart() {
     DVLOG(1) << __func__ << " this=" << this
              << ": Worker MediaSource attachment is closing";
   }
+#endif
 }
 
 void SourceBuffer::AppendBufferAsyncPart() {
@@ -2266,6 +2290,7 @@ void SourceBuffer::AppendBufferAsyncPart() {
 
 void SourceBuffer::AppendEncodedChunksAsyncPart_Locked(
     MediaSourceAttachmentSupplement::ExclusiveKey pass_key) {
+#if !BUILDFLAG(IS_COBALT)
   DCHECK(source_);
   source_->AssertAttachmentsMutexHeldIfCrossThreadForDebugging();
   DCHECK(updating_);
@@ -2312,6 +2337,10 @@ void SourceBuffer::AppendEncodedChunksAsyncPart_Locked(
   DVLOG(3) << __func__ << " done. this=" << this
            << " media_time=" << GetMediaTime() << " buffered="
            << WebTimeRangesToString(web_source_buffer_->Buffered());
+#else
+  // Cobalt: WebCodecs is disabled; appendEncodedChunks is not supported.
+  NOTREACHED();
+#endif
 }
 
 void SourceBuffer::AppendBufferAsyncPart_Locked(

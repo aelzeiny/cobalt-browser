@@ -130,6 +130,7 @@ blink_modules_sources("webgpu") {
     } else {
       deps -= [ "//third_party/dawn/src/dawn:proc" ]
     }
+    deps -= [ "//third_party/blink/renderer/modules/webcodecs:webcodecs" ]
   }
 }
 
