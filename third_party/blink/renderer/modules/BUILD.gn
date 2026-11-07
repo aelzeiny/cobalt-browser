@@ -883,6 +883,11 @@ source_set("unit_tests") {
     ]
     sources -= [
       "bluetooth/bluetooth_uuid_unittest.cc",
+      "canvas/canvas2d/base_rendering_context_2d_test.cc",
+      "canvas/canvas2d/canvas_2d_recorder_context_test.cc",
+      "canvas/canvas2d/canvas_rendering_context_2d_api_test.cc",
+      "canvas/canvas2d/canvas_rendering_context_2d_test.cc",
+      "canvas/offscreencanvas2d/offscreen_canvas_rendering_context_2d_test.cc",
       "nfc/nfc_proxy_test.cc",
       "xr/xr_rigid_transform_test.cc",
       "xr/xr_test_utils.cc",

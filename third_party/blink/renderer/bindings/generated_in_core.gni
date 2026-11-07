@@ -2032,6 +2032,11 @@ if (is_cobalt) {
     "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_boolean_double_long_string.h",
     "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_long_string.cc",
     "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_long_string.h",
+    # Cobalt: renamed unions without VideoFrame are now purely core
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_cssimagevalue_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_offscreencanvas_svgimageelement.cc",
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_cssimagevalue_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_offscreencanvas_svgimageelement.h",
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement.cc",
+    "$root_gen_dir/third_party/blink/renderer/bindings/core/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement.h",
   ]
 }
 

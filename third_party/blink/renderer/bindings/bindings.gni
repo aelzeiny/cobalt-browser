@@ -356,6 +356,7 @@ if (is_cobalt) {
     "*v8_video_transfer_characteristics*",
     "*v8_webcodecs_error_callback*",
     "*v8_union_encodedaudiochunk*",
+    "*_videoframe.*",
   ]
 
   if (!enable_privacy_sandbox_apis) {

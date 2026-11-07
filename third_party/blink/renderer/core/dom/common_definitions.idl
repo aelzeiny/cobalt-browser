@@ -4,6 +4,8 @@
 
 // https://webidl.spec.whatwg.org/#common
 typedef (ArrayBuffer or ArrayBufferView) BufferSource;
+// Cobalt: AllowSharedBufferSource moved from webcodecs/video_frame.idl since
+// webcodecs is disabled in Cobalt.
 typedef ([AllowShared] ArrayBuffer or [AllowShared] ArrayBufferView) AllowSharedBufferSource;
 typedef unsigned long long DOMTimeStamp;
 

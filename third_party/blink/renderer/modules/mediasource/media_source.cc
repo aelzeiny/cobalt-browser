@@ -26,10 +26,14 @@
 #include "third_party/blink/public/common/privacy_budget/identifiable_surface.h"
 #include "third_party/blink/public/platform/web_media_source.h"
 #include "third_party/blink/public/platform/web_source_buffer.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_audio_decoder_config.h"
+#endif
 #include "third_party/blink/renderer/bindings/modules/v8/v8_end_of_stream_error.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_source_buffer_config.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_video_decoder_config.h"
+#endif
 #include "third_party/blink/renderer/core/dom/events/event.h"
 #include "third_party/blink/renderer/core/dom/events/event_queue.h"
 #include "third_party/blink/renderer/core/frame/deprecation/deprecation.h"
@@ -266,6 +270,7 @@ SourceBuffer* MediaSource::addSourceBuffer(const String& type,
   return source_buffer;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
     ExecutionContext* execution_context,
     const SourceBufferConfig* config,
@@ -302,7 +307,6 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
   std::unique_ptr<media::VideoDecoderConfig> video_config;
   String console_message;
 
-#if !BUILDFLAG(IS_COBALT)
   if (config->hasAudioConfig()) {
     if (!AudioDecoder::IsValidAudioDecoderConfig(*(config->audioConfig()),
                                                  &console_message /* out */)) {
@@ -357,12 +361,6 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
       return nullptr;
     }
   }
-#else
-  LogAndThrowDOMException(exception_state,
-                          DOMExceptionCode::kNotSupportedError,
-                          "WebCodecs is not supported on Cobalt.");
-  return nullptr;
-#endif  // !BUILDFLAG(IS_COBALT)
 
   // If the readyState attribute is not in the "open" state then throw an
   // InvalidStateError exception and abort these steps.
@@ -394,6 +392,7 @@ SourceBuffer* MediaSource::AddSourceBufferUsingConfig(
 
   return source_buffer;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void MediaSource::AddSourceBuffer_Locked(
     const String& type,

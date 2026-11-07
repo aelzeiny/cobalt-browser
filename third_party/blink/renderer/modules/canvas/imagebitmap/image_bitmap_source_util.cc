@@ -6,8 +6,13 @@
 
 #include <utility>
 
+#include "build/build_config.h"
 #include "skia/ext/skia_utils_base.h"
+#if BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/bindings/core/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement.h"
+#else
 #include "third_party/blink/renderer/bindings/modules/v8/v8_union_blob_htmlcanvaselement_htmlimageelement_htmlvideoelement_imagebitmap_imagedata_offscreencanvas_svgimageelement_videoframe.h"
+#endif
 #include "third_party/blink/renderer/core/dom/dom_exception.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/canvas/image_data.h"
@@ -154,7 +159,9 @@ std::optional<SkBitmap> GetBitmapFromV8ImageBitmapSource(
       break;
     case V8ImageBitmapSource::ContentType::kBlob:
     case V8ImageBitmapSource::ContentType::kSVGImageElement:
+#if !BUILDFLAG(IS_COBALT)
     case V8ImageBitmapSource::ContentType::kVideoFrame:
+#endif
       exception_state.ThrowDOMException(DOMExceptionCode::kNotSupportedError,
                                         "Unsupported source.");
       return std::nullopt;

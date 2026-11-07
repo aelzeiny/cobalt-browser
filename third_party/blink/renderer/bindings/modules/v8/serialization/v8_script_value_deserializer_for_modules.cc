@@ -57,6 +57,7 @@
 #include "third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame.h"  // nogncheck
 #include "third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame_delegate.h"  // nogncheck
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/webcodecs/audio_data.h"
 #include "third_party/blink/renderer/modules/webcodecs/audio_data_attachment.h"
 #include "third_party/blink/renderer/modules/webcodecs/decoder_buffer_attachment.h"
@@ -64,6 +65,7 @@
 #include "third_party/blink/renderer/modules/webcodecs/encoded_video_chunk.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame_attachment.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 
 namespace blink {
 
@@ -123,6 +125,7 @@ ScriptWrappable* V8ScriptValueDeserializerForModules::ReadDOMObject(
     case kRTCEncodedVideoFrameTag:
       return ReadRTCEncodedVideoFrame();
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
     case kAudioDataTag:
       return ReadAudioData();
     case kVideoFrameTag:
@@ -131,6 +134,7 @@ ScriptWrappable* V8ScriptValueDeserializerForModules::ReadDOMObject(
       return ReadEncodedAudioChunk();
     case kEncodedVideoChunkTag:
       return ReadEncodedVideoChunk();
+#endif  // !BUILDFLAG(IS_COBALT)
     case kMediaStreamTrack:
       return ReadMediaStreamTrack();
     case kCropTargetTag:
@@ -535,6 +539,7 @@ V8ScriptValueDeserializerForModules::ReadRTCEncodedVideoFrame() {
 }
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
 
+#if !BUILDFLAG(IS_COBALT)
 AudioData* V8ScriptValueDeserializerForModules::ReadAudioData() {
   uint32_t index;
   if (!ReadUint32(&index))
@@ -606,6 +611,7 @@ V8ScriptValueDeserializerForModules::ReadEncodedVideoChunk() {
 
   return MakeGarbageCollected<EncodedVideoChunk>(buffers[index]);
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 MediaStreamTrack* V8ScriptValueDeserializerForModules::ReadMediaStreamTrack() {
   if (!RuntimeEnabledFeatures::MediaStreamTrackTransferEnabled(
@@ -753,6 +759,7 @@ bool V8ScriptValueDeserializerForModules::ExecutionContextExposesInterface(
     case kRTCDataChannel:
       return V8RTCDataChannel::IsExposed(execution_context);
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
     case kAudioDataTag:
       return V8AudioData::IsExposed(execution_context);
     case kVideoFrameTag:
@@ -761,6 +768,7 @@ bool V8ScriptValueDeserializerForModules::ExecutionContextExposesInterface(
       return V8EncodedAudioChunk::IsExposed(execution_context);
     case kEncodedVideoChunkTag:
       return V8EncodedVideoChunk::IsExposed(execution_context);
+#endif  // !BUILDFLAG(IS_COBALT)
     case kMediaStreamTrack:
       return V8MediaStreamTrack::IsExposed(execution_context);
     case kCropTargetTag:

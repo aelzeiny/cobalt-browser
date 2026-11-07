@@ -37,7 +37,9 @@ class ExceptionState;
 class HTMLMediaElement;
 class CrossThreadMediaSourceAttachment;
 class SameThreadMediaSourceAttachment;
+#if !BUILDFLAG(IS_COBALT)
 class SourceBufferConfig;
+#endif
 class TrackBase;
 class V8EndOfStreamError;
 class WebSourceBuffer;
@@ -78,10 +80,12 @@ class MediaSource final : public EventTarget,
   }
   SourceBuffer* addSourceBuffer(const String& type, ExceptionState&)
       LOCKS_EXCLUDED(attachment_link_lock_);
+#if !BUILDFLAG(IS_COBALT)
   SourceBuffer* AddSourceBufferUsingConfig(ExecutionContext* execution_context,
                                            const SourceBufferConfig*,
                                            ExceptionState&)
       LOCKS_EXCLUDED(attachment_link_lock_);
+#endif
   void removeSourceBuffer(SourceBuffer*, ExceptionState&)
       LOCKS_EXCLUDED(attachment_link_lock_);
   void setDuration(double, ExceptionState&)

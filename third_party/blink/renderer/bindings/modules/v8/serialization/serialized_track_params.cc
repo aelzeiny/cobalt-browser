@@ -5,7 +5,7 @@
 #include "third_party/blink/renderer/bindings/modules/v8/serialization/serialized_track_params.h"
 #include "build/build_config.h"
 #if !BUILDFLAG(IS_COBALT)
-#include "third_party/blink/renderer/modules/breakout_box/media_stream_track_generator.h"  // nogncheck
+#include "third_party/blink/renderer/modules/breakout_box/media_stream_track_generator.h"
 #endif
 #include "third_party/blink/renderer/modules/mediacapturefromelement/canvas_capture_media_stream_track.h"
 #include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
@@ -109,7 +109,7 @@ const WrapperTypeInfo* DeserializeTrackImplSubtype(
 #if !BUILDFLAG(IS_COBALT)
       return MediaStreamTrackGenerator::GetStaticWrapperTypeInfo();
 #else
-      NOTREACHED();
+      return MediaStreamTrack::GetStaticWrapperTypeInfo();
 #endif
     case SerializedTrackImplSubtype::kTrackImplSubtypeBrowserCapture:
       return BrowserCaptureMediaStreamTrack::GetStaticWrapperTypeInfo();

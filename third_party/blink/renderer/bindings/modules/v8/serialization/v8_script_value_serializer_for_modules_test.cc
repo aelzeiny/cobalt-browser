@@ -63,11 +63,13 @@
 #include "third_party/blink/renderer/modules/peerconnection/rtc_data_channel_transfer_list.h"
 #include "third_party/blink/renderer/modules/peerconnection/testing/fake_webrtc_data_channel.h"
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/webcodecs/array_buffer_util.h"
 #include "third_party/blink/renderer/modules/webcodecs/audio_data.h"
 #include "third_party/blink/renderer/modules/webcodecs/audio_data_transfer_list.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame_transfer_list.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_track.h"
@@ -1252,6 +1254,7 @@ TEST(V8ScriptValueSerializerForModulesTest, DecodeInvalidDOMFileSystem) {
           ->IsNull());
 }
 
+#if !BUILDFLAG(IS_COBALT)
 TEST(V8ScriptValueSerializerForModulesTest, RoundTripVideoFrame) {
   test::TaskEnvironment task_environment;
   V8TestingScope scope;
@@ -1469,6 +1472,7 @@ TEST(V8ScriptValueSerializerForModulesTest, ClosedAudioDataThrows) {
   EXPECT_TRUE(HadDOMExceptionInModulesTest("DataCloneError",
                                            scope.GetScriptState(), try_catch));
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 TEST(V8ScriptValueSerializerForModulesTest, TransferMediaStreamTrack) {
   test::TaskEnvironment task_environment;

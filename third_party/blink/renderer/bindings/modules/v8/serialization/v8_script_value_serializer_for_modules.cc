@@ -59,6 +59,7 @@
 #include "third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame.h"  // nogncheck
 #include "third_party/blink/renderer/modules/peerconnection/rtc_encoded_video_frame_delegate.h"  // nogncheck
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/webcodecs/audio_data.h"
 #include "third_party/blink/renderer/modules/webcodecs/audio_data_attachment.h"
 #include "third_party/blink/renderer/modules/webcodecs/audio_data_transfer_list.h"
@@ -68,6 +69,7 @@
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame_attachment.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame_transfer_list.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 
 namespace blink {
@@ -88,6 +90,7 @@ bool V8ScriptValueSerializerForModules::ExtractTransferable(
   if (exception_state.HadException())
     return false;
 
+#if !BUILDFLAG(IS_COBALT)
   if (VideoFrame* video_frame = V8VideoFrame::ToWrappable(isolate, object)) {
     VideoFrameTransferList* transfer_list =
         transferables.GetOrCreateTransferList<VideoFrameTransferList>();
@@ -115,6 +118,7 @@ bool V8ScriptValueSerializerForModules::ExtractTransferable(
     transfer_list->audio_data_collection.push_back(audio_data);
     return true;
   }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #if BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
   if (RTCDataChannel* channel =
@@ -257,6 +261,7 @@ bool V8ScriptValueSerializerForModules::WriteDOMObject(
     return WriteRTCEncodedVideoFrame(video_frame);
   }
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
+#if !BUILDFLAG(IS_COBALT)
   if (auto* video_frame = dispatcher.ToMostDerived<VideoFrame>()) {
     if (IsForStorage()) {
       exception_state.ThrowDOMException(DOMExceptionCode::kDataCloneError,
@@ -307,6 +312,7 @@ bool V8ScriptValueSerializerForModules::WriteDOMObject(
     }
     return WriteDecoderBuffer(video_chunk->buffer(), /*for_audio=*/false);
   }
+#endif  // !BUILDFLAG(IS_COBALT)
   if (auto* track = dispatcher.DowncastTo<MediaStreamTrack>()) {
     if (!RuntimeEnabledFeatures::MediaStreamTrackTransferEnabled(
             ExecutionContext::From(GetScriptState()))) {
@@ -631,6 +637,7 @@ bool V8ScriptValueSerializerForModules::WriteRTCEncodedVideoFrame(
 }
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
 
+#if !BUILDFLAG(IS_COBALT)
 bool V8ScriptValueSerializerForModules::WriteVideoFrameHandle(
     scoped_refptr<VideoFrameHandle> handle) {
   auto* attachment =
@@ -674,6 +681,7 @@ bool V8ScriptValueSerializerForModules::WriteDecoderBuffer(
 
   return true;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 bool V8ScriptValueSerializerForModules::WriteMediaStreamTrack(
     MediaStreamTrack* track,
