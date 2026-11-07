@@ -266,7 +266,6 @@ bindings_unittest_files = get_path_info(
 if (is_cobalt) {
   # Exclusion patterns used in Cobalt builds to omit interfaces.
   cobalt_bindings_exclude_patterns = [
-    "*/core/v8/v8_union_arraybufferallowshared_arraybufferviewallowshared_readablestream.*",
     "*_rtc_*",
     "*v8_rtc_*",
     "*peer_connection*",

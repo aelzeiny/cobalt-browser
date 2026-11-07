@@ -480,7 +480,7 @@ void GPUBuffer::Trace(Visitor* visitor) const {
 
 void ExternalTextureCache::Trace(Visitor* visitor) const {
   visitor->Trace(from_html_video_element_);
-  visitor->Trace(from_video_frame_);
+  // Cobalt: VideoFrame is disabled with WebCodecs, so from_video_frame_ is untraced.
   visitor->Trace(expire_set_);
   visitor->Trace(device_);
 }
