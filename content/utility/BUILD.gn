@@ -76,6 +76,7 @@ source_set("utility") {
     "//services/video_capture:lib",
     "//services/video_capture/public/mojom:constants",
     "//services/video_effects/buildflags",
+    "//services/viz/public/cpp/gpu",
     "//third_party/blink/public:blink_headers",
     "//url",
   ]
@@ -85,6 +86,8 @@ source_set("utility") {
       "//services/on_device_model:on_device_model_service",
       "//services/on_device_model/public/cpp",
       "//services/on_device_model/public/mojom",
+      "//services/video_capture:lib",
+      "//services/video_capture/public/mojom:constants",
     ]
   }
 

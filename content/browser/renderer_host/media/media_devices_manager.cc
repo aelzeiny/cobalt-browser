@@ -45,7 +45,9 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/audio/public/mojom/device_notifications.mojom.h"
-#include "services/video_capture/public/cpp/features.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/video_capture/public/cpp/features.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/mojom/mediastream/media_devices.mojom.h"
 
@@ -915,7 +917,9 @@ void MediaDevicesManager::StopMonitoring(
       disconnect_video_source_provider_timer_.Stop();
     }
 #endif
+#if !BUILDFLAG(IS_COBALT)
     video_capture_service_device_changed_observer_.reset();
+#endif  // !BUILDFLAG(IS_COBALT)
     monitoring_started_for_video_ = false;
     SetCachePolicy(MediaDeviceType::kMediaVideoInput, CachePolicy::NO_CACHE);
   }

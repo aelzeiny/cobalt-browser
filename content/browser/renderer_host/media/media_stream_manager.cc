@@ -44,7 +44,9 @@
 #include "content/browser/renderer_host/media/media_stream_metrics.h"
 #include "content/browser/renderer_host/media/media_stream_ui_proxy.h"
 #include "content/browser/renderer_host/media/preferred_audio_output_device_manager.h"
-#include "content/browser/renderer_host/media/service_video_capture_provider.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/renderer_host/media/service_video_capture_provider.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "content/browser/renderer_host/media/video_capture_manager.h"
 #include "content/browser/renderer_host/media/video_capture_provider_switcher.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
@@ -1618,11 +1620,18 @@ MediaStreamManager::MediaStreamManager(
       media::CameraHalDispatcherImpl::GetInstance()->Start();
     }
 #endif
+#if !BUILDFLAG(IS_COBALT)
     video_capture_provider = std::make_unique<VideoCaptureProviderSwitcher>(
         std::make_unique<ServiceVideoCaptureProvider>(
             base::BindRepeating(&SendVideoCaptureLogMessage)),
         InProcessVideoCaptureProvider::CreateInstanceForScreenCapture(
             std::move(device_task_runner)));
+#else
+    // Cobalt: Living Room TVs have no webcams.
+    video_capture_provider =
+        InProcessVideoCaptureProvider::CreateInstanceForScreenCapture(
+            std::move(device_task_runner));
+#endif  // !BUILDFLAG(IS_COBALT)
   }
   InitializeMaybeAsync(std::move(video_capture_provider));
 

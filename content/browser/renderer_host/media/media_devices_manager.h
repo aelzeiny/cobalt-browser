@@ -30,8 +30,10 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
-#include "services/video_capture/public/mojom/devices_changed_observer.mojom.h"
-#include "services/video_capture/public/mojom/video_source_provider.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/video_capture/public/mojom/devices_changed_observer.mojom.h"  // nogncheck
+#include "services/video_capture/public/mojom/video_source_provider.mojom.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/mojom/mediastream/media_devices.mojom.h"
 
@@ -242,6 +244,7 @@ class CONTENT_EXPORT MediaDevicesManager
   void UpdateVideoCaptureHostsEmptyState(bool empty);
 #endif
 
+#if !BUILDFLAG(IS_COBALT)
   // Implementation of video_capture::mojom::DevicesChangedObserver that
   // forwards a devices changed event to the global (process-local) instance of
   // base::DeviceMonitor.
@@ -275,6 +278,7 @@ class CONTENT_EXPORT MediaDevicesManager
     mojo::Remote<video_capture::mojom::VideoSourceProvider>
         mojo_device_notifier_;
   };
+#endif  // !BUILDFLAG(IS_COBALT)
 
   // The NO_CACHE policy is such that no previous results are used when
   // EnumerateDevices is called. The results of a new or in-progress low-level
@@ -488,8 +492,10 @@ class CONTENT_EXPORT MediaDevicesManager
 
   class AudioServiceDeviceListener;
   std::unique_ptr<AudioServiceDeviceListener> audio_service_device_listener_;
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<VideoCaptureDevicesChangedObserver>
       video_capture_service_device_changed_observer_;
+#endif  // !BUILDFLAG(IS_COBALT)
 
   std::map<uint32_t, EnumerationState> enumeration_states_;
   uint32_t next_enumeration_state_id_ = 0;

@@ -102,3 +102,6 @@ enable_vectorized_html_scanning = false
 # Disable Media Remoting (Casting / Remoter Mojo endpoints) for Cobalt.
 enable_media_remoting = false
 enable_media_remoting_rpc = false
+
+# Cobalt: Living Room TVs have no webcams or media capture utility process.
+enable_gpu_channel_media_capture = false

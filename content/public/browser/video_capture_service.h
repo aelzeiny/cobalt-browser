@@ -5,8 +5,11 @@
 #ifndef CONTENT_PUBLIC_BROWSER_VIDEO_CAPTURE_SERVICE_H_
 #define CONTENT_PUBLIC_BROWSER_VIDEO_CAPTURE_SERVICE_H_
 
+#include "build/build_config.h"
 #include "content/common/content_export.h"
-#include "services/video_capture/public/mojom/video_capture_service.mojom-forward.h"
+
+#if !BUILDFLAG(IS_COBALT)
+#include "services/video_capture/public/mojom/video_capture_service.mojom-forward.h"  // nogncheck
 
 namespace content {
 
@@ -27,5 +30,6 @@ CONTENT_EXPORT void OverrideVideoCaptureServiceForTesting(
     video_capture::mojom::VideoCaptureService* service);
 
 }  // namespace content
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #endif  // CONTENT_PUBLIC_BROWSER_VIDEO_CAPTURE_SERVICE_H_

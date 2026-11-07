@@ -1848,7 +1848,13 @@ test("content_browsertests") {
   }
 
   if (is_cobalt) {
-    sources -= [ "../browser/bluetooth/web_bluetooth_service_impl_browsertest.cc" ]
+    sources -= [
+      "../browser/bluetooth/web_bluetooth_service_impl_browsertest.cc",
+      "../browser/webrtc/webrtc_video_capture_browsertest.cc",
+      "../browser/webrtc/webrtc_video_capture_service_browsertest.cc",
+      "../browser/webrtc/webrtc_video_capture_service_enumeration_browsertest.cc",
+      "../browser/webrtc/webrtc_video_capture_shared_device_browsertest.cc",
+    ]
   }
 
   if (enable_reporting) {
@@ -1976,9 +1982,6 @@ test("content_browsertests") {
     "//services/service_manager/public/cpp",
     "//services/test/echo/public/mojom",
     "//services/tracing:privacy_check",
-    "//services/video_capture/public/cpp",
-    "//services/video_capture/public/cpp:mocks",
-    "//services/video_capture/public/mojom:constants",
     "//services/viz/privileged/mojom",
     "//services/viz/public/cpp/gpu",
     "//storage/browser",
@@ -2027,6 +2030,15 @@ test("content_browsertests") {
 
   if (is_cobalt) {
     deps -= [ "//device/bluetooth:mocks" ]
+  }
+
+  if (!is_cobalt) {
+    deps += [
+      "//services/video_capture/public/cpp",
+      "//services/video_capture/public/cpp:mocks",
+      "//services/video_capture/public/mojom",
+      "//services/video_capture/public/mojom:constants",
+    ]
   }
 
   data_deps = [
@@ -3109,6 +3121,8 @@ test("content_unittests") {
       "../browser/bluetooth/frame_connected_bluetooth_devices_unittest.cc",
       "../browser/bluetooth/web_bluetooth_pairing_manager_impl_unittest.cc",
       "../browser/bluetooth/web_bluetooth_service_impl_unittest.cc",
+      "../browser/renderer_host/media/service_video_capture_device_launcher_unittest.cc",
+      "../browser/renderer_host/media/service_video_capture_provider_unittest.cc",
       "../browser/service_worker/embedded_worker_instance_unittest.cc",
     ]
   }
@@ -3365,9 +3379,6 @@ test("content_unittests") {
     "//services/service_manager/public/cpp/test:test_support",
     "//services/tracing:lib",
     "//services/tracing:test_utils",
-    "//services/video_capture/public/cpp:mocks",
-    "//services/video_capture/public/mojom",
-    "//services/video_capture/public/mojom:constants",
     "//services/video_effects/buildflags",
     "//services/viz/public/cpp/gpu",
     "//skia",
@@ -3437,6 +3448,14 @@ test("content_unittests") {
     deps -= [
       "//device/bluetooth",
       "//device/bluetooth:mocks",
+    ]
+  }
+
+  if (!is_cobalt) {
+    deps += [
+      "//services/video_capture/public/cpp:mocks",
+      "//services/video_capture/public/mojom",
+      "//services/video_capture/public/mojom:constants",
     ]
   }
 

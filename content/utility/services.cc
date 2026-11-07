@@ -36,8 +36,10 @@
 #endif  // !BUILDFLAG(IS_COBALT)
 #include "services/tracing/public/mojom/tracing_service.mojom.h"
 #include "services/tracing/tracing_service.h"
-#include "services/video_capture/public/mojom/video_capture_service.mojom.h"
-#include "services/video_capture/video_capture_service_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/video_capture/public/mojom/video_capture_service.mojom.h"  // nogncheck
+#include "services/video_capture/video_capture_service_impl.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "services/video_effects/public/cpp/buildflags.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
@@ -169,6 +171,7 @@ class ContentCdmServiceClient final : public media::CdmService::Client {
 };
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS)
 
+#if !BUILDFLAG(IS_COBALT)
 class UtilityThreadVideoCaptureServiceImpl final
     : public video_capture::VideoCaptureServiceImpl {
  public:
@@ -185,6 +188,7 @@ class UtilityThreadVideoCaptureServiceImpl final
       base::win::ScopedCOMInitializer::kMTA};
 #endif  // BUILDFLAG(IS_WIN)
 };
+#endif  // !BUILDFLAG(IS_COBALT)
 
 auto RunNetworkService(
     mojo::PendingReceiver<network::mojom::NetworkService> receiver) {

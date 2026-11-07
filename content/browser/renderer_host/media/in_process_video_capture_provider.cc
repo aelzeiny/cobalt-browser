@@ -8,6 +8,7 @@
 
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
+#include "build/build_config.h"
 #include "content/browser/renderer_host/media/in_process_video_capture_device_launcher.h"
 
 namespace content {
@@ -37,7 +38,14 @@ InProcessVideoCaptureProvider::CreateInstanceForScreenCapture(
 
 void InProcessVideoCaptureProvider::GetDeviceInfosAsync(
     GetDeviceInfosCallback result_callback) {
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: Living Room TVs have no webcams. Return an empty list cleanly.
+  std::move(result_callback)
+      .Run(media::mojom::DeviceEnumerationResult::kSuccess,
+           std::vector<media::VideoCaptureDeviceInfo>());
+#else
   NOTREACHED();
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 std::unique_ptr<VideoCaptureDeviceLauncher>

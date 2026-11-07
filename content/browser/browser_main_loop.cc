@@ -150,7 +150,9 @@
 #include "services/network/public/mojom/network_service.mojom.h"
 #include "services/network/transitional_url_loader_factory_owner.h"
 #include "services/tracing/public/cpp/trace_startup_config.h"
-#include "services/video_capture/public/cpp/features.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/video_capture/public/cpp/features.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "skia/ext/event_tracer_impl.h"
 #include "skia/ext/legacy_display_globals.h"
 #include "skia/ext/skia_memory_dump_provider.h"
