@@ -8,6 +8,8 @@
 
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "content/browser/broadcast_channel/broadcast_channel_provider.h"
 #include "content/browser/broadcast_channel/broadcast_channel_service.h"
 #include "content/browser/buckets/bucket_manager.h"
@@ -291,6 +293,7 @@ RenderProcessHost* ServiceWorkerHost::GetProcessHost() const {
   return RenderProcessHost::FromID(version_->embedded_worker()->process_id());
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void ServiceWorkerHost::BindAIManager(
     mojo::PendingReceiver<blink::mojom::AIManager> receiver) {
   auto* process = GetProcessHost();
@@ -300,5 +303,6 @@ void ServiceWorkerHost::BindAIManager(
                                                  std::move(receiver));
   }
 }
+#endif
 
 }  // namespace content

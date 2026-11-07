@@ -86,12 +86,16 @@
 #include "storage/browser/file_system/file_system_context.h"
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
-#include "third_party/blink/public/mojom/ai/ai_manager.mojom-forward.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/public/mojom/ai/ai_manager.mojom-forward.h"  // nogncheck
+#endif
 #include "third_party/blink/public/mojom/browsing_topics/browsing_topics.mojom-forward.h"
 #include "third_party/blink/public/mojom/file_system_access/file_system_access_cloud_identifier.mojom-forward.h"
 #include "third_party/blink/public/mojom/file_system_access/file_system_access_error.mojom-forward.h"
 #include "third_party/blink/public/mojom/manifest/manifest.mojom-forward.h"
-#include "third_party/blink/public/mojom/on_device_translation/translation_manager.mojom-forward.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/public/mojom/on_device_translation/translation_manager.mojom-forward.h"  // nogncheck
+#endif
 #include "third_party/blink/public/mojom/origin_trials/origin_trials_settings.mojom-forward.h"
 #include "third_party/blink/public/mojom/payments/secure_payment_confirmation_service.mojom-forward.h"
 #include "third_party/blink/public/mojom/worker/shared_worker_info.mojom.h"
@@ -3213,6 +3217,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   // today to suppress the event when the user navigates to the new tab page.
   virtual bool ShouldSuppressAXLoadComplete(RenderFrameHost* rfh);
 
+#if !BUILDFLAG(IS_COBALT)
   // Binds the AIManager for a given `browser_context` to `receiver`. The
   // created AIManager will be owned by the `context_user_data`. The
   // RenderFrameHost may be null if this is called for a service worker or
@@ -3233,7 +3238,6 @@ class CONTENT_EXPORT ContentBrowserClient {
       const url::Origin& origin,
       mojo::PendingReceiver<blink::mojom::TranslationManager> receiver);
 
-#if !BUILDFLAG(IS_COBALT)
   // Binds to a singleton new instance of
   // `language_detection::ContentLanguageDetectionDriver` which receives the
   // model from a local file specified by a flag param..

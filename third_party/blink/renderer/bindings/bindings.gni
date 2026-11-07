@@ -332,10 +332,16 @@ if (is_cobalt) {
     "*v8_writer*",
     "*v8_summarizer*",
     "*v8_language_model*",
-    "*v8_proofreader*",
+    "*v8_proofread*",
     "*v8_create_monitor*",
     "*v8_language_detector*",
+    "*v8_availability.*",
+    "*v8_correction_type.*",
+    "*v8_language_detection_result.*",
+    "*v8_union_language_model_*",
+    "*v8_union_languagemodel*",
   ]
+  cobalt_bindings_exclude_patterns += cobalt_ai_exclude_patterns
 
   if (!enable_privacy_sandbox_apis) {
     cobalt_bindings_exclude_patterns += [

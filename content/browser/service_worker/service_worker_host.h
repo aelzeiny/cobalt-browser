@@ -13,6 +13,8 @@
 #include "base/memory/weak_ptr.h"
 #include "base/supports_user_data.h"
 #include "base/task/single_thread_task_runner.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "content/browser/browser_interface_broker_impl.h"
 #include "content/browser/buckets/bucket_context.h"
 #include "content/browser/renderer_host/code_cache_host_impl.h"
@@ -29,7 +31,9 @@
 #include "services/network/public/mojom/fetch_api.mojom.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/service_manager/public/cpp/interface_provider.h"
-#include "third_party/blink/public/mojom/ai/ai_manager.mojom-forward.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/public/mojom/ai/ai_manager.mojom-forward.h"  // nogncheck
+#endif
 #include "third_party/blink/public/mojom/blob/blob_url_store.mojom-forward.h"
 #include "third_party/blink/public/mojom/broadcastchannel/broadcast_channel.mojom.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom.h"
@@ -144,7 +148,9 @@ class CONTENT_EXPORT ServiceWorkerHost : public BucketContext,
           callback) override;
   storage::BucketClientInfo GetBucketClientInfo() const override;
 
+#if !BUILDFLAG(IS_COBALT)
   void BindAIManager(mojo::PendingReceiver<blink::mojom::AIManager> receiver);
+#endif
 
   RenderProcessHost* GetProcessHost() const;
 

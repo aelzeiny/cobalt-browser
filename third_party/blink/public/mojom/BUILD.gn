@@ -377,6 +377,26 @@ mojom("mojom_platform") {
     ]
   }
 
+  if (is_cobalt) {
+    # Cobalt: built-in AI / Gemini Nano is not supported on TV devices.
+    sources -= [
+      "ai/ai_common.mojom",
+      "ai/ai_language_model.mojom",
+      "ai/ai_manager.mojom",
+      "ai/ai_proofreader.mojom",
+      "ai/ai_rewriter.mojom",
+      "ai/ai_summarizer.mojom",
+      "ai/ai_writer.mojom",
+      "ai/model_download_progress_observer.mojom",
+      "ai/model_streaming_responder.mojom",
+      "on_device_translation/translation_manager.mojom",
+      "on_device_translation/translator.mojom",
+    ]
+    public_deps -= [
+      "//services/on_device_model/public/mojom",
+    ]
+  }
+
   enabled_features = []
   if (use_ozone) {
     enabled_features += [ "is_selection_clipboard_buffer_possible" ]
