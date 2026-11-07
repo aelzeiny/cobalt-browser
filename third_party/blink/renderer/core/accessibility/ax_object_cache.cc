@@ -31,6 +31,7 @@
 #include <memory>
 
 #include "base/memory/ptr_util.h"
+#include "build/build_config.h"
 #include "third_party/blink/public/web/web_ax_enums.h"
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/dom/node.h"
@@ -53,14 +54,24 @@ void AXObjectCache::Init(AXObjectCacheCreateFunction function) {
 
 AXObjectCache* AXObjectCache::Create(Document& document,
                                      const ui::AXMode& ax_mode) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return null cache.
+  return nullptr;
+#else
   DCHECK(create_function_);
   return create_function_(document, ax_mode, /*for_snapshot_only*/ false);
+#endif
 }
 
 AXObjectCache* AXObjectCache::CreateSnapshotter(Document& document,
                                                 const ui::AXMode& ax_mode) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return null snapshotter.
+  return nullptr;
+#else
   DCHECK(create_function_);
   return create_function_(document, ax_mode, /*for_snapshot_only*/ true);
+#endif
 }
 
 namespace {

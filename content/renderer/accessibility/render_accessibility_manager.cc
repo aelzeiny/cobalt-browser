@@ -9,11 +9,20 @@
 #include "base/debug/alias.h"
 #include "base/functional/bind.h"
 #include "base/notreached.h"
-#include "content/renderer/accessibility/render_accessibility_impl.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/renderer/accessibility/render_accessibility_impl.h"  // nogncheck
+#endif
 #include "content/renderer/render_frame_impl.h"
 #include "third_party/blink/public/common/features.h"
 
 namespace content {
+
+#if BUILDFLAG(IS_COBALT)
+// Cobalt: Stub definition to satisfy std::unique_ptr destructor without pulling in
+// RenderAccessibilityImpl.
+class RenderAccessibilityImpl {};
+#endif
 
 RenderAccessibilityManager::RenderAccessibilityManager(
     RenderFrameImpl* render_frame)
@@ -40,17 +49,28 @@ void RenderAccessibilityManager::BindReceiver(
 
 RenderAccessibilityImpl*
 RenderAccessibilityManager::GetRenderAccessibilityImpl() {
+#if BUILDFLAG(IS_STARBOARD)
+  return nullptr;
+#else
   return render_accessibility_.get();
+#endif
 }
 
 ui::AXMode RenderAccessibilityManager::GetAccessibilityMode() const {
+#if BUILDFLAG(IS_STARBOARD)
+  return ui::AXMode();
+#else
   if (!render_accessibility_)
     return ui::AXMode();
   return render_accessibility_->GetAccessibilityMode();
+#endif
 }
 
 void RenderAccessibilityManager::SetMode(const ui::AXMode& new_mode,
                                          uint32_t reset_token) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: AXTree not used on TV; Kabuki uses JS TTS screen reader.
+#else
   ui::AXMode old_mode = GetAccessibilityMode();
 
   if (old_mode == new_mode) {
@@ -82,6 +102,7 @@ void RenderAccessibilityManager::SetMode(const ui::AXMode& new_mode,
   // or tears down Blink accessibility ensuring subsequent observers can reason
   // accurately about accessibility.
   render_frame_->NotifyAccessibilityModeChange(new_mode);
+#endif
 }
 
 void RenderAccessibilityManager::FatalError() {
@@ -94,19 +115,32 @@ void RenderAccessibilityManager::HitTest(
     ax::mojom::Event event_to_fire,
     int request_id,
     blink::mojom::RenderAccessibility::HitTestCallback callback) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; return null callback result.
+  std::move(callback).Run(nullptr);
+#else
   DCHECK(render_accessibility_);
   render_accessibility_->HitTest(point, event_to_fire, request_id,
                                  std::move(callback));
+#endif
 }
 
 void RenderAccessibilityManager::PerformAction(const ui::AXActionData& data) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; no-op.
+#else
   DCHECK(render_accessibility_);
   render_accessibility_->PerformAction(data);
+#endif
 }
 
 void RenderAccessibilityManager::Reset(uint32_t reset_token) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; no-op.
+#else
   DCHECK(render_accessibility_);
   render_accessibility_->Reset(reset_token);
+#endif
 }
 
 void RenderAccessibilityManager::HandleAXEvents(
@@ -114,10 +148,15 @@ void RenderAccessibilityManager::HandleAXEvents(
     ui::AXLocationAndScrollUpdates& location_and_scroll_updates,
     uint32_t reset_token,
     blink::mojom::RenderAccessibilityHost::HandleAXEventsCallback callback) {
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; no-op.
+  return;
+#else
   CHECK(reset_token);
   GetOrCreateRemoteRenderAccessibilityHost()->HandleAXEvents(
       updates_and_events, location_and_scroll_updates, reset_token,
       std::move(callback));
+#endif
 }
 
 mojo::Remote<blink::mojom::RenderAccessibilityHost>&
@@ -132,9 +171,11 @@ RenderAccessibilityManager::GetOrCreateRemoteRenderAccessibilityHost() {
 void RenderAccessibilityManager::CloseConnection() {
   if (render_accessibility_host_) {
     render_accessibility_host_.reset();
+#if !BUILDFLAG(IS_COBALT)
     if (render_accessibility_) {
       render_accessibility_->ConnectionClosed();
     }
+#endif
   }
 }
 

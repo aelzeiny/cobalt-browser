@@ -37,8 +37,16 @@ blink_modules_sources("exported") {
     ]
     deps -= [ "//third_party/blink/renderer/modules/shared_storage" ]
   }
-  if (is_cobalt) {
-    deps -= [ "//third_party/blink/renderer/modules/ai" ]
+  if (is_starboard) {
+    # Cobalt: WebAXObject/WebAXContext not used on TV.
+    sources -= [
+      "web_ax_context.cc",
+      "web_ax_object.cc",
+    ]
+    deps -= [
+      "//third_party/blink/renderer/modules/accessibility",
+      "//third_party/blink/renderer/modules/ai",
+    ]
   }
 }
 

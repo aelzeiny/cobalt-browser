@@ -28,4 +28,15 @@ blink_modules_sources("content_extraction") {
   ]
 
   public_deps = [ "//third_party/blink/public/mojom:mojom_modules_blink" ]
+
+  if (is_starboard) {
+    # Cobalt: AI page content agent depends on accessibility AXObject.
+    sources -= [
+      "ai_page_content_agent.cc",
+      "ai_page_content_agent.h",
+    ]
+    deps -= [
+      "//third_party/blink/renderer/modules/accessibility:accessibility",
+    ]
+  }
 }

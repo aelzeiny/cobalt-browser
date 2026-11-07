@@ -10,6 +10,7 @@
 
 #include "base/feature_list.h"
 #include "base/task/thread_pool.h"
+#include "base/trace_event/trace_event.h"  // Cobalt: provide Perfetto TrackEventCategoryRegistry needed by init_webrtc.h
 #include "build/android_buildflags.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/binder_map.h"
@@ -40,15 +41,21 @@
 #include "third_party/blink/renderer/core/page/chrome_client.h"
 #include "third_party/blink/renderer/core/page/page.h"
 #include "third_party/blink/renderer/core/scheduler/task_attribution_tracker_impl.h"
-#include "third_party/blink/renderer/modules/accessibility/ax_object_cache_impl.h"
-#include "third_party/blink/renderer/modules/accessibility/inspector_accessibility_agent.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Living Room TV has no C++ AXTree; ax_object_cache_impl and inspector_accessibility_agent omitted.
+#include "third_party/blink/renderer/modules/accessibility/ax_object_cache_impl.h"  // nogncheck
+#include "third_party/blink/renderer/modules/accessibility/inspector_accessibility_agent.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/app_banner/app_banner_controller.h"
 #include "third_party/blink/renderer/modules/audio_output_devices/html_media_element_audio_output_device.h"
 #include "third_party/blink/renderer/modules/cache_storage/inspector_cache_storage_agent.h"
 #include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_rendering_context_2d.h"
 #include "third_party/blink/renderer/modules/canvas/imagebitmap/image_bitmap_rendering_context.h"
 #include "third_party/blink/renderer/modules/canvas/offscreencanvas2d/offscreen_canvas_rendering_context_2d.h"
-#include "third_party/blink/renderer/modules/content_extraction/ai_page_content_agent.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Living Room TV has no C++ AXTree; ai_page_content_agent omitted.
+#include "third_party/blink/renderer/modules/content_extraction/ai_page_content_agent.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/content_extraction/inner_html_agent.h"
 #include "third_party/blink/renderer/modules/content_extraction/inner_text_agent.h"
 #include "third_party/blink/renderer/modules/context_menu/context_menu.h"
@@ -199,7 +206,10 @@ void ModulesInitializer::Initialize() {
   ModuleBindingsInitializer::Init();
   indexed_db_names::Init();
   media_capabilities_names::Init();
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; AXObjectCache omitted.
   AXObjectCache::Init(AXObjectCacheImpl::Create);
+#endif
   DraggedIsolatedFileSystem::Init(
       DraggedIsolatedFileSystemImpl::PrepareForDataObject);
   CSSPaintImageGenerator::Init(CSSPaintImageGeneratorImpl::Create);
@@ -255,10 +265,13 @@ void ModulesInitializer::InitLocalFrame(LocalFrame& frame) const {
     frame.GetInterfaceRegistry()->AddInterface(WTF::BindRepeating(
         &DocumentMetadataServer::BindReceiver, WrapWeakPersistent(&frame)));
   }
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; AIPageContentAgent omitted.
   if (frame.IsLocalRoot()) {
     frame.GetInterfaceRegistry()->AddInterface(WTF::BindRepeating(
         &AIPageContentAgent::BindReceiver, WrapWeakPersistent(&frame)));
   }
+#endif
   frame.GetInterfaceRegistry()->AddAssociatedInterface(WTF::BindRepeating(
       &WebLaunchServiceImpl::BindReceiver, WrapWeakPersistent(&frame)));
 
@@ -295,7 +308,10 @@ void ModulesInitializer::InitLocalFrame(LocalFrame& frame) const {
 
 void ModulesInitializer::InstallSupplements(LocalFrame& frame) const {
   DCHECK(WebLocalFrameImpl::FromFrame(&frame)->Client());
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; InspectorAccessibilityAgent omitted.
   InspectorAccessibilityAgent::ProvideTo(&frame);
+#endif
   ImageDownloaderImpl::ProvideTo(frame);
   ContextMenu::ProvideTo(frame);
   AudioRendererSinkCache::InstallWindowObserver(*frame.DomWindow());
@@ -322,8 +338,11 @@ void ModulesInitializer::InitInspectorAgentSession(
                                                     session->V8Session());
   session->CreateAndAppend<DeviceOrientationInspectorAgent>(inspected_frames);
   session->CreateAndAppend<InspectorDOMStorageAgent>(inspected_frames);
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Living Room TV has no C++ AXTree; InspectorAccessibilityAgent omitted.
   session->CreateAndAppend<InspectorAccessibilityAgent>(inspected_frames,
                                                         dom_agent);
+#endif
   session->CreateAndAppend<InspectorWebAudioAgent>(page);
   session->CreateAndAppend<InspectorCacheStorageAgent>(inspected_frames);
   session->CreateAndAppend<BucketFileSystemAgent>(inspected_frames);

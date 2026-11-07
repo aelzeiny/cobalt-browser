@@ -185,8 +185,24 @@ target(link_target_type, "renderer") {
     ]
   }
 
-  if (is_cobalt) {
+  if (is_starboard) {
+    # Cobalt: Chromium AXTree not used on TV; keep only RenderAccessibilityManager shell.
     sources -= [
+      "accessibility/annotations/ax_annotator.h",
+      "accessibility/annotations/ax_annotators_manager.cc",
+      "accessibility/annotations/ax_annotators_manager.h",
+      "accessibility/annotations/ax_image_annotator.cc",
+      "accessibility/annotations/ax_image_annotator.h",
+      "accessibility/annotations/ax_image_stopwords.cc",
+      "accessibility/annotations/ax_image_stopwords.h",
+      "accessibility/ax_action_target_factory.cc",
+      "accessibility/ax_action_target_factory.h",
+      "accessibility/ax_tree_snapshotter_impl.cc",
+      "accessibility/ax_tree_snapshotter_impl.h",
+      "accessibility/blink_ax_action_target.cc",
+      "accessibility/blink_ax_action_target.h",
+      "accessibility/render_accessibility_impl.cc",
+      "accessibility/render_accessibility_impl.h",
       "media/audio_decoder.cc",
       "media/audio_decoder.h",
     ]
@@ -356,7 +372,8 @@ target(link_target_type, "renderer") {
     }
   }
 
-  if (enable_screen_ai_service) {
+  if (enable_screen_ai_service && !is_starboard) {
+    # Cobalt: Screen AI / AXMainNodeAnnotator disabled on Starboard.
     sources += [
       "accessibility/annotations/ax_main_node_annotator.cc",
       "accessibility/annotations/ax_main_node_annotator.h",

@@ -111,7 +111,10 @@
 #include "third_party/blink/public/platform/web_thread_safe_data.h"
 #include "third_party/blink/public/platform/web_url.h"
 #include "third_party/blink/public/platform/websocket_handshake_throttle_provider.h"
-#include "third_party/blink/public/web/web_ax_object.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Living Room TV has no C++ AXTree; WebAXObject is omitted.
+#include "third_party/blink/public/web/web_ax_object.h"  // nogncheck
+#endif
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "third_party/blink/public/web/web_frame_load_type.h"
 #include "third_party/blink/public/web/web_frame_serializer.h"
