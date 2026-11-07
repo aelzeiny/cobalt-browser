@@ -5,6 +5,11 @@
 #ifndef CONTENT_PUBLIC_BROWSER_DOWNLOAD_ITEM_UTILS_H_
 #define CONTENT_PUBLIC_BROWSER_DOWNLOAD_ITEM_UTILS_H_
 
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if !BUILDFLAG(IS_COBALT)
+
 #include "content/common/content_export.h"
 #include "content/public/browser/global_routing_id.h"
 
@@ -55,5 +60,7 @@ class CONTENT_EXPORT DownloadItemUtils {
 };
 
 }  // namespace content
+
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #endif  // CONTENT_PUBLIC_BROWSER_DOWNLOAD_ITEM_UTILS_H_

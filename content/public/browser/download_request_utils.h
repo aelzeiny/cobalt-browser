@@ -5,7 +5,12 @@
 #ifndef CONTENT_PUBLIC_BROWSER_DOWNLOAD_REQUEST_UTILS_H_
 #define CONTENT_PUBLIC_BROWSER_DOWNLOAD_REQUEST_UTILS_H_
 
-#include "components/download/public/common/download_url_parameters.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if !BUILDFLAG(IS_COBALT)
+
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
 #include "content/common/content_export.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 
@@ -34,5 +39,7 @@ class CONTENT_EXPORT DownloadRequestUtils {
 };
 
 }  // namespace content
+
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #endif  // CONTENT_PUBLIC_BROWSER_DOWNLOAD_REQUEST_UTILS_H_

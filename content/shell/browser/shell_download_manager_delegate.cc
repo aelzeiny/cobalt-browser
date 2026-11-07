@@ -9,7 +9,7 @@
 
 #include "base/files/file_path.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_target_info.h"
+#include "components/download/public/common/download_target_info.h"  // nogncheck
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>

@@ -13,7 +13,7 @@
 #include "base/memory/ref_counted_delete_on_sequence.h"
 #include "base/sequence_checker.h"
 #include "base/time/time.h"
-#include "components/download/public/common/download_item.h"
+#include "components/download/public/common/download_item.h"  // nogncheck // Cobalt: header-only type; dep intentionally removed
 #include "content/browser/background_fetch/background_fetch_constants.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/background_fetch_response.h"

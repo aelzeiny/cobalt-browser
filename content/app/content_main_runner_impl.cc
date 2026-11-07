@@ -55,7 +55,9 @@
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
 #include "components/discardable_memory/service/discardable_shared_memory_manager.h"
-#include "components/download/public/common/download_task_runner.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_task_runner.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "components/power_monitor/make_power_monitor_device_source.h"
 #include "components/variations/net/variations_command_line.h"
 #include "components/variations/variations_ids_provider.h"
@@ -1307,7 +1309,9 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
     GetContentClient()->browser()->BindBrowserControlInterface(
         MaybeAcceptMojoInvitation());
 
+#if !BUILDFLAG(IS_COBALT)
     download::SetIOTaskRunner(mojo_ipc_support_->io_thread()->task_runner());
+#endif  // !BUILDFLAG(IS_COBALT)
 
     InitializeBrowserMemoryInstrumentationClient();
 

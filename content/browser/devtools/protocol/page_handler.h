@@ -26,7 +26,9 @@
 #include "cc/trees/render_frame_metadata.h"
 #include "content/browser/devtools/devtools_video_consumer.h"
 #include "content/browser/devtools/protocol/devtools_domain_handler.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/devtools/protocol/devtools_download_manager_delegate.h"
+#endif
 #include "content/browser/devtools/protocol/page.h"
 #include "content/browser/preloading/prerender/prerender_final_status.h"
 #include "content/browser/renderer_host/back_forward_cache_impl.h"
@@ -65,8 +67,11 @@ class EmulationHandler;
 
 class PageHandler : public DevToolsDomainHandler,
                     public Page::Backend,
-                    public RenderWidgetHostObserver,
-                    public download::DownloadItem::Observer {
+                    public RenderWidgetHostObserver
+#if !BUILDFLAG(IS_COBALT)
+                    , public download::DownloadItem::Observer
+#endif
+{
  public:
   PageHandler(
       EmulationHandler* emulation_handler,
@@ -109,7 +114,9 @@ class PageHandler : public DevToolsDomainHandler,
                                 bool success,
                                 const std::u16string& user_input);
   void NavigationReset(NavigationRequest* navigation_request);
+#if !BUILDFLAG(IS_COBALT)
   void DownloadWillBegin(FrameTreeNode* ftn, download::DownloadItem* item);
+#endif
   void DidStartNavigating(FrameTreeNode& ftn,
                           const GURL& url,
                           const base::UnguessableToken& loader_id,
@@ -233,9 +240,11 @@ class PageHandler : public DevToolsDomainHandler,
                                          bool became_visible) override;
   void RenderWidgetHostDestroyed(RenderWidgetHost* widget_host) override;
 
+#if !BUILDFLAG(IS_COBALT)
   // DownloadItem::Observer overrides
   void OnDownloadUpdated(download::DownloadItem* item) override;
   void OnDownloadDestroyed(download::DownloadItem* item) override;
+#endif
 
   // Returns WebContents only if `host_` is a top level frame. Otherwise, it
   // returns Response with an error.
@@ -279,8 +288,10 @@ class PageHandler : public DevToolsDomainHandler,
   // Maps DevTools navigation tokens to pending NavigateCallbacks.
   base::flat_map<base::UnguessableToken, std::unique_ptr<NavigateCallback>>
       navigate_callbacks_;
+#if !BUILDFLAG(IS_COBALT)
   base::flat_set<raw_ptr<download::DownloadItem, CtnExperimental>>
       pending_downloads_;
+#endif
 
   bool is_prerendering_allowed_ = true;
   base::RepeatingCallback<void(std::string)> prepare_for_reload_callback_;

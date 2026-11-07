@@ -6,6 +6,7 @@
 #define CONTENT_BROWSER_DEVTOOLS_PROTOCOL_DEVTOOLS_MHTML_HELPER_H_
 
 #include "content/browser/devtools/protocol/page_handler.h"
+#include "content/public/browser/web_contents.h"
 #include "storage/browser/blob/shareable_file_reference.h"
 
 namespace content {

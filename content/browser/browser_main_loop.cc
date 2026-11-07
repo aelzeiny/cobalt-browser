@@ -67,7 +67,9 @@
 #include "content/browser/browser_thread_impl.h"
 #include "content/browser/child_process_security_policy_impl.h"
 #include "content/browser/compositor/viz_process_transport_factory.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/download/save_file_manager.h"
+#endif
 #include "content/browser/field_trial_synchronizer.h"
 #include "content/browser/first_party_sets/first_party_set_parser.h"
 #include "content/browser/first_party_sets/first_party_sets_handler_impl.h"
@@ -1237,8 +1239,10 @@ void BrowserMainLoop::ShutdownThreadsAndCleanUp() {
 
   mojo_ipc_support_.reset();
 
+#if !BUILDFLAG(IS_COBALT)
   if (save_file_manager_)
     save_file_manager_->Shutdown();
+#endif
 
   {
     TRACE_EVENT0("shutdown", "BrowserMainLoop::Subsystem:IOThread");

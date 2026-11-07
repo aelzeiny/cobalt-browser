@@ -55,7 +55,9 @@
 // Cobalt: Attribution Reporting is disabled on Cobalt.
 #include "components/attribution_reporting/features.h"  // nogncheck
 #endif
-#include "components/download/public/common/download_stats.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_stats.h"  // nogncheck
+#endif
 #include "components/fingerprinting_protection_filter/interventions/common/interventions_features.h"
 #include "components/input/cursor_manager.h"
 #include "components/input/render_widget_host_input_event_router.h"
@@ -86,8 +88,10 @@
 #include "content/browser/display_cutout/display_cutout_host_impl.h"
 #include "content/browser/dom_storage/dom_storage_context_wrapper.h"
 #include "content/browser/dom_storage/session_storage_namespace_impl.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/download/mhtml_generation_manager.h"
 #include "content/browser/download/save_package.h"
+#endif
 #include "content/browser/fenced_frame/fenced_frame.h"
 #include "content/browser/find_request_manager.h"
 #include "content/browser/fingerprinting_protection/canvas_noise_token_data.h"
@@ -1558,11 +1562,13 @@ WebContentsImpl::~WebContentsImpl() {
     }
   }
 
+#if !BUILDFLAG(IS_COBALT)
   // |save_package_| is refcounted so make sure we clear the page before
   // we toss out our reference.
   if (save_package_) {
     save_package_->ClearPage();
   }
+#endif
 
   observers_.NotifyObservers(&WebContentsObserver::WebContentsDestroyed);
 
@@ -6566,6 +6572,10 @@ bool WebContentsImpl::IsSavable() {
 
 void WebContentsImpl::OnSavePage() {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnSavePage");
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: saving pages is not supported.
+  return;
+#else
   // If we can not save the page, try to download it.
   if (!IsSavable()) {
     SaveFrame(GetLastCommittedURL(), Referrer(), GetPrimaryMainFrame());
@@ -6579,6 +6589,7 @@ void WebContentsImpl::OnSavePage() {
   // another thread.
   save_package_ = new SavePackage(GetPrimaryPage());
   save_package_->GetSaveInfo();
+#endif
 }
 
 // Used in automated testing to bypass prompting the user for file names.
@@ -6587,6 +6598,9 @@ void WebContentsImpl::OnSavePage() {
 bool WebContentsImpl::SavePage(const base::FilePath& main_file,
                                const base::FilePath& dir_path,
                                SavePageType save_type) {
+#if BUILDFLAG(IS_COBALT)
+  return false;
+#else
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::SavePage", "main_file",
                         main_file, "dir_path", dir_path);
   // Stop the page from navigating.
@@ -6595,6 +6609,7 @@ bool WebContentsImpl::SavePage(const base::FilePath& main_file,
   save_package_ =
       new SavePackage(GetPrimaryPage(), save_type, main_file, dir_path);
   return save_package_->Init(SavePackageDownloadCreatedCallback());
+#endif
 }
 
 void WebContentsImpl::SaveFrame(const GURL& url,
@@ -6612,6 +6627,10 @@ void WebContentsImpl::SaveFrameWithHeaders(
     const std::u16string& suggested_filename,
     RenderFrameHost* rfh,
     bool is_subresource) {
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: saving frames/downloads not supported.
+  return;
+#else
   DCHECK(rfh);
   auto& rfhi = *static_cast<RenderFrameHostImpl*>(rfh);
 
@@ -6709,12 +6728,16 @@ void WebContentsImpl::SaveFrameWithHeaders(
   }
 
   GetBrowserContext()->GetDownloadManager()->DownloadUrl(std::move(params));
+#endif  // !BUILDFLAG(IS_COBALT)
 }
 
 void WebContentsImpl::GenerateMHTML(
     const MHTMLGenerationParams& params,
     base::OnceCallback<void(int64_t)> callback) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::GenerateMHTML");
+#if BUILDFLAG(IS_COBALT)
+  std::move(callback).Run(-1);
+#else
   base::OnceCallback<void(const MHTMLGenerationResult&)> wrapper_callback =
       base::BindOnce(
           [](base::OnceCallback<void(int64_t)> size_callback,
@@ -6724,14 +6747,19 @@ void WebContentsImpl::GenerateMHTML(
           std::move(callback));
   MHTMLGenerationManager::GetInstance()->SaveMHTML(this, params,
                                                    std::move(wrapper_callback));
+#endif
 }
 
 void WebContentsImpl::GenerateMHTMLWithResult(
     const MHTMLGenerationParams& params,
     MHTMLGenerationResult::GenerateMHTMLCallback callback) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::GenerateMHTMLWithResult");
+#if BUILDFLAG(IS_COBALT)
+  std::move(callback).Run(MHTMLGenerationResult(-1, nullptr));
+#else
   MHTMLGenerationManager::GetInstance()->SaveMHTML(this, params,
                                                    std::move(callback));
+#endif
 }
 
 const std::string& WebContentsImpl::GetContentsMimeType() {
@@ -8163,18 +8191,22 @@ void WebContentsImpl::SavableResourceLinksResponse(
   OPTIONAL_TRACE_EVENT1("content",
                         "WebContentsImpl::SavableResourceLinksResponse",
                         "render_frame_host", source);
+#if !BUILDFLAG(IS_COBALT)
   if (save_package_) {
     save_package_->SavableResourceLinksResponse(source, resources_list,
                                                 std::move(referrer), subframes);
   }
+#endif
 }
 
 void WebContentsImpl::SavableResourceLinksError(RenderFrameHostImpl* source) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::SavableResourceLinksError",
                         "render_frame_host", source);
+#if !BUILDFLAG(IS_COBALT)
   if (save_package_) {
     save_package_->SavableResourceLinksError(source);
   }
+#endif
 }
 
 void WebContentsImpl::OnServiceWorkerAccessed(
@@ -11534,11 +11566,19 @@ bool WebContentsImpl::IsShowingContextMenuOnPage() const {
   return showing_context_menu_;
 }
 
+#if BUILDFLAG(IS_COBALT)
+std::vector<std::pair<std::string, std::string>>
+#else
 download::DownloadUrlParameters::RequestHeadersType
+#endif
 WebContentsImpl::ParseDownloadHeaders(const std::string& headers) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::ParseDownloadHeaders",
                         "headers", headers);
+#if BUILDFLAG(IS_COBALT)
+  std::vector<std::pair<std::string, std::string>> request_headers;
+#else
   download::DownloadUrlParameters::RequestHeadersType request_headers;
+#endif
   for (std::string_view key_value : base::SplitStringPiece(
            headers, "\r\n", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY)) {
     std::vector<std::string> pair = base::SplitString(
@@ -11768,10 +11808,12 @@ void WebContentsImpl::NotifyPageBecamePrimary(PageImpl& page) {
   DCHECK_EQ(&page, &GetPrimaryPage());
 
   // Clear |save_package_| since the primary page changed.
+#if !BUILDFLAG(IS_COBALT)
   if (save_package_) {
     save_package_->ClearPage();
     save_package_.reset();
   }
+#endif
   observers_.NotifyObservers(&WebContentsObserver::PrimaryPageChanged, page);
 }
 

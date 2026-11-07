@@ -698,10 +698,12 @@ Response PageHandler::Disable() {
     pending_dialog_.Reset();
   }
 
+#if !BUILDFLAG(IS_COBALT)
   for (download::DownloadItem* item : pending_downloads_) {
     item->RemoveObserver(this);
   }
   pending_downloads_.clear();
+#endif
   navigate_callbacks_.clear();
   SetPrerenderingAllowed(true);
 
@@ -962,6 +964,7 @@ void PageHandler::NavigationReset(NavigationRequest* navigation_request) {
   navigate_callbacks_.erase(it);
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void PageHandler::DownloadWillBegin(FrameTreeNode* ftn,
                                     download::DownloadItem* item) {
   if (!enabled_)
@@ -985,6 +988,7 @@ void PageHandler::DownloadWillBegin(FrameTreeNode* ftn,
   item->AddObserver(this);
   pending_downloads_.insert(item);
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 void PageHandler::DidStartNavigating(
     FrameTreeNode& ftn,
@@ -1021,6 +1025,7 @@ void PageHandler::DidChangeFrameLoadingState(const FrameTreeNode& ftn) {
   }
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void PageHandler::OnDownloadDestroyed(download::DownloadItem* item) {
   pending_downloads_.erase(item);
 }
@@ -1050,6 +1055,7 @@ void PageHandler::OnDownloadUpdated(download::DownloadItem* item) {
     pending_downloads_.erase(item);
   }
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 static const char* TransitionTypeName(ui::PageTransition type) {
   int32_t t = type & ~ui::PAGE_TRANSITION_QUALIFIER_MASK;
@@ -1505,6 +1511,9 @@ Response PageHandler::BringToFront() {
 Response PageHandler::SetDownloadBehavior(
     const std::string& behavior,
     std::optional<std::string> download_path) {
+#if BUILDFLAG(IS_COBALT)
+  return Response::ServerError("SetDownloadBehavior not supported on Cobalt");
+#else
   BrowserContext* browser_context =
       host_ ? host_->GetProcess()->GetBrowserContext() : nullptr;
   if (!browser_context)
@@ -1517,6 +1526,7 @@ Response PageHandler::SetDownloadBehavior(
     return Response::ServerError("Cannot not access browser-level commands");
   return browser_handler_->DoSetDownloadBehavior(behavior, browser_context,
                                                  std::move(download_path));
+#endif
 }
 
 void PageHandler::GetAppManifest(

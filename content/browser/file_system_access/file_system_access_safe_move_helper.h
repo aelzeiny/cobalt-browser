@@ -8,7 +8,7 @@
 #include "base/files/file.h"
 #include "base/sequence_checker.h"
 #include "base/thread_annotations.h"
-#include "components/download/public/common/quarantine_connection.h"
+#include "components/download/public/common/quarantine_connection.h"  // nogncheck // Cobalt: header-only type; dep intentionally removed
 #include "content/browser/file_system_access/file_system_access_manager_impl.h"
 #include "content/common/content_export.h"
 #include "storage/browser/file_system/file_system_url.h"

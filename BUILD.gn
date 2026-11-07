@@ -148,7 +148,8 @@ group("gn_all") {
       ]
     }
 
-    if (!is_ios && !is_android && !is_castos) {
+    # Cobalt: Living Room does not build desktop Chrome, which depends on components/download via content/public/browser
+    if (!is_ios && !is_android && !is_castos && !is_cobalt) {
       if (!is_fuchsia) {
         deps += [
           "//chrome",
@@ -190,7 +191,8 @@ group("gn_all") {
       ]
     }
 
-    if (!is_ios && !is_castos) {
+    # Cobalt: Living Room does not build desktop Chrome unit tests
+    if (!is_ios && !is_castos && !is_cobalt) {
       if (!is_fuchsia) {
         deps += [ "//chrome/test:unit_tests" ]
       }

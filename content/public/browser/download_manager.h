@@ -27,6 +27,30 @@
 #ifndef CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_H_
 #define CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_H_
 
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if BUILDFLAG(IS_COBALT)
+#include "base/supports_user_data.h"
+#include "content/common/content_export.h"
+
+namespace content {
+
+class DownloadManagerDelegate;
+
+// Cobalt stub: Living Room has no downloads.
+class CONTENT_EXPORT DownloadManager : public base::SupportsUserData::Data {
+ public:
+  ~DownloadManager() override {}
+  virtual void Shutdown() = 0;
+  virtual void SetDelegate(DownloadManagerDelegate* delegate) = 0;
+  virtual DownloadManagerDelegate* GetDelegate() = 0;
+};
+
+}  // namespace content
+
+#else  // !BUILDFLAG(IS_COBALT)
+
 #include <stdint.h>
 
 #include <memory>
@@ -38,12 +62,12 @@
 #include "base/functional/callback.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
-#include "components/download/public/common/download_interrupt_reasons.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_stream.mojom-forward.h"
-#include "components/download/public/common/download_url_parameters.h"
-#include "components/download/public/common/input_stream.h"
-#include "components/download/public/common/simple_download_manager.h"
+#include "components/download/public/common/download_interrupt_reasons.h"  // nogncheck
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_stream.mojom-forward.h"  // nogncheck
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#include "components/download/public/common/input_stream.h"  // nogncheck
+#include "components/download/public/common/simple_download_manager.h"  // nogncheck
 #include "content/common/content_export.h"
 #include "net/base/net_errors.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
@@ -233,5 +257,7 @@ class CONTENT_EXPORT DownloadManager : public base::SupportsUserData::Data,
 };
 
 }  // namespace content
+
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #endif  // CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_H_

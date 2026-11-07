@@ -5,6 +5,24 @@
 #ifndef CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_DELEGATE_H_
 #define CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_DELEGATE_H_
 
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if BUILDFLAG(IS_COBALT)
+#include "content/common/content_export.h"
+
+namespace content {
+
+// Cobalt stub: Living Room has no downloads.
+class CONTENT_EXPORT DownloadManagerDelegate {
+ public:
+  virtual ~DownloadManagerDelegate() {}
+};
+
+}  // namespace content
+
+#else  // !BUILDFLAG(IS_COBALT)
+
 #include <stdint.h>
 
 #include <optional>
@@ -12,11 +30,11 @@
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_danger_type.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_target_info.h"
-#include "components/download/public/common/download_url_parameters.h"
-#include "components/download/public/common/quarantine_connection.h"
+#include "components/download/public/common/download_danger_type.h"  // nogncheck
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_target_info.h"  // nogncheck
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#include "components/download/public/common/quarantine_connection.h"  // nogncheck
 #include "content/common/content_export.h"
 #include "content/public/browser/save_page_type.h"
 #include "content/public/browser/web_contents.h"
@@ -259,5 +277,7 @@ class CONTENT_EXPORT DownloadManagerDelegate {
 };
 
 }  // namespace content
+
+#endif  // !BUILDFLAG(IS_COBALT)
 
 #endif  // CONTENT_PUBLIC_BROWSER_DOWNLOAD_MANAGER_DELEGATE_H_

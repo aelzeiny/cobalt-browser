@@ -22,7 +22,9 @@ class DownloadManagerDelegate;
 class OriginTrialsControllerDelegate;
 class PermissionControllerDelegate;
 class ReduceAcceptLanguageControllerDelegate;
+#if !BUILDFLAG(IS_COBALT)
 class ShellDownloadManagerDelegate;
+#endif
 class ZoomLevelDelegate;
 
 class ShellBrowserContext : public BrowserContext {
@@ -67,7 +69,9 @@ class ShellBrowserContext : public BrowserContext {
  protected:
   bool ignore_certificate_errors() const { return ignore_certificate_errors_; }
 
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<ShellDownloadManagerDelegate> download_manager_delegate_;
+#endif
   std::unique_ptr<PermissionControllerDelegate> permission_manager_;
   std::unique_ptr<BackgroundSyncController> background_sync_controller_;
   std::unique_ptr<ContentIndexProvider> content_index_provider_;

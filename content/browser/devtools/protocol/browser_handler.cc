@@ -23,11 +23,16 @@
 #include "base/strings/strcat.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_item.h"
+#include "build/buildflag.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_item.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "components/embedder_support/user_agent_utils.h"
 #include "content/browser/devtools/browser_devtools_agent_host.h"
 #include "content/browser/devtools/devtools_manager.h"
-#include "content/browser/devtools/protocol/devtools_download_manager_delegate.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/devtools/protocol/devtools_download_manager_delegate.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "content/browser/gpu/gpu_process_host.h"
 #include "content/browser/interest_group/interest_group_manager_impl.h"
 #include "content/browser/permissions/permission_controller_impl.h"
@@ -35,7 +40,9 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/devtools_agent_host.h"
-#include "content/public/browser/download_item_utils.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/public/browser/download_item_utils.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
 #include "net/base/filename_util.h"
@@ -82,6 +89,7 @@ Response BrowserHandler::Disable() {
             ? std::nullopt
             : std::optional<std::string>(browser_context_id);
     FindBrowserContext(context_id, &browser_context);
+#if !BUILDFLAG(IS_COBALT)
     if (browser_context) {
       auto* delegate =
           DevToolsDownloadManagerDelegate::GetInstance(browser_context);
@@ -90,6 +98,7 @@ Response BrowserHandler::Disable() {
             DevToolsDownloadManagerDelegate::DownloadBehavior::DEFAULT);
       }
     }
+#endif
   }
   contexts_with_overridden_downloads_.clear();
   SetDownloadEventsEnabled(false);
@@ -466,6 +475,9 @@ Response BrowserHandler::SetDownloadBehavior(
     std::optional<std::string> browser_context_id,
     std::optional<std::string> download_path,
     std::optional<bool> events_enabled) {
+#if BUILDFLAG(IS_COBALT)
+  return Response::ServerError("Downloads not supported");
+#else
   BrowserContext* browser_context = nullptr;
   Response response = FindBrowserContext(browser_context_id, &browser_context);
   if (!response.IsSuccess())
@@ -476,8 +488,10 @@ Response BrowserHandler::SetDownloadBehavior(
     return response;
   SetDownloadEventsEnabled(events_enabled.value_or(false));
   return response;
+#endif
 }
 
+#if !BUILDFLAG(IS_COBALT)
 Response BrowserHandler::DoSetDownloadBehavior(
     const std::string& behavior,
     BrowserContext* browser_context,
@@ -520,10 +534,14 @@ Response BrowserHandler::DoSetDownloadBehavior(
 
   return Response::Success();
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 Response BrowserHandler::CancelDownload(
     const std::string& guid,
     std::optional<std::string> browser_context_id) {
+#if BUILDFLAG(IS_COBALT)
+  return Response::ServerError("Downloads not supported");
+#else
   BrowserContext* browser_context = nullptr;
   Response response = FindBrowserContext(browser_context_id, &browser_context);
   if (!response.IsSuccess())
@@ -538,6 +556,7 @@ Response BrowserHandler::CancelDownload(
   // already cancelled or finished).
   download_item->Cancel(true);
   return Response::Success();
+#endif
 }
 
 Response BrowserHandler::GetHistograms(
@@ -659,6 +678,7 @@ void BrowserHandler::AddPrivacySandboxCoordinatorKeyConfig(
               std::move(callback)));
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void BrowserHandler::OnDownloadUpdated(download::DownloadItem* item) {
   std::string state;
   std::optional<std::string> maybe_file_path;
@@ -724,6 +744,11 @@ void BrowserHandler::SetDownloadEventsEnabled(bool enabled) {
   }
   download_events_enabled_ = enabled;
 }
+#else
+void BrowserHandler::SetDownloadEventsEnabled(bool enabled) {
+  download_events_enabled_ = enabled;
+}
+#endif  // !BUILDFLAG(IS_COBALT)
 
 std::unique_ptr<Browser::Histogram> BrowserHandler::GetHistogramData(
     const base::HistogramBase& histogram,

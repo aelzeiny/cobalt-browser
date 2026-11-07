@@ -19,7 +19,10 @@
 #include "content/browser/background_sync/background_sync_scheduler.h"
 #include "content/browser/browsing_data/browsing_data_remover_impl.h"
 #include "content/browser/btm/btm_service_impl.h"
-#include "content/browser/download/download_manager_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/download/download_manager_impl.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
+#include "content/public/browser/download_manager.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 #include "content/browser/in_memory_federated_permission_context.h"
 #endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
@@ -302,6 +305,9 @@ void BrowserContextImpl::ShutdownStoragePartitions() {
 }
 
 DownloadManager* BrowserContextImpl::GetDownloadManager() {
+#if BUILDFLAG(IS_COBALT)
+  return nullptr;
+#else
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   // Lazily populate `download_manager_`.  This is important to
@@ -319,6 +325,7 @@ DownloadManager* BrowserContextImpl::GetDownloadManager() {
   }
 
   return download_manager_.get();
+#endif
 }
 
 void BrowserContextImpl::SetDownloadManagerForTesting(

@@ -7,8 +7,11 @@
 #include <utility>
 
 #include "base/functional/bind.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_url_parameters.h"
+#include "build/buildflag.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#endif
 #include "content/browser/background_fetch/background_fetch_job_controller.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/storage_partition_impl.h"
@@ -63,18 +66,20 @@ void BackgroundFetchDelegateProxy::GetPermissionForOrigin(
     GetPermissionForOriginCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
+#if !BUILDFLAG(IS_COBALT)
   // Permissions need to go through the DownloadRequestLimiter for top level
   // frames. (This may be missing in unit tests.)
-  if (rfh && !rfh->GetParent() &&
-      rfh->GetBrowserContext()->GetDownloadManager()->GetDelegate()) {
+  auto* download_manager =
+      rfh ? rfh->GetBrowserContext()->GetDownloadManager() : nullptr;
+  if (rfh && !rfh->GetParent() && download_manager &&
+      download_manager->GetDelegate()) {
     WebContents::Getter web_contents_getter(base::BindRepeating(
         [](GlobalRenderFrameHostId rfh_id) {
           return WebContents::FromRenderFrameHost(
               RenderFrameHost::FromID(rfh_id));
         },
         rfh->GetGlobalId()));
-    rfh->GetBrowserContext()
-        ->GetDownloadManager()
+    download_manager
         ->GetDelegate()
         ->CheckDownloadAllowed(
             std::move(web_contents_getter), origin.GetURL(), "GET",
@@ -87,6 +92,7 @@ void BackgroundFetchDelegateProxy::GetPermissionForOrigin(
                            std::move(callback)));
     return;
   }
+#endif
 
   BackgroundFetchPermission result = BackgroundFetchPermission::BLOCKED;
 

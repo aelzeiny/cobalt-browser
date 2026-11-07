@@ -353,6 +353,11 @@ source_set("browser") {
       # Cobalt: optimization_guide (ModelBroker/echo-AI params) unused on TV.
       "//components/optimization_guide/core:features",
       "//components/optimization_guide/public/mojom",
+
+      # Cobalt: Remove components/download from Cobalt build
+      "//components/download/database",
+      "//components/download/public/common:public",
+      "//content/browser/download:proto",
     ]
   }
 
@@ -3836,6 +3841,36 @@ source_set("browser") {
       "ai/echo_ai_summarizer.h",
       "ai/echo_ai_writer.cc",
       "ai/echo_ai_writer.h",
+
+      # Cobalt: Remove components/download from Cobalt build
+      "devtools/protocol/devtools_download_manager_delegate.cc",
+      "devtools/protocol/devtools_download_manager_delegate.h",
+      "download/data_url_blob_reader.cc",
+      "download/data_url_blob_reader.h",
+      "download/download_item_utils.cc",
+      "download/download_manager_impl.cc",
+      "download/download_manager_impl.h",
+      "download/download_request_utils.cc",
+      "download/drag_download_file.cc",
+      "download/drag_download_file.h",
+      "download/drag_download_util.cc",
+      "download/drag_download_util.h",
+      "download/mhtml_extra_parts_impl.cc",
+      "download/mhtml_extra_parts_impl.h",
+      "download/mhtml_generation_manager.cc",
+      "download/mhtml_generation_manager.h",
+      "download/save_file.cc",
+      "download/save_file.h",
+      "download/save_file_manager.cc",
+      "download/save_file_manager.h",
+      "download/save_item.cc",
+      "download/save_item.h",
+      "download/save_package.cc",
+      "download/save_package.h",
+      "download/save_package_serialization_handler.cc",
+      "download/save_package_serialization_handler.h",
+      "download/save_types.cc",
+      "download/save_types.h",
 
       "bluetooth/advertisement_client.cc",
       "bluetooth/advertisement_client.h",

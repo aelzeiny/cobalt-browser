@@ -9,7 +9,7 @@
 #include "base/strings/string_util.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/uuid.h"
-#include "components/download/public/common/download_item.h"
+#include "components/download/public/common/download_item.h"  // nogncheck
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/public/browser/background_fetch_response.h"
 #include "content/public/browser/browser_task_traits.h"

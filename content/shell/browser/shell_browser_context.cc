@@ -28,7 +28,9 @@
 #include "content/public/common/content_switches.h"
 #include "content/shell/browser/shell_content_browser_client.h"
 #include "content/shell/browser/shell_content_index_provider.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/shell/browser/shell_download_manager_delegate.h"
+#endif
 #include "content/shell/browser/shell_permission_manager.h"
 #include "content/shell/common/shell_paths.h"
 #include "content/shell/common/shell_switches.h"
@@ -97,6 +99,9 @@ bool ShellBrowserContext::IsOffTheRecord() {
 }
 
 DownloadManagerDelegate* ShellBrowserContext::GetDownloadManagerDelegate()  {
+#if BUILDFLAG(IS_COBALT)
+  return nullptr;
+#else
   if (!download_manager_delegate_.get()) {
     download_manager_delegate_ =
         std::make_unique<ShellDownloadManagerDelegate>();
@@ -104,6 +109,7 @@ DownloadManagerDelegate* ShellBrowserContext::GetDownloadManagerDelegate()  {
   }
 
   return download_manager_delegate_.get();
+#endif
 }
 
 BrowserPluginGuestManager* ShellBrowserContext::GetGuestManager() {

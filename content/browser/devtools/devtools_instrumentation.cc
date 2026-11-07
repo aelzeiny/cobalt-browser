@@ -10,9 +10,11 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/trace_event/traced_value.h"
-#include "components/download/public/common/download_create_info.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_url_parameters.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_create_info.h"  // nogncheck
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#endif
 #include "content/browser/devtools/browser_devtools_agent_host.h"
 #include "content/browser/devtools/dedicated_worker_devtools_agent_host.h"
 #include "content/browser/devtools/devtools_issue_storage.h"
@@ -1057,6 +1059,7 @@ bool ShouldBypassCertificateErrors() {
   return false;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void ApplyNetworkOverridesForDownload(
     RenderFrameHostImpl* rfh,
     download::DownloadUrlParameters* parameters) {
@@ -1093,6 +1096,14 @@ void WillBeginDownload(download::DownloadCreateInfo* info,
     }
   }
 }
+#else
+void ApplyNetworkOverridesForDownload(
+    RenderFrameHostImpl* rfh,
+    download::DownloadUrlParameters* parameters) {}
+
+void WillBeginDownload(download::DownloadCreateInfo* info,
+                       download::DownloadItem* item) {}
+#endif
 
 void OnSignedExchangeReceived(
     FrameTreeNode* frame_tree_node,

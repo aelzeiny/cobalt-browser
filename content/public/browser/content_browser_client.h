@@ -27,7 +27,9 @@
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "components/browsing_topics/common/common_types.h"
-#include "components/download/public/common/quarantine_connection.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/quarantine_connection.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "components/file_access/scoped_file_access.h"
 #if !BUILDFLAG(IS_COBALT)
 #include "components/language_detection/content/common/language_detection.mojom-forward.h"  // nogncheck
@@ -817,10 +819,12 @@ class CONTENT_EXPORT ContentBrowserClient {
   // Returns a client GUID used for virus scanning.
   virtual std::string GetApplicationClientGUIDForQuarantineCheck();
 
+#if !BUILDFLAG(IS_COBALT)
   // Gets a callback which can connect to a Quarantine Service instance if
   // available.
   virtual download::QuarantineConnectionCallback
   GetQuarantineConnectionCallback();
+#endif  // !BUILDFLAG(IS_COBALT)
 
   // Returns the locale used by the application.
   // This is called on the UI and IO threads.

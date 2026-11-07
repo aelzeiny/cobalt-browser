@@ -22,7 +22,7 @@
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_url_parameters.h"
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
 #include "components/input/native_web_keyboard_event.h"
 #include "content/browser/child_process_security_policy_impl.h"
 #include "content/browser/media/audio_stream_monitor.h"

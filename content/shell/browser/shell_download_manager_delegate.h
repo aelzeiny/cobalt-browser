@@ -10,8 +10,8 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_target_info.h"
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_target_info.h"  // nogncheck
 #include "content/public/browser/download_manager_delegate.h"
 
 namespace content {

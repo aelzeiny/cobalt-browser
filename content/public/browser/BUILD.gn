@@ -616,6 +616,10 @@ source_set("browser_sources") {
       "//media/capture/mojom:video_effects_manager",
       "//services/video_effects/public/mojom",
     ]
+    # Cobalt: Remove components/download from Cobalt build
+    public_deps -= [
+      "//components/download/public/common:public",
+    ]
   }
 
   deps = [

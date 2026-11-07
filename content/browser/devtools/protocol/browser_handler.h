@@ -10,7 +10,11 @@
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram.h"
-#include "components/download/public/common/download_item.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_item.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "content/browser/devtools/protocol/browser.h"
 #include "content/browser/devtools/protocol/devtools_domain_handler.h"
 
@@ -22,8 +26,11 @@ class FrameTreeNode;
 namespace protocol {
 
 class BrowserHandler : public DevToolsDomainHandler,
-                       public Browser::Backend,
-                       public download::DownloadItem::Observer {
+                       public Browser::Backend
+#if !BUILDFLAG(IS_COBALT)
+                       , public download::DownloadItem::Observer
+#endif
+{
  public:
   explicit BrowserHandler(bool allow_set_download_behavior);
 
@@ -81,9 +88,11 @@ class BrowserHandler : public DevToolsDomainHandler,
                                std::optional<std::string> browser_context_id,
                                std::optional<std::string> download_path,
                                std::optional<bool> events_enabled) override;
+#if !BUILDFLAG(IS_COBALT)
   Response DoSetDownloadBehavior(const std::string& behavior,
                                  BrowserContext* browser_context,
                                  std::optional<std::string> download_path);
+#endif
 
   Response CancelDownload(
       const std::string& guid,
@@ -100,11 +109,13 @@ class BrowserHandler : public DevToolsDomainHandler,
       std::unique_ptr<AddPrivacySandboxCoordinatorKeyConfigCallback> callback)
       override;
 
+#if !BUILDFLAG(IS_COBALT)
   // DownloadItem::Observer overrides
   void OnDownloadUpdated(download::DownloadItem* item) override;
   void OnDownloadDestroyed(download::DownloadItem* item) override;
 
   void DownloadWillBegin(FrameTreeNode* ftn, download::DownloadItem* item);
+#endif  // !BUILDFLAG(IS_COBALT)
 
  private:
   void SetDownloadEventsEnabled(bool enabled);
@@ -121,9 +132,11 @@ class BrowserHandler : public DevToolsDomainHandler,
   base::flat_set<std::string> contexts_with_overridden_permissions_;
   base::flat_set<std::string> contexts_with_overridden_downloads_;
   bool download_events_enabled_;
-  const bool allow_set_download_behavior_;
+  [[maybe_unused]] const bool allow_set_download_behavior_;
+#if !BUILDFLAG(IS_COBALT)
   base::flat_set<raw_ptr<download::DownloadItem, CtnExperimental>>
       pending_downloads_;
+#endif  // !BUILDFLAG(IS_COBALT)
   // Stores past histogram snapshots for producing histogram deltas.
   std::map<std::string, std::unique_ptr<base::HistogramSamples>, std::less<>>
       histograms_snapshots_;

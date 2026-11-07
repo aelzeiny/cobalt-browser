@@ -58,7 +58,9 @@
 #include "base/types/optional_util.h"
 #include "base/uuid.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_url_parameters.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#endif
 #include "components/input/input_router.h"
 #include "components/input/timeout_monitor.h"
 #include "components/input/utils.h"
@@ -81,7 +83,9 @@
 #include "content/browser/data_url_loader_factory.h"
 #include "content/browser/devtools/devtools_instrumentation.h"
 #include "content/browser/dom_storage/dom_storage_context_wrapper.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/download/data_url_blob_reader.h"
+#endif
 #include "content/browser/feature_observer.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 #include "content/browser/fenced_frame/automatic_beacon_info.h"   // nogncheck
@@ -620,6 +624,7 @@ std::unique_ptr<blink::PendingURLLoaderFactoryBundle> CloneFactoryBundle(
       bundle->Clone().release()));
 }
 
+#if !BUILDFLAG(IS_COBALT)
 // Helper method to download a URL on UI thread.
 void StartDownload(
     std::unique_ptr<download::DownloadUrlParameters> parameters,
@@ -649,6 +654,7 @@ void OnDataURLRetrieved(
   parameters->set_url(std::move(data_url));
   StartDownload(std::move(parameters), nullptr);
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 // Analyzes trusted sources of a frame's private-state-token-redemption
 // Permissions Policy feature to see if the feature is definitely disabled or
@@ -7414,6 +7420,10 @@ void RenderFrameHostImpl::DidFirstVisuallyNonEmptyPaint() {
 
 void RenderFrameHostImpl::DownloadURL(
     blink::mojom::DownloadURLParamsPtr blink_parameters) {
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: Living Room has no downloads.
+  return;
+#else
   // TODO(crbug.com/40180431): We should defer the download until the
   // prerendering page is activated, and it will comply with the prerendering
   // spec.
@@ -7488,6 +7498,7 @@ void RenderFrameHostImpl::DownloadURL(
                                                              parameters.get());
 
   StartDownload(std::move(parameters), std::move(blob_url_loader_factory));
+#endif  // !BUILDFLAG(IS_COBALT)
 }
 
 void RenderFrameHostImpl::ReportNoBinderForInterface(const std::string& error) {

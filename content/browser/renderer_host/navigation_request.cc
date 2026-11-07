@@ -49,7 +49,9 @@
 #include "content/browser/client_hints/client_hints.h"
 #include "content/browser/devtools/devtools_instrumentation.h"
 #include "content/browser/devtools/network_service_devtools_observer.h"
-#include "content/browser/download/download_manager_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/download/download_manager_impl.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 #include "content/browser/fenced_frame/fenced_frame_url_mapping.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
@@ -5970,6 +5972,17 @@ void NavigationRequest::OnWillProcessResponseChecksComplete(
     // navigation response, pass it to DownloadManager, and cancel the
     // navigation.
     if (is_download_) {
+#if BUILDFLAG(IS_COBALT)
+      // Cobalt: Living Room has no downloads; abort navigation cleanly without crashing.
+      auto completion_status =
+          network::URLLoaderCompletionStatus(net::ERR_ABORTED);
+      completion_status.extended_error_code = static_cast<int32_t>(
+          ErrorNavigationTrigger::kShouldNotRenderResponse);
+      OnRequestFailedInternal(completion_status, false /*skip_throttles*/,
+                              std::nullopt /*error_page_content*/,
+                              false /*collapse_frame*/);
+      return;
+#else
       // TODO(arthursonzogni): Pass the real ResourceRequest. For the moment
       // only these parameters will be used, but it may evolve quickly.
       auto resource_request = std::make_unique<network::ResourceRequest>();
@@ -6040,6 +6053,7 @@ void NavigationRequest::OnWillProcessResponseChecksComplete(
       // DO NOT ADD CODE after this. The previous call to OnRequestFailed has
       // destroyed the NavigationRequest.
       return;
+#endif  // !BUILDFLAG(IS_COBALT)
     }
 
     // Per https://whatwg.org/C/iframe-embed-object.html#the-object-element,

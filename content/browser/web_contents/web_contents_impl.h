@@ -30,7 +30,13 @@
 #include "base/time/time.h"
 #include "base/types/pass_key.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_url_parameters.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#else
+namespace download {
+class DownloadUrlParameters;
+}
+#endif
 #include "components/input/render_widget_host_input_event_router.h"
 #include "content/browser/media/audio_stream_monitor.h"
 #include "content/browser/media/forwarding_audio_stream_factory.h"
@@ -249,7 +255,11 @@ class CONTENT_EXPORT WebContentsImpl
                     blink::FramePolicy primary_main_frame_policy);
 
   // Returns the SavePackage which manages the page saving job. May be NULL.
+#if BUILDFLAG(IS_COBALT)
+  SavePackage* save_package() const { return nullptr; }
+#else
   SavePackage* save_package() const { return save_package_.get(); }
+#endif
 
   // Sets a BrowserPluginGuest object for this WebContents. If this WebContents
   // has a BrowserPluginGuest then that implies that it is being hosted by
@@ -2066,7 +2076,11 @@ class CONTENT_EXPORT WebContentsImpl
 
   // Format of |headers| is a new line separated list of key value pairs:
   // "<key1>: <value1>\r\n<key2>: <value2>".
+#if BUILDFLAG(IS_COBALT)
+  static std::vector<std::pair<std::string, std::string>>
+#else
   static download::DownloadUrlParameters::RequestHeadersType
+#endif
   ParseDownloadHeaders(const std::string& headers);
 
   // Sets the visibility of immediate child views, i.e. views whose parent view
@@ -2292,8 +2306,10 @@ class CONTENT_EXPORT WebContentsImpl
   // different FrameTree (fenced frame).
   FrameTree primary_frame_tree_;
 
+#if !BUILDFLAG(IS_COBALT)
   // SavePackage, lazily created.
   scoped_refptr<SavePackage> save_package_;
+#endif
 
   // Manages/coordinates multi-process find-in-page requests. Created lazily.
   std::unique_ptr<FindRequestManager> find_request_manager_;

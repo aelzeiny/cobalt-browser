@@ -12,8 +12,10 @@
 #include "base/files/file_path.h"
 #include "base/files/safe_base_name.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback_helpers.h"
 #include "base/strings/strcat.h"
 #include "base/strings/utf_string_conversions.h"
+#include "build/buildflag.h"
 #include "content/browser/file_system_access/features.h"
 #include "content/browser/file_system_access/file_system_access_directory_handle_impl.h"
 #include "content/browser/file_system_access/file_system_access_error.h"
@@ -443,7 +445,11 @@ void FileSystemAccessHandleBase::DoPerformMoveOperation(
       std::make_unique<FileSystemAccessSafeMoveHelper>(
           manager()->AsWeakPtr(), context(), url(), destination_url,
           storage::FileSystemOperation::CopyOrMoveOptionSet(),
+#if BUILDFLAG(IS_COBALT)
+          base::NullCallback(),
+#else
           GetContentClient()->browser()->GetQuarantineConnectionCallback(),
+#endif
           has_transient_user_activation);
   // Allows the unique pointer to be bound to the callback so the helper stays
   // alive until the operation completes.
