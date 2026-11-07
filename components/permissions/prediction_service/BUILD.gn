@@ -35,6 +35,14 @@ source_set("prediction_service") {
     "//components/optimization_guide/proto:optimization_guide_proto",
   ]
 
+  if (is_cobalt && !build_with_tflite_lib) {
+    # Cobalt: optimization_guide only needed when building with on-device TFLite models.
+    public_deps -= [
+      "//components/optimization_guide/core",
+      "//components/optimization_guide/proto:optimization_guide_proto",
+    ]
+  }
+
   if (build_with_tflite_lib) {
     sources += [
       "permissions_aiv3_encoder.cc",
