@@ -41,7 +41,9 @@
 #include "content/browser/device_posture/device_posture_provider_impl.h"
 #include "content/browser/eye_dropper_chooser_impl.h"
 #include "content/browser/handwriting/handwriting_recognition_service_factory.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/image_capture/image_capture_impl.h"
+#endif
 #include "content/browser/indexed_db/indexed_db_internals.mojom.h"
 #include "content/browser/indexed_db/indexed_db_internals_ui.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
@@ -105,7 +107,9 @@
 #include "device/gamepad/public/mojom/gamepad.mojom.h"
 #include "device/vr/buildflags/buildflags.h"
 #include "device/vr/public/mojom/vr_service.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "media/capture/mojom/image_capture.mojom.h"
+#endif
 #include "media/capture/mojom/video_capture.mojom.h"
 #include "media/midi/midi_service.h"
 #include "media/mojo/mojom/interface_factory.mojom.h"
@@ -1008,8 +1012,10 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       base::BindRepeating(&RenderFrameHostImpl::CreateAudioOutputStreamFactory,
                           base::Unretained(host)));
 
+#if !BUILDFLAG(IS_COBALT)
   map->Add<media::mojom::ImageCapture>(
       base::BindRepeating(&ImageCaptureImpl::Create, base::Unretained(host)));
+#endif
 
   map->Add<media::mojom::InterfaceFactory>(base::BindRepeating(
       &RenderFrameHostImpl::BindMediaInterfaceFactoryReceiver,

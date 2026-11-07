@@ -49,7 +49,9 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/imagecapture/image_capture.h"
+#endif
 #include "third_party/blink/renderer/modules/mediastream/apply_constraints_request.h"
 #include "third_party/blink/renderer/modules/mediastream/browser_capture_media_stream_track.h"
 #include "third_party/blink/renderer/modules/mediastream/media_constraints_impl.h"
@@ -119,11 +121,13 @@ bool ConstraintSetHasNonImageCapture(
          constraint_set->hasWidth();
 }
 
+#if !BUILDFLAG(IS_COBALT)
 bool ConstraintSetHasImageAndNonImageCapture(
     const MediaTrackConstraintSet* constraint_set) {
   return ConstraintSetHasImageCapture(constraint_set) &&
          ConstraintSetHasNonImageCapture(constraint_set);
 }
+#endif
 
 bool ConstraintSetIsNonEmpty(const MediaTrackConstraintSet* constraint_set) {
   return ConstraintSetHasImageCapture(constraint_set) ||
@@ -150,19 +154,23 @@ bool ConstraintsSatisfyCondition(ConstraintSetCondition condition,
   return false;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 bool ConstraintsHaveImageAndNonImageCapture(
     const MediaTrackConstraints* constraints) {
   return ConstraintsSatisfyCondition(ConstraintSetHasImageAndNonImageCapture,
                                      constraints);
 }
+#endif
 
 bool ConstraintsAreEmpty(const MediaTrackConstraints* constraints) {
   return !ConstraintsSatisfyCondition(ConstraintSetIsNonEmpty, constraints);
 }
 
+#if !BUILDFLAG(IS_COBALT)
 bool ConstraintsHaveImageCapture(const MediaTrackConstraints* constraints) {
   return ConstraintsSatisfyCondition(ConstraintSetHasImageCapture, constraints);
 }
+#endif
 
 // Caller must take the ownership of the returned |WebAudioSourceProvider|
 // object.
@@ -282,9 +290,18 @@ MediaStreamTrackImpl::MediaStreamTrackImpl(
       MediaStreamVideoTrack::From(Component());
   if (video_track && component_->Source() &&
       component_->GetSourceType() == MediaStreamSource::kTypeVideo) {
+#if !BUILDFLAG(IS_COBALT)
     image_capture_ = MakeGarbageCollected<ImageCapture>(
         context, this, video_track->pan_tilt_zoom_allowed(),
         std::move(callback));
+#else
+    if (execution_context_) {
+      execution_context_->GetTaskRunner(TaskType::kInternalMedia)
+          ->PostTask(FROM_HERE, std::move(callback));
+    } else {
+      std::move(callback).Run();
+    }
+#endif
   } else {
     if (execution_context_) {
       execution_context_->GetTaskRunner(TaskType::kInternalMedia)
@@ -474,9 +491,11 @@ MediaTrackCapabilities* MediaStreamTrackImpl::getCapabilities() const {
   MediaStreamTrackPlatform::Settings platform_settings;
   component_->GetSettings(platform_settings);
 
+#if !BUILDFLAG(IS_COBALT)
   if (image_capture_) {
     image_capture_->GetMediaTrackCapabilities(capabilities);
   }
+#endif
   auto platform_capabilities = component_->Source()->GetCapabilities();
 
   capabilities->setDeviceId(platform_capabilities.device_id);
@@ -592,12 +611,14 @@ MediaTrackCapabilities* MediaStreamTrackImpl::getCapabilities() const {
 }
 
 MediaTrackConstraints* MediaStreamTrackImpl::getConstraints() const {
+#if !BUILDFLAG(IS_COBALT)
   if (image_capture_) {
     if (auto* image_capture_constraints =
             image_capture_->GetMediaTrackConstraints()) {
       return image_capture_constraints;
     }
   }
+#endif
 
   return media_constraints_impl::ConvertConstraints(constraints_);
 }
@@ -670,9 +691,11 @@ MediaTrackSettings* MediaStreamTrackImpl::getSettings() const {
     settings->setLatency(platform_settings.latency);
   }
 
+#if !BUILDFLAG(IS_COBALT)
   if (image_capture_) {
     image_capture_->GetMediaTrackSettings(settings);
   }
+#endif
 
   if (platform_settings.display_surface) {
     settings->setDisplaySurface(
@@ -857,6 +880,7 @@ void MediaStreamTrackImpl::applyConstraints(
     return;
   }
 
+#if !BUILDFLAG(IS_COBALT)
   if (image_capture_) {
     // TODO(guidou): Integrate image-capture constraints processing with the
     // spec-compliant main implementation. http://crbug.com/708723
@@ -878,6 +902,7 @@ void MediaStreamTrackImpl::applyConstraints(
       return;
     }
   }
+#endif
 
   // Resolve empty constraints here instead of relying on UserMediaClient
   // because the empty constraints have already been applied to image capture
@@ -953,6 +978,7 @@ void MediaStreamTrackImpl::SourceChangedCaptureConfiguration() {
     return;
   }
 
+#if !BUILDFLAG(IS_COBALT)
   // Update the current image capture capabilities and settings and dispatch a
   // configurationchange event if they differ from the old ones.
   if (image_capture_) {
@@ -960,6 +986,7 @@ void MediaStreamTrackImpl::SourceChangedCaptureConfiguration() {
         WTF::BindOnce(&MediaStreamTrackImpl::MaybeDispatchConfigurationChange,
                       WrapWeakPersistent(this)));
   }
+#endif
 }
 
 void MediaStreamTrackImpl::MaybeDispatchConfigurationChange(bool has_changed) {
@@ -1156,7 +1183,9 @@ void MediaStreamTrackImpl::Trace(Visitor* visitor) const {
   visitor->Trace(registered_media_streams_);
   visitor->Trace(registered_sinks_);
   visitor->Trace(component_);
+#if !BUILDFLAG(IS_COBALT)
   visitor->Trace(image_capture_);
+#endif
   visitor->Trace(execution_context_);
   visitor->Trace(observers_);
   visitor->Trace(stats_);
@@ -1171,9 +1200,11 @@ void MediaStreamTrackImpl::CloneInternal(MediaStreamTrackImpl* cloned_track) {
 
   cloned_track->SetInitialConstraints(constraints_);
 
+#if !BUILDFLAG(IS_COBALT)
   if (image_capture_) {
     cloned_track->image_capture_ = image_capture_->Clone();
   }
+#endif
 }
 
 void MediaStreamTrackImpl::EnsureFeatureHandleForScheduler() {

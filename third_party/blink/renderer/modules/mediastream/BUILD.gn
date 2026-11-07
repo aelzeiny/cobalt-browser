@@ -148,6 +148,15 @@ blink_modules_sources("mediastream") {
       "remote_media_stream_track_adapter.h",
     ]
   }
+
+  if (is_cobalt) {
+    # Cobalt: Remove imagecapture dependency
+    deps -= [
+      "//third_party/blink/renderer/modules/imagecapture:imagecapture",
+    ]
+    allow_circular_includes_from -=
+        [ "//third_party/blink/renderer/modules/imagecapture:imagecapture" ]
+  }
 }
 
 source_set("test_support") {

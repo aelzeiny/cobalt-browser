@@ -1344,10 +1344,17 @@ if (is_cobalt) {
             "abspath")
   }
 
+  # Cobalt: Remove mediarecorder, imagecapture, mediacapturefromelement
   static_idl_files_in_modules -= [
     "//third_party/blink/renderer/modules/mediarecorder/blob_event.idl",
     "//third_party/blink/renderer/modules/mediarecorder/blob_event_init.idl",
     "//third_party/blink/renderer/modules/mediarecorder/media_recorder.idl",
+    "//third_party/blink/renderer/modules/imagecapture/image_capture.idl",
+    "//third_party/blink/renderer/modules/imagecapture/photo_capabilities.idl",
+    "//third_party/blink/renderer/modules/imagecapture/photo_settings.idl",
+    "//third_party/blink/renderer/modules/mediacapturefromelement/canvas_capture_media_stream_track.idl",
+    "//third_party/blink/renderer/modules/mediacapturefromelement/html_canvas_element_capture.idl",
+    "//third_party/blink/renderer/modules/mediacapturefromelement/html_media_element_capture.idl",
   ]
 
   if (enable_in_app_dial) {

@@ -274,6 +274,13 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
+    "*v8_image_capture*",
+    "*v8_fill_light_mode*",
+    "*v8_metering_mode*",
+    "*v8_red_eye_reduction*",
+    "*v8_photo_capabilities*",
+    "*v8_photo_settings*",
+    "*v8_canvas_capture_media_stream_track*",
   ]
 
   cobalt_hardware_exclude_patterns = [

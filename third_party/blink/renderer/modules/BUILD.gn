@@ -188,7 +188,10 @@ component("modules") {
   }
 
   if (is_cobalt) {
+    # Cobalt: Remove mediarecorder, imagecapture, mediacapturefromelement
     sub_modules -= [
+      "//third_party/blink/renderer/modules/imagecapture",
+      "//third_party/blink/renderer/modules/mediacapturefromelement",
       "//third_party/blink/renderer/modules/mediarecorder",
       "//third_party/blink/renderer/modules/ml",
       "//third_party/blink/renderer/modules/webgpu",
@@ -770,7 +773,12 @@ source_set("unit_tests") {
   }
 
   if (is_cobalt) {
-    sources -= filter_include(sources, [ "mediarecorder/*" ])
+    sources -= filter_include(sources,
+                              [
+                                "imagecapture/*",
+                                "mediacapturefromelement/*",
+                                "mediarecorder/*",
+                              ])
     sources += [
       "cobalt/h5vcc_accessibility/h_5_vcc_accessibility_test.cc",
       "cobalt/h5vcc_experiments/experiments_utils_test.cc",
