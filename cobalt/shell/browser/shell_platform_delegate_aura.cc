@@ -45,6 +45,10 @@ struct ShellPlatformDelegate::PlatformData {
 ShellPlatformDelegate::ShellPlatformDelegate() = default;
 ShellPlatformDelegate::~ShellPlatformDelegate() = default;
 
+ShellPlatformDataAura* ShellPlatformDelegate::GetShellPlatformDataAura() {
+  return platform_ ? platform_->aura.get() : nullptr;
+}
+
 void ShellPlatformDelegate::Initialize(const gfx::Size& default_window_size,
                                        bool is_visible) {
   is_visible_ = is_visible;
@@ -159,13 +163,33 @@ void ShellPlatformDelegate::DidCreateOrAttachWebContents(
   }
 }
 
-void ShellPlatformDelegate::LoadSplashScreenContents(Shell* shell) {}
+void ShellPlatformDelegate::LoadSplashScreenContents(Shell* shell) {
+  if (!shell || !shell->splash_screen_web_contents()) {
+    return;
+  }
+  aura::Window* splash_view =
+      shell->splash_screen_web_contents()->GetNativeView();
+  if (!platform_ || !platform_->aura || !splash_view) {
+    return;
+  }
+  aura::Window* parent = platform_->aura->host()->window();
+  if (parent && !parent->Contains(splash_view)) {
+    parent->AddChild(splash_view);
+  }
+  splash_view->Show();
+  platform_->aura->host()->Show();
+}
 
-void ShellPlatformDelegate::UpdateContents(Shell* shell) {}
+void ShellPlatformDelegate::UpdateContents(Shell* shell) {
+  SetContents(shell);
+}
 
 void ShellPlatformDelegate::ResizeWebContent(Shell* shell,
                                              const gfx::Size& content_size) {
-  shell->web_contents()->GetRenderWidgetHostView()->SetSize(content_size);
+  if (shell && shell->web_contents() &&
+      shell->web_contents()->GetRenderWidgetHostView()) {
+    shell->web_contents()->GetRenderWidgetHostView()->SetSize(content_size);
+  }
 }
 
 void ShellPlatformDelegate::SetTitle(Shell* shell,
