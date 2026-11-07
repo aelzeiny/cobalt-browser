@@ -7,7 +7,9 @@
 #include "build/build_config.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_context_creation_attributes_module.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_pixel_format.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_rendering_context_2d_settings.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_will_read_frequently.h"
 #include "third_party/blink/renderer/core/html/canvas/canvas_context_creation_attributes_core.h"
 #include "third_party/blink/renderer/core/html/canvas/predefined_color_space.h"
@@ -77,6 +79,7 @@ bool ToCanvasContextCreationAttributes(
   return true;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 CanvasRenderingContext2DSettings* ToCanvasRenderingContext2DSettings(
     const CanvasContextCreationAttributesCore& attrs) {
   CanvasRenderingContext2DSettings* settings =
@@ -108,5 +111,6 @@ CanvasRenderingContext2DSettings* ToCanvasRenderingContext2DSettings(
   }
   return settings;
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 }  // namespace blink
