@@ -4,11 +4,16 @@
 
 #include "content/public/browser/download_manager_delegate.h"
 
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if !BUILDFLAG(IS_COBALT)
+
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/task/single_thread_task_runner.h"
-#include "components/download/public/common/download_item.h"
-#include "components/download/public/common/download_item_rename_handler.h"
+#include "components/download/public/common/download_item.h"  // nogncheck
+#include "components/download/public/common/download_item_rename_handler.h"  // nogncheck
 #include "content/public/browser/web_contents_delegate.h"
 
 namespace content {
@@ -159,3 +164,5 @@ bool DownloadManagerDelegate::IsDownloadRestrictedByPolicy() {
 #endif  // BUILDFLAG(IS_ANDROID)
 
 }  // namespace content
+
+#endif  // !BUILDFLAG(IS_COBALT)

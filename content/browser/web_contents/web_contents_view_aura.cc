@@ -27,7 +27,9 @@
 #include "components/input/render_widget_host_input_event_router.h"
 #include "components/viz/common/features.h"
 #include "content/browser/browser_plugin/browser_plugin_guest.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/download/drag_download_util.h"
+#endif
 #include "content/browser/renderer_host/dip_util.h"
 #include "content/browser/renderer_host/input/touch_selection_controller_client_aura.h"
 #include "content/browser/renderer_host/navigation_entry_impl.h"

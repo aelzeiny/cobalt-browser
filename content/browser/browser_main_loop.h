@@ -365,7 +365,9 @@ class CONTENT_EXPORT BrowserMainLoop {
 #endif
 
   std::unique_ptr<MediaStreamManager> media_stream_manager_;
+#if !BUILDFLAG(IS_COBALT)
   scoped_refptr<SaveFileManager> save_file_manager_;
+#endif
   std::unique_ptr<content::TracingControllerImpl> tracing_controller_;
   std::unique_ptr<BackgroundTracingManager> background_tracing_manager_;
 #if !BUILDFLAG(IS_ANDROID)

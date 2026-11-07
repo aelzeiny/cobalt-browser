@@ -31,8 +31,10 @@
 #include "content/grit/indexed_db_resources_map.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/public/browser/download_manager.h"
 #include "content/public/browser/download_request_utils.h"
+#endif
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_ui.h"
@@ -321,6 +323,11 @@ void IndexedDBInternalsUI::OnDownloadDataReady(
     return;
   }
 
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: downloading database not supported.
+  std::move(callback).Run("Downloading database not supported on Cobalt.");
+#else
+
   const GURL url = GURL("file://" + zip_path.AsUTF8Unsafe());
   WebContents* web_contents = web_ui()->GetWebContents();
   net::NetworkTrafficAnnotationTag traffic_annotation =
@@ -362,8 +369,10 @@ void IndexedDBInternalsUI::OnDownloadDataReady(
 
   BrowserContext* context = web_contents->GetBrowserContext();
   context->GetDownloadManager()->DownloadUrl(std::move(dl_params));
+#endif  // !BUILDFLAG(IS_COBALT)
 }
 
+#if !BUILDFLAG(IS_COBALT)
 // The entire purpose of this class is to delete the temp file after
 // the download is complete.
 class FileDeleter : public download::DownloadItem::Observer {
@@ -423,5 +432,6 @@ void IndexedDBInternalsUI::OnDownloadStarted(
   item->AddObserver(new FileDeleter(temp_path));
   std::move(callback).Run(std::nullopt);
 }
+#endif  // !BUILDFLAG(IS_COBALT)
 
 }  // namespace content::indexed_db

@@ -19,7 +19,10 @@ source_set("public") {
     sources += [ "context_menu_download.h" ]
   }
 
-  public_deps = [ "//base" ]
+  public_deps = [
+    "//base",
+    "//components/download/public/common:public",
+  ]
 
   deps = [
     "//components/download/public/background_service:public",
@@ -36,6 +39,7 @@ source_set("unit_tests") {
 
   deps = [
     ":public",
+    "//components/download/public/common:test_support",
     "//content/test:test_support",
     "//testing/gmock",
     "//testing/gtest",

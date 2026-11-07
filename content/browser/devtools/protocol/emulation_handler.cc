@@ -17,7 +17,10 @@
 #include "base/types/expected.h"
 #include "base/types/expected_macros.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_url_parameters.h"
+#include "build/buildflag.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_url_parameters.h"  // nogncheck
+#endif
 #include "content/browser/compute_pressure/web_contents_pressure_manager_proxy.h"
 #include "content/browser/device_posture/device_posture_provider_impl.h"
 #include "content/browser/devtools/devtools_agent_host_impl.h"
@@ -1230,6 +1233,7 @@ bool EmulationHandler::ApplyUserAgentMetadataOverrides(
 
 void EmulationHandler::ApplyNetworkOverridesForDownload(
     download::DownloadUrlParameters* parameters) {
+#if !BUILDFLAG(IS_COBALT)
   net::HttpRequestHeaders headers;
   bool user_agent_overridden;
   bool accept_language_overridden;
@@ -1237,6 +1241,7 @@ void EmulationHandler::ApplyNetworkOverridesForDownload(
   for (net::HttpRequestHeaders::Iterator it(headers); it.GetNext();) {
     parameters->add_request_header(it.name(), it.value());
   }
+#endif
 }
 
 }  // namespace protocol

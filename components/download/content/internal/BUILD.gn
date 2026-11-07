@@ -22,10 +22,12 @@ source_set("internal") {
     "//components/download/internal/background_service:common",
     "//components/download/internal/background_service:internal",
     "//components/download/public/background_service:public",
+    "//components/download/public/common:public",
   ]
 
   deps = [
     "//base",
+    "//components/download/network",
     "//content/public/browser",
     "//net",
     "//url",
@@ -44,6 +46,8 @@ source_set("unit_tests") {
     "//base/test:test_support",
     "//components/download/content/public",
     "//components/download/internal/background_service/test:test_support",
+    "//components/download/public/common:public",
+    "//components/download/public/common:test_support",
     "//content/test:test_support",
     "//testing/gmock",
     "//testing/gtest",

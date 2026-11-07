@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "base/files/file_path.h"
-#include "components/download/public/common/download_interrupt_reasons.h"
+#include "components/download/public/common/download_interrupt_reasons.h"  // nogncheck
 #include "components/services/storage/privileged/mojom/indexed_db_control.mojom.h"
 #include "components/services/storage/public/cpp/buckets/bucket_id.h"
 #include "content/browser/indexed_db/indexed_db_internals.mojom.h"
@@ -70,10 +70,12 @@ class IndexedDBInternalsUI : public WebUIController,
                            bool success,
                            const base::FilePath& temp_path,
                            const base::FilePath& zip_path);
+#if !BUILDFLAG(IS_COBALT)
   void OnDownloadStarted(const base::FilePath& temp_path,
                          DownloadBucketDataCallback callback,
                          download::DownloadItem* item,
                          download::DownloadInterruptReason interrupt_reason);
+#endif
 
   storage::mojom::IndexedDBControl* GetBucketControl(
       storage::BucketId bucket_id);

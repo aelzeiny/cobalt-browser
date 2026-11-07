@@ -439,10 +439,12 @@ std::string ContentBrowserClient::GetApplicationClientGUIDForQuarantineCheck() {
   return std::string();
 }
 
+#if !BUILDFLAG(IS_COBALT)
 download::QuarantineConnectionCallback
 ContentBrowserClient::GetQuarantineConnectionCallback() {
   return base::NullCallback();
 }
+#endif
 
 std::string ContentBrowserClient::GetApplicationLocale() {
   return "en-US";

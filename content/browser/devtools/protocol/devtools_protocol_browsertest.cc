@@ -32,16 +32,22 @@
 #include "base/test/values_test_util.h"
 #include "base/values.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_file_factory.h"
-#include "components/download/public/common/download_file_impl.h"
-#include "components/download/public/common/download_task_runner.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_file_factory.h"  // nogncheck
+#include "components/download/public/common/download_file_impl.h"     // nogncheck
+#include "components/download/public/common/download_task_runner.h"   // nogncheck
+#endif
 #include "components/services/storage/shared_storage/shared_storage_manager.h"
 #include "content/browser/devtools/protocol/browser_handler.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/devtools/protocol/devtools_download_manager_delegate.h"
+#endif
 #include "content/browser/devtools/protocol/devtools_protocol_test_support.h"
 #include "content/browser/devtools/protocol/system_info.h"
 #include "content/browser/devtools/render_frame_devtools_agent_host.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/browser/download/download_manager_impl.h"
+#endif
 #include "content/browser/host_zoom_map_impl.h"
 #include "content/browser/preloading/prerender/prerender_final_status.h"
 #include "content/browser/renderer_host/navigator.h"
@@ -66,16 +72,22 @@
 #include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "content/public/test/content_browser_test_utils.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/public/test/download_test_observer.h"
+#endif
 #include "content/public/test/no_renderer_crashes_assertion.h"
 #include "content/public/test/prerender_test_util.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/public/test/slow_download_http_response.h"
+#endif
 #include "content/public/test/test_navigation_observer.h"
 #include "content/public/test/test_utils.h"
 #include "content/shell/browser/shell.h"
 #include "content/shell/browser/shell_browser_context.h"
 #include "content/shell/browser/shell_content_browser_client.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "content/shell/browser/shell_download_manager_delegate.h"
+#endif
 #include "content/test/content_browser_test_utils_internal.h"
 #include "net/base/features.h"
 #include "net/dns/dns_test_util.h"
@@ -3146,7 +3158,7 @@ IN_PROC_BROWSER_TEST_F(DevToolsProtocolBackForwardCacheTest, Basic) {
 }
 
 // Download tests are flaky on Android: https://crbug.com/7546
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_COBALT)
 namespace {
 
 static DownloadManagerImpl* DownloadManagerForShell(Shell* shell) {

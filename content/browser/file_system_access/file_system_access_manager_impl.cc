@@ -1333,7 +1333,11 @@ FileSystemAccessManagerImpl::CreateFileWriter(
       binding_context, url, swap_url, std::move(lock), std::move(swap_lock),
       handle_state, result.InitWithNewPipeAndPassReceiver(),
       has_transient_user_activation, auto_close,
+#if BUILDFLAG(IS_COBALT)
+      base::NullCallback());
+#else
       GetContentClient()->browser()->GetQuarantineConnectionCallback());
+#endif
   return result;
 }
 

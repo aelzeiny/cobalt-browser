@@ -24,7 +24,10 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
-#include "components/download/public/common/download_stats.h"
+#include "build/buildflag.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/download/public/common/download_stats.h"  // nogncheck
+#endif
 #include "content/browser/about_url_loader_factory.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
 #include "content/browser/attribution_reporting/attribution_manager.h"

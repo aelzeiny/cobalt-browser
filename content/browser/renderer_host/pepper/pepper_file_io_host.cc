@@ -471,12 +471,14 @@ void PepperFileIOHost::OnLocalFileOpened(
   }
 
   mojo::Remote<quarantine::mojom::Quarantine> quarantine_remote;
+#if !BUILDFLAG(IS_COBALT)
   download::QuarantineConnectionCallback quarantine_connection_callback =
       GetContentClient()->browser()->GetQuarantineConnectionCallback();
   if (quarantine_connection_callback) {
     quarantine_connection_callback.Run(
         quarantine_remote.BindNewPipeAndPassReceiver());
   }
+#endif
 
   if (quarantine_remote) {
     quarantine::mojom::Quarantine* raw_quarantine = quarantine_remote.get();

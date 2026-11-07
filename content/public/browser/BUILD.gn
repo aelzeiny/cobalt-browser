@@ -609,6 +609,10 @@ source_set("browser_sources") {
       "//services/on_device_model/public/cpp",
       "//services/on_device_model/public/mojom",
     ]
+    # Cobalt: Remove components/download from Cobalt build
+    public_deps -= [
+      "//components/download/public/common:public",
+    ]
   }
 
   deps = [

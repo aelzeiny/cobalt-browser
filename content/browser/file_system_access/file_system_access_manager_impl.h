@@ -20,7 +20,7 @@
 #include "base/types/pass_key.h"
 #include "base/unguessable_token.h"
 #include "base/uuid.h"
-#include "components/download/public/common/quarantine_connection.h"
+#include "components/download/public/common/quarantine_connection.h"  // nogncheck // Cobalt: header-only type; dep intentionally removed
 #include "components/services/storage/public/mojom/file_system_access_context.mojom.h"
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/browser/file_system_access/file_system_access.pb.h"
