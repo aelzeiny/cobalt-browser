@@ -2496,7 +2496,12 @@
     {
       // Cobalt: h5vccWasmImports on Window and DedicatedWorkerGlobalScope,
       // which gives a page direct control of Starboard (e.g. SbPlayer).
+      // Prototype (27.lts wasm-engine branch): enabled by default so no
+      // command-line flag is needed. "stable" also makes the generated
+      // blink::features::kH5vccWasmImports base::Feature enabled by default,
+      // which turns on V8's --wasm-fast-api and the WasmHoleWebMediaPlayer.
       name: "H5vccWasmImports",
+      status: "stable",
     },
     {
       // Enables Skipping children for invisible select elements containing
