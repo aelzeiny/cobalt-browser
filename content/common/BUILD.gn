@@ -655,7 +655,6 @@ mojom("mojo_bindings") {
 
   public_deps = [
     "//cc/mojom",
-    "//components/attribution_reporting:mojom",
     "//components/metrics/public/mojom:histogram_fetcher_mojo_bindings",
     "//components/variations:variations_mojom",
     "//content/public/common:interfaces",
@@ -690,6 +689,10 @@ mojom("mojo_bindings") {
     "//url/mojom:url_mojom_gurl",
     "//url/mojom:url_mojom_origin",
   ]
+
+  if (enable_privacy_sandbox_apis) {
+    public_deps += [ "//components/attribution_reporting:mojom" ]
+  }
 
   if (is_mac) {
     sources += [

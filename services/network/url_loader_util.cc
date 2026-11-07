@@ -21,7 +21,9 @@
 #include "net/storage_access_api/status.h"
 #include "net/url_request/url_request.h"
 #include "services/network/ad_heuristic_cookie_overrides.h"
-#include "services/network/attribution/attribution_request_helper.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+#include "services/network/attribution/attribution_request_helper.h"  // nogncheck
+#endif
 #include "services/network/chunked_data_pipe_upload_data_stream.h"
 #include "services/network/cookie_manager.h"
 #include "services/network/cookie_settings.h"
@@ -613,7 +615,9 @@ void ConfigureUrlRequest(const ResourceRequest& request,
   // They are non-empty when the values are given by the UA code, therefore
   // they should be ignored by CORS checks.
   net::HttpRequestHeaders merged_headers = request.headers;
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   merged_headers.MergeFrom(ComputeAttributionReportingHeaders(request));
+#endif
   merged_headers.MergeFrom(request.cors_exempt_headers);
   // This should be ensured by the CorsURLLoaderFactory(), which is called
   // before URLLoaders are created.

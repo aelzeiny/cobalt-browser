@@ -3783,10 +3783,13 @@ source_set("browser") {
                          "in_memory_federated_permission_context.*",
                          "devtools/protocol/fedcm_handler.*",
                          "devtools/auction_worklet_devtools_agent_host.*",
+                         "loader/keep_alive_attribution_request_helper.*",
                        ])
     sources = []
     sources = _filtered_sources
     deps -= [
+      "//components/attribution_reporting:data_host_mojom",
+      "//components/attribution_reporting:mojom",
       "//components/browsing_topics/common:common",
       "//content/browser/aggregation_service/proto:aggregatable_report_proto",
       "//content/browser/attribution_reporting:attribution_reporting_proto",

@@ -342,8 +342,6 @@ component("network_service") {
     "//mojo/public/cpp/system",
     "//net",
     "//net:extras",
-    "//services/network/ad_auction",
-    "//services/network/attribution",
     "//services/network/first_party_sets:first_party_sets_manager",
     "//services/network/public/cpp",
     "//services/network/public/cpp:crash_keys",
@@ -368,6 +366,8 @@ component("network_service") {
       "//components/ip_protection/common:ip_protection_telemetry_uma",
       "//components/ip_protection/common:masked_domain_list_manager",
       "//components/ip_protection/common:probabilistic_reveal_token_registry",
+      "//services/network/ad_auction",
+      "//services/network/attribution",
     ]
     deps += [ "//services/network/trust_tokens" ]
   }
@@ -590,8 +590,6 @@ source_set("tests") {
     "//net:simple_quic_tools",
     "//net:test_support",
     "//net/http:transport_security_state_unittest_data_default",
-    "//services/network/attribution",
-    "//services/network/attribution:tests",
     "//services/network/first_party_sets:first_party_sets_manager",
     "//services/network/first_party_sets:tests",
     "//services/network/public/cpp",
@@ -625,6 +623,14 @@ source_set("tests") {
     deps += [
       "//services/proxy_resolver:lib",
       "//third_party/blink/public/common:preloading_headers",
+    ]
+  }
+
+  if (enable_privacy_sandbox_apis) {
+    # Cobalt: Attribution Reporting is gated behind enable_privacy_sandbox_apis.
+    deps += [
+      "//services/network/attribution",
+      "//services/network/attribution:tests",
     ]
   }
 }

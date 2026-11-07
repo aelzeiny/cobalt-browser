@@ -37,7 +37,9 @@
 #include "net/socket/socket_tag.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/url_request.h"
-#include "services/network/ad_auction/event_record_request_helper.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+#include "services/network/ad_auction/event_record_request_helper.h"  // nogncheck
+#endif
 #include "services/network/keepalive_statistics_recorder.h"
 #include "services/network/network_service.h"
 #include "services/network/observer_wrapper.h"
@@ -704,7 +706,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Request helper responsible for processing Ad Auction record event
   // headers.
   // (https://github.com/WICG/turtledove/pull/1279)
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   AdAuctionEventRecordRequestHelper ad_auction_event_record_request_helper_;
+#endif
 
   // Indicates |url_request_| is fetch upload request and that has streaming
   // body.

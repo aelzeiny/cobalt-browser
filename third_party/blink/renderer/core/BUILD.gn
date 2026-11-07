@@ -443,8 +443,6 @@ component("core") {
     ":generate_eventhandler_names",
     ":make_deprecation_info",
     "//base",
-    "//components/attribution_reporting",
-    "//components/attribution_reporting:mojom_blink",
     "//components/paint_preview/common",
     "//components/performance_manager/public/mojom:mojom_blink",
     "//components/shared_highlighting/core/common",
@@ -480,6 +478,13 @@ component("core") {
     "//ui/gfx/geometry:geometry_skia",
     "//ui/strings",
   ]
+
+  if (enable_privacy_sandbox_apis) {
+    deps += [
+      "//components/attribution_reporting",
+      "//components/attribution_reporting:mojom_blink",
+    ]
+  }
 
   if (is_mac) {
     deps += [ "//ui/base/mojom" ]
@@ -1556,7 +1561,7 @@ source_set("unit_tests") {
   sources += rebase_path(blink_core_tests_workers, "", "workers")
   sources += rebase_path(blink_core_tests_xml, "", "xml")
   sources += rebase_path(blink_core_tests_xmlhttprequest, "", "xmlhttprequest")
-  
+
   if (is_cobalt){ 
     sources += rebase_path(blink_core_tests_cobalt, "", "cobalt")
   }

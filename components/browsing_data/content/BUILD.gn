@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//cobalt/build/configs/cobalt.gni")
+
 static_library("content") {
   sources = [
     "browsing_data_helper.cc",
@@ -26,7 +28,6 @@ static_library("content") {
 
   deps = [
     "//base",
-    "//components/attribution_reporting:features",
     "//components/browsing_data/core",
     "//components/content_settings/core/browser",
     "//components/content_settings/core/common",
@@ -41,6 +42,10 @@ static_library("content") {
     "//content/public/browser",
     "//net",
   ]
+
+  if (enable_privacy_sandbox_apis) {
+    deps += [ "//components/attribution_reporting:features" ]
+  }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 }

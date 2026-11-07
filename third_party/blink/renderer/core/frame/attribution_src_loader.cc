@@ -4,6 +4,10 @@
 
 #include "third_party/blink/renderer/core/frame/attribution_src_loader.h"
 
+#include "build/build_config.h"
+
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+
 #include <stdint.h>
 
 #include <algorithm>
@@ -24,22 +28,22 @@
 #include "base/numerics/safe_conversions.h"
 #include "base/types/expected.h"
 #include "base/unguessable_token.h"
-#include "components/attribution_reporting/attribution_src_request_status.h"
-#include "components/attribution_reporting/data_host.mojom-blink.h"
-#include "components/attribution_reporting/eligibility.h"
-#include "components/attribution_reporting/os_registration.h"
-#include "components/attribution_reporting/os_registration_error.mojom-shared.h"
-#include "components/attribution_reporting/registrar.h"
-#include "components/attribution_reporting/registrar_info.h"
-#include "components/attribution_reporting/registration_eligibility.mojom-shared.h"
-#include "components/attribution_reporting/registration_header_error.h"
-#include "components/attribution_reporting/registration_info.h"
-#include "components/attribution_reporting/source_registration.h"
-#include "components/attribution_reporting/source_registration_error.mojom-shared.h"
-#include "components/attribution_reporting/source_type.mojom-shared.h"
-#include "components/attribution_reporting/suitable_origin.h"
-#include "components/attribution_reporting/trigger_registration.h"
-#include "components/attribution_reporting/trigger_registration_error.mojom-shared.h"
+#include "components/attribution_reporting/attribution_src_request_status.h"  // nogncheck
+#include "components/attribution_reporting/data_host.mojom-blink.h"  // nogncheck
+#include "components/attribution_reporting/eligibility.h"  // nogncheck
+#include "components/attribution_reporting/os_registration.h"  // nogncheck
+#include "components/attribution_reporting/os_registration_error.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/registrar.h"  // nogncheck
+#include "components/attribution_reporting/registrar_info.h"  // nogncheck
+#include "components/attribution_reporting/registration_eligibility.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/registration_header_error.h"  // nogncheck
+#include "components/attribution_reporting/registration_info.h"  // nogncheck
+#include "components/attribution_reporting/source_registration.h"  // nogncheck
+#include "components/attribution_reporting/source_registration_error.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/source_type.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/suitable_origin.h"  // nogncheck
+#include "components/attribution_reporting/trigger_registration.h"  // nogncheck
+#include "components/attribution_reporting/trigger_registration_error.mojom-shared.h"  // nogncheck
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/shared_remote.h"
 #include "services/network/public/cpp/attribution_utils.h"
@@ -1287,3 +1291,73 @@ void AttributionSrcLoader::ResourceClient::
 }
 
 }  // namespace blink
+
+#else  // !BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+
+#include "services/network/public/mojom/attribution.mojom-blink.h"
+#include "third_party/blink/public/common/navigation/impression.h"
+#include "third_party/blink/renderer/core/frame/local_frame.h"
+
+namespace blink {
+
+AttributionSrcLoader::AttributionSrcLoader(LocalFrame* frame)
+    : local_frame_(frame) {}
+
+AttributionSrcLoader::~AttributionSrcLoader() = default;
+
+void AttributionSrcLoader::Trace(Visitor* visitor) const {
+  visitor->Trace(local_frame_);
+}
+
+void AttributionSrcLoader::RecordAttributionFeatureAllowed(bool enabled) {}
+
+void AttributionSrcLoader::Register(const AtomicString& attribution_src,
+                                    HTMLElement* element,
+                                    network::mojom::ReferrerPolicy) {}
+
+std::optional<Impression> AttributionSrcLoader::RegisterNavigation(
+    const KURL& navigation_url,
+    const AtomicString& attribution_src,
+    HTMLAnchorElementBase* element,
+    bool has_transient_user_activation,
+    network::mojom::ReferrerPolicy) {
+  return std::nullopt;
+}
+
+std::optional<Impression> AttributionSrcLoader::RegisterNavigation(
+    const KURL& navigation_url,
+    const std::vector<WebString>& attribution_srcs,
+    bool has_transient_user_activation,
+    network::mojom::ReferrerPolicy) {
+  return std::nullopt;
+}
+
+std::optional<Impression> AttributionSrcLoader::PrepareContextMenuNavigation(
+    const KURL& navigation_url,
+    HTMLAnchorElementBase* anchor) {
+  return std::nullopt;
+}
+
+void AttributionSrcLoader::RegisterFromContextMenuNavigation(
+    const std::optional<Impression>&,
+    HTMLAnchorElementBase* anchor) {}
+
+bool AttributionSrcLoader::CanRegister(const KURL& url,
+                                       HTMLElement* element,
+                                       bool log_issues) {
+  return false;
+}
+
+network::mojom::AttributionSupport AttributionSrcLoader::GetSupport() const {
+  return network::mojom::AttributionSupport::kNone;
+}
+
+bool AttributionSrcLoader::MaybeRegisterAttributionHeaders(
+    const ResourceRequest& request,
+    const ResourceResponse& response) {
+  return false;
+}
+
+}  // namespace blink
+
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)

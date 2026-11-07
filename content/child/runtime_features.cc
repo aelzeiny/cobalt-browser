@@ -17,7 +17,10 @@
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "cc/base/features.h"
-#include "components/attribution_reporting/features.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
+#include "components/attribution_reporting/features.h"  // nogncheck
+#endif
 #include "content/common/content_navigation_policy.h"
 #include "content/common/content_switches_internal.h"
 #include "content/common/features.h"
@@ -553,6 +556,7 @@ void ResolveInvalidConfigurations() {
   // document.hasPrivateToken) are not exposed to JavaScript.
   WebRuntimeFeatures::EnableFencedFrames(false);
   WebRuntimeFeatures::EnablePrivateStateTokens(false);
+  WebRuntimeFeatures::EnableAttributionReporting(false);
 #endif
   // Fenced frames cannot be enabled without the support of the
   // browser process.
@@ -614,6 +618,7 @@ void ResolveInvalidConfigurations() {
     WebRuntimeFeatures::EnableSharedStorageAPI(false);
   }
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   if (!base::FeatureList::IsEnabled(
           attribution_reporting::features::kConversionMeasurement)) {
     LOG_IF(WARNING, WebRuntimeFeatures::IsAttributionReportingEnabled())
@@ -624,6 +629,7 @@ void ResolveInvalidConfigurations() {
         << " in addition.";
     WebRuntimeFeatures::EnableAttributionReporting(false);
   }
+#endif
 
   if (!base::FeatureList::IsEnabled(network::features::kInterestGroupStorage)) {
     LOG_IF(WARNING,

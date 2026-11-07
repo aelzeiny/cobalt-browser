@@ -3,11 +3,11 @@
 # found in the LICENSE file.
 
 import("//chrome/browser/buildflags.gni")
+import("//cobalt/build/configs/cobalt.gni")
 import("//device/vr/buildflags/buildflags.gni")
 
 group("resources") {
   public_deps = [
-    "attribution_reporting:resources",
     "gpu:resources",
     "histograms:resources",
     "indexed_db:resources",
@@ -17,6 +17,13 @@ group("resources") {
     "quota:resources",
     "service_worker:resources",
   ]
+
+  # Cobalt: attribution_reporting resources removed
+  if (enable_privacy_sandbox_apis) {
+    public_deps += [
+      "attribution_reporting:resources",
+    ]
+  }
 
   if (!is_android && !is_ios) {
     public_deps += [ "traces_internals:resources" ]

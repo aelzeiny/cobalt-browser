@@ -18,14 +18,17 @@
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "build/build_config.h"
-#include "components/attribution_reporting/data_host.mojom-blink.h"
-#include "components/attribution_reporting/os_registration.h"
-#include "components/attribution_reporting/registration_header_error.h"
-#include "components/attribution_reporting/source_registration.h"
-#include "components/attribution_reporting/suitable_origin.h"
-#include "components/attribution_reporting/trigger_registration.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: components/attribution_reporting removed
+#include "components/attribution_reporting/data_host.mojom-blink.h"  // nogncheck
+#include "components/attribution_reporting/os_registration.h"  // nogncheck
+#include "components/attribution_reporting/registration_header_error.h"  // nogncheck
+#include "components/attribution_reporting/source_registration.h"  // nogncheck
+#include "components/attribution_reporting/suitable_origin.h"  // nogncheck
+#include "components/attribution_reporting/trigger_registration.h"  // nogncheck
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "services/network/public/mojom/attribution.mojom-blink.h"
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/context_menu_data/context_menu_data.h"
@@ -161,6 +164,8 @@ void RegisterMockedImageURLLoad(const String& url) {
       test::CoreTestDataPath(kTestResourceFilename), kTestResourceMimeType);
 }
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: components/attribution_reporting removed
 class MockAttributionHost
     : public mojom::blink::AttributionHost,
       public attribution_reporting::mojom::blink::DataHost {
@@ -254,6 +259,7 @@ class MockAttributionHost
 
   mojo::ReceiverSet<attribution_reporting::mojom::blink::DataHost> data_hosts_;
 };
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 
 }  // namespace
 
@@ -2044,6 +2050,8 @@ TEST_F(ContextMenuControllerTest, CheckRendererIdFromContextMenuOnTextField) {
   }
 }
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: components/attribution_reporting removed
 TEST_F(ContextMenuControllerTest, AttributionSrc) {
   // The context must be secure for attributionsrc to work at all.
   frame_test_helpers::LoadHTMLString(
@@ -2228,6 +2236,7 @@ TEST_F(ContextMenuControllerTest, AttributionSrc_DataHostLifetime) {
     }
   }
 }
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 
 // Test that if text selection contains unselectable content, the opened context
 // menu should omit the unselectable content.
