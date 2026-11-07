@@ -1374,7 +1374,6 @@ void PopulateBinderMapWithContext(
   // Cobalt: optimization_guide ModelBroker is unused on Living Room TV.
   map->Add<optimization_guide::mojom::ModelBroker>(base::BindRepeating(
       &EmptyBinderForFrame<optimization_guide::mojom::ModelBroker>));
-#endif
   if (base::FeatureList::IsEnabled(blink::features::kBuiltInAIAPI)) {
     map->Add<blink::mojom::AIManager>(
         base::BindRepeating(&EmptyBinderForFrame<blink::mojom::AIManager>));
