@@ -274,6 +274,7 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
+    "*v8_union_string_unsignedlong*",
   ]
 
   cobalt_hardware_exclude_patterns = [
@@ -285,6 +286,32 @@ if (is_cobalt) {
     "*v8_serial.*",
     "*v8_serial_*",
     "*v8_serial_port*",
+    "*v8_usb.*",
+    "*v8_usb_*",
+    "*v8_watch_advertisements_options*",
+  ]
+
+  # Cobalt: Hardware APIs (bluetooth, webusb, hid, serial, webmidi) exclusion patterns.
+  cobalt_hw_apis_exclude_patterns = [
+    "*v8_bluetooth*",
+    "*v8_flow_control_type*",
+    "*v8_hid.*",
+    "*v8_hid_*",
+    "*v8_midi_access*",
+    "*v8_midi_connection_event*",
+    "*v8_midi_input*",
+    "*v8_midi_message_event*",
+    "*v8_midi_options*",
+    "*v8_midi_output*",
+    "*v8_midi_port*",
+    "*v8_parity_type*",
+    "*v8_request_device_options*",
+    "*v8_serial.*",
+    "*v8_serial_*",
+    "*v8_serial_port*",
+    "*v8_sync_iterator_bluetooth*",
+    "*v8_sync_iterator_midi*",
+    "*v8_union_string_unsignedlong*",
     "*v8_usb.*",
     "*v8_usb_*",
     "*v8_watch_advertisements_options*",

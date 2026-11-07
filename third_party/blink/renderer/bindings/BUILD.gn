@@ -279,6 +279,14 @@ generate_bindings("generate_bindings_all") {
     outputs = []
     outputs = _filtered_outputs
   }
+
+  # Cobalt: Filter out excluded hardware bindings outputs.
+  if (is_cobalt) {
+    _filtered_hardware_outputs =
+        filter_exclude(outputs, cobalt_hw_apis_exclude_patterns)
+    outputs = []
+    outputs = _filtered_hardware_outputs
+  }
 }
 
 action_with_pydeps("check_generated_file_list") {
@@ -416,6 +424,14 @@ action_with_pydeps("check_generated_file_list") {
         filter_exclude(file_list, cobalt_bindings_exclude_patterns)
     file_list = []
     file_list = _filtered_file_list
+  }
+
+  # Cobalt: Filter out excluded hardware bindings file list.
+  if (is_cobalt) {
+    _filtered_hardware_file_list =
+        filter_exclude(file_list, cobalt_hw_apis_exclude_patterns)
+    file_list = []
+    file_list = _filtered_hardware_file_list
   }
 
   response_file_contents = []

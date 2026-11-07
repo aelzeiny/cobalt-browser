@@ -27,7 +27,9 @@ blink_modules_sources("v8") {
       generated_typedef_sources_in_modules + generated_union_sources_in_modules
 
   if (is_cobalt) {
-    _hardware_filtered = filter_exclude(sources, cobalt_hardware_exclude_patterns)
+    _hardware_filtered = filter_exclude(
+            sources,
+            cobalt_hardware_exclude_patterns + cobalt_hw_apis_exclude_patterns)
     sources = []
     sources = _hardware_filtered
   }
