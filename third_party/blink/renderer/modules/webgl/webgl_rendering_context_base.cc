@@ -119,7 +119,9 @@
 #include "third_party/blink/renderer/modules/webgl/webgl_uniform_location.h"
 #include "third_party/blink/renderer/modules/webgl/webgl_vertex_array_object.h"
 #include "third_party/blink/renderer/modules/webgl/webgl_vertex_array_object_oes.h"
+#if BUILDFLAG(ENABLE_VR)
 #include "third_party/blink/renderer/modules/xr/xr_system.h"
+#endif  // BUILDFLAG(ENABLE_VR)
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/bindings/v8_binding_macros.h"
@@ -937,6 +939,7 @@ bool WebGLRenderingContextBase::IsXRCompatible() const {
   return xr_compatible_;
 }
 
+#if BUILDFLAG(ENABLE_VR)
 bool WebGLRenderingContextBase::IsXrCompatibleFromResult(
     device::mojom::blink::XrCompatibleResult result) {
   return result ==
@@ -972,33 +975,39 @@ XRSystem* WebGLRenderingContextBase::GetXrSystemFromHost(
 
   return xr;
 }
+#endif  // BUILDFLAG(ENABLE_VR)
 
 bool WebGLRenderingContextBase::MakeXrCompatibleSync(
     CanvasRenderingContextHost* host) {
+#if BUILDFLAG(ENABLE_VR)
   device::mojom::blink::XrCompatibleResult xr_compatible_result =
       device::mojom::blink::XrCompatibleResult::kNoDeviceAvailable;
 
-  if constexpr (BUILDFLAG(ENABLE_VR)) {
-    if (XRSystem* xr = GetXrSystemFromHost(host)) {
-      xr->MakeXrCompatibleSync(&xr_compatible_result);
-    }
+  if (XRSystem* xr = GetXrSystemFromHost(host)) {
+    xr->MakeXrCompatibleSync(&xr_compatible_result);
   }
 
   return IsXrCompatibleFromResult(xr_compatible_result);
+#else
+  return false;
+#endif  // BUILDFLAG(ENABLE_VR)
 }
 
 void WebGLRenderingContextBase::MakeXrCompatibleAsync() {
+#if BUILDFLAG(ENABLE_VR)
   if (XRSystem* xr = GetXrSystemFromHost(Host())) {
     // The promise will be completed on the callback.
     xr->MakeXrCompatibleAsync(
         WTF::BindOnce(&WebGLRenderingContextBase::OnMakeXrCompatibleFinished,
                       WrapWeakPersistent(this)));
-  } else {
-    xr_compatible_ = false;
-    CompleteXrCompatiblePromiseIfPending(DOMExceptionCode::kAbortError);
+    return;
   }
+#endif  // BUILDFLAG(ENABLE_VR)
+  xr_compatible_ = false;
+  CompleteXrCompatiblePromiseIfPending(DOMExceptionCode::kAbortError);
 }
 
+#if BUILDFLAG(ENABLE_VR)
 void WebGLRenderingContextBase::OnMakeXrCompatibleFinished(
     device::mojom::blink::XrCompatibleResult xr_compatible_result) {
   xr_compatible_ = IsXrCompatibleFromResult(xr_compatible_result);
@@ -1025,6 +1034,7 @@ void WebGLRenderingContextBase::OnMakeXrCompatibleFinished(
     CompleteXrCompatiblePromiseIfPending(exception_code);
   }
 }
+#endif  // BUILDFLAG(ENABLE_VR)
 
 void WebGLRenderingContextBase::CompleteXrCompatiblePromiseIfPending(
     DOMExceptionCode exception_code) {
