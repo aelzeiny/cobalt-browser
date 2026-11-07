@@ -102,3 +102,7 @@ enable_vectorized_html_scanning = false
 # Disable Media Remoting (Casting / Remoter Mojo endpoints) for Cobalt.
 enable_media_remoting = false
 enable_media_remoting_rpc = false
+
+# Disable Safe Browsing for Cobalt. Cobalt TV app navigates exclusively to
+# YouTube origins via CobaltSecureNavigationThrottle.
+safe_browsing_mode = 0
