@@ -274,6 +274,9 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
+    # Cobalt: Living Room is a 2nd-screen receiver, not a sender.
+    "*v8_presentation*",
+    "*v8_remote_playback*",
   ]
 
   cobalt_hardware_exclude_patterns = [

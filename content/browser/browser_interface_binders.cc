@@ -865,8 +865,10 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
   map->Add<blink::mojom::PermissionService>(base::BindRepeating(
       &RenderFrameHostImpl::CreatePermissionService, base::Unretained(host)));
 
+#if !BUILDFLAG(IS_COBALT)
   map->Add<blink::mojom::PresentationService>(base::BindRepeating(
       &RenderFrameHostImpl::GetPresentationService, base::Unretained(host)));
+#endif
 
   map->Add<blink::mojom::QuotaManagerHost>(
       base::BindRepeating(&BindQuotaManagerHost, base::Unretained(host)));

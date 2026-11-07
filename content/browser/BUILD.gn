@@ -3833,6 +3833,10 @@ source_set("browser") {
 
       "usb/web_usb_service_impl.cc",
       "usb/web_usb_service_impl.h",
+
+      # Cobalt: Living Room is a 2nd-screen receiver, not a sender.
+      "presentation/presentation_service_impl.cc",
+      "presentation/presentation_service_impl.h",
     ]
 
     deps -= [

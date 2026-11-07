@@ -11,8 +11,11 @@
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/core/html/track/text_track_list.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
-#include "third_party/blink/renderer/modules/remoteplayback/availability_callback_wrapper.h"
-#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/remoteplayback/availability_callback_wrapper.h"  // nogncheck
+#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 
 namespace blink {
@@ -102,6 +105,7 @@ void MediaControlsMediaEventListener::Attach() {
         event_type_names::kKeypress, this, false);
   }
 
+#if !BUILDFLAG(IS_COBALT)
   RemotePlayback& remote = RemotePlayback::From(GetMediaElement());
   remote.addEventListener(event_type_names::kConnect, this,
                           /*use_capture=*/false);
@@ -120,6 +124,7 @@ void MediaControlsMediaEventListener::Attach() {
                                        OnRemotePlaybackAvailabilityChanged,
                                    WrapWeakPersistent(this)))));
   }
+#endif
 }
 
 void MediaControlsMediaEventListener::Detach() {
@@ -141,6 +146,7 @@ void MediaControlsMediaEventListener::Detach() {
         event_type_names::kKeypress, this, /*use_capture=*/false);
   }
 
+#if !BUILDFLAG(IS_COBALT)
   RemotePlayback& remote = RemotePlayback::From(GetMediaElement());
   remote.removeEventListener(event_type_names::kConnect, this,
                              /*use_capture=*/false);
@@ -158,6 +164,7 @@ void MediaControlsMediaEventListener::Detach() {
         remote_playback_availability_callback_id_.value());
     remote_playback_availability_callback_id_.reset();
   }
+#endif
 }
 
 HTMLMediaElement& MediaControlsMediaEventListener::GetMediaElement() {
