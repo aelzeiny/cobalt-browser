@@ -27,7 +27,6 @@
 #include "cobalt/version.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
-#include "components/variations/pref_names.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace cobalt {
@@ -38,7 +37,7 @@ class ExperimentConfigManagerTest : public testing::Test {
       : task_environment_(base::test::TaskEnvironment::TimeSource::MOCK_TIME) {
     pref_service_ = std::make_unique<TestingPrefServiceSimple>();
     pref_service_->registry()->RegisterIntegerPref(
-        variations::prefs::kVariationsCrashStreak, 0);
+        cobalt::kVariationsCrashStreak, 0);
     pref_service_->registry()->RegisterStringPref(
         kExperimentConfigActiveConfigData, std::string());
     pref_service_->registry()->RegisterDictionaryPref(
@@ -55,10 +54,10 @@ class ExperimentConfigManagerTest : public testing::Test {
                                                   std::string());
     pref_service_->registry()->RegisterDictionaryPref(kFinchParameters);
     pref_service_->registry()->RegisterTimePref(
-        variations::prefs::kVariationsLastFetchTime, base::Time());
+        cobalt::kVariationsLastFetchTime, base::Time());
     metrics_pref_service_ = std::make_unique<TestingPrefServiceSimple>();
     metrics_pref_service_->registry()->RegisterIntegerPref(
-        variations::prefs::kVariationsCrashStreak, 0);
+        cobalt::kVariationsCrashStreak, 0);
 
     experiment_config_manager_ = std::make_unique<ExperimentConfigManager>(
         pref_service_.get(), metrics_pref_service_.get());
@@ -84,7 +83,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(10));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -103,7 +102,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(31));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -122,7 +121,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(31));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -143,7 +142,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(30));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -162,7 +161,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 0);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(1));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -189,7 +188,7 @@ TEST_F(ExperimentConfigManagerTest,
   pref_service_->SetDict(kExperimentConfigFeatures, std::move(feature_map));
 
   // Set age to be less than the default of 30.
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(20));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -208,7 +207,7 @@ TEST_F(ExperimentConfigManagerTest,
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
   // Set age to be less than the default of 30.
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(20));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -226,7 +225,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", -5);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(100));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -239,7 +238,7 @@ TEST_F(ExperimentConfigManagerTest,
   feature_map.Set(features::kExperimentConfigExpiration.name, "true");
   pref_service_->SetDict(kExperimentConfigFeatures, std::move(feature_map));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(100));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -248,7 +247,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsSafeWhenCrashStreakHighAndNotExpired) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
 
   base::DictValue feature_map;
@@ -256,7 +255,7 @@ TEST_F(ExperimentConfigManagerTest,
   // Enable the feature in the SAFE config.
   pref_service_->SetDict(kSafeConfigFeatures, std::move(feature_map));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(5));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -265,7 +264,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyWhenSafeConfigIsExpired) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
 
   base::DictValue feature_map;
@@ -276,7 +275,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(31));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -287,11 +286,11 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyWhenCrashStreakVeryHigh) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakEmptyConfigThreshold);
 
   // Set up a non-expired config.
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(1));
 
   // The crash streak should take precedence over the expiration check.
@@ -308,7 +307,7 @@ TEST_F(ExperimentConfigManagerTest, GetExperimentConfigTypeIsCached) {
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(10));
 
   // Call GetExperimentConfigType multiple times.
@@ -325,28 +324,27 @@ TEST_F(ExperimentConfigManagerTest, GetExperimentConfigTypeIsCached) {
 }
 
 TEST_F(ExperimentConfigManagerTest, GetExperimentConfigTypeReturnsRegular) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
 }
 
 TEST_F(ExperimentConfigManagerTest, GetExperimentConfigTypeReturnsSafe) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kSafeConfig);
 }
 
 TEST_F(ExperimentConfigManagerTest, GetExperimentConfigTypeReturnsEmpty) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakEmptyConfigThreshold);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kEmptyConfig);
 }
 
 TEST_F(ExperimentConfigManagerTest, StoreSafeConfigIsNoOpForSafeConfig) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
 
   experiment_config_manager_->StoreSafeConfig();
@@ -359,8 +357,7 @@ TEST_F(ExperimentConfigManagerTest, StoreSafeConfigIsNoOpForSafeConfig) {
 
 TEST_F(ExperimentConfigManagerTest,
        StoreSafeConfigIsNoOpWhenRegularConfigIsExpired) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
 
   base::DictValue feature_map;
   feature_map.Set(features::kExperimentConfigExpiration.name, true);
@@ -370,7 +367,7 @@ TEST_F(ExperimentConfigManagerTest,
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(31));
 
   experiment_config_manager_->StoreSafeConfig();
@@ -380,7 +377,7 @@ TEST_F(ExperimentConfigManagerTest,
 }
 
 TEST_F(ExperimentConfigManagerTest, StoreSafeConfigIsNoOpForEmptyConfig) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakEmptyConfigThreshold);
 
   experiment_config_manager_->StoreSafeConfig();
@@ -395,8 +392,7 @@ TEST_F(ExperimentConfigManagerTest, StoreSafeConfigIsOnlyCalledOnce) {
   base::DictValue initial_features;
   initial_features.Set("feature1", true);
   pref_service_->SetDict(kExperimentConfigFeatures, initial_features.Clone());
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
 
   // First call should store the initial config.
   experiment_config_manager_->StoreSafeConfig();
@@ -422,12 +418,11 @@ TEST_F(ExperimentConfigManagerTest, StoreSafeConfigIsOnlyCalledOnce) {
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeIgnoresCrashStreakInExperimentPrefs) {
   // Set a high crash streak in the experiment prefs (which should be ignored).
-  pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                             kDefaultCrashStreakSafeConfigThreshold);
 
   // Set a safe crash streak in the metrics prefs (which should be used).
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
 
   // Expect regular config because the metrics crash streak is 0.
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -436,8 +431,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyOnRegularConfigRollback) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, "99.android.0");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kEmptyConfig);
@@ -445,8 +439,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularWhenVersionMatches) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, COBALT_VERSION);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
@@ -454,8 +447,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularWhenMinVersionIsOlder) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, "0.lts.0");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
@@ -463,7 +455,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyOnSafeConfigRollback) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
   pref_service_->SetString(kSafeConfigMinVersion, "99.lts.0");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -472,7 +464,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsSafeWhenVersionMatches) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
   pref_service_->SetString(kSafeConfigMinVersion, COBALT_VERSION);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -481,7 +473,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsSafeWhenVersionIsOlder) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
   pref_service_->SetString(kSafeConfigMinVersion, "0.lts.0");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -490,8 +482,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularWhenMinVersionIsEmpty) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, "");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
@@ -499,7 +490,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsSafeWhenMinVersionIsEmpty) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
   pref_service_->SetString(kSafeConfigMinVersion, "");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -526,8 +517,7 @@ std::string GetModifiedVersionString(int major_offset, int minor_offset) {
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyOnMajorVersionRollback) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   // Recorded version is one major version ahead of the current version.
   std::string future_version = GetModifiedVersionString(1, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, future_version);
@@ -540,8 +530,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsEmptyOnMinorVersionRollback) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   // Recorded version is one minor version ahead of the current version.
   std::string future_version = GetModifiedVersionString(0, 1);
   pref_service_->SetString(kExperimentConfigMinVersion, future_version);
@@ -552,8 +541,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularWhenVersionIsOlder) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   // Recorded version is one major version behind the current version.
   std::string past_version = GetModifiedVersionString(-1, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, past_version);
@@ -563,8 +551,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularOnInvalidVersionFormat) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, "invalid-version");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
@@ -572,8 +559,7 @@ TEST_F(ExperimentConfigManagerTest,
 
 TEST_F(ExperimentConfigManagerTest,
        GetExperimentConfigTypeReturnsRegularWhenMinVersionHasNumericPurpose) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   // The middle component "123" should be ignored.
   pref_service_->SetString(kExperimentConfigMinVersion, "0.123.0");
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -639,8 +625,7 @@ TEST_F(ExperimentConfigManagerTest,
 
   // Crash streak is 4, which is less than the server-configured safe threshold
   // of 5. Expect kRegularConfig.
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    4);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 4);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kRegularConfig);
 }
@@ -654,8 +639,7 @@ TEST_F(ExperimentConfigManagerTest,
 
   // Crash streak is 5, which is equal to the server-configured safe threshold.
   // Expect kSafeConfig.
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    5);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 5);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kSafeConfig);
 }
@@ -669,8 +653,7 @@ TEST_F(ExperimentConfigManagerTest,
 
   // Crash streak is 9, which is between the safe and empty thresholds.
   // Expect kSafeConfig.
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    9);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 9);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kSafeConfig);
 }
@@ -684,8 +667,7 @@ TEST_F(ExperimentConfigManagerTest,
 
   // Crash streak is 10, which is equal to the server-configured empty
   // threshold. Expect kEmptyConfig.
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    10);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 10);
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
             ExperimentConfigType::kEmptyConfig);
 }
@@ -699,7 +681,7 @@ TEST_F(ExperimentConfigManagerTest, HistogramsConfigOutcomeRegular) {
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(10));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -711,7 +693,7 @@ TEST_F(ExperimentConfigManagerTest, HistogramsConfigOutcomeRegular) {
 }
 
 TEST_F(ExperimentConfigManagerTest, HistogramsSafeModeTriggered) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak,
                                     kDefaultCrashStreakSafeConfigThreshold);
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -731,7 +713,7 @@ TEST_F(ExperimentConfigManagerTest, HistogramsConfigDiscardedExpiration) {
   finch_params.Set("experiment_expiration_threshold_days", 30);
   pref_service_->SetDict(kFinchParameters, std::move(finch_params));
 
-  pref_service_->SetTime(variations::prefs::kVariationsLastFetchTime,
+  pref_service_->SetTime(cobalt::kVariationsLastFetchTime,
                          base::Time::Now() - base::Days(31));
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),
@@ -743,8 +725,7 @@ TEST_F(ExperimentConfigManagerTest, HistogramsConfigDiscardedExpiration) {
 }
 
 TEST_F(ExperimentConfigManagerTest, HistogramsConfigDiscardedDowngrade) {
-  metrics_pref_service_->SetInteger(variations::prefs::kVariationsCrashStreak,
-                                    0);
+  metrics_pref_service_->SetInteger(cobalt::kVariationsCrashStreak, 0);
   pref_service_->SetString(kExperimentConfigMinVersion, "99.android.0");
 
   EXPECT_EQ(experiment_config_manager_->GetExperimentConfigType(),

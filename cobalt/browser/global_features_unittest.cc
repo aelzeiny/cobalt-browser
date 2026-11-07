@@ -23,7 +23,6 @@
 #include "cobalt/browser/constants/cobalt_experiment_names.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/testing_pref_service.h"
-#include "components/variations/pref_names.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace cobalt {

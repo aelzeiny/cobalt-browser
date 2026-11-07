@@ -66,8 +66,12 @@ source_set("common_syncable_prefs_database") {
     "//components/search_engines",
     "//components/sharing_message",
     "//components/translate/core/browser",
-    "//components/variations/service",
   ]
+
+  # Cobalt: does not use variations service.
+  if (!is_cobalt) {
+    deps += [ "//components/variations/service" ]
+  }
 }
 
 static_library("test_support") {

@@ -28,7 +28,6 @@
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
-#include "components/variations/service/variations_service.h"
 #include "components/variations/synthetic_trial_registry.h"
 
 namespace cobalt {
@@ -52,6 +51,7 @@ CobaltMetricsServicesManagerClient::CreateMetricsServiceClient(
   return metrics_service_client;
 }
 
+#if !BUILDFLAG(IS_COBALT)
 std::unique_ptr<variations::VariationsService>
 CobaltMetricsServicesManagerClient::CreateVariationsService(
     variations::SyntheticTrialRegistry* synthetic_trial_registry) {
@@ -62,6 +62,7 @@ CobaltMetricsServicesManagerClient::CreateVariationsService(
   NOTIMPLEMENTED();
   return nullptr;
 }
+#endif
 
 void StoreMetricsClientInfo(const ::metrics::ClientInfo& client_info) {
   // ClientInfo is a way to get data into the metrics component, but goes unused

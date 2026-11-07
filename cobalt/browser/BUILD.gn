@@ -111,7 +111,6 @@ source_set("browser") {
     "//components/os_crypt/sync",
     "//components/prefs",
     "//components/services/storage/public/cpp",
-    "//components/variations/service",
     "//components/viz/common",
     "//gpu/config",
     "//services/resource_coordinator/public/cpp/memory_instrumentation",
@@ -259,7 +258,6 @@ source_set("global_features") {
     "//components/metrics",
     "//components/metrics_services_manager",
     "//components/prefs",
-    "//components/variations",
     "//third_party/abseil-cpp:absl",
   ]
 }
@@ -307,7 +305,6 @@ source_set("metrics") {
     "//components/metrics_services_manager",
     "//components/prefs",
     "//components/variations",
-    "//components/variations/service",
     "//content/public/browser",
     "//services/resource_coordinator/public/cpp/memory_instrumentation:browser",
     "//third_party/metrics_proto",
