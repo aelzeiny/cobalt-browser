@@ -26,6 +26,8 @@
 #include "base/test/test_suite.h"
 #include "base/test/test_support_starboard.h"
 #include "base/test/test_timeouts.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "cobalt/app/cobalt_switch_defaults.h"
 #include "cobalt/shell/browser/shell_devtools_manager_delegate.h"
 #include "cobalt/shell/common/shell_switches.h"
@@ -34,8 +36,10 @@
 #include "starboard/event.h"
 #include "starboard/system.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "ui/linux/linux_ui.h"
-#include "ui/linux/linux_ui_factory.h"
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
+#include "ui/linux/linux_ui.h"          // nogncheck
+#include "ui/linux/linux_ui_factory.h"  // nogncheck
+#endif
 #include "ui/ozone/platform/starboard/platform_event_source_starboard.h"
 
 #if SB_IS(EVERGREEN)
@@ -174,8 +178,10 @@ SB_EXPORT void SbEventHandle(const SbEvent* event) {
       base::FeatureList::SetInstance(std::move(feature_list));
 #endif
 
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
       // TODO(b/433354983): Support more platforms.
       ui::LinuxUi::SetInstance(ui::GetDefaultLinuxUi());
+#endif
 
       if (!s_delegate) {
         s_delegate = new CobaltBrowserTestLauncherDelegate();

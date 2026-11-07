@@ -47,8 +47,7 @@ namespace {
 
 class FillLayout : public aura::LayoutManager {
  public:
-  explicit FillLayout(aura::Window* root)
-      : root_(root), has_bounds_(!root->bounds().IsEmpty()) {}
+  explicit FillLayout(aura::Window* root) : root_(root) {}
 
   FillLayout(const FillLayout&) = delete;
   FillLayout& operator=(const FillLayout&) = delete;
@@ -58,13 +57,8 @@ class FillLayout : public aura::LayoutManager {
  private:
   // aura::LayoutManager:
   void OnWindowResized() override {
-    // If window bounds were not set previously then resize all children to
-    // match the size of the parent.
-    if (!has_bounds_) {
-      has_bounds_ = true;
-      for (aura::Window* child : root_->children()) {
-        SetChildBoundsDirect(child, gfx::Rect(root_->bounds().size()));
-      }
+    for (aura::Window* child : root_->children()) {
+      SetChildBoundsDirect(child, gfx::Rect(root_->bounds().size()));
     }
   }
 
@@ -85,7 +79,6 @@ class FillLayout : public aura::LayoutManager {
   }
 
   raw_ptr<aura::Window> root_;
-  bool has_bounds_;
 };
 
 class FocusRules : public wm::BaseFocusRules {

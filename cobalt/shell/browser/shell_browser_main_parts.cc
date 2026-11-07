@@ -67,7 +67,7 @@
 #include "device/bluetooth/dbus/dbus_bluez_manager_wrapper_linux.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
 #include "ui/linux/linux_ui.h"          // nogncheck
 #include "ui/linux/linux_ui_factory.h"  // nogncheck
 #endif
@@ -193,7 +193,7 @@ void ShellBrowserMainParts::InitializeMessageLoopContext() {
 }
 
 void ShellBrowserMainParts::ToolkitInitialized() {
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
   ui::LinuxUi::SetInstance(ui::GetDefaultLinuxUi());
 #endif
 }
@@ -236,7 +236,7 @@ void ShellBrowserMainParts::PostMainMessageLoopRun() {
   ShellDevToolsManagerDelegate::StopHttpHandler();
   browser_context_.reset();
   off_the_record_browser_context_.reset();
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
   ui::LinuxUi::SetInstance(nullptr);
 #endif
   base::RunLoop().RunUntilIdle();

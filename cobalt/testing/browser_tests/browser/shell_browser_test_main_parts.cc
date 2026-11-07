@@ -15,9 +15,10 @@
 #include "cobalt/testing/browser_tests/browser/shell_browser_test_main_parts.h"
 
 #include "build/build_config.h"
+#include "build/buildflag.h"
 #include "cobalt/testing/browser_tests/common/shell_test_switches.h"
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
 #include "ui/linux/linux_ui.h"          // nogncheck
 #include "ui/linux/linux_ui_factory.h"  // nogncheck
 #endif
@@ -34,7 +35,7 @@ void ShellBrowserTestMainParts::ToolkitInitialized() {
     return;
   }
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_STARBOARD) && defined(TOOLKIT_VIEWS)
   ui::LinuxUi::SetInstance(ui::GetDefaultLinuxUi());
 #endif
 }
