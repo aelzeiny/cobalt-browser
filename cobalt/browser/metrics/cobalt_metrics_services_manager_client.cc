@@ -28,7 +28,6 @@
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
-#include "components/variations/service/variations_service.h"
 #include "components/variations/synthetic_trial_registry.h"
 
 namespace cobalt {
@@ -50,17 +49,6 @@ CobaltMetricsServicesManagerClient::CreateMetricsServiceClient(
       local_state_.get());
   metrics_service_client_ = metrics_service_client.get();
   return metrics_service_client;
-}
-
-std::unique_ptr<variations::VariationsService>
-CobaltMetricsServicesManagerClient::CreateVariationsService(
-    variations::SyntheticTrialRegistry* synthetic_trial_registry) {
-  // VariationsService is not needed for Finch support in Cobalt. We don't
-  // use things like the Finch seed or client-side Field Trials. Instead,
-  // we have our own custom implementation that is driven by the server via
-  // H5vccExperiments.
-  NOTIMPLEMENTED();
-  return nullptr;
 }
 
 void StoreMetricsClientInfo(const ::metrics::ClientInfo& client_info) {

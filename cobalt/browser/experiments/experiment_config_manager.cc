@@ -21,11 +21,11 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "cobalt/browser/constants/cobalt_experiment_names.h"
+#include "cobalt/browser/constants/cobalt_pref_names.h"
 #include "cobalt/browser/features.h"
 #include "cobalt/browser/global_features.h"
 #include "cobalt/version.h"
 #include "components/prefs/pref_service.h"
-#include "components/variations/pref_names.h"
 
 namespace cobalt {
 
@@ -49,15 +49,13 @@ enum class VariationsConfigState {
 bool HasConfigExpired(PrefService* experiment_prefs) {
   // If the pref is missing, we cannot determine its age. For backward
   // compatibility and safety on first run, we treat it as valid
-  if (!experiment_prefs->HasPrefPath(
-          variations::prefs::kVariationsLastFetchTime)) {
+  if (!experiment_prefs->HasPrefPath(kVariationsLastFetchTime)) {
     base::UmaHistogramEnumeration("Cobalt.Finch.ConfigState",
                                   VariationsConfigState::kMissingTimestamp);
     return false;
   }
 
-  base::Time fetch_time =
-      experiment_prefs->GetTime(variations::prefs::kVariationsLastFetchTime);
+  base::Time fetch_time = experiment_prefs->GetTime(kVariationsLastFetchTime);
   base::TimeDelta config_age = base::Time::Now() - fetch_time;
 
   base::UmaHistogramCustomCounts("Cobalt.Finch.ConfigAgeInDays",
@@ -144,8 +142,7 @@ ExperimentConfigType ExperimentConfigManager::GetExperimentConfigType() {
       finch_params.FindInt(kCrashStreakSafeConfigThreshold)
           .value_or(kDefaultCrashStreakSafeConfigThreshold);
 
-  int num_crashes = metrics_local_state_->GetInteger(
-      variations::prefs::kVariationsCrashStreak);
+  int num_crashes = metrics_local_state_->GetInteger(kVariationsCrashStreak);
   base::UmaHistogramExactLinear("Cobalt.Finch.CrashStreakAtStartup",
                                 num_crashes, 20);
   static_assert(kDefaultCrashStreakEmptyConfigThreshold >

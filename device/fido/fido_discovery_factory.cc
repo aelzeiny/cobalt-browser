@@ -11,7 +11,9 @@
 #include "device/bluetooth/bluetooth_adapter_factory.h"
 #include "device/fido/cable/fido_cable_discovery.h"
 #include "device/fido/cable/v2_discovery.h"
-#include "device/fido/enclave/enclave_discovery.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/fido/enclave/enclave_discovery.h"  // nogncheck
+#endif
 #include "device/fido/features.h"
 #include "device/fido/fido_discovery_base.h"
 #include "device/fido/hid/fido_hid_discovery.h"
@@ -127,11 +129,15 @@ std::vector<std::unique_ptr<FidoDiscoveryBase>> FidoDiscoveryFactory::Create(
 
 std::optional<std::unique_ptr<FidoDiscoveryBase>>
 FidoDiscoveryFactory::MaybeCreateEnclaveDiscovery() {
+#if BUILDFLAG(IS_COBALT)
+  return std::nullopt;
+#else
   if (!enclave_ui_request_stream_ || !network_context_factory_) {
     return std::nullopt;
   }
   return std::make_unique<enclave::EnclaveAuthenticatorDiscovery>(
       std::move(enclave_ui_request_stream_), network_context_factory_);
+#endif
 }
 
 bool FidoDiscoveryFactory::IsTestOverride() {

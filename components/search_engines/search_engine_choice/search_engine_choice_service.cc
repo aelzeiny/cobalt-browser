@@ -47,7 +47,7 @@
 #include "components/signin/public/base/signin_switches.h"
 #include "components/version_info/version_info.h"
 
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_COBALT)
 #include "components/variations/service/variations_service.h"  // nogncheck
 #endif
 
@@ -246,8 +246,8 @@ SearchEngineChoiceService::Client::~Client() = default;
 // static
 CountryId SearchEngineChoiceService::Client::GetVariationsLatestCountry(
     variations::VariationsService* variations_service) {
-#if BUILDFLAG(IS_FUCHSIA)
-  // We can't add a dependency from Fuchsia to
+#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_COBALT)
+  // We can't add a dependency from Fuchsia or Cobalt to
   // `//components/variations/service`.
   return CountryId();
 #else

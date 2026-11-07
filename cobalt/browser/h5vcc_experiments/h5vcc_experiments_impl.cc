@@ -22,6 +22,7 @@
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "cobalt/browser/constants/cobalt_experiment_names.h"
+#include "cobalt/browser/constants/cobalt_pref_names.h"
 #include "cobalt/browser/global_features.h"
 #include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
 #include "cobalt/version.h"
@@ -29,7 +30,6 @@
 #include "components/metrics/metrics_state_manager.h"
 #include "components/metrics_services_manager/metrics_services_manager.h"
 #include "components/prefs/pref_service.h"
-#include "components/variations/pref_names.h"
 
 namespace h5vcc_experiments {
 
@@ -76,7 +76,7 @@ void H5vccExperimentsImpl::SetExperimentState(
   // successful config fetch do not prevent updating to a new update, and
   // therefore do not necessitate falling back to a safe config.
   global_features->metrics_local_state()->SetInteger(
-      variations::prefs::kVariationsCrashStreak, 0);
+      cobalt::kVariationsCrashStreak, 0);
   // At this point, have set the crash streak to 0 in the metrics_local_state
   // file. Do the same for the Variations beacon file to keep them in sync by
   // calling WriteBeaconValue(true). This eventually leads to the read
@@ -96,8 +96,8 @@ void H5vccExperimentsImpl::SetExperimentState(
       ->clean_exit_beacon()
       ->WriteBeaconValue(true);
 
-  int64_t previous_fetch_time_internal = experiment_config_ptr->GetInt64(
-      variations::prefs::kVariationsLastFetchTime);
+  int64_t previous_fetch_time_internal =
+      experiment_config_ptr->GetInt64(cobalt::kVariationsLastFetchTime);
   if (previous_fetch_time_internal > 0) {
     base::Time previous_fetch_time =
         base::Time::FromInternalValue(previous_fetch_time_internal);
@@ -110,7 +110,7 @@ void H5vccExperimentsImpl::SetExperimentState(
     }
   }
 
-  experiment_config_ptr->SetInt64(variations::prefs::kVariationsLastFetchTime,
+  experiment_config_ptr->SetInt64(cobalt::kVariationsLastFetchTime,
                                   base::Time::Now().ToInternalValue());
   experiment_config_ptr->SetDict(
       cobalt::kExperimentConfigFeatures,

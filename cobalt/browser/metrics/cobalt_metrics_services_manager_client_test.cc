@@ -1,3 +1,4 @@
+#include "build/build_config.h"
 // Copyright 2025 The Cobalt Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
-
 #include <memory>
 #include <utility>
 
@@ -24,6 +23,7 @@
 #include "base/test/task_environment.h"
 #include "cobalt/browser/metrics/cobalt_enabled_state_provider.h"
 #include "cobalt/browser/metrics/cobalt_metrics_service_client.h"
+#include "cobalt/browser/metrics/cobalt_metrics_services_manager_client.h"
 #include "cobalt/shell/common/shell_paths.h"
 #include "components/metrics/file_metrics_provider.h"
 #include "components/metrics/metrics_pref_names.h"
@@ -32,7 +32,6 @@
 #include "components/metrics/metrics_switches.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
-#include "components/variations/service/variations_service.h"
 #include "components/variations/synthetic_trial_registry.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -243,13 +242,6 @@ TEST_F(CobaltMetricsServicesManagerClientTest,
   EXPECT_NE(client1_ptr, metrics_service_client_owner_.get());
   EXPECT_EQ(metrics_service_client_owner_.get(),
             manager_client_->metrics_service_client());
-}
-
-TEST_F(CobaltMetricsServicesManagerClientTest,
-       CreateVariationsServiceReturnsNullAndDoesNotCrash) {
-  EXPECT_THAT(
-      manager_client_->CreateVariationsService(synthetic_trial_registry_.get()),
-      IsNull());
 }
 
 TEST_F(CobaltMetricsServicesManagerClientTest,

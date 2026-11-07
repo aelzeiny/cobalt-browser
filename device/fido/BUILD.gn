@@ -157,25 +157,6 @@ component("fido") {
         "device_operation.h",
         "device_response_converter.cc",
         "device_response_converter.h",
-        "enclave/attestation.cc",
-        "enclave/attestation.h",
-        "enclave/attestation_report.h",
-        "enclave/constants.cc",
-        "enclave/constants.h",
-        "enclave/enclave_authenticator.cc",
-        "enclave/enclave_authenticator.h",
-        "enclave/enclave_discovery.cc",
-        "enclave/enclave_discovery.h",
-        "enclave/enclave_protocol_utils.cc",
-        "enclave/enclave_protocol_utils.h",
-        "enclave/enclave_websocket_client.cc",
-        "enclave/enclave_websocket_client.h",
-        "enclave/metrics.cc",
-        "enclave/metrics.h",
-        "enclave/transact.cc",
-        "enclave/transact.h",
-        "enclave/types.cc",
-        "enclave/types.h",
         "fido_authenticator.cc",
         "fido_authenticator.h",
         "fido_device.cc",
@@ -239,9 +220,37 @@ component("fido") {
         "virtual_u2f_device.h",
       ]
 
+      # Cobalt: no passkey enclave / sync protocol.
+      if (!is_cobalt) {
+        sources += [
+          "enclave/attestation.cc",
+          "enclave/attestation.h",
+          "enclave/attestation_report.h",
+          "enclave/constants.cc",
+          "enclave/constants.h",
+          "enclave/enclave_authenticator.cc",
+          "enclave/enclave_authenticator.h",
+          "enclave/enclave_discovery.cc",
+          "enclave/enclave_discovery.h",
+          "enclave/enclave_protocol_utils.cc",
+          "enclave/enclave_protocol_utils.h",
+          "enclave/enclave_websocket_client.cc",
+          "enclave/enclave_websocket_client.h",
+          "enclave/metrics.cc",
+          "enclave/metrics.h",
+          "enclave/transact.cc",
+          "enclave/transact.h",
+          "enclave/types.cc",
+          "enclave/types.h",
+        ]
+
+        deps += [
+          "//components/sync/protocol:protocol",
+          "//device/fido/enclave/proto:proto",
+        ]
+      }
+
       deps += [
-        "//components/sync/protocol:protocol",
-        "//device/fido/enclave/proto:proto",
         "//services/device/public/cpp/hid",
         "//services/device/public/cpp/usb",
         "//services/device/public/mojom",
