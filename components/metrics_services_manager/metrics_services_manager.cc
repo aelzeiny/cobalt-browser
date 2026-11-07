@@ -11,6 +11,7 @@
 #include "base/check_is_test.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "build/build_config.h"
 #include "components/metrics/dwa/dwa_recorder.h"
 #include "components/metrics/dwa/dwa_service.h"
 #include "components/metrics/enabled_state_provider.h"
@@ -21,7 +22,9 @@
 #include "components/metrics/structured/structured_metrics_service.h"  // nogncheck
 #include "components/metrics_services_manager/metrics_services_manager_client.h"
 #include "components/ukm/ukm_service.h"
-#include "components/variations/service/variations_service.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/variations/service/variations_service.h"  // nogncheck
+#endif
 #include "components/variations/synthetic_trial_registry.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 
@@ -77,12 +80,16 @@ metrics::dwa::DwaService* MetricsServicesManager::GetDwaService() {
 }
 
 variations::VariationsService* MetricsServicesManager::GetVariationsService() {
+#if BUILDFLAG(IS_COBALT)
+  return nullptr;
+#else
   DCHECK(thread_checker_.CalledOnValidThread());
   if (!variations_service_) {
     variations_service_ =
         client_->CreateVariationsService(GetSyntheticTrialRegistry());
   }
   return variations_service_.get();
+#endif
 }
 
 MetricsServicesManager::OnDidStartLoadingCb

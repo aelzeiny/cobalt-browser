@@ -907,7 +907,8 @@ static_library("browser") {
     deps += [ "//components/language_detection/core:constants" ]
   }
 
-  if (!is_fuchsia) {
+  # Cobalt: does not use variations service.
+  if (!is_fuchsia && !is_cobalt) {
     deps += [ "//components/variations/service" ]
   }
 

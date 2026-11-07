@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "base/memory/scoped_refptr.h"
+#include "build/build_config.h"
 
 namespace metrics {
 class EnabledStateProvider;
@@ -32,10 +33,12 @@ class MetricsServicesManagerClient {
  public:
   virtual ~MetricsServicesManagerClient() = default;
 
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: does not use variations service.
   // Methods that create the various services in the context of the embedder.
   virtual std::unique_ptr<variations::VariationsService>
   CreateVariationsService(
       variations::SyntheticTrialRegistry* synthetic_trial_registry) = 0;
+#endif
   virtual std::unique_ptr<metrics::MetricsServiceClient>
   CreateMetricsServiceClient(
       variations::SyntheticTrialRegistry* synthetic_trial_registry) = 0;

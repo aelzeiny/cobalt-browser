@@ -37,10 +37,14 @@ group("resources") {
     "../crash/core/browser/resources:resources",
     "../gcm_driver/resources:resources",
     "../net_log/resources",
-    "../signin/core/browser/resources",
     "../translate/translate_internals:resources",
     "../webui:resources",
   ]
+
+  # Cobalt: does not use desktop signin WebUI resources.
+  if (!is_cobalt) {
+    public_deps += [ "../signin/core/browser/resources" ]
+  }
 
   if (is_ios) {
     public_deps += [ "../management/resources:resources" ]
