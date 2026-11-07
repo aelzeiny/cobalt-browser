@@ -11,6 +11,7 @@
 #include "base/check_is_test.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "build/build_config.h"
 #include "components/metrics/dwa/dwa_recorder.h"
 #include "components/metrics/dwa/dwa_service.h"
 #include "components/metrics/enabled_state_provider.h"
@@ -23,6 +24,7 @@
 #include "build/build_config.h"
 #include "components/ukm/ukm_service.h"
 #if !BUILDFLAG(IS_COBALT)
+// Cobalt: variations/service deadcode
 #include "components/variations/service/variations_service.h"  // nogncheck
 #endif
 #include "components/variations/synthetic_trial_registry.h"
@@ -81,6 +83,7 @@ metrics::dwa::DwaService* MetricsServicesManager::GetDwaService() {
 
 variations::VariationsService* MetricsServicesManager::GetVariationsService() {
 #if BUILDFLAG(IS_COBALT)
+  // Cobalt: variations/service deadcode
   return nullptr;
 #else
   DCHECK(thread_checker_.CalledOnValidThread());

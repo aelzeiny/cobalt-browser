@@ -30,7 +30,9 @@
 #include "build/util/chromium_git_revision.h"
 #include "components/embedder_support/pref_names.h"
 #include "components/embedder_support/switches.h"
-#include "components/policy/core/common/policy_pref_names.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/policy/core/common/policy_pref_names.h"  // nogncheck
+#endif
 #include "components/prefs/pref_service.h"
 #include "components/version_info/version_info.h"
 #include "net/http/http_util.h"

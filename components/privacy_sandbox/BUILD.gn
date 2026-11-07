@@ -72,11 +72,15 @@ source_set("tracking_protection_settings") {
     "//components/content_settings/core/browser",
     "//components/content_settings/core/common",
     "//components/keyed_service/core:core",
-    "//components/policy/core/common",
     "//components/pref_registry:pref_registry",
     "//components/prefs",
     "//url:url",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [ "//components/policy/core/common" ]
+  }
 
   public_deps = [ "//base" ]
 }

@@ -60,7 +60,9 @@
 #include "components/sync/service/sync_error.h"
 #include "components/sync/service/sync_feature_status_for_migrations_recorder.h"
 #include "components/sync/service/sync_prefs.h"
-#include "components/sync/service/sync_prefs_policy_handler.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/sync/service/sync_prefs_policy_handler.h"  // nogncheck
+#endif
 #include "components/sync/service/sync_service_utils.h"
 #include "components/sync/service/trusted_vault_histograms.h"
 #include "components/sync/service/trusted_vault_synthetic_field_trial.h"
@@ -348,8 +350,10 @@ void SyncServiceImpl::Initialize(DataTypeController::TypeVector controllers) {
       GetSyncAccountStateForPrefs(), GetAccountInfo().gaia);
   sync_prefs_.MaybeMigrateCustomPassphrasePref(GetAccountInfo().gaia);
 
+#if !BUILDFLAG(IS_COBALT)
   // Update selected types prefs if a policy is applied.
   sync_prefs_policy_handler_ = std::make_unique<SyncPrefsPolicyHandler>(this);
+#endif
 
   // If sync is disabled permanently, clean up old data that may be around (e.g.
   // crash during signout).

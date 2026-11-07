@@ -12,6 +12,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/threading/thread_checker.h"
+#include "build/build_config.h"
 #include "components/variations/synthetic_trial_registry.h"
 
 namespace metrics {

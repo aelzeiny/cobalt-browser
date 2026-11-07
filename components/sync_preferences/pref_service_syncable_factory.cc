@@ -9,10 +9,14 @@
 #include "base/check_is_test.h"
 #include "base/feature_list.h"
 #include "base/trace_event/trace_event.h"
-#include "components/policy/core/browser/browser_policy_connector.h"
-#include "components/policy/core/browser/configuration_policy_pref_store.h"
-#include "components/policy/core/common/policy_service.h"
-#include "components/policy/core/common/policy_types.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/browser/browser_policy_connector.h"  // nogncheck
+#include "components/policy/core/browser/configuration_policy_pref_store.h"  // nogncheck
+#include "components/policy/core/common/policy_service.h"  // nogncheck
+#include "components/policy/core/common/policy_types.h"  // nogncheck
+#endif
 #include "components/pref_registry/pref_registry_syncable.h"
 #include "components/prefs/in_memory_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
@@ -32,17 +36,25 @@ PrefServiceSyncableFactory::~PrefServiceSyncableFactory() = default;
 void PrefServiceSyncableFactory::SetManagedPolicies(
     policy::PolicyService* service,
     policy::BrowserPolicyConnector* connector) {
+#if !BUILDFLAG(IS_COBALT)
   set_managed_prefs(new policy::ConfigurationPolicyPrefStore(
       connector, service, connector->GetHandlerList(),
       policy::POLICY_LEVEL_MANDATORY));
+#else
+  // Cobalt: enterprise policy deadcode
+#endif
 }
 
 void PrefServiceSyncableFactory::SetRecommendedPolicies(
     policy::PolicyService* service,
     policy::BrowserPolicyConnector* connector) {
+#if !BUILDFLAG(IS_COBALT)
   set_recommended_prefs(new policy::ConfigurationPolicyPrefStore(
       connector, service, connector->GetHandlerList(),
       policy::POLICY_LEVEL_RECOMMENDED));
+#else
+  // Cobalt: enterprise policy deadcode
+#endif
 }
 
 void PrefServiceSyncableFactory::SetPrefModelAssociatorClient(

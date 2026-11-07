@@ -63,6 +63,7 @@ CobaltMetricsServicesManagerClient::CreateVariationsService(
   return nullptr;
 }
 #endif
+
 void StoreMetricsClientInfo(const ::metrics::ClientInfo& client_info) {
   // ClientInfo is a way to get data into the metrics component, but goes unused
   // in Cobalt. Do nothing with it for now.

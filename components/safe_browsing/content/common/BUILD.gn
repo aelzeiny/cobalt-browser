@@ -43,12 +43,16 @@ if (safe_browsing_mode != 0) {
     ]
 
     deps = [
-      "//components/policy/core/browser",
       "//components/prefs",
       "//components/resources:components_resources",
       "//components/url_matcher:url_matcher",
       "//ui/base",
     ]
+
+    if (!is_cobalt) {
+      # Cobalt: enterprise policy deadcode
+      deps += [ "//components/policy/core/browser" ]
+    }
   }
 
   source_set("file_type_policies_test_support") {
