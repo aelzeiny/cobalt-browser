@@ -99,7 +99,6 @@ target(link_target_type, "child") {
     "//services/tracing/public/cpp",
     "//services/tracing/public/cpp:traced_process",
     "//services/tracing/public/cpp/background_tracing:background_tracing",
-    "//services/webnn/public/mojom",
     "//skia",
     "//storage/common",
     "//third_party/blink/public:blink_headers",
@@ -121,6 +120,11 @@ target(link_target_type, "child") {
     "//url",
     "//v8",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: WebNN service pruned.
+    deps += [ "//services/webnn/public/mojom" ]
+  }
 
   if (is_linux && !is_cobalt_hermetic_build || is_chromeos) {
     sources += [

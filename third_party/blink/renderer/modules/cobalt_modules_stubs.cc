@@ -16,7 +16,6 @@
 
 #include "third_party/blink/renderer/modules/bluetooth/bluetooth.h"  // nogncheck
 #include "third_party/blink/renderer/modules/hid/hid.h"  // nogncheck
-#include "third_party/blink/renderer/modules/ml/navigator_ml.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_texture.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_device.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_adapter.h"  // nogncheck
@@ -29,6 +28,7 @@
 #include "third_party/blink/renderer/modules/webgpu/gpu_device_lost_info.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_buffer.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webgpu/gpu_external_texture.h"  // nogncheck
+#include "third_party/blink/renderer/core/execution_context/navigator_base.h"
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
@@ -136,14 +136,6 @@ STUB_V8_WRAPPER(V8NDEFMessage)
 STUB_V8_WRAPPER(V8NDEFReader)
 STUB_V8_WRAPPER(V8NDEFReadingEvent)
 STUB_V8_WRAPPER(V8NDEFRecord)
-
-// WebNN / ML V8 Wrappers
-STUB_V8_WRAPPER(V8ML)
-STUB_V8_WRAPPER(V8MLGraph)
-STUB_V8_WRAPPER(V8MLGraphBuilder)
-STUB_V8_WRAPPER(V8MLOperand)
-STUB_V8_WRAPPER(V8MLTensor)
-STUB_V8_WRAPPER(V8MLContext)
 
 // AI V8 Wrappers
 STUB_V8_WRAPPER(V8CreateMonitor)
@@ -275,14 +267,6 @@ HID* HID::hid(NavigatorBase&) {
 }
 
 Serial* Serial::serial(NavigatorBase&) {
-  return nullptr;
-}
-
-// --- WebNN / ML C++ Stubs ---
-
-const char NavigatorML::kSupplementName[] = "NavigatorML";
-
-ML* NavigatorML::ml(NavigatorBase&) {
   return nullptr;
 }
 

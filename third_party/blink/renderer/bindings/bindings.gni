@@ -274,6 +274,9 @@ if (is_cobalt) {
     "*blob_event*",
     "*v8_media_recorder.*",
     "*v8_recording_state*",
+    # Cobalt: Prune WebNN / ML bindings.
+    "*v8_ml.*",
+    "*v8_ml_*",
   ]
 
   cobalt_hardware_exclude_patterns = [
