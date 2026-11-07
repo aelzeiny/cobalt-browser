@@ -22,11 +22,7 @@
 #include "base/observer_list.h"
 #include "base/types/expected_macros.h"
 #include "base/values.h"
-#include "build/build_config.h"
-#if !BUILDFLAG(IS_COBALT)
-// Cobalt: signin deadcode
-#include "components/signin/public/base/signin_switches.h"  // nogncheck
-#endif
+#include "components/signin/public/base/signin_switches.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/base/features.h"
 #include "components/sync/model/sync_change.h"
@@ -99,10 +95,8 @@ PrefModelAssociator::PrefModelAssociator(
     : PrefModelAssociator(client,
                           dual_layer_user_prefs->GetAccountPrefStore(),
                           type) {
-#if !BUILDFLAG(IS_COBALT)
   CHECK(
       base::FeatureList::IsEnabled(switches::kEnablePreferencesAccountStorage));
-#endif
   dual_layer_user_prefs_ = std::move(dual_layer_user_prefs);
 }
 

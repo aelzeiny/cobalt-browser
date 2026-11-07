@@ -21,10 +21,7 @@
 #include "components/prefs/in_memory_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_value_store.h"
-#if !BUILDFLAG(IS_COBALT)
-// Cobalt: signin deadcode
-#include "components/signin/public/base/signin_switches.h"  // nogncheck
-#endif
+#include "components/signin/public/base/signin_switches.h"
 #include "components/sync/base/features.h"
 #include "components/sync_preferences/dual_layer_user_pref_store.h"
 #include "components/sync_preferences/pref_model_associator_client.h"
@@ -76,7 +73,6 @@ std::unique_ptr<PrefServiceSyncable> PrefServiceSyncableFactory::CreateSyncable(
 
   auto pref_notifier = std::make_unique<PrefNotifierImpl>();
 
-#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(
           switches::kEnablePreferencesAccountStorage)) {
     // If EnablePreferencesAccountStorage is enabled, then a
@@ -102,7 +98,6 @@ std::unique_ptr<PrefServiceSyncable> PrefServiceSyncableFactory::CreateSyncable(
         std::move(dual_layer_user_pref_store), std::move(pref_registry),
         pref_model_associator_client_, read_error_callback_, async_);
   }
-#endif
 
   auto pref_value_store = std::make_unique<PrefValueStore>(
       managed_prefs_.get(), supervised_user_prefs_.get(),

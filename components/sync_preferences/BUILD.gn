@@ -29,15 +29,13 @@ static_library("sync_preferences") {
     "//components/metrics/demographics",
     "//components/pref_registry",
     "//components/prefs",
+    "//components/signin/public/base",
     "//components/sync",
   ]
 
   if (!is_cobalt) {
     # Cobalt: enterprise policy deadcode
-    deps += [
-      "//components/policy/core/browser",
-      "//components/signin/public/base",
-    ]
+    deps += [ "//components/policy/core/browser" ]
   }
 
   if (is_chromeos) {
