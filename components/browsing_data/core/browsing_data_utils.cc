@@ -56,7 +56,7 @@ std::u16string CreatePasswordDomainExamples(
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if (BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)) && !BUILDFLAG(IS_COBALT)
 // Constructs the text to be displayed by the history counter from the given
 // `history_result`. The string is based on the unique domains within the
 // deletion range and if there are synced entries within the deletion range.
@@ -109,7 +109,7 @@ std::u16string CreateHistoryCounterString(
   return l10n_util::GetStringFUTF16(
       IDS_DEL_BROWSING_HISTORY_COUNTER_SINGLE_DOMAIN_TEXT, last_visited_domain);
 }
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#endif  // (BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)) && !BUILDFLAG(IS_COBALT)
 }  // namespace
 
 namespace browsing_data {

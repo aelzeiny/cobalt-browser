@@ -29,8 +29,10 @@
 #include "base/version_info/version_info.h"
 #include "components/country_codes/country_codes.h"
 #include "components/crash/core/common/crash_key.h"
-#include "components/policy/core/common/policy_service.h"
-#include "components/policy/policy_constants.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/policy/core/common/policy_service.h"  // nogncheck
+#include "components/policy/policy_constants.h"            // nogncheck
+#endif
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/regional_capabilities/access/country_access_reason.h"
@@ -57,7 +59,7 @@ namespace search_engines {
 namespace {
 
 #if !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-      BUILDFLAG(CHROME_FOR_TESTING))
+      BUILDFLAG(CHROME_FOR_TESTING) || BUILDFLAG(IS_COBALT))
 // The choice screen should be shown if the `DefaultSearchProviderEnabled`
 // policy is not set, or set to true and the
 // `DefaultSearchProviderSearchURL` policy is not set.
@@ -283,7 +285,7 @@ SearchEngineChoiceService::GetStaticChoiceScreenConditions(
     bool is_regular_profile,
     const TemplateURLService& template_url_service) {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(CHROME_FOR_TESTING)
+    BUILDFLAG(CHROME_FOR_TESTING) || BUILDFLAG(IS_COBALT)
   // TODO(b/319050536): Remove the function declaration on these platforms.
   return SearchEngineChoiceScreenConditions::kUnsupportedBrowserType;
 #else
@@ -329,7 +331,7 @@ SearchEngineChoiceScreenConditions
 SearchEngineChoiceService::GetDynamicChoiceScreenConditions(
     const TemplateURLService& template_url_service) {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(CHROME_FOR_TESTING)
+    BUILDFLAG(CHROME_FOR_TESTING) || BUILDFLAG(IS_COBALT)
   // TODO(b/319050536): Remove the function declaration on these platforms.
   return SearchEngineChoiceScreenConditions::kUnsupportedBrowserType;
 #else

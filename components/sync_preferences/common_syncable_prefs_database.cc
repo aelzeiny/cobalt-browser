@@ -32,7 +32,9 @@
 #include "components/sync/base/features.h"
 #include "components/translate/core/browser/translate_pref_names.h"
 #include "components/translate/core/browser/translate_prefs.h"
-#include "components/variations/service/google_groups_manager_prefs.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/variations/service/google_groups_manager_prefs.h"  // nogncheck
+#endif
 
 namespace sync_preferences {
 
@@ -287,7 +289,7 @@ constexpr auto kCommonSyncablePrefsAllowlist =
           PrefSensitivity::kNone, MergeBehavior::kNone}},
 // For Ash, the OS_PRIORITY_PREFERENCES equivalent is defined in
 // chrome/browser/sync/prefs/chrome_syncable_prefs_database.cc instead.
-#if !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_COBALT)
         {variations::kDogfoodGroupsSyncPrefName,
          {syncable_prefs_ids::kDogfoodGroupsSyncPrefName,
           syncer::PRIORITY_PREFERENCES, PrefSensitivity::kNone,

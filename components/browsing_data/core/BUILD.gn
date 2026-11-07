@@ -121,6 +121,13 @@ source_set("unit_tests") {
     sources += [ "pref_names_unittest.cc" ]
   }
 
+  if (is_cobalt) {
+    sources -= [
+      "browsing_data_policies_utils_unittest.cc",
+      "history_notice_utils_unittest.cc",
+    ]
+  }
+
   deps = [
     ":core",
     "//base/test:test_support",

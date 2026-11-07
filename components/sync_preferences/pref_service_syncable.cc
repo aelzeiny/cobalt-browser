@@ -19,7 +19,11 @@
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_registry.h"
 #include "components/prefs/pref_value_store.h"
-#include "components/signin/public/base/signin_switches.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: signin deadcode
+#include "components/signin/public/base/signin_switches.h"  // nogncheck
+#endif
 #include "components/sync/base/features.h"
 #include "components/sync/service/sync_service.h"
 #include "components/sync_preferences/dual_layer_user_pref_store.h"
@@ -133,8 +137,10 @@ PrefServiceSyncable::PrefServiceSyncable(
 #endif
       pref_registry_(std::move(pref_registry)),
       dual_layer_user_prefs_(std::move(dual_layer_user_prefs)) {
+#if !BUILDFLAG(IS_COBALT)
   CHECK(
       base::FeatureList::IsEnabled(switches::kEnablePreferencesAccountStorage));
+#endif
   CHECK(dual_layer_user_prefs_);
   ConnectAssociatorsAndRegisterPreferences();
 }

@@ -5,7 +5,11 @@
 #include "components/safe_browsing/content/common/file_type_policies_policy_util.h"
 
 #include "base/strings/string_util.h"
-#include "components/policy/core/browser/url_blocklist_manager.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/browser/url_blocklist_manager.h"  // nogncheck
+#endif
 #include "components/prefs/pref_service.h"
 #include "components/safe_browsing/content/common/file_type_policies_prefs.h"
 #include "components/url_matcher/url_matcher.h"

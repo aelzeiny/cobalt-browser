@@ -27,12 +27,18 @@ static_library("sync_preferences") {
   deps = [
     "//base",
     "//components/metrics/demographics",
-    "//components/policy/core/browser",
     "//components/pref_registry",
     "//components/prefs",
-    "//components/signin/public/base",
     "//components/sync",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: enterprise policy deadcode
+    deps += [
+      "//components/policy/core/browser",
+      "//components/signin/public/base",
+    ]
+  }
 
   if (is_chromeos) {
     deps += [ "//ash/constants" ]
@@ -66,8 +72,12 @@ source_set("common_syncable_prefs_database") {
     "//components/search_engines",
     "//components/sharing_message",
     "//components/translate/core/browser",
-    "//components/variations/service",
   ]
+
+  # Cobalt: does not use variations service.
+  if (!is_cobalt) {
+    deps += [ "//components/variations/service" ]
+  }
 }
 
 static_library("test_support") {

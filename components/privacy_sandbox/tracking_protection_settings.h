@@ -7,11 +7,19 @@
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#include "build/build_config.h"
 #include "components/content_settings/core/browser/host_content_settings_map.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "components/content_settings/core/common/cookie_controls_state.h"
 #include "components/keyed_service/core/keyed_service.h"
-#include "components/policy/core/common/management/management_service.h"
+#if BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+namespace policy {
+class ManagementService;
+}
+#else
+#include "components/policy/core/common/management/management_service.h"  // nogncheck
+#endif
 #include "components/privacy_sandbox/tracking_protection_prefs.h"
 
 class HostContentSettingsMap;

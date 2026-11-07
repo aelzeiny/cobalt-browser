@@ -9,15 +9,22 @@
 #include "base/check_is_test.h"
 #include "base/feature_list.h"
 #include "base/trace_event/trace_event.h"
-#include "components/policy/core/browser/browser_policy_connector.h"
-#include "components/policy/core/browser/configuration_policy_pref_store.h"
-#include "components/policy/core/common/policy_service.h"
-#include "components/policy/core/common/policy_types.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: enterprise policy deadcode
+#include "components/policy/core/browser/browser_policy_connector.h"  // nogncheck
+#include "components/policy/core/browser/configuration_policy_pref_store.h"  // nogncheck
+#include "components/policy/core/common/policy_service.h"  // nogncheck
+#include "components/policy/core/common/policy_types.h"  // nogncheck
+#endif
 #include "components/pref_registry/pref_registry_syncable.h"
 #include "components/prefs/in_memory_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_value_store.h"
-#include "components/signin/public/base/signin_switches.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: signin deadcode
+#include "components/signin/public/base/signin_switches.h"  // nogncheck
+#endif
 #include "components/sync/base/features.h"
 #include "components/sync_preferences/dual_layer_user_pref_store.h"
 #include "components/sync_preferences/pref_model_associator_client.h"
@@ -32,17 +39,25 @@ PrefServiceSyncableFactory::~PrefServiceSyncableFactory() = default;
 void PrefServiceSyncableFactory::SetManagedPolicies(
     policy::PolicyService* service,
     policy::BrowserPolicyConnector* connector) {
+#if !BUILDFLAG(IS_COBALT)
   set_managed_prefs(new policy::ConfigurationPolicyPrefStore(
       connector, service, connector->GetHandlerList(),
       policy::POLICY_LEVEL_MANDATORY));
+#else
+  // Cobalt: enterprise policy deadcode
+#endif
 }
 
 void PrefServiceSyncableFactory::SetRecommendedPolicies(
     policy::PolicyService* service,
     policy::BrowserPolicyConnector* connector) {
+#if !BUILDFLAG(IS_COBALT)
   set_recommended_prefs(new policy::ConfigurationPolicyPrefStore(
       connector, service, connector->GetHandlerList(),
       policy::POLICY_LEVEL_RECOMMENDED));
+#else
+  // Cobalt: enterprise policy deadcode
+#endif
 }
 
 void PrefServiceSyncableFactory::SetPrefModelAssociatorClient(
@@ -61,6 +76,7 @@ std::unique_ptr<PrefServiceSyncable> PrefServiceSyncableFactory::CreateSyncable(
 
   auto pref_notifier = std::make_unique<PrefNotifierImpl>();
 
+#if !BUILDFLAG(IS_COBALT)
   if (base::FeatureList::IsEnabled(
           switches::kEnablePreferencesAccountStorage)) {
     // If EnablePreferencesAccountStorage is enabled, then a
@@ -86,6 +102,7 @@ std::unique_ptr<PrefServiceSyncable> PrefServiceSyncableFactory::CreateSyncable(
         std::move(dual_layer_user_pref_store), std::move(pref_registry),
         pref_model_associator_client_, read_error_callback_, async_);
   }
+#endif
 
   auto pref_value_store = std::make_unique<PrefValueStore>(
       managed_prefs_.get(), supervised_user_prefs_.get(),
