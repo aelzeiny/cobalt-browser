@@ -30,6 +30,11 @@ blink_modules_sources("v8") {
     _hardware_filtered = filter_exclude(sources, cobalt_hardware_exclude_patterns)
     sources = []
     sources = _hardware_filtered
+
+    _sensors_filtered =
+        filter_exclude(sources, cobalt_sensors_exclude_patterns)
+    sources = []
+    sources = _sensors_filtered
   }
 
   if (!use_webrtc_peer_connection) {
@@ -75,6 +80,13 @@ source_set("testing") {
         filter_exclude(sources, cobalt_bindings_exclude_patterns)
     sources = []
     sources = _filtered_sources
+  }
+
+  if (is_cobalt) {
+    _sensors_filtered =
+        filter_exclude(sources, cobalt_sensors_exclude_patterns)
+    sources = []
+    sources = _sensors_filtered
   }
 
   deps = [
