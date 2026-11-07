@@ -19,18 +19,18 @@
 #include "base/uuid.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
-#include "components/attribution_reporting/attribution_src_request_status.h"
-#include "components/attribution_reporting/data_host.mojom-blink.h"
-#include "components/attribution_reporting/os_registration.h"
-#include "components/attribution_reporting/os_registration_error.mojom-shared.h"
-#include "components/attribution_reporting/registration_eligibility.mojom-shared.h"
-#include "components/attribution_reporting/registration_header_error.h"
-#include "components/attribution_reporting/source_registration.h"
-#include "components/attribution_reporting/source_registration_error.mojom-shared.h"
-#include "components/attribution_reporting/suitable_origin.h"
-#include "components/attribution_reporting/test_utils.h"
-#include "components/attribution_reporting/trigger_registration.h"
-#include "components/attribution_reporting/trigger_registration_error.mojom-shared.h"
+#include "components/attribution_reporting/attribution_src_request_status.h"  // nogncheck
+#include "components/attribution_reporting/data_host.mojom-blink.h"  // nogncheck
+#include "components/attribution_reporting/os_registration.h"  // nogncheck
+#include "components/attribution_reporting/os_registration_error.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/registration_eligibility.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/registration_header_error.h"  // nogncheck
+#include "components/attribution_reporting/source_registration.h"  // nogncheck
+#include "components/attribution_reporting/source_registration_error.mojom-shared.h"  // nogncheck
+#include "components/attribution_reporting/suitable_origin.h"  // nogncheck
+#include "components/attribution_reporting/test_utils.h"  // nogncheck
+#include "components/attribution_reporting/trigger_registration.h"  // nogncheck
+#include "components/attribution_reporting/trigger_registration_error.mojom-shared.h"  // nogncheck
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "services/network/public/mojom/attribution.mojom-blink.h"
 #include "services/network/public/mojom/referrer_policy.mojom-blink.h"

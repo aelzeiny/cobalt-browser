@@ -48,7 +48,10 @@ class URLLoaderThrottle;
 namespace content {
 
 class BrowserContext;
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
 class KeepAliveAttributionRequestHelper;
+#endif
 class KeepAliveRequestTracker;
 class KeepAliveRequestBrowserTestBase;
 class KeepAliveURLLoaderService;
@@ -138,9 +141,14 @@ class CONTENT_EXPORT KeepAliveURLLoader
       std::optional<ukm::SourceId> ukm_source_id,
       BrowserContext* browser_context,
       URLLoaderThrottlesGetter throttles_getter,
-      base::PassKey<KeepAliveURLLoaderService>,
+      base::PassKey<KeepAliveURLLoaderService>
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+      // Cobalt: Attribution Reporting is disabled on Cobalt.
+      ,
       std::unique_ptr<KeepAliveAttributionRequestHelper>
-          attribution_request_helper);
+          attribution_request_helper
+#endif
+      );
   ~KeepAliveURLLoader() override;
 
   // Not copyable.
@@ -520,12 +528,14 @@ class CONTENT_EXPORT KeepAliveURLLoader
   // https://docs.google.com/document/d/1RKPgoLBrrLZBPn01XtwHJiLlH9rA7nIRXQJIR7BUqJA/edit#heading=h.y1og20bzkuf7
   std::unique_ptr<blink::ThrottlingURLLoader> url_loader_;
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   // Request helper responsible for processing Attribution Reporting API
   // operations (https://github.com/WICG/attribution-reporting-api). Only set if
   // the request is related to attribution. When set, responses (redirects &
   // final) handled by the loader will be forwarded to the helper.
   std::unique_ptr<KeepAliveAttributionRequestHelper>
       attribution_request_helper_;
+#endif
 
   // For testing only:
   // Not owned.

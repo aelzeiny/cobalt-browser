@@ -23,34 +23,37 @@
 #include "base/strings/string_split.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
-#include "components/attribution_reporting/aggregatable_debug_reporting_config.h"
-#include "components/attribution_reporting/aggregatable_dedup_key.h"
-#include "components/attribution_reporting/aggregatable_named_budget_candidate.h"
-#include "components/attribution_reporting/aggregatable_named_budget_defs.h"
-#include "components/attribution_reporting/aggregatable_trigger_data.h"
-#include "components/attribution_reporting/aggregatable_values.h"
-#include "components/attribution_reporting/aggregation_keys.h"
-#include "components/attribution_reporting/attribution_scopes_data.h"
-#include "components/attribution_reporting/attribution_scopes_set.h"
-#include "components/attribution_reporting/debug_types.h"
-#include "components/attribution_reporting/destination_set.h"
-#include "components/attribution_reporting/event_trigger_data.h"
-#include "components/attribution_reporting/filters.h"
-#include "components/attribution_reporting/max_event_level_reports.h"
-#include "components/attribution_reporting/parsing_utils.h"
-#include "components/attribution_reporting/source_registration.h"
-#include "components/attribution_reporting/source_type.h"
-#include "components/attribution_reporting/suitable_origin.h"
-#include "components/attribution_reporting/trigger_config.h"
-#include "components/attribution_reporting/trigger_data_matching.mojom.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
+#include "components/attribution_reporting/aggregatable_debug_reporting_config.h"  // nogncheck
+#include "components/attribution_reporting/aggregatable_dedup_key.h"  // nogncheck
+#include "components/attribution_reporting/aggregatable_named_budget_candidate.h"  // nogncheck
+#include "components/attribution_reporting/aggregatable_named_budget_defs.h"  // nogncheck
+#include "components/attribution_reporting/aggregatable_trigger_data.h"  // nogncheck
+#include "components/attribution_reporting/aggregatable_values.h"  // nogncheck
+#include "components/attribution_reporting/aggregation_keys.h"  // nogncheck
+#include "components/attribution_reporting/attribution_scopes_data.h"  // nogncheck
+#include "components/attribution_reporting/attribution_scopes_set.h"  // nogncheck
+#include "components/attribution_reporting/debug_types.h"  // nogncheck
+#include "components/attribution_reporting/destination_set.h"  // nogncheck
+#include "components/attribution_reporting/event_trigger_data.h"  // nogncheck
+#include "components/attribution_reporting/filters.h"  // nogncheck
+#include "components/attribution_reporting/max_event_level_reports.h"  // nogncheck
+#include "components/attribution_reporting/parsing_utils.h"  // nogncheck
+#include "components/attribution_reporting/source_registration.h"  // nogncheck
+#include "components/attribution_reporting/source_type.h"  // nogncheck
+#include "components/attribution_reporting/suitable_origin.h"  // nogncheck
+#include "components/attribution_reporting/trigger_config.h"  // nogncheck
+#include "components/attribution_reporting/trigger_data_matching.mojom.h"  // nogncheck
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 #include "components/services/storage/privileged/mojom/indexed_db_control.mojom.h"
 #include "components/services/storage/public/cpp/buckets/bucket_locator.h"
 #include "components/services/storage/public/mojom/cache_storage_control.mojom.h"
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
 #include "content/browser/attribution_reporting/aggregatable_result.mojom.h"  // nogncheck
-#include "content/browser/attribution_reporting/attribution_manager.h"
-#include "content/browser/attribution_reporting/attribution_observer.h"
-#include "content/browser/attribution_reporting/attribution_report.h"
+#include "content/browser/attribution_reporting/attribution_manager.h"  // nogncheck
+#include "content/browser/attribution_reporting/attribution_observer.h"  // nogncheck
+#include "content/browser/attribution_reporting/attribution_report.h"  // nogncheck
 #include "content/browser/attribution_reporting/attribution_trigger.h"
 #include "content/browser/attribution_reporting/common_source_info.h"
 #include "content/browser/attribution_reporting/create_report_result.h"

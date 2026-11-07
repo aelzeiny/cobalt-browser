@@ -51,7 +51,10 @@
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "cc/input/browser_controls_offset_tag_modifications.h"
-#include "components/attribution_reporting/features.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
+#include "components/attribution_reporting/features.h"  // nogncheck
+#endif
 #include "components/download/public/common/download_stats.h"
 #include "components/fingerprinting_protection_filter/interventions/common/interventions_features.h"
 #include "components/input/cursor_manager.h"

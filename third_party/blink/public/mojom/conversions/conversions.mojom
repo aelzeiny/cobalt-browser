@@ -4,7 +4,10 @@
 
 module blink.mojom;
 
+// Cobalt: Attribution Reporting is gated behind enable_privacy_sandbox_apis.
+[EnableIf=enable_privacy_sandbox_apis]
 import "components/attribution_reporting/data_host.mojom";
+[EnableIf=enable_privacy_sandbox_apis]
 import "components/attribution_reporting/registration_eligibility.mojom";
 import "third_party/blink/public/mojom/tokens/tokens.mojom";
 import "services/network/public/mojom/attribution.mojom";
@@ -30,7 +33,8 @@ interface AttributionHost {
   // element. Information will be passed at a later point when the renderer
   // is done fetching the config. `is_for_background_requests` indicates if the
   // host will be used to register registrations from background requests.
-   // `reporting_origins` indicate the requesters of the data host.
+  // `reporting_origins` indicate the requesters of the data host.
+  [EnableIf=enable_privacy_sandbox_apis]
   RegisterDataHost(pending_receiver<attribution_reporting.mojom.DataHost> data_host,
                    attribution_reporting.mojom.RegistrationEligibility registration_eligibility,
                    bool is_for_background_requests,
@@ -43,6 +47,7 @@ interface AttributionHost {
   // processing the attribution source config returned from the request.
   // `attribution_src_token` can be used to associate `data_host` with an
   // `Impression` object in the browser process.
+  [EnableIf=enable_privacy_sandbox_apis]
   RegisterNavigationDataHost(pending_receiver<attribution_reporting.mojom.DataHost> data_host,
                              AttributionSrcToken attribution_src_token
                              );
@@ -51,6 +56,7 @@ interface AttributionHost {
   // `expected_registrations` is the number of background registrations requests
   // sent which are associated to the navigation tied to
   // `attribution_src_token`.
+  [EnableIf=enable_privacy_sandbox_apis]
   NotifyNavigationWithBackgroundRegistrationsWillStart(
     AttributionSrcToken attribution_src_token,
     uint32 expected_registrations

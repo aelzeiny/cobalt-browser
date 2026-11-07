@@ -14,7 +14,10 @@
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
 #include "content/browser/attribution_reporting/attribution_suitable_context.h"
 #endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
 #include "content/browser/loader/keep_alive_attribution_request_helper.h"
+#endif
 #include "content/browser/loader/keep_alive_url_loader.h"
 #include "content/browser/renderer_host/document_associated_data.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
@@ -268,17 +271,17 @@ class KeepAliveURLLoaderService::KeepAliveURLLoaderFactoriesBase {
         service_->browser_context_,
         base::BindRepeating(&KeepAliveURLLoaderFactoriesBase::CreateThrottles,
                             base::Unretained(this)),
-        base::PassKey<KeepAliveURLLoaderService>(),
-#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
+        base::PassKey<KeepAliveURLLoaderService>()
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+        // Cobalt: Attribution Reporting is disabled on Cobalt.
+        ,
         KeepAliveAttributionRequestHelper::CreateIfNeeded(
             resource_request.attribution_reporting_eligibility,
             resource_request.url,
             resource_request.attribution_reporting_src_token,
             resource_request.devtools_request_id, context->attribution_context,
             context->weak_document_ptr)
-#else
-        nullptr
-#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS) && CHROMIUM_MILESTONE_LE_138
+#endif
     );
     // Adds a new loader receiver to the set held by `this`, binding the pending
     // `receiver` from a renderer to `raw_loader` with `loader` as its context.

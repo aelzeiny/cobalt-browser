@@ -319,6 +319,11 @@ blink_core_tests_frame = [
   "web_local_frame_client_test.cc",
 ]
 
+if (!enable_privacy_sandbox_apis) {
+  # Cobalt: Attribution Reporting is disabled on Cobalt.
+  blink_core_tests_frame -= [ "attribution_src_loader_test.cc" ]
+}
+
 if (is_cobalt) {
   blink_core_tests_frame += [
     "csp/local_ip_test.cc",

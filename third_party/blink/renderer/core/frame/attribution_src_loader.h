@@ -11,8 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "components/attribution_reporting/data_host.mojom-blink-forward.h"
-#include "components/attribution_reporting/registration_eligibility.mojom-blink-forward.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
+
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+#include "components/attribution_reporting/data_host.mojom-blink-forward.h"  // nogncheck
+#include "components/attribution_reporting/registration_eligibility.mojom-blink-forward.h"  // nogncheck
+#endif
 #include "mojo/public/cpp/bindings/shared_remote.h"
 #include "services/network/public/mojom/attribution.mojom-forward.h"
 #include "services/network/public/mojom/referrer_policy.mojom-blink-forward.h"
@@ -23,10 +28,12 @@
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 namespace attribution_reporting {
 class SuitableOrigin;
 struct RegistrationInfo;
 }  // namespace attribution_reporting
+#endif
 
 namespace blink {
 
@@ -120,6 +127,7 @@ class CORE_EXPORT AttributionSrcLoader
   static void RecordAttributionFeatureAllowed(bool enabled);
 
  private:
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   class ResourceClient;
 
   using DataHostSharedRemote =
@@ -169,13 +177,16 @@ class CORE_EXPORT AttributionSrcLoader
       const AttributionHeaders&,
       const attribution_reporting::RegistrationInfo&,
       bool was_fetched_via_service_worker);
+#endif  // BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
 
   const Member<LocalFrame> local_frame_;
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   using ContextMenuDataHostEntry =
       std::pair<AttributionSrcToken, DataHostSharedRemote>;
 
   Vector<ContextMenuDataHostEntry> context_menu_data_hosts_;
+#endif
 };
 
 }  // namespace blink

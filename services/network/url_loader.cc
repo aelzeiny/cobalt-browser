@@ -470,9 +470,11 @@ URLLoader::URLLoader(
           std::make_unique<SharedStorageRequestHelper>(
               shared_storage_writable_eligible,
               url_loader_network_observer_.get())),
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
       ad_auction_event_record_request_helper_(
           request.attribution_reporting_eligibility,
           url_loader_network_observer_.get()),
+#endif
       has_fetch_streaming_upload_body_(
           url_loader_util::HasFetchStreamingUploadBody(request)),
       accept_ch_frame_interceptor_(AcceptCHFrameInterceptor::MaybeCreate(
@@ -1059,8 +1061,10 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK_EQ(emitted_devtools_raw_request_, emitted_devtools_raw_response_);
   response->emitted_extra_info = emitted_devtools_raw_request_;
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   ad_auction_event_record_request_helper_.HandleResponse(
       *url_request_, GetPermissionsPolicy());
+#endif
 
   ProcessInboundSharedStorageInterceptorOnReceivedRedirect(redirect_info,
                                                            std::move(response));
@@ -1184,8 +1188,10 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   response_ = BuildResponseHead();
   DispatchOnRawResponse();
 
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   ad_auction_event_record_request_helper_.HandleResponse(
       *url_request_, GetPermissionsPolicy());
+#endif
 
 #if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
   // Parse and remove the Trust Tokens response headers, if any are expected,

@@ -38,7 +38,10 @@
 #include "base/threading/sequence_local_storage_slot.h"
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
-#include "components/attribution_reporting/features.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
+#include "components/attribution_reporting/features.h"  // nogncheck
+#endif
 #include "components/leveldb_proto/public/proto_database_provider.h"
 #include "components/services/storage/privileged/cpp/bucket_client_info.h"
 #include "components/services/storage/privileged/mojom/indexed_db_control.mojom.h"

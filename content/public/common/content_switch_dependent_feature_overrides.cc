@@ -4,7 +4,11 @@
 
 #include "content/public/common/content_switch_dependent_feature_overrides.h"
 
-#include "components/attribution_reporting/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
+// Cobalt: Attribution Reporting is disabled on Cobalt.
+#include "components/attribution_reporting/features.h"  // nogncheck
+#endif
 #include "content/common/features.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
@@ -147,9 +151,11 @@ GetSwitchDependentFeatureOverrides(const base::CommandLine& command_line) {
       {switches::kEnablePrivacySandboxAdsApis,
        std::cref(network::features::kBrowsingTopics),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},
+#if BUILDFLAG(ENABLE_PRIVACY_SANDBOX_APIS)
       {switches::kEnablePrivacySandboxAdsApis,
        std::cref(attribution_reporting::features::kConversionMeasurement),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},
+#endif
       {switches::kEnablePrivacySandboxAdsApis,
        std::cref(blink::features::kFencedFrames),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},
