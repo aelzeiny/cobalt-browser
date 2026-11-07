@@ -84,7 +84,10 @@ class PrimaryAccountManagerTest : public testing::Test,
     account_fetcher_ = std::make_unique<AccountFetcherService>();
     account_fetcher_->Initialize(
         &test_signin_client_, token_service_.get(), account_tracker_.get(),
+        // Cobalt: image_fetcher is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
         std::make_unique<image_fetcher::FakeImageDecoder>(),
+#endif
         std::make_unique<FakeAccountCapabilitiesFetcherFactory>());
   }
 

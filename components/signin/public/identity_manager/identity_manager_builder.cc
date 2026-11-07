@@ -8,7 +8,9 @@
 #include <utility>
 
 #include "build/build_config.h"
-#include "components/image_fetcher/core/image_decoder.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "components/image_fetcher/core/image_decoder.h"  // nogncheck
+#endif
 #include "components/prefs/pref_service.h"
 #include "components/signin/internal/identity_manager/account_capabilities_fetcher_factory.h"
 #include "components/signin/internal/identity_manager/account_fetcher_service.h"
@@ -81,13 +83,17 @@ std::unique_ptr<AccountFetcherService> BuildAccountFetcherService(
     SigninClient* signin_client,
     ProfileOAuth2TokenService* token_service,
     AccountTrackerService* account_tracker_service,
+#if !BUILDFLAG(IS_COBALT)
     std::unique_ptr<image_fetcher::ImageDecoder> image_decoder,
+#endif
     std::unique_ptr<AccountCapabilitiesFetcherFactory>
         account_capabilities_fetcher_factory) {
   auto account_fetcher_service = std::make_unique<AccountFetcherService>();
   account_fetcher_service->Initialize(
       signin_client, token_service, account_tracker_service,
+#if !BUILDFLAG(IS_COBALT)
       std::move(image_decoder),
+#endif
       std::move(account_capabilities_fetcher_factory));
   return account_fetcher_service;
 }
@@ -179,7 +185,9 @@ IdentityManager::InitParameters BuildIdentityManagerInitParameters(
 
   init_params.account_fetcher_service = BuildAccountFetcherService(
       params->signin_client, token_service.get(), account_tracker_service.get(),
+#if !BUILDFLAG(IS_COBALT)
       std::move(params->image_decoder),
+#endif
       std::move(account_capabilities_fetcher_factory));
 
 #if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID)

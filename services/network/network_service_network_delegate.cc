@@ -14,7 +14,10 @@
 #include "base/types/optional_ref.h"
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
-#include "components/domain_reliability/monitor.h"
+// Cobalt: domain_reliability is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/domain_reliability/monitor.h"  // nogncheck
+#endif
 #include "net/base/features.h"
 #include "net/base/isolation_info.h"
 #include "net/base/load_flags.h"
@@ -177,8 +180,10 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
 
 void NetworkServiceNetworkDelegate::OnBeforeRedirect(net::URLRequest* request,
                                                      const GURL& new_location) {
+#if !BUILDFLAG(IS_COBALT)
   if (network_context_->domain_reliability_monitor())
     network_context_->domain_reliability_monitor()->OnBeforeRedirect(request);
+#endif
 }
 
 void NetworkServiceNetworkDelegate::OnResponseStarted(net::URLRequest* request,
@@ -193,10 +198,12 @@ void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
   // this logic into URLLoader's completion method.
   DCHECK_NE(net::ERR_IO_PENDING, net_error);
 
+#if !BUILDFLAG(IS_COBALT)
   if (network_context_->domain_reliability_monitor()) {
     network_context_->domain_reliability_monitor()->OnCompleted(
         request, started, net_error);
   }
+#endif
 
   ForwardProxyErrors(net_error);
 }

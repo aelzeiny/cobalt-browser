@@ -790,7 +790,8 @@ static_library("browser") {
     ]
   }
 
-  if (!is_android) {
+  # Cobalt: image_fetcher is unused on TV.
+  if (!is_android && !is_cobalt) {
     sources += [
       "ui/autofill_image_fetcher.cc",
       "ui/autofill_image_fetcher.h",
@@ -861,7 +862,6 @@ static_library("browser") {
     "//components/feature_engagement",
     "//components/google/core/common",
     "//components/history/core/browser",
-    "//components/image_fetcher/core",
     "//components/infobars/core",
     "//components/keyed_service/core",
     "//components/language/core/browser",
@@ -902,9 +902,12 @@ static_library("browser") {
     "//ui/accessibility:accessibility",
   ]
 
+  # Cobalt: image_fetcher is unused on TV.
   if (is_cobalt) {
     deps -= [ "//components/language_detection/core" ]
     deps += [ "//components/language_detection/core:constants" ]
+  } else {
+    deps += [ "//components/image_fetcher/core" ]
   }
 
   if (!is_fuchsia) {

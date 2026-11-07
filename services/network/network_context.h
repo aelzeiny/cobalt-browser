@@ -647,7 +647,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
           url_loader_factory_pending_receiver);
 
   domain_reliability::DomainReliabilityMonitor* domain_reliability_monitor() {
+    // Cobalt: domain_reliability is not linked on TV.
+#if BUILDFLAG(IS_COBALT)
+    return nullptr;
+#else
     return domain_reliability_monitor_.get();
+#endif
   }
 
   // The http_auth_dynamic_params_ would be used to populate
@@ -878,8 +883,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   // needs to be defined after `shared_dictionary_manager_`.
   std::unique_ptr<SharedDictionaryManager> shared_dictionary_manager_;
 
+#if !BUILDFLAG(IS_COBALT)
   std::unique_ptr<domain_reliability::DomainReliabilityMonitor>
       domain_reliability_monitor_;
+#endif
 
   // Holds owning pointer to |url_request_context_|. Will contain a nullptr for
   // |url_request_context| when the NetworkContextImpl doesn't own its own

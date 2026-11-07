@@ -25,17 +25,22 @@ static_library("core") {
     "history_ui_favicon_request_handler_impl.cc",
     "history_ui_favicon_request_handler_impl.h",
     "large_icon_service.h",
-    "large_icon_service_impl.cc",
-    "large_icon_service_impl.h",
-    "large_icon_worker.cc",
-    "large_icon_worker.h",
   ]
+
+  # Cobalt: large_icon_service and image_fetcher are unused on TV.
+  if (!is_cobalt) {
+    sources += [
+      "large_icon_service_impl.cc",
+      "large_icon_service_impl.h",
+      "large_icon_worker.cc",
+      "large_icon_worker.h",
+    ]
+  }
 
   deps = [
     "//base",
     "//base:i18n",
     "//components/favicon_base",
-    "//components/image_fetcher/core",
     "//components/keyed_service/core",
     "//net:net",
     "//skia",
@@ -43,6 +48,11 @@ static_library("core") {
     "//ui/gfx",
     "//url",
   ]
+
+  # Cobalt: image_fetcher is unused on TV.
+  if (!is_cobalt) {
+    deps += [ "//components/image_fetcher/core" ]
+  }
 }
 
 static_library("database") {

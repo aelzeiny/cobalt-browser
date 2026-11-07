@@ -1797,7 +1797,6 @@ component("platform") {
     "//components/language_detection/content/common:common_blink",
     "//components/language_detection/content/renderer",
     "//components/language_detection/core",
-    "//components/paint_preview/common",
     "//components/search_engines:search_engine_utils",
     "//components/translate/core/language_detection:language_detection",
     "//components/viz/client",
@@ -1848,6 +1847,11 @@ component("platform") {
     "//ui/gl:buildflags",
     "//ui/native_theme",
   ]
+
+  # Cobalt: paint_preview is unused on TV.
+  if (!is_cobalt) {
+    deps += [ "//components/paint_preview/common" ]
+  }
 
   if (has_zstd_compression) {
     deps += [

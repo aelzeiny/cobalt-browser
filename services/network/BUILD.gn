@@ -324,7 +324,6 @@ component("network_service") {
     "//build:chromecast_buildflags",
     "//components/content_settings/core/common",
     "//components/cookie_config",
-    "//components/domain_reliability",
     "//components/miracle_parameter/common",
     "//components/network_session_configurator/browser",
     "//components/network_session_configurator/common",
@@ -358,6 +357,11 @@ component("network_service") {
     "//third_party/re2",
     "//url",
   ]
+
+  # Cobalt: domain_reliability is unused on TV.
+  if (!is_cobalt) {
+    deps += [ "//components/domain_reliability" ]
+  }
 
   if (enable_privacy_sandbox_apis) {
     deps += [

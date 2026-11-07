@@ -32,7 +32,10 @@
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "cc/paint/color_filter.h"
-#include "components/paint_preview/common/paint_preview_tracker.h"
+// Cobalt: paint_preview is not linked on TV.
+#if !BUILDFLAG(IS_COBALT)
+#include "components/paint_preview/common/paint_preview_tracker.h"  // nogncheck
+#endif
 #include "skia/ext/platform_canvas.h"
 #include "third_party/blink/public/mojom/frame/color_scheme.mojom-blink.h"
 #include "third_party/blink/renderer/platform/fonts/plain_text_painter.h"
