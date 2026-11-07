@@ -13,7 +13,9 @@
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/mojo_binder_policy_map.h"
 #include "content/public/common/content_client.h"
-#include "device/gamepad/public/mojom/gamepad.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/gamepad/public/mojom/gamepad.mojom.h"  // nogncheck
+#endif
 #include "media/mojo/mojom/media_player.mojom.h"
 #include "media/mojo/mojom/webrtc_video_perf.mojom.h"
 #include "services/network/public/mojom/restricted_cookie_manager.mojom.h"
@@ -63,10 +65,12 @@ void RegisterNonAssociatedPolicies(MojoBinderPolicyMap& map,
   // content/browser/preloading/prerender/prerender_metrics.h once you add a new
   // kCancel interface.
 
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
   map.SetNonAssociatedPolicy<device::mojom::GamepadHapticsManager>(
       MojoBinderNonAssociatedPolicy::kCancel);
   map.SetNonAssociatedPolicy<device::mojom::GamepadMonitor>(
       MojoBinderNonAssociatedPolicy::kCancel);
+#endif
 
   if (policy == PolicyClass::kSameOriginPrerendering) {
     // ClipboardHost has sync messages, so it cannot be kDefer. However, the

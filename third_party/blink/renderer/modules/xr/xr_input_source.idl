@@ -23,7 +23,8 @@ enum XRTargetRayMode {
   readonly attribute XRTargetRayMode targetRayMode;
   [SameObject] readonly attribute XRSpace targetRaySpace;
   [SameObject] readonly attribute XRSpace? gripSpace;
-  [SameObject, Measure] readonly attribute Gamepad? gamepad;
+  // Cobalt: gamepad.idl is excluded from the IDL database on Cobalt (idl_in_modules.gni); XR bindings are not compiled. Restore if Gamepad or XR is re-enabled.
+  // [SameObject, Measure] readonly attribute Gamepad? gamepad;
   [SameObject, RuntimeEnabled=WebXRHandInput] readonly attribute XRHand? hand;
   [SameObject] readonly attribute FrozenArray<DOMString> profiles;
 };

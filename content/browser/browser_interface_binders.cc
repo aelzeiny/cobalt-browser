@@ -100,9 +100,11 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/url_constants.h"
-#include "device/gamepad/gamepad_haptics_manager.h"
-#include "device/gamepad/gamepad_monitor.h"
-#include "device/gamepad/public/mojom/gamepad.mojom.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/gamepad/gamepad_haptics_manager.h"  // nogncheck
+#include "device/gamepad/gamepad_monitor.h"          // nogncheck
+#include "device/gamepad/public/mojom/gamepad.mojom.h"  // nogncheck
+#endif
 #include "device/vr/buildflags/buildflags.h"
 #include "device/vr/public/mojom/vr_service.mojom.h"
 #include "media/capture/mojom/image_capture.mojom.h"
@@ -817,8 +819,10 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
         &RenderFrameHostImpl::GetFontAccessManager, base::Unretained(host)));
   }
 
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
   map->Add<device::mojom::GamepadHapticsManager>(
       base::BindRepeating(&device::GamepadHapticsManager::Create));
+#endif
 
   map->Add<blink::mojom::GeolocationService>(base::BindRepeating(
       &RenderFrameHostImpl::GetGeolocationService, base::Unretained(host)));
@@ -934,8 +938,10 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::USER_VISIBLE}));
 
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
   map->Add<device::mojom::GamepadMonitor>(
       base::BindRepeating(&device::GamepadMonitor::Create));
+#endif
 
   map->Add<blink::mojom::WebSensorProvider>(base::BindRepeating(
       &RenderFrameHostImpl::GetSensorProvider, base::Unretained(host)));

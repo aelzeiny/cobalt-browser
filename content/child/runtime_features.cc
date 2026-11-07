@@ -25,7 +25,9 @@
 #include "content/public/common/content_switches.h"
 #include "device/base/features.h"
 #include "device/fido/features.h"
-#include "device/gamepad/public/cpp/gamepad_features.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/gamepad/public/cpp/gamepad_features.h"  // nogncheck
+#endif
 #include "device/vr/buildflags/buildflags.h"
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_switches.h"
@@ -211,8 +213,10 @@ void SetRuntimeFeaturesFromChromiumFeatures() {
            raw_ref(features::kFedCmIdPRegistration), kDefault},
           {wf::EnableFedCmLightweightMode,
            raw_ref(features::kFedCmLightweightMode), kDefault},
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
           {wf::EnableGamepadMultitouch,
            raw_ref(features::kEnableGamepadMultitouch)},
+#endif
           {wf::EnableSharedStorageAPI,
            raw_ref(features::kPrivacySandboxAdsAPIsOverride),
            kSetOnlyIfOverridden},

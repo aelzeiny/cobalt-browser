@@ -99,7 +99,9 @@
 #include "content/renderer/variations_render_thread_observer.h"
 #include "content/renderer/worker/embedded_shared_worker_stub.h"
 #include "content/renderer/worker/worker_thread_registry.h"
-#include "device/gamepad/public/cpp/gamepads.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/gamepad/public/cpp/gamepads.h"  // nogncheck
+#endif
 #include "gin/public/debug.h"
 #include "gpu/GLES2/gl2extchromium.h"
 #include "gpu/command_buffer/client/context_support.h"

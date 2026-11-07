@@ -3800,6 +3800,10 @@ source_set("browser") {
   }
 
   if (is_cobalt) {
+    deps -= [
+      # Cobalt: Gamepad is dead code on Living Room TV.
+      "//device/gamepad",
+    ]
     sources -= [
       "bluetooth/advertisement_client.cc",
       "bluetooth/advertisement_client.h",

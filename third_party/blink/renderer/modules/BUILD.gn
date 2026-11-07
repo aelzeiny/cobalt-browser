@@ -189,6 +189,8 @@ component("modules") {
 
   if (is_cobalt) {
     sub_modules -= [
+      # Cobalt: Gamepad is dead code on Living Room TV.
+      "//third_party/blink/renderer/modules/gamepad",
       "//third_party/blink/renderer/modules/mediarecorder",
       "//third_party/blink/renderer/modules/ml",
       "//third_party/blink/renderer/modules/webgpu",
@@ -871,6 +873,8 @@ source_set("unit_tests") {
   if (is_cobalt) {
     deps += [ "//third_party/blink/renderer/modules/cobalt/h5vcc_experiments:experiments_utils" ]
     deps -= [
+      # Cobalt: Gamepad unit tests.
+      "//third_party/blink/renderer/modules/gamepad:unit_tests",
       "//third_party/blink/renderer/modules/hid:unit_tests",
       "//third_party/blink/renderer/modules/ml:unit_tests",
       "//third_party/blink/renderer/modules/webgpu:unit_tests",

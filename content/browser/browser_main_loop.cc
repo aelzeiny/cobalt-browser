@@ -126,7 +126,9 @@
 #include "content/public/common/zygote/zygote_buildflags.h"
 #include "crypto/crypto_buildflags.h"
 #include "device/fido/hid/fido_hid_discovery.h"
-#include "device/gamepad/gamepad_service.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "device/gamepad/gamepad_service.h"  // nogncheck
+#endif
 #include "media/audio/audio_manager.h"
 #include "media/audio/audio_system.h"
 #include "media/audio/audio_thread_impl.h"
@@ -1257,12 +1259,14 @@ void BrowserMainLoop::ShutdownThreadsAndCleanUp() {
     }
   }
 
+#if !BUILDFLAG(IS_COBALT)  // Cobalt: Gamepad API is not built.
   // Must happen after the I/O thread is shutdown since this class lives on the
   // I/O thread and isn't threadsafe.
   {
     TRACE_EVENT0("shutdown", "BrowserMainLoop::Subsystem:GamepadService");
     device::GamepadService::GetInstance()->Terminate();
   }
+#endif
   {
     TRACE_EVENT0("shutdown", "BrowserMainLoop::Subsystem:DeleteDataSources");
     URLDataManager::DeleteDataSources();

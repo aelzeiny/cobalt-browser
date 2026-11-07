@@ -135,6 +135,13 @@ target(link_target_type, "child") {
     ]
   }
 
+  if (is_cobalt) {
+    deps -= [
+      # Cobalt: Gamepad is dead code on Living Room TV.
+      "//device/gamepad/public/cpp:switches",
+    ]
+  }
+
   if (is_win) {
     sources += [
       "child_process_sandbox_support_impl_win.cc",
