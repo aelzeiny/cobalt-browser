@@ -14,20 +14,26 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "services/device/binder_overrides.h"
-#include "services/device/fingerprint/fingerprint.h"
-#include "services/device/generic_sensor/platform_sensor_provider.h"
-#include "services/device/generic_sensor/sensor_provider_impl.h"
-#include "services/device/geolocation/geolocation_context.h"
-#include "services/device/geolocation/public_ip_address_geolocator.h"
-#include "services/device/geolocation/public_ip_address_location_notifier.h"
-#include "services/device/power_monitor/power_monitor_message_broadcaster.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: device subsystem headers are pruned on Starboard.
+#include "services/device/fingerprint/fingerprint.h"                                // nogncheck
+#include "services/device/generic_sensor/platform_sensor_provider.h"                // nogncheck
+#include "services/device/generic_sensor/sensor_provider_impl.h"                    // nogncheck
+#include "services/device/geolocation/geolocation_context.h"                        // nogncheck
+#include "services/device/geolocation/public_ip_address_geolocator.h"               // nogncheck
+#include "services/device/geolocation/public_ip_address_location_notifier.h"       // nogncheck
+#include "services/device/power_monitor/power_monitor_message_broadcaster.h"        // nogncheck
+#endif
 #include "services/device/public/mojom/battery_monitor.mojom.h"
 #if defined(IS_SERIAL_ENABLED_PLATFORM)
 #include "services/device/serial/serial_port_manager_impl.h"
 #endif
 #include "services/device/time_zone_monitor/time_zone_monitor.h"
-#include "services/device/vibration/vibration_manager_impl.h"
-#include "services/device/wake_lock/wake_lock_provider.h"
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: vibration and wake lock headers are pruned on Starboard.
+#include "services/device/vibration/vibration_manager_impl.h"                      // nogncheck
+#include "services/device/wake_lock/wake_lock_provider.h"                          // nogncheck
+#endif
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "ui/gfx/native_widget_types.h"
 
@@ -36,10 +42,11 @@
 #include "services/device/device_service_jni_headers/InterfaceRegistrar_jni.h"
 #include "services/device/screen_orientation/screen_orientation_listener_android.h"
 #include "services/device/vibration/vibration_manager_android.h"
-#else
-#include "services/device/battery/battery_monitor_impl.h"
-#include "services/device/battery/battery_status_service.h"
-#include "services/device/hid/hid_manager_impl.h"
+#elif !BUILDFLAG(IS_STARBOARD)
+// Cobalt: battery and HID headers are pruned on Starboard.
+#include "services/device/battery/battery_monitor_impl.h"                           // nogncheck
+#include "services/device/battery/battery_status_service.h"                         // nogncheck
+#include "services/device/hid/hid_manager_impl.h"                                  // nogncheck
 #endif
 
 #if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
@@ -59,11 +66,14 @@ DeviceServiceParams::~DeviceServiceParams() = default;
 std::unique_ptr<DeviceService> CreateDeviceService(
     std::unique_ptr<DeviceServiceParams> params,
     mojo::PendingReceiver<mojom::DeviceService> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Geolocation is pruned on Starboard.
   GeolocationProviderImpl::SetGeolocationConfiguration(
       params->url_loader_factory, params->geolocation_api_key,
       params->custom_location_provider_callback,
       params->geolocation_system_permission_manager,
       params->use_gms_core_location_provider);
+#endif
   return std::make_unique<DeviceService>(std::move(params),
                                          std::move(receiver));
 }
@@ -76,9 +86,14 @@ DeviceService::DeviceService(
       url_loader_factory_(std::move(params->url_loader_factory)),
       network_connection_tracker_(params->network_connection_tracker),
       geolocation_api_key_(params->geolocation_api_key),
-      wake_lock_context_callback_(params->wake_lock_context_callback),
+      wake_lock_context_callback_(params->wake_lock_context_callback)
+#if !BUILDFLAG(IS_STARBOARD)
+      ,
+      // Cobalt: Wake lock provider is pruned on Starboard.
       wake_lock_provider_(file_task_runner_,
-                          params->wake_lock_context_callback) {
+                          params->wake_lock_context_callback)
+#endif
+{
   receivers_.Add(this, std::move(receiver));
 
 #if BUILDFLAG(IS_ANDROID)
@@ -102,16 +117,18 @@ DeviceService::DeviceService(
       base::SingleThreadTaskRunner::GetCurrentDefault());
 #endif  // defined(IS_SERIAL_ENABLED_PLATFORM)
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS_TVOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS_TVOS) && !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Battery service is pruned on Starboard.
   // Ensure that the battery backend is initialized now; otherwise it may end up
   // getting initialized on access during destruction, when it's no longer safe
   // to initialize.
   device::BatteryStatusService::GetInstance();
-#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS_TVOS)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS_TVOS) && !BUILDFLAG(IS_STARBOARD)
 }
 
 DeviceService::~DeviceService() {
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS_TVOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS_TVOS) && !BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Battery service is pruned on Starboard.
   // NOTE: We don't call this on Chrome OS due to https://crbug.com/856771, as
   // Shutdown() implicitly depends on DBusThreadManager, which may already be
   // destroyed by the time DeviceService is destroyed. Fortunately on Chrome OS
@@ -125,11 +142,14 @@ void DeviceService::AddReceiver(
   receivers_.Add(this, std::move(receiver));
 }
 
+#if !BUILDFLAG(IS_STARBOARD)
+// Cobalt: Sensor provider is pruned on Starboard.
 void DeviceService::SetSensorProviderImplForTesting(
     std::unique_ptr<SensorProviderImpl> sensor_provider) {
   CHECK(!sensor_provider_);
   sensor_provider_ = std::move(sensor_provider);
 }
+#endif
 
 // static
 void DeviceService::OverrideGeolocationContextBinderForTesting(
@@ -159,7 +179,9 @@ void DeviceService::OverrideUsbDeviceManagerBinderForTesting(
 
 void DeviceService::BindBatteryMonitor(
     mojo::PendingReceiver<mojom::BatteryMonitor> receiver) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Battery API is not supported on Starboard / Living Room devices.
+#elif BUILDFLAG(IS_ANDROID)
   GetJavaInterfaceProvider()->GetInterface(std::move(receiver));
 #elif !BUILDFLAG(IS_IOS_TVOS)
   BatteryMonitorImpl::Create(std::move(receiver));
@@ -201,7 +223,9 @@ void DeviceService::BindNFCProvider(
 void DeviceService::BindVibrationManager(
     mojo::PendingReceiver<mojom::VibrationManager> receiver,
     mojo::PendingRemote<mojom::VibrationManagerListener> listener) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_STARBOARD)
+  // Cobalt: Vibration is not supported on Starboard / Living Room devices.
+#elif BUILDFLAG(IS_ANDROID)
   VibrationManagerAndroid::Create(std::move(receiver), std::move(listener));
 #else
   VibrationManagerImpl::Create(std::move(receiver), std::move(listener));
@@ -211,10 +235,12 @@ void DeviceService::BindVibrationManager(
 #if !BUILDFLAG(IS_ANDROID)
 void DeviceService::BindHidManager(
     mojo::PendingReceiver<mojom::HidManager> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   if (!hid_manager_) {
     hid_manager_ = std::make_unique<HidManagerImpl>();
   }
   hid_manager_->AddReceiver(std::move(receiver));
+#endif
 }
 #endif
 
@@ -238,7 +264,9 @@ void DeviceService::BindInputDeviceManager(
 
 void DeviceService::BindFingerprint(
     mojo::PendingReceiver<mojom::Fingerprint> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   Fingerprint::Create(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindGeolocationContext(
@@ -249,32 +277,41 @@ void DeviceService::BindGeolocationContext(
     return;
   }
 
+#if !BUILDFLAG(IS_STARBOARD)
   GeolocationContext::Create(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindGeolocationControl(
     mojo::PendingReceiver<mojom::GeolocationControl> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   GeolocationProviderImpl::GetInstance()->BindGeolocationControlReceiver(
       std::move(receiver));
+#endif
 }
 
 void DeviceService::BindGeolocationInternals(
     mojo::PendingReceiver<mojom::GeolocationInternals> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   GeolocationProviderImpl::GetInstance()->BindGeolocationInternalsReceiver(
       std::move(receiver));
+#endif
 }
 
 void DeviceService::BindPowerMonitor(
     mojo::PendingReceiver<mojom::PowerMonitor> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   if (!power_monitor_message_broadcaster_) {
     power_monitor_message_broadcaster_ =
         std::make_unique<PowerMonitorMessageBroadcaster>();
   }
   power_monitor_message_broadcaster_->Bind(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindPublicIpAddressGeolocationProvider(
     mojo::PendingReceiver<mojom::PublicIpAddressGeolocationProvider> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   if (!public_ip_address_geolocation_provider_) {
     public_ip_address_geolocation_provider_ =
         std::make_unique<PublicIpAddressGeolocationProvider>(
@@ -282,6 +319,7 @@ void DeviceService::BindPublicIpAddressGeolocationProvider(
             geolocation_api_key_);
   }
   public_ip_address_geolocation_provider_->Bind(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindScreenOrientationListener(
@@ -297,6 +335,7 @@ void DeviceService::BindScreenOrientationListener(
 
 void DeviceService::BindSensorProvider(
     mojo::PendingReceiver<mojom::SensorProvider> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   if (!sensor_provider_) {
     auto platform_provider = PlatformSensorProvider::Create();
     if (!platform_provider)
@@ -305,6 +344,7 @@ void DeviceService::BindSensorProvider(
         std::make_unique<SensorProviderImpl>(std::move(platform_provider));
   }
   sensor_provider_->Bind(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindSerialPortManager(
@@ -332,7 +372,9 @@ void DeviceService::BindTimeZoneMonitor(
 
 void DeviceService::BindWakeLockProvider(
     mojo::PendingReceiver<mojom::WakeLockProvider> receiver) {
+#if !BUILDFLAG(IS_STARBOARD)
   wake_lock_provider_.AddBinding(std::move(receiver));
+#endif
 }
 
 void DeviceService::BindUsbDeviceManager(
