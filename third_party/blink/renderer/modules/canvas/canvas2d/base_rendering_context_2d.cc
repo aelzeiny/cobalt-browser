@@ -33,13 +33,19 @@
 #include "third_party/blink/renderer/bindings/core/v8/v8_canvas_text_align.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_canvas_text_baseline.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_text_cluster_options.h"
-#include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_2d_gpu_transfer_option.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGPU IDLs are excluded (Dawn disabled).
+#include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_2d_gpu_transfer_option.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_direction.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_font_kerning.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_font_stretch.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_font_variant_caps.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_text_rendering.h"
-#include "third_party/blink/renderer/bindings/modules/v8/v8_gpu_texture_format.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGPU IDLs are excluded (Dawn disabled).
+#include "third_party/blink/renderer/bindings/modules/v8/v8_gpu_texture_format.h"  // nogncheck
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/core/canvas_interventions/canvas_interventions_enums.h"
 #include "third_party/blink/renderer/core/canvas_interventions/canvas_interventions_helper.h"
 #include "third_party/blink/renderer/core/css/properties/computed_style_utils.h"

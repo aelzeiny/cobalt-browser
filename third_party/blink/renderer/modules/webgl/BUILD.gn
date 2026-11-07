@@ -205,6 +205,15 @@ blink_modules_sources("webgl") {
 
   if (is_cobalt) {
     deps -= [ "//third_party/blink/renderer/modules/xr:xr" ]
+    # Cobalt: WebGL-on-WebGPU is disabled (Dawn disabled).
+    sources -= [
+      "webgl2_rendering_context_webgpu.cc",
+      "webgl2_rendering_context_webgpu.h",
+      "webgl_rendering_context_webgpu.cc",
+      "webgl_rendering_context_webgpu.h",
+      "webgl_rendering_context_webgpu_base.cc",
+      "webgl_rendering_context_webgpu_base.h",
+    ]
   }
 
   allow_circular_includes_from = deps

@@ -8,10 +8,16 @@
 #include "third_party/blink/renderer/core/html/canvas/canvas_context_creation_attributes_core.h"
 #include "third_party/blink/renderer/core/html/canvas/html_canvas_element.h"
 #include "third_party/blink/renderer/modules/webgl/webgl2_rendering_context.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGL-on-WebGPU is disabled (Dawn disabled).
 #include "third_party/blink/renderer/modules/webgl/webgl2_rendering_context_webgpu.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/webgl/webgl_context_event.h"
 #include "third_party/blink/renderer/modules/webgl/webgl_rendering_context.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: WebGL-on-WebGPU is disabled (Dawn disabled).
 #include "third_party/blink/renderer/modules/webgl/webgl_rendering_context_webgpu.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
 namespace blink {
@@ -32,11 +38,12 @@ WebGLContextFactory::WebGLContextFactory(bool is_webgl2)
 CanvasRenderingContext* WebGLContextFactory::Create(
     CanvasRenderingContextHost* host,
     const CanvasContextCreationAttributesCore& attrs) {
+#if !BUILDFLAG(IS_COBALT)
   if (RuntimeEnabledFeatures::WebGLOnWebGPUEnabled()) {
     return CreateInternalWebGPU(host, attrs);
-  } else {
-    return CreateInternal(host, attrs);
   }
+#endif
+  return CreateInternal(host, attrs);
 }
 
 CanvasRenderingContext* WebGLContextFactory::CreateInternal(
@@ -109,11 +116,16 @@ CanvasRenderingContext* WebGLContextFactory::CreateInternal(
 CanvasRenderingContext* WebGLContextFactory::CreateInternalWebGPU(
     CanvasRenderingContextHost* host,
     const CanvasContextCreationAttributesCore& attrs) {
+#if !BUILDFLAG(IS_COBALT)
   if (is_webgl2_) {
     return MakeGarbageCollected<WebGL2RenderingContextWebGPU>(host, attrs);
   } else {
     return MakeGarbageCollected<WebGLRenderingContextWebGPU>(host, attrs);
   }
+#else
+  // Cobalt: WebGL-on-WebGPU is disabled (Dawn disabled).
+  return nullptr;
+#endif
 }
 
 CanvasRenderingContext::CanvasRenderingAPI
