@@ -12,13 +12,16 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/scripted_animation_controller.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
+#include "device/vr/buildflags/buildflags.h"
 #include "third_party/blink/renderer/core/loader/document_loader.h"
 #include "third_party/blink/renderer/core/timing/performance.h"
 #include "third_party/blink/renderer/core/timing/time_clamper.h"
 #include "third_party/blink/renderer/modules/video_rvfc/video_frame_request_callback_collection.h"
+#if BUILDFLAG(ENABLE_VR)
 #include "third_party/blink/renderer/modules/xr/xr_frame_provider.h"
 #include "third_party/blink/renderer/modules/xr/xr_session.h"
 #include "third_party/blink/renderer/modules/xr/xr_system.h"
+#endif  // BUILDFLAG(ENABLE_VR)
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 
@@ -126,12 +129,15 @@ void VideoFrameCallbackRequesterImpl::ScheduleExecution() {
 
   pending_execution_ = true;
 
+#if BUILDFLAG(ENABLE_VR)
   if (TryScheduleImmersiveXRSessionRaf())
     return;
+#endif  // BUILDFLAG(ENABLE_VR)
 
   ScheduleWindowRaf();
 }
 
+#if BUILDFLAG(ENABLE_VR)
 void VideoFrameCallbackRequesterImpl::OnImmersiveSessionStart() {
   in_immersive_session_ = true;
 
@@ -190,6 +196,7 @@ bool VideoFrameCallbackRequesterImpl::TryScheduleImmersiveXRSessionRaf() {
 
   return true;
 }
+#endif  // BUILDFLAG(ENABLE_VR)
 
 void VideoFrameCallbackRequesterImpl::OnRequestVideoFrameCallback() {
   TRACE_EVENT1("blink",

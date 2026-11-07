@@ -131,10 +131,14 @@ component("controller") {
   # adding/editing *.idl files, especially because it's very easy to forget to
   # add generated bindings files to the lists defined in
   # generated_in_{core,modules}.gni. Hence, run the check scripts here.
-  deps += [
-    "//third_party/blink/renderer/bindings:check_generated_file_list",
-    "//third_party/blink/renderer/bindings:validate_web_idl",
-  ]
+  # Cobalt: In Cobalt builds, IDL lists are filtered to remove unused Web APIs,
+  # so checking against upstream static generated file lists is skipped.
+  if (!is_cobalt) {
+    deps += [
+      "//third_party/blink/renderer/bindings:check_generated_file_list",
+      "//third_party/blink/renderer/bindings:validate_web_idl",
+    ]
+  }
 }
 
 group("blink_unittests_data") {

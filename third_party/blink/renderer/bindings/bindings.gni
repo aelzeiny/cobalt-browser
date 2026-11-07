@@ -283,6 +283,16 @@ if (is_cobalt) {
     # Cobalt: Prune WebNN / ML bindings.
     "*v8_ml.*",
     "*v8_ml_*",
+
+    # Cobalt: Exclude empty modules/v8 partial interface wrappers whose sole
+    # partial IDLs were in modules/xr (path-qualified to avoid stripping Core).
+    "*/modules/v8/v8_html_element.*",
+    "*/modules/v8/v8_mathml_element.*",
+    "*/modules/v8/v8_svg_element.*",
+    "*v8_xr.*",
+    "*v8_xr_*",
+    "*v8_sync_iterator_xr_*",
+    "*v8_union_webgl2renderingcontext_webglrenderingcontext.*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.
