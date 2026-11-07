@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_set("lib") {
+# Cobalt: Split metrics/utils into a separate source_set so client code (such as
+# public/cpp:cpp / ImageProcessor) does not pull in annotator and components/manta.
+source_set("metrics") {
   sources = [
-    "annotator.cc",
-    "annotator.h",
     "image_annotation_metrics.cc",
     "image_annotation_metrics.h",
     "image_annotation_utils.cc",
@@ -13,6 +13,23 @@ source_set("lib") {
   ]
 
   visibility = [ "/*" ]
+
+  deps = [
+    "//base",
+    "//net",
+    "//services/image_annotation/public/mojom",
+  ]
+}
+
+source_set("lib") {
+  sources = [
+    "annotator.cc",
+    "annotator.h",
+  ]
+
+  visibility = [ "/*" ]
+
+  public_deps = [ ":metrics" ]
 
   deps = [
     "//base",
