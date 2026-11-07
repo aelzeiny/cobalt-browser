@@ -276,6 +276,19 @@ if (is_cobalt) {
     "*v8_recording_state*",
   ]
 
+  # Cobalt: IndexedDB exclusion patterns.
+  cobalt_idb_exclude_patterns = [
+    "*v8_idb_*",
+    "*v8_union_idbcursor_idbindex_idbobjectstore.*",
+    "*v8_union_idbindex_idbobjectstore.*",
+  ]
+
+  # Cobalt: IndexedDB is not built; drop v8 binding source and test.
+  blink_modules_sources_bindings -=
+      get_path_info([ "modules/v8/v8_binding_for_modules.cc" ], "abspath")
+  bindings_unittest_files -=
+      get_path_info([ "modules/v8/v8_binding_for_modules_test.cc" ], "abspath")
+
   cobalt_hardware_exclude_patterns = [
     "*v8_bluetooth*",
     "*v8_hid.*",

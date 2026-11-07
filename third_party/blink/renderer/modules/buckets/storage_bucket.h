@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_BUCKETS_STORAGE_BUCKET_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_BUCKETS_STORAGE_BUCKET_H_
 
+#include "build/build_config.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/buckets/bucket_manager_host.mojom-blink.h"
@@ -48,7 +49,10 @@ class StorageBucket final : public ScriptWrappable,
   ScriptPromise<IDLUndefined> setExpires(ScriptState*,
                                          const DOMHighResTimeStamp&);
   ScriptPromise<IDLNullable<IDLDOMHighResTimeStamp>> expires(ScriptState*);
+  // Cobalt: IndexedDB is disabled on Cobalt TV.
+#if !BUILDFLAG(IS_COBALT)
   IDBFactory* indexedDB();
+#endif
   LockManager* locks();
   CacheStorage* caches(ExceptionState&);
   ScriptPromise<FileSystemDirectoryHandle> getDirectory(ScriptState*,
@@ -98,7 +102,10 @@ class StorageBucket final : public ScriptWrappable,
   // BucketHost in the browser process.
   HeapMojoRemote<mojom::blink::BucketHost> remote_;
 
+  // Cobalt: IndexedDB is disabled on Cobalt TV.
+#if !BUILDFLAG(IS_COBALT)
   Member<IDBFactory> idb_factory_;
+#endif
   Member<LockManager> lock_manager_;
   Member<CacheStorage> caches_;
   Member<NavigatorBase> navigator_base_;

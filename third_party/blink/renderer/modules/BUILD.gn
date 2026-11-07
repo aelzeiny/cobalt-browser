@@ -202,6 +202,8 @@ component("modules") {
       "//third_party/blink/renderer/modules/nfc",
       "//third_party/blink/renderer/modules/serial",
       "//third_party/blink/renderer/modules/webusb",
+      # Cobalt: IndexedDB is unused on Living Room TV.
+      "//third_party/blink/renderer/modules/indexeddb",
     ]
     sub_modules += [
       "//third_party/blink/renderer/modules/cobalt:h_5_vcc",
@@ -489,9 +491,13 @@ blink_modules_sources("modules_generated") {
     ":make_modules_generated_event_factory",
     ":make_modules_generated_event_names",
     ":make_modules_generated_event_target_names",
-    ":make_modules_generated_indexed_db_names",
     ":make_modules_generated_media_capabilities_names",
   ]
+  if (!is_cobalt) {
+    targets_generating_sources += [
+      ":make_modules_generated_indexed_db_names",
+    ]
+  }
 
   sources = []
   foreach(current, targets_generating_sources) {
@@ -887,6 +893,7 @@ source_set("unit_tests") {
       "//third_party/blink/renderer/modules/hid:unit_tests",
       "//third_party/blink/renderer/modules/ml:unit_tests",
       "//third_party/blink/renderer/modules/webgpu:unit_tests",
+      "//third_party/blink/renderer/modules/indexeddb:unit_tests",
     ]
     sources -= [
       "bluetooth/bluetooth_uuid_unittest.cc",

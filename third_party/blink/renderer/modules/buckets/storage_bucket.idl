@@ -21,7 +21,8 @@
   [CallWith=ScriptState, Measure] Promise<undefined> setExpires(DOMHighResTimeStamp expires);
   [CallWith=ScriptState, Measure] Promise<DOMHighResTimeStamp?> expires();
 
-  [SameObject, Measure] readonly attribute IDBFactory indexedDB;
+  // Cobalt: IndexedDB is disabled on Cobalt TV.
+  // [SameObject, Measure] readonly attribute IDBFactory indexedDB;
 
   [SameObject, RuntimeEnabled=StorageBucketsLocks, Measure] readonly attribute LockManager locks;
 
