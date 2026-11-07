@@ -982,9 +982,13 @@ void AuthenticatorCommonImpl::StartGetAssertionRequest(
       base::BindRepeating(
           &device::GetAssertionRequestHandler::PreselectAccount,
           request_handler->GetWeakPtr()) /* account_preselected_callback */,
+#if !BUILDFLAG(IS_COBALT)
       base::BindRepeating(
           &AuthenticatorCommonImpl::HandlePasswordResponse,
           weak_factory_.GetWeakPtr()) /*password_selected_callback */,
+#else
+      base::DoNothing() /*password_selected_callback */,
+#endif
       base::BindRepeating(
           &device::GetAssertionRequestHandler::StartAuthenticatorRequest,
           request_handler->GetWeakPtr()) /* request_callback */,
@@ -2944,6 +2948,8 @@ void AuthenticatorCommonImpl::CompleteGetAssertionRequest(
   Cleanup();
 }
 
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: TV has no password_manager.
 void AuthenticatorCommonImpl::HandlePasswordResponse(
     password_manager::CredentialInfo credential) {
   CHECK(std::holds_alternative<GetCredentialCallback>(
@@ -2959,6 +2965,7 @@ void AuthenticatorCommonImpl::HandlePasswordResponse(
       .Run(std::move(credential_response));
   Cleanup();
 }
+#endif
 
 void AuthenticatorCommonImpl::CompleteReportRequest(
     blink::mojom::AuthenticatorStatus status,

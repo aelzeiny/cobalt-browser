@@ -14,6 +14,7 @@
 
 #include "base/memory/weak_ptr.h"
 #include "base/types/strong_alias.h"
+#include "build/build_config.h"
 #include "content/browser/webauth/client_data_json.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/authenticator_common.h"
@@ -341,7 +342,10 @@ class CONTENT_EXPORT AuthenticatorCommonImpl : public AuthenticatorCommon {
       blink::mojom::WebAuthnDOMExceptionDetailsPtr dom_exception_details =
           nullptr);
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: TV has no password_manager.
   void HandlePasswordResponse(password_manager::CredentialInfo credential);
+#endif
 
   AuthenticatorRequestClientDelegate::RequestSource RequestSource() const;
   BrowserContext* GetBrowserContext() const;

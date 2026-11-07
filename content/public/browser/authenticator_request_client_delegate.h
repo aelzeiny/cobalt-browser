@@ -50,8 +50,13 @@ class CONTENT_EXPORT AuthenticatorRequestClientDelegate
  public:
   using AccountPreselectedCallback =
       base::RepeatingCallback<void(device::DiscoverableCredentialMetadata)>;
+#if !BUILDFLAG(IS_COBALT)
   using PasswordSelectedCallback =
       base::RepeatingCallback<void(password_manager::CredentialInfo)>;
+#else
+  // Cobalt: TV has no password_manager; callback is a no-op closure.
+  using PasswordSelectedCallback = base::RepeatingClosure;
+#endif
 
   // Failure reasons that might be of interest to the user, so the embedder may
   // decide to inform the user.
