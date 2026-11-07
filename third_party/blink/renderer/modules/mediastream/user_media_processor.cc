@@ -40,7 +40,9 @@
 #include "third_party/blink/renderer/modules/mediastream/local_media_stream_audio_source.h"
 #include "third_party/blink/renderer/modules/mediastream/local_video_capturer_source.h"
 #include "third_party/blink/renderer/modules/mediastream/media_constraints.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/mediastream/media_stream_audio_processor.h"
+#endif
 #include "third_party/blink/renderer/modules/mediastream/media_stream_constraints_util.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream_constraints_util_audio.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream_constraints_util_video_content.h"
@@ -48,7 +50,9 @@
 #include "third_party/blink/renderer/modules/mediastream/media_stream_utils.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream_video_capturer_source.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream_video_track.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/mediastream/processed_local_audio_source.h"
+#endif
 #include "third_party/blink/renderer/modules/mediastream/scoped_media_stream_tracer.h"
 #include "third_party/blink/renderer/modules/mediastream/user_media_client.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h"
@@ -206,6 +210,7 @@ void SurfaceAudioProcessingSettings(MediaStreamSource* source) {
   auto* source_impl =
       static_cast<blink::MediaStreamAudioSource*>(source->GetPlatformSource());
 
+#if !BUILDFLAG(IS_COBALT)
   // If the source is a processed source, get the properties from it.
   if (auto* processed_source =
           blink::ProcessedLocalAudioSource::From(source_impl)) {
@@ -219,7 +224,9 @@ void SurfaceAudioProcessingSettings(MediaStreamSource* source) {
         properties.voice_isolation ==
             AudioProcessingProperties::VoiceIsolationType::
                 kVoiceIsolationEnabled);
-  } else {
+  } else
+#endif
+  {
     // If the source is not a processed source, it could still support system
     // echo cancellation or voice. Surface that if it does.
     media::AudioParameters params = source_impl->GetAudioParameters();
@@ -801,9 +808,13 @@ void UserMediaProcessor::SelectAudioDeviceSettings(
           DCHECK(source);
           MediaStreamAudioSource* platform_source =
               MediaStreamAudioSource::From(source);
+#if !BUILDFLAG(IS_COBALT)
           ProcessedLocalAudioSource* processed_source =
               ProcessedLocalAudioSource::From(platform_source);
           return processed_source && source->Id() == device->device_id;
+#else
+          return platform_source && source->Id() == device->device_id;
+#endif
         });
     if (it != local_sources_.end()) {
       WebPlatformMediaStreamSource* const source = (*it)->GetPlatformSource();
@@ -1802,6 +1813,7 @@ MediaStreamSource* UserMediaProcessor::InitializeAudioSourceObject(
         IsAudioInputMediaType(platform_source->device().type)) {
       auto* audio_platform_source =
           static_cast<MediaStreamAudioSource*>(platform_source);
+#if !BUILDFLAG(IS_COBALT)
       auto* processed_existing_source =
           ProcessedLocalAudioSource::From(audio_platform_source);
       auto* processed_new_source =
@@ -1810,6 +1822,7 @@ MediaStreamSource* UserMediaProcessor::InitializeAudioSourceObject(
         DCHECK(audio_source->HasSameNonReconfigurableSettings(
             audio_platform_source));
       }
+#endif
     }
   }
 #endif  // DCHECK_IS_ON()
@@ -1872,6 +1885,19 @@ UserMediaProcessor::CreateAudioSource(
   blink::AudioProcessingProperties audio_processing_properties =
       current_request_info_->audio_capture_settings()
           .audio_processing_properties();
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt: WebRTC APM is removed; mic input uses raw unprocessed audio.
+  SendLogMessage(
+      base::StringPrintf("%s => (Cobalt: raw mic audio without APM)", __func__));
+  return std::make_unique<blink::LocalMediaStreamAudioSource>(
+      frame_, device,
+      base::OptionalToPtr(current_request_info_->audio_capture_settings()
+                              .requested_buffer_size()),
+      stream_controls->disable_local_echo,
+      audio_processing_properties.echo_cancellation_type ==
+          EchoCancellationType::kEchoCancellationSystem,
+      std::move(source_ready), task_runner_);
+#else
   if (blink::IsScreenCaptureMediaType(device.type) ||
       !blink::MediaStreamAudioProcessor::WouldModifyAudio(
           audio_processing_properties)) {
@@ -1896,6 +1922,7 @@ UserMediaProcessor::CreateAudioSource(
       audio_processing_properties,
       current_request_info_->audio_capture_settings().num_channels(),
       std::move(source_ready), task_runner_);
+#endif
 }
 
 std::unique_ptr<blink::MediaStreamVideoSource>

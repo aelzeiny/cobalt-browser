@@ -23,7 +23,9 @@
 #include "third_party/blink/public/web/modules/mediastream/media_stream_video_source.h"
 #include "third_party/blink/renderer/modules/mediastream/media_constraints.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream_constraints_util_sets.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/mediastream/processed_local_audio_source.h"
+#endif
 #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_processor_options.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_audio_source.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
@@ -1081,6 +1083,14 @@ class DeviceContainer {
     // Three variations of the processing-based container. Each variant is
     // associated to a different type of audio processing configuration, namely
     // unprocessed, processed by WebRTC, or processed by other means.
+#if BUILDFLAG(IS_COBALT)
+    // Cobalt: APM is removed; only the unprocessed container is offered so
+    // track.getSettings() matches the raw PCM delivery.
+    processing_based_containers_.push_back(
+        ProcessingBasedContainer::CreateUnprocessedContainer(
+            source_info, is_device_capture, device_parameters_,
+            is_reconfiguration_allowed));
+#else
     processing_based_containers_.push_back(
         ProcessingBasedContainer::CreateUnprocessedContainer(
             source_info, is_device_capture, device_parameters_,
@@ -1094,6 +1104,7 @@ class DeviceContainer {
               source_info, stream_type, is_device_capture, device_parameters_,
               is_reconfiguration_allowed));
       DCHECK_EQ(processing_based_containers_.size(), 3u);
+#endif
 
       if (!source_info) {
         return;

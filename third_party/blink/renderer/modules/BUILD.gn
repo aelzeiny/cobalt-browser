@@ -233,7 +233,10 @@ component("modules") {
   }
 
   if (!use_webrtc_peer_connection) {
-    sub_modules -= [ "//third_party/blink/renderer/modules/peerconnection" ]
+    sub_modules -= [
+      "//third_party/blink/renderer/modules/peerconnection",
+      "//third_party/blink/renderer/modules/webrtc",
+    ]
   }
 
   if (is_cobalt) {
@@ -868,6 +871,15 @@ source_set("unit_tests") {
     ]
   }
 
+  if (is_cobalt && !chrome_wide_echo_cancellation_supported) {
+    # Cobalt: Exclude unit tests for WebRTC APM and ProcessedLocalAudioSource.
+    sources -= [
+      "mediastream/media_stream_audio_processor_test.cc",
+      "mediastream/media_stream_constraints_util_audio_test.cc",
+      "mediastream/processed_local_audio_source_test.cc",
+    ]
+  }
+
   if (is_cobalt) {
     deps += [ "//third_party/blink/renderer/modules/cobalt/h5vcc_experiments:experiments_utils" ]
     deps -= [
@@ -878,6 +890,7 @@ source_set("unit_tests") {
     sources -= [
       "bluetooth/bluetooth_uuid_unittest.cc",
       "nfc/nfc_proxy_test.cc",
+      "webrtc/webrtc_audio_device_impl_test.cc",
       "xr/xr_rigid_transform_test.cc",
       "xr/xr_test_utils.cc",
       "xr/xr_view_test.cc",

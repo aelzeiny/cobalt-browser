@@ -30,6 +30,18 @@ component("webrtc") {
     "//media:shared_memory_support",
     "//third_party/webrtc_overrides:webrtc_component",
   ]
+
+  if (is_cobalt && !chrome_wide_echo_cancellation_supported) {
+    # Cobalt: Drop WebRTC APM sources; keep constants and feature flags.
+    sources -= [
+      "audio_delay_stats_reporter.cc",
+      "audio_delay_stats_reporter.h",
+      "audio_processor.cc",
+      "audio_processor.h",
+      "helpers.cc",
+      "helpers.h",
+    ]
+  }
 }
 
 source_set("unit_tests") {
@@ -48,4 +60,9 @@ source_set("unit_tests") {
     "audio_processor_test.cc",
     "helpers_unittests.cc",
   ]
+
+  if (is_cobalt && !chrome_wide_echo_cancellation_supported) {
+    # Cobalt: AudioProcessor and helpers tests dropped with APM.
+    sources = []
+  }
 }
