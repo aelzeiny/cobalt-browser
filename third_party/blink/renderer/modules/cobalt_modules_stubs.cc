@@ -39,7 +39,6 @@
 #include "third_party/blink/renderer/platform/graphics/gpu/webgpu_mailbox_texture.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_canvas_2d_gpu_transfer_option.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_gpu_texture_format.h"
-#include "third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.h"
 #include "third_party/blink/renderer/modules/serial/serial.h"  // nogncheck
 #include "third_party/blink/renderer/modules/webusb/usb.h"  // nogncheck
 #include "third_party/blink/renderer/modules/xr/xr_frame_provider.h"  // nogncheck
@@ -456,18 +455,6 @@ String Canvas2dGPUTransferOption::getLabelOr(String&& fallback_value) const {
   return label();
 }
 
-// --- BaseRenderingContext2D WebGPU Stubs ---
-
-GPUTexture* BaseRenderingContext2D::transferToGPUTexture(
-    const Canvas2dGPUTransferOption* options,
-    ExceptionState& exception_state) {
-  return nullptr;
-}
-
-void BaseRenderingContext2D::transferBackFromGPUTexture(
-    ExceptionState& exception_state) {
-}
-
 // --- GC Trace Stubs for incomplete types ---
 
 class GPUMappedDOMArrayBuffer : public DOMArrayBuffer {
@@ -484,10 +471,6 @@ void ExternalTextureCache::Trace(Visitor* visitor) const {
   visitor->Trace(from_video_frame_);
   visitor->Trace(expire_set_);
   visitor->Trace(device_);
-}
-
-V8GPUTextureFormat BaseRenderingContext2D::getTextureFormat() const {
-  return V8GPUTextureFormat(V8GPUTextureFormat::Enum::kR8Unorm);
 }
 
 }  // namespace blink

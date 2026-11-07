@@ -45,9 +45,13 @@
 #include "third_party/blink/renderer/modules/app_banner/app_banner_controller.h"
 #include "third_party/blink/renderer/modules/audio_output_devices/html_media_element_audio_output_device.h"
 #include "third_party/blink/renderer/modules/cache_storage/inspector_cache_storage_agent.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/canvas/canvas2d/canvas_rendering_context_2d.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/canvas/imagebitmap/image_bitmap_rendering_context.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/canvas/offscreencanvas2d/offscreen_canvas_rendering_context_2d.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "third_party/blink/renderer/modules/content_extraction/ai_page_content_agent.h"
 #include "third_party/blink/renderer/modules/content_extraction/inner_html_agent.h"
 #include "third_party/blink/renderer/modules/content_extraction/inner_text_agent.h"
@@ -213,8 +217,10 @@ void ModulesInitializer::Initialize() {
   CoreInitializer::Initialize();
 
   // Canvas context types must be registered with the HTMLCanvasElement.
+#if !BUILDFLAG(IS_COBALT)
   HTMLCanvasElement::RegisterRenderingContextFactory(
       std::make_unique<CanvasRenderingContext2D::Factory>());
+#endif  // !BUILDFLAG(IS_COBALT)
   HTMLCanvasElement::RegisterRenderingContextFactory(
       WebGLContextFactory::MakeWebGL1());
   HTMLCanvasElement::RegisterRenderingContextFactory(
@@ -227,8 +233,10 @@ void ModulesInitializer::Initialize() {
 #endif  // !BUILDFLAG(IS_COBALT)
 
   // OffscreenCanvas context types must be registered with the OffscreenCanvas.
+#if !BUILDFLAG(IS_COBALT)
   OffscreenCanvas::RegisterRenderingContextFactory(
       std::make_unique<OffscreenCanvasRenderingContext2D::Factory>());
+#endif  // !BUILDFLAG(IS_COBALT)
   OffscreenCanvas::RegisterRenderingContextFactory(
       WebGLContextFactory::MakeWebGL1());
   OffscreenCanvas::RegisterRenderingContextFactory(

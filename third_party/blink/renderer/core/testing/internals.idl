@@ -323,8 +323,8 @@ interface Internals {
 
     boolean isInCanvasFontCache(Document document, DOMString fontString);
     unsigned long canvasFontCacheMaxFonts();
-    void forceLoseCanvasContext(CanvasRenderingContext2D ctx);
-    void forceLoseCanvasContext(OffscreenCanvasRenderingContext2D ctx);
+    // Cobalt: forceLoseCanvasContext for 2D canvas is omitted because
+    // 2D canvas contexts are pruned.
     void disableCanvasAcceleration(HTMLCanvasElement canvas);
     boolean isCanvasImageSourceAccelerated(HTMLCanvasElement imageSource);
     boolean isCanvasImageSourceAccelerated(OffscreenCanvas imageSource);

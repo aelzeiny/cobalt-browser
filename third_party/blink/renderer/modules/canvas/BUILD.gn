@@ -7,8 +7,6 @@ import("//third_party/blink/renderer/modules/modules.gni")
 
 blink_modules_sources("canvas") {
   sources = [
-    "canvas2d/base_rendering_context_2d.cc",
-    "canvas2d/base_rendering_context_2d.h",
     "canvas2d/cached_color.h",
     "canvas2d/canvas_2d_recorder_context.cc",
     "canvas2d/canvas_2d_recorder_context.h",
@@ -24,8 +22,6 @@ blink_modules_sources("canvas") {
     "canvas2d/canvas_path.h",
     "canvas2d/canvas_pattern.cc",
     "canvas2d/canvas_pattern.h",
-    "canvas2d/canvas_rendering_context_2d.cc",
-    "canvas2d/canvas_rendering_context_2d.h",
     "canvas2d/canvas_rendering_context_2d_state.cc",
     "canvas2d/canvas_rendering_context_2d_state.h",
     "canvas2d/canvas_style.cc",
@@ -56,10 +52,21 @@ blink_modules_sources("canvas") {
     "imagebitmap/image_bitmap_source_util.h",
     "offscreencanvas/offscreen_canvas_module.cc",
     "offscreencanvas/offscreen_canvas_module.h",
-    "offscreencanvas2d/offscreen_canvas_rendering_context_2d.cc",
-    "offscreencanvas2d/offscreen_canvas_rendering_context_2d.h",
     "testing/canvas_test_utils.cc",
   ]
+
+  # Cobalt: Remove 2D Canvas contexts (CanvasRenderingContext2D,
+  # OffscreenCanvasRenderingContext2D, BaseRenderingContext2D).
+  if (!is_cobalt) {
+    sources += [
+      "canvas2d/base_rendering_context_2d.cc",
+      "canvas2d/base_rendering_context_2d.h",
+      "canvas2d/canvas_rendering_context_2d.cc",
+      "canvas2d/canvas_rendering_context_2d.h",
+      "offscreencanvas2d/offscreen_canvas_rendering_context_2d.cc",
+      "offscreencanvas2d/offscreen_canvas_rendering_context_2d.h",
+    ]
+  }
 
   deps = [
     "//third_party/blink/renderer/modules/webcodecs",

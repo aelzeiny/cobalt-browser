@@ -12,7 +12,8 @@ interface WorkerInternals {
 
     [CallWith=ScriptState] void collectGarbage();
 
-    void forceLoseCanvasContext(OffscreenCanvasRenderingContext2D ctx);
+    // Cobalt: forceLoseCanvasContext for OffscreenCanvasRenderingContext2D
+    // is omitted because 2D canvas contexts are pruned.
     boolean isCanvasImageSourceAccelerated(HTMLCanvasElement imageSource);
     boolean isCanvasImageSourceAccelerated(OffscreenCanvas imageSource);
 };

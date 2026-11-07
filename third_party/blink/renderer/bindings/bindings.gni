@@ -301,6 +301,12 @@ if (is_cobalt) {
     "*v8_union_*gpu*",
   ]
 
+  cobalt_canvas_exclude_patterns = [
+    "*v8_canvas_rendering_context_2d*",
+    "*v8_offscreen_canvas_rendering_context_2d*",
+    "*v8_union_rendering_context*",
+  ]
+
   cobalt_ai_exclude_patterns = [
     "*v8_rewriter*",
     "*v8_translator*",

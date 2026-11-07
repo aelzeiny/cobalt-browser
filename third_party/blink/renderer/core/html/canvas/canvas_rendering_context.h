@@ -30,6 +30,7 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/notreached.h"
+#include "build/build_config.h"
 #include "cc/paint/paint_flags.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
 #include "third_party/blink/public/common/privacy_budget/identifiable_token.h"
@@ -79,8 +80,17 @@ class ExecutionContext;
 class ImageBitmap;
 class ScriptState;
 class StaticBitmapImage;
+#if BUILDFLAG(IS_COBALT)
+// Cobalt: 2D Canvas contexts are omitted from RenderingContext and
+// OffscreenRenderingContext, making their member sets identical.
+// The WebIDL generator collapses identical union sets into the latter,
+// so V8RenderingContext is aliased to V8OffscreenRenderingContext.
+class V8OffscreenRenderingContext;
+using V8RenderingContext = V8OffscreenRenderingContext;
+#else
 class V8RenderingContext;
 class V8OffscreenRenderingContext;
+#endif  // BUILDFLAG(IS_COBALT)
 class WebGraphicsContext3DVideoFramePool;
 
 class CORE_EXPORT CanvasRenderingContext

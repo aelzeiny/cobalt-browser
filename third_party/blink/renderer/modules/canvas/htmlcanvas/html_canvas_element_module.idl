@@ -4,8 +4,7 @@
 
 // https://html.spec.whatwg.org/C/#the-canvas-element
 
-typedef (CanvasRenderingContext2D or
-         WebGLRenderingContext or
+typedef (WebGLRenderingContext or
          WebGL2RenderingContext or
          WebGLRenderingContextWebGPU or
          WebGL2RenderingContextWebGPU or

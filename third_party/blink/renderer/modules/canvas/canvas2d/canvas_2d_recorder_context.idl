@@ -9,6 +9,17 @@ dictionary BeginLayerOptions {
   CanvasFilterInput? filter = null;
 };
 
+// Cobalt: CanvasImageSource typedef was formerly defined in
+// canvas_rendering_context_2d.idl, which is pruned on Cobalt.
+typedef (CSSImageValue or
+         HTMLImageElement or
+         SVGImageElement or
+         HTMLVideoElement or
+         HTMLCanvasElement or
+         ImageBitmap or
+         OffscreenCanvas or
+         VideoFrame) CanvasImageSource;
+
 interface mixin Canvas2DRecorderContext {
     // state
     [NoAllocDirectCall] void save(); // push state on state stack

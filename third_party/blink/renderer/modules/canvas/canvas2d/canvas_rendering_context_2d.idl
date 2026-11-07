@@ -32,15 +32,7 @@
 // so we split this into two for simplicity. There's no difference from a user
 // perspective.
 // TODO(fserb): revisit this once union typedefs are finalized.
-
-typedef (CSSImageValue or
-         HTMLImageElement or
-         SVGImageElement or
-         HTMLVideoElement or
-         HTMLCanvasElement or
-         ImageBitmap or
-         OffscreenCanvas or
-         VideoFrame) CanvasImageSource;
+// Cobalt: CanvasImageSource typedef was moved to canvas_2d_recorder_context.idl
 
 [
     ActiveScriptWrappable,

@@ -279,6 +279,14 @@ generate_bindings("generate_bindings_all") {
     outputs = []
     outputs = _filtered_outputs
   }
+
+  # Cobalt: Exclude ungenerated 2D canvas bindings from target outputs.
+  if (is_cobalt) {
+    _canvas_filtered_outputs =
+        filter_exclude(outputs, cobalt_canvas_exclude_patterns)
+    outputs = []
+    outputs = _canvas_filtered_outputs
+  }
 }
 
 action_with_pydeps("check_generated_file_list") {
@@ -416,6 +424,14 @@ action_with_pydeps("check_generated_file_list") {
         filter_exclude(file_list, cobalt_bindings_exclude_patterns)
     file_list = []
     file_list = _filtered_file_list
+  }
+
+  # Cobalt: Exclude ungenerated 2D canvas bindings from checked generated file list.
+  if (is_cobalt) {
+    _canvas_filtered_file_list =
+        filter_exclude(file_list, cobalt_canvas_exclude_patterns)
+    file_list = []
+    file_list = _canvas_filtered_file_list
   }
 
   response_file_contents = []
