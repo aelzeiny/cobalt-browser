@@ -120,7 +120,9 @@
 #include "content/browser/preloading/prerender/prerender_final_status.h"
 #include "content/browser/preloading/prerender/prerender_host_registry.h"
 #include "content/browser/preloading/prerender/prerender_metrics.h"
-#include "content/browser/presentation/presentation_service_impl.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "content/browser/presentation/presentation_service_impl.h"  // nogncheck
+#endif
 #include "content/browser/process_lock.h"
 #include "content/browser/push_messaging/push_messaging_manager.h"
 #include "content/browser/renderer_host/agent_scheduling_group_host.h"
@@ -14245,6 +14247,7 @@ void RenderFrameHostImpl::BindIdleManager(
       BackForwardCacheDisablingFeature::kIdleManager);
 }
 
+#if !BUILDFLAG(IS_COBALT)
 void RenderFrameHostImpl::GetPresentationService(
     mojo::PendingReceiver<blink::mojom::PresentationService> receiver) {
   if (!presentation_service_)
@@ -14257,6 +14260,7 @@ RenderFrameHostImpl::GetPresentationServiceForTesting() {
   DCHECK(presentation_service_);
   return *presentation_service_.get();
 }
+#endif
 
 void RenderFrameHostImpl::GetSpeechSynthesis(
     mojo::PendingReceiver<blink::mojom::SpeechSynthesis> receiver) {

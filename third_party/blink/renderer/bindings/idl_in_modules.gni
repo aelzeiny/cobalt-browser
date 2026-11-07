@@ -1374,6 +1374,20 @@ if (is_cobalt) {
     "//third_party/blink/renderer/modules/mediacapturefromelement/canvas_capture_media_stream_track.idl",
     "//third_party/blink/renderer/modules/mediacapturefromelement/html_canvas_element_capture.idl",
     "//third_party/blink/renderer/modules/mediacapturefromelement/html_media_element_capture.idl",
+    # Cobalt: Living Room is a 2nd-screen receiver, not a sender.
+    "//third_party/blink/renderer/modules/presentation/navigator_presentation.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_availability.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection_available_event.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection_available_event_init.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection_close_event.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection_close_event_init.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_connection_list.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_receiver.idl",
+    "//third_party/blink/renderer/modules/presentation/presentation_request.idl",
+    "//third_party/blink/renderer/modules/remoteplayback/html_media_element_remote_playback.idl",
+    "//third_party/blink/renderer/modules/remoteplayback/remote_playback.idl",
   ]
 
   # Cobalt: Prune WebGPU IDLs (Dawn is disabled, 113 IDLs remain).

@@ -109,10 +109,14 @@ blink_modules_sources("media_controls") {
     "//third_party/blink/public/strings:strings_grit",
     "//third_party/blink/renderer/modules/device_orientation",
     "//third_party/blink/renderer/modules/picture_in_picture",
-    "//third_party/blink/renderer/modules/remoteplayback",
     "//third_party/blink/renderer/modules/screen_orientation",
     "//ui/strings",
   ]
+
+  # Cobalt: Living Room is a 2nd-screen receiver, not a sender.
+  if (!is_cobalt) {
+    deps += [ "//third_party/blink/renderer/modules/remoteplayback" ]
+  }
 }
 
 grit("media_controls_resources") {

@@ -15,8 +15,11 @@
 #include "third_party/blink/renderer/core/input_type_names.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_elements_helper.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
-#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"
-#include "third_party/blink/renderer/modules/remoteplayback/remote_playback_metrics.h"
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"  // nogncheck
+#include "third_party/blink/renderer/modules/remoteplayback/remote_playback_metrics.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/strings/grit/ax_strings.h"
 
@@ -101,9 +104,12 @@ void MediaControlCastButtonElement::DefaultEventHandler(Event& event) {
           UserMetricsAction("Media.Controls.Cast"));
     }
 
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
     RemotePlayback::From(MediaElement()).PromptInternal();
     RemotePlaybackMetrics::RecordRemotePlaybackLocation(
         RemotePlaybackInitiationLocation::kHTMLMediaElement);
+#endif
   }
   MediaControlInputElement::DefaultEventHandler(event);
 }
@@ -113,8 +119,13 @@ bool MediaControlCastButtonElement::KeepEventInNode(const Event& event) const {
 }
 
 bool MediaControlCastButtonElement::IsPlayingRemotely() const {
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
   return RemotePlayback::From(MediaElement()).GetState() !=
          mojom::blink::PresentationConnectionState::CLOSED;
+#else
+  return false;
+#endif
 }
 
 }  // namespace blink

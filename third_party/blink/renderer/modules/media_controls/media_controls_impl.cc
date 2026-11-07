@@ -101,7 +101,10 @@
 #include "third_party/blink/renderer/modules/media_controls/media_controls_rotate_to_fullscreen_delegate.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_shared_helper.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_text_track_manager.h"
-#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
@@ -1135,10 +1138,13 @@ bool MediaControlsImpl::ShouldHideMediaControls(unsigned behavior_flags) const {
     return false;
   }
 
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
   if (RemotePlayback::From(MediaElement()).GetState() !=
       mojom::blink::PresentationConnectionState::CLOSED) {
     return false;
   }
+#endif
 
   // Keep the controls visible as long as the timer is running.
   const bool ignore_wait_for_timer = behavior_flags & kIgnoreWaitForTimer;

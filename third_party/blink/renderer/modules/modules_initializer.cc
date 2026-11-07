@@ -99,10 +99,15 @@
 #if BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
 #include "third_party/blink/renderer/modules/peerconnection/peer_connection_tracker.h"  // nogncheck
 #endif  // BUILDFLAG(USE_WEBRTC_PEER_CONNECTION)
-#include "third_party/blink/renderer/modules/presentation/presentation.h"
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/presentation/presentation.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/push_messaging/push_messaging_client.h"
-#include "third_party/blink/renderer/modules/remoteplayback/html_media_element_remote_playback.h"
-#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "third_party/blink/renderer/modules/remoteplayback/html_media_element_remote_playback.h"  // nogncheck
+#include "third_party/blink/renderer/modules/remoteplayback/remote_playback.h"  // nogncheck
+#endif
 #include "third_party/blink/renderer/modules/screen_details/screen_details.h"
 #include "third_party/blink/renderer/modules/screen_details/window_screen_details.h"
 #include "third_party/blink/renderer/modules/screen_orientation/screen_orientation_controller.h"
@@ -382,6 +387,8 @@ void ModulesInitializer::OnClearWindowObjectInMainWorld(
     NavigatorServiceWorker::From(window);
 
   DOMWindowStorageController::From(window);
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
   if (RuntimeEnabledFeatures::PresentationEnabled() &&
       settings.GetPresentationReceiver()) {
     // We eagerly create Presentation and associated PresentationReceiver so
@@ -389,6 +396,7 @@ void ModulesInitializer::OnClearWindowObjectInMainWorld(
     // presentation receiver.
     Presentation::presentation(*window.navigator());
   }
+#endif
   ManifestManager::From(window);
 
 #if BUILDFLAG(IS_ANDROID)
@@ -421,7 +429,12 @@ std::unique_ptr<WebMediaPlayer> ModulesInitializer::CreateWebMediaPlayer(
 
 RemotePlaybackClient* ModulesInitializer::CreateRemotePlaybackClient(
     HTMLMediaElement& html_media_element) const {
+// Cobalt: Presentation/RemotePlayback API removed (receiver-only).
+#if !BUILDFLAG(IS_COBALT)
   return &RemotePlayback::From(html_media_element);
+#else
+  return nullptr;
+#endif
 }
 
 void ModulesInitializer::ProvideModulesToPage(

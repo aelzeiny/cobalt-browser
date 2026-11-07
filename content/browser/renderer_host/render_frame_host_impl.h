@@ -2106,10 +2106,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void BindIdleManager(
       mojo::PendingReceiver<blink::mojom::IdleManager> receiver);
 
+#if !BUILDFLAG(IS_COBALT)
   void GetPresentationService(
       mojo::PendingReceiver<blink::mojom::PresentationService> receiver);
 
   PresentationServiceImpl& GetPresentationServiceForTesting();
+#endif
 
   void GetSpeechSynthesis(
       mojo::PendingReceiver<blink::mojom::SpeechSynthesis> receiver);
@@ -4967,8 +4969,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   std::optional<RenderFrameAudioInputStreamFactory>
       audio_service_audio_input_stream_factory_;
 
+#if !BUILDFLAG(IS_COBALT)
   // Hosts blink::mojom::PresentationService for the RenderFrame.
   std::unique_ptr<PresentationServiceImpl> presentation_service_;
+#endif
 
   // Hosts blink::mojom::FileSystemManager for the RenderFrame.
   std::unique_ptr<FileSystemManagerImpl, BrowserThread::DeleteOnIOThread>
