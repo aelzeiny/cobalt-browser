@@ -14,15 +14,19 @@
 #include "base/no_destructor.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
+#if !BUILDFLAG(IS_COBALT)
 #include "components/browsing_data/core/counters/autofill_counter.h"
 #include "components/browsing_data/core/counters/history_counter.h"
 #include "components/browsing_data/core/counters/passwords_counter.h"
+#endif
 #include "components/browsing_data/core/pref_names.h"
 #include "components/prefs/pref_service.h"
 #include "components/strings/grit/components_strings.h"
 #include "ui/base/l10n/l10n_util.h"
 
 namespace {
+#if !BUILDFLAG(IS_COBALT)
 // Creates a string like "for a.com, b.com, and 4 more" for the password
 // counter.
 std::u16string CreatePasswordDomainExamples(
@@ -50,6 +54,7 @@ std::u16string CreatePasswordDomainExamples(
       replacements, nullptr);
   return domains_list;
 }
+#endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
 // Constructs the text to be displayed by the history counter from the given
@@ -222,6 +227,7 @@ std::u16string GetCounterTextFromResult(
     return l10n_util::GetStringUTF16(IDS_CLEAR_BROWSING_DATA_CALCULATING);
   }
 
+#if !BUILDFLAG(IS_COBALT)
   if (pref_name == prefs::kDeletePasswords) {
     const PasswordsCounter::PasswordsResult* password_result =
         static_cast<const PasswordsCounter::PasswordsResult*>(result);
@@ -266,6 +272,7 @@ std::u16string GetCounterTextFromResult(
         NOTREACHED();
     }
   }
+#endif
 
   if (pref_name == prefs::kDeleteDownloadHistory) {
     BrowsingDataCounter::ResultInt count =
@@ -287,6 +294,7 @@ std::u16string GetCounterTextFromResult(
     NOTREACHED();
   }
 
+#if !BUILDFLAG(IS_COBALT)
   // TODO(crbug.com/397187800): Migrate to displaying the domains for Desktop.
   if (pref_name == prefs::kDeleteBrowsingHistory) {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
@@ -392,6 +400,7 @@ std::u16string GetCounterTextFromResult(
 
     return payment_methods_addresses_autocomplete_entries_part;
   }
+#endif
 
   NOTREACHED();
 }
