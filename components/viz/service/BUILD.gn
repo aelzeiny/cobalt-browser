@@ -319,8 +319,6 @@ viz_component("service") {
     "//services/metrics/public/mojom",
     "//services/tracing/public/cpp:cpp",
     "//services/viz/privileged/mojom",
-    "//services/webnn:webnn_service",
-    "//services/webnn/public/mojom",
     "//skia",
     "//skia:skcms",
     "//third_party/blink/public/common",
@@ -347,13 +345,21 @@ viz_component("service") {
     "//services/viz/privileged/mojom/compositing",
     "//services/viz/privileged/mojom/gl",
     "//services/viz/public/mojom",
-    "//services/webnn/public/mojom",
     "//skia",
     "//ui/base/prediction",
     "//ui/gfx",
     "//ui/gfx/geometry",
     "//ui/latency",
   ]
+
+  if (!is_cobalt) {
+    # Cobalt: WebNN service pruned.
+    deps += [
+      "//services/webnn:webnn_service",
+      "//services/webnn/public/mojom",
+    ]
+    public_deps += [ "//services/webnn/public/mojom" ]
+  }
 
   if (is_chromeos) {
     sources += [

@@ -82,8 +82,10 @@
 #include "sandbox/policy/mojom/sandbox.mojom.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "sandbox/policy/switches.h"
-#include "services/webnn/buildflags.h"
-#include "services/webnn/webnn_switches.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/webnn/buildflags.h"      // nogncheck
+#include "services/webnn/webnn_switches.h"  // nogncheck
+#endif
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/base/ui_base_switches.h"
@@ -293,7 +295,9 @@ static const char* const kSwitchNames[] = {
     sandbox::policy::switches::kEnableSandboxLogging,
     sandbox::policy::switches::kDisableMetalShaderCache,
     switches::kShowMacOverlayBorders,
+#if !BUILDFLAG(IS_COBALT)
     switches::kWebNNCoreMlDumpModel,
+#endif
 #endif
 #if BUILDFLAG(IS_OZONE)
     switches::kOzonePlatform,
@@ -323,11 +327,13 @@ static const char* const kSwitchNames[] = {
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     switches::kHardwareVideoDecodeFrameRate,
 #endif
+#if !BUILDFLAG(IS_COBALT)
 #if BUILDFLAG(WEBNN_USE_TFLITE)
     switches::kWebNNTfliteDumpModel,
 #endif
 #if BUILDFLAG(IS_WIN)
     switches::kWebNNOrtLoggingLevel,
+#endif
 #endif
 };
 

@@ -274,10 +274,6 @@ source_set("browser") {
     "//services/viz/privileged/mojom",
     "//services/viz/public/cpp/gpu",
     "//services/viz/public/mojom",
-    "//services/webnn:buildflags",
-    "//services/webnn:webnn_service",
-    "//services/webnn:webnn_switches",
-    "//services/webnn/public/mojom",
     "//skia",
     "//skia/public/mojom",
     "//sql",
@@ -353,6 +349,16 @@ source_set("browser") {
 
   if (is_cobalt) {
     deps -= [ "//components/language_detection/content/common" ]
+  }
+
+  if (!is_cobalt) {
+    # Cobalt: WebNN service pruned.
+    deps += [
+      "//services/webnn:buildflags",
+      "//services/webnn:webnn_service",
+      "//services/webnn:webnn_switches",
+      "//services/webnn/public/mojom",
+    ]
   }
 
   public_deps = [

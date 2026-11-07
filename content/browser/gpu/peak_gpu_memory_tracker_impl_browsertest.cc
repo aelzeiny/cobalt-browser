@@ -107,9 +107,11 @@ class TestGpuService : public viz::mojom::GpuService {
       mojo::PendingReceiver<media::mojom::VideoEncodeAcceleratorProvider>
           receiver) override {}
 
+#if !BUILDFLAG(IS_COBALT)
   void BindWebNNContextProvider(
       mojo::PendingReceiver<webnn::mojom::WebNNContextProvider> receiver,
       int32_t client_id) override {}
+#endif
 
   void GetVideoMemoryUsageStats(
       GetVideoMemoryUsageStatsCallback callback) override {}

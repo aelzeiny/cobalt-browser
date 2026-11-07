@@ -14,7 +14,6 @@
 
 #include <utility>
 
-#include "third_party/blink/renderer/modules/ml/navigator_ml.h"  // nogncheck
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/modules/webcodecs/video_frame.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
@@ -49,14 +48,6 @@ static const WrapperTypeInfo g_dummy_wrapper_type_info = {
 #define STUB_V8_WRAPPER(ClassName) \
   class ClassName { public: static const WrapperTypeInfo wrapper_type_info_; }; \
   const WrapperTypeInfo ClassName::wrapper_type_info_ = g_dummy_wrapper_type_info;
-
-// WebNN / ML V8 Wrappers
-STUB_V8_WRAPPER(V8ML)
-STUB_V8_WRAPPER(V8MLGraph)
-STUB_V8_WRAPPER(V8MLGraphBuilder)
-STUB_V8_WRAPPER(V8MLOperand)
-STUB_V8_WRAPPER(V8MLTensor)
-STUB_V8_WRAPPER(V8MLContext)
 
 // WebXR V8 Wrappers
 STUB_V8_WRAPPER(V8XRAnchor)
@@ -107,14 +98,6 @@ STUB_V8_WRAPPER(V8XRWebGLSubImage)
 STUB_V8_WRAPPER(V8XRWebGLContext)
 
 #undef STUB_V8_WRAPPER
-
-// --- WebNN / ML C++ Stubs ---
-
-const char NavigatorML::kSupplementName[] = "NavigatorML";
-
-ML* NavigatorML::ml(NavigatorBase&) {
-  return nullptr;
-}
 
 // --- WebXR C++ Stubs ---
 

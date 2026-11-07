@@ -19,13 +19,16 @@ mojom("gl") {
     "//gpu/ipc/common:interfaces",
     "//gpu/ipc/common:surface_handle",
     "//media/mojo/mojom",
-    "//services/webnn/public/mojom",
     "//third_party/blink/public/mojom/tokens:tokens",
     "//ui/gfx/geometry/mojom",
     "//ui/gfx/mojom",
     "//ui/gl/mojom",
     "//url/mojom:url_mojom_gurl",
   ]
+  if (!is_cobalt) {
+    # Cobalt: WebNN service pruned.
+    public_deps += [ "//services/webnn/public/mojom" ]
+  }
   if (is_chromeos) {
     public_deps += [
       "//chromeos/ash/experiences/arc/mojom:media",

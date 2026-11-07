@@ -49,7 +49,9 @@
 #include "gpu/config/gpu_preferences.h"
 #include "gpu/config/gpu_switches.h"
 #include "gpu/vulkan/buildflags.h"
-#include "services/webnn/public/mojom/features.mojom-features.h"
+#if !BUILDFLAG(IS_COBALT)
+#include "services/webnn/public/mojom/features.mojom-features.h"  // nogncheck
+#endif
 #include "skia/buildflags.h"
 #include "ui/gfx/extension_set.h"
 #include "ui/gl/buildflags.h"
@@ -294,6 +296,9 @@ GpuFeatureStatus GetSkiaGraphiteFeatureStatus(
 
 GpuFeatureStatus GetWebNNFeatureStatus(
     const std::set<int>& blocklisted_features) {
+#if BUILDFLAG(IS_COBALT)
+  return kGpuFeatureStatusDisabled;
+#else
   if (!base::FeatureList::IsEnabled(
           webnn::mojom::features::kWebMachineLearningNeuralNetwork)) {
     return kGpuFeatureStatusDisabled;
@@ -302,6 +307,7 @@ GpuFeatureStatus GetWebNNFeatureStatus(
     return kGpuFeatureStatusSoftware;
   }
   return kGpuFeatureStatusEnabled;
+#endif
 }
 
 void SetProcessGlWorkaroundsFromGpuFeatures(

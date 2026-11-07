@@ -280,6 +280,9 @@ if (is_cobalt) {
     "*v8_union_dommatrix_float32array_float64array*",
     "*v8_union_string_unsignedlong*",
     "*v8_gamepad*",
+    # Cobalt: Prune WebNN / ML bindings.
+    "*v8_ml.*",
+    "*v8_ml_*",
   ]
 
   # Cobalt: IndexedDB exclusion patterns.
