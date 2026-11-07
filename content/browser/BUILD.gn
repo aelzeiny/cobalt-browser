@@ -3833,6 +3833,10 @@ source_set("browser") {
 
       "usb/web_usb_service_impl.cc",
       "usb/web_usb_service_impl.h",
+
+      # Cobalt: cut browser-side MIDI stack
+      "media/midi_host.cc",
+      "media/midi_host.h",
     ]
 
     deps -= [

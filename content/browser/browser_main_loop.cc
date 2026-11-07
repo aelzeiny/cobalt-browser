@@ -131,7 +131,10 @@
 #include "media/audio/audio_system.h"
 #include "media/audio/audio_thread_impl.h"
 #include "media/media_buildflags.h"
+#if !BUILDFLAG(IS_COBALT)
+// Cobalt: cut browser-side MIDI stack
 #include "media/midi/midi_service.h"
+#endif  // !BUILDFLAG(IS_COBALT)
 #include "media/mojo/buildflags.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/core/embedder/scoped_ipc_support.h"
@@ -1166,11 +1169,14 @@ void BrowserMainLoop::ShutdownThreadsAndCleanUp() {
     parts_->PostMainMessageLoopRun();
   }
 
+#if !BUILDFLAG(IS_COBALT)
+  // Cobalt: cut browser-side MIDI stack
   // Request shutdown to clean up allocated resources on the IO thread.
   if (midi_service_) {
     TRACE_EVENT0("shutdown", "BrowserMainLoop::Subsystem:MidiService");
     midi_service_->Shutdown();
   }
+#endif  // !BUILDFLAG(IS_COBALT)
 
   {
     TRACE_EVENT0("shutdown",

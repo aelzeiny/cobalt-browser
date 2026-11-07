@@ -277,20 +277,6 @@ if (is_cobalt) {
     "*v8_union_string_unsignedlong*",
   ]
 
-  cobalt_hardware_exclude_patterns = [
-    "*v8_bluetooth*",
-    "*v8_hid.*",
-    "*v8_hid_*",
-    "*v8_ndef*",
-    "*v8_request_device_options*",
-    "*v8_serial.*",
-    "*v8_serial_*",
-    "*v8_serial_port*",
-    "*v8_usb.*",
-    "*v8_usb_*",
-    "*v8_watch_advertisements_options*",
-  ]
-
   # Cobalt: Hardware APIs (bluetooth, webusb, hid, serial, webmidi) exclusion patterns.
   cobalt_hw_apis_exclude_patterns = [
     "*v8_bluetooth*",
@@ -308,14 +294,15 @@ if (is_cobalt) {
     "*v8_request_device_options*",
     "*v8_serial.*",
     "*v8_serial_*",
-    "*v8_serial_port*",
     "*v8_sync_iterator_bluetooth*",
     "*v8_sync_iterator_midi*",
-    "*v8_union_string_unsignedlong*",
     "*v8_usb.*",
     "*v8_usb_*",
     "*v8_watch_advertisements_options*",
   ]
+
+  cobalt_hardware_exclude_patterns =
+      cobalt_hw_apis_exclude_patterns + [ "*v8_ndef*" ]
 
   cobalt_webgpu_exclude_patterns = [
     "*v8_canvas_2d_gpu_*",
