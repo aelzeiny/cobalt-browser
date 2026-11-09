@@ -155,6 +155,13 @@ video, canvas, img {
   overflow-clip-margin: content-box;
 }
 
+/* <rive-player> repaints every frame while animating. Its own composited
+ * layer keeps those repaints from reallocating the page's shared raster
+ * tiles each frame. Authors can opt out with `will-change: auto`. */
+rive-player {
+  will-change: transform;
+}
+
 iframe, embed, object, fencedframe {
    overflow: clip !important;
    overflow-clip-margin: content-box !important;

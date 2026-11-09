@@ -71,6 +71,8 @@ TEST_F(HTMLRiveElementTest, CreatesRivePlayerElementAndLayoutRive) {
   LayoutObject* layout_object = rive_elem->GetLayoutObject();
   ASSERT_NE(layout_object, nullptr);
   EXPECT_STREQ(layout_object->GetName(), "LayoutRive");
+  // The player gets its own composited layer by default (UA stylesheet).
+  EXPECT_TRUE(layout_object->StyleRef().HasWillChangeTransformHint());
 }
 
 TEST_F(HTMLRiveElementTest, LoadsAndRendersLikeButtonRiv) {
