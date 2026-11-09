@@ -16,6 +16,9 @@
     [CEReactions] attribute boolean autoplay;
 
     readonly attribute boolean paused;
+    // True while the player is still producing frames (e.g. a scroll is
+    // settling); false once everything has come to rest.
+    readonly attribute boolean animating;
     readonly attribute boolean loaded;
     readonly attribute double artboardWidth;
     readonly attribute double artboardHeight;

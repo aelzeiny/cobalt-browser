@@ -67,6 +67,7 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   void setAutoplay(bool value);
 
   bool paused() const { return paused_; }
+  bool animating() const { return raf_callback_id_ != 0; }
   bool loaded() const { return artboard_ != nullptr; }
   double artboardWidth() const;
   double artboardHeight() const;
