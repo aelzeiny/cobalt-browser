@@ -60,6 +60,27 @@
     DOMString getViewModelEnum(DOMString path);
     boolean fireViewModelTrigger(DOMString path);
 
+    // ViewModel lists. setListItems() replaces the list at `listPath` with one
+    // new instance of the ViewModel `viewModel` per entry; each entry maps
+    // property names to values, parsed by the property's type (string, number,
+    // "true"/"false", "#rrggbb"/"#aarrggbb" colours, enum names, and image
+    // URLs, which load asynchronously).
+    boolean setListItems(DOMString listPath, DOMString viewModel,
+                         sequence<record<DOMString, DOMString>> items);
+    // Like setListItems() but appends, keeping existing items, focus and
+    // scroll position (e.g. for continuations).
+    boolean appendListItems(DOMString listPath, DOMString viewModel,
+                            sequence<record<DOMString, DOMString>> items);
+    unsigned long listItemCount(DOMString listPath);
+    // Scrolls the list so item `index` sits at the start (mounting it if it
+    // was virtualized away) and gives it Rive focus, e.g. to restore a
+    // remembered selection. Returns false if it can't.
+    boolean focusListItem(DOMString listPath, unsigned long index);
+    // Like focusListItem() but only scrolls; focus is unchanged.
+    boolean scrollToListItem(DOMString listPath, unsigned long index);
+    DOMString getListItemValue(DOMString listPath, unsigned long index,
+                               DOMString property);
+
     // Focus and navigation within the artboard. moveFocus() accepts "left",
     // "right", "up", "down", "next" or "previous" and returns false when there
     // is nothing to move to in that direction.

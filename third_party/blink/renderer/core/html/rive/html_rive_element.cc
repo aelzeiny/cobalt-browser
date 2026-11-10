@@ -23,8 +23,13 @@
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/html/rive/rive_paint_canvas_renderer.h"
 #include "third_party/blink/renderer/core/html_names.h"
+#include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
+#include "third_party/blink/renderer/core/loader/resource/image_resource_observer.h"
+#include "third_party/blink/renderer/platform/graphics/image.h"
 #include "third_party/blink/renderer/platform/graphics/paint_invalidation_reason.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
+#include "third_party/blink/renderer/platform/loader/fetch/fetch_parameters.h"
+#include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_loader_options.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
 #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
@@ -34,13 +39,18 @@
 #pragma clang diagnostic ignored "-Wignored-qualifiers"
 #pragma clang diagnostic ignored "-Wshadow"
 #include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
+#include "third_party/rive/include/rive/artboard_component_list.hpp"
+#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
 #include "third_party/rive/include/rive/event.hpp"
 #include "third_party/rive/include/rive/event_report.hpp"
+#include "third_party/rive/include/rive/focus_data.hpp"
+#include "third_party/rive/include/rive/layout_component.hpp"
 #include "third_party/rive/include/rive/math/aabb.hpp"
 #include "third_party/rive/include/rive/math/mat2d.hpp"
 #include "third_party/rive/include/rive/math/vec2d.hpp"
 #include "third_party/rive/include/rive/text/text_value_run.hpp"
 #include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_runtime.hpp"
+#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
 #pragma clang diagnostic pop
 
 namespace blink {
@@ -98,10 +108,34 @@ const QualifiedName& AlignmentAttrName() {
   return attr;
 }
 
+const QualifiedName& FocusScrollAttrName() {
+  DEFINE_STATIC_LOCAL(QualifiedName, attr,
+                      (g_null_atom, AtomicString("focus-scroll"), g_null_atom));
+  return attr;
+}
+
 const QualifiedName& ViewModelAttrName() {
   DEFINE_STATIC_LOCAL(QualifiedName, attr,
                       (g_null_atom, AtomicString("view-model"), g_null_atom));
   return attr;
+}
+
+// Parses "#rrggbb" or "#aarrggbb" into ARGB.
+std::optional<uint32_t> ParseHexColor(const String& value) {
+  if ((value.length() != 7 && value.length() != 9) || value[0] != '#') {
+    return std::nullopt;
+  }
+  uint32_t argb = 0;
+  for (unsigned i = 1; i < value.length(); ++i) {
+    if (!IsASCIIHexDigit(value[i])) {
+      return std::nullopt;
+    }
+    argb = (argb << 4) | ToASCIIHexValue(value[i]);
+  }
+  if (value.length() == 7) {
+    argb |= 0xFF000000u;
+  }
+  return argb;
 }
 
 // Maps a KeyboardEvent.key value to the rive key it corresponds to, if any.
@@ -151,6 +185,61 @@ std::optional<rive::Key> ToRiveKey(const String& key) {
 
 HTMLRiveElement::HTMLRiveElement(Document& document)
     : HTMLElement(html_names::kRivePlayerTag, document, kCreateHTMLElement) {}
+
+// Loads one image URL for list items through Blink's image loader (sharing
+// its memory cache, no CORS needed since pixels are only drawn) and hands the
+// result to the element once, for every item that asked for it.
+class RiveImageRequest final : public GarbageCollected<RiveImageRequest>,
+                               public ImageResourceObserver {
+ public:
+  RiveImageRequest(HTMLRiveElement* element, const String& url)
+      : element_(element), url_(url) {}
+
+  void Start(ImageResourceContent* content) {
+    content_ = content;
+    content_->AddObserver(this);
+    if (content_->IsLoaded()) {
+      ImageNotifyFinished(content_);
+    }
+  }
+
+  void AddTarget(rive::rcp<rive::ViewModelInstanceRuntime> instance,
+                 std::string property) {
+    targets_.emplace_back(std::move(instance), std::move(property));
+  }
+
+  // Hands over the items waiting for this image.
+  std::vector<std::pair<rive::rcp<rive::ViewModelInstanceRuntime>, std::string>>
+  TakeTargets() {
+    return std::move(targets_);
+  }
+
+  bool finished() const { return finished_; }
+
+  void ImageNotifyFinished(ImageResourceContent* content) override {
+    if (finished_) {
+      return;
+    }
+    finished_ = true;
+    element_->OnListImageLoaded(url_, content);
+  }
+
+  String DebugName() const override { return "RiveImageRequest"; }
+
+  void Trace(Visitor* visitor) const override {
+    visitor->Trace(element_);
+    visitor->Trace(content_);
+    ImageResourceObserver::Trace(visitor);
+  }
+
+ private:
+  Member<HTMLRiveElement> element_;
+  Member<ImageResourceContent> content_;
+  String url_;
+  bool finished_ = false;
+  std::vector<std::pair<rive::rcp<rive::ViewModelInstanceRuntime>, std::string>>
+      targets_;
+};
 
 HTMLRiveElement::~HTMLRiveElement() = default;
 
@@ -547,6 +636,277 @@ bool HTMLRiveElement::fireViewModelTrigger(const String& path) {
   return true;
 }
 
+void HTMLRiveElement::OnViewModelValuesChanged() {
+  if (state_machine_) {
+    state_machine_->markNeedsAdvance();
+  }
+  ScheduleAnimationIfNeeded();
+  InvalidateRivePaint();
+}
+
+bool HTMLRiveElement::setListItems(
+    const String& list_path,
+    const String& view_model,
+    const Vector<Vector<std::pair<String, String>>>& items) {
+  return AddListItems(list_path, view_model, items, /*replace=*/true);
+}
+
+bool HTMLRiveElement::appendListItems(
+    const String& list_path,
+    const String& view_model,
+    const Vector<Vector<std::pair<String, String>>>& items) {
+  return AddListItems(list_path, view_model, items, /*replace=*/false);
+}
+
+bool HTMLRiveElement::AddListItems(
+    const String& list_path,
+    const String& view_model,
+    const Vector<Vector<std::pair<String, String>>>& items,
+    bool replace) {
+  if (!view_model_instance_ || !rive_file_) {
+    return false;
+  }
+  rive::ViewModelInstanceListRuntime* list =
+      view_model_instance_->propertyList(list_path.Utf8());
+  rive::ViewModelRuntime* item_view_model =
+      rive_file_->viewModelByName(view_model.Utf8());
+  if (!list || !item_view_model) {
+    return false;
+  }
+  if (replace) {
+    // A replaced list is a new list (e.g. a recycled shelf showing different
+    // content): start it at the beginning with nothing focused.
+    state_machine_->clearFocus();
+    list->removeAllInstances();
+    if (rive::ArtboardComponentList* component_list = FindArtboardList()) {
+      if (rive::ScrollConstraint* scroll = component_list->scrollConstraint()) {
+        scroll->setScrollIndex(0.0f);
+      }
+    }
+  }
+  for (const auto& item : items) {
+    rive::rcp<rive::ViewModelInstanceRuntime> instance =
+        item_view_model->createInstance();
+    if (!instance) {
+      continue;
+    }
+    for (const auto& [property, value] : item) {
+      SetListItemValue(instance.get(), property, value);
+    }
+    list->addInstance(instance.get());
+  }
+  // Apply now so the new items exist (e.g. can take focus) right away rather
+  // than on the next frame.
+  AdvanceInternal(0.0f);
+  OnViewModelValuesChanged();
+  return true;
+}
+
+void HTMLRiveElement::SetListItemValue(rive::ViewModelInstanceRuntime* instance,
+                                       const String& property,
+                                       const String& value) {
+  rive::ViewModelInstanceValueRuntime* prop =
+      instance->property(property.Utf8());
+  if (!prop) {
+    return;
+  }
+  switch (prop->dataType()) {
+    case rive::DataType::string:
+      static_cast<rive::ViewModelInstanceStringRuntime*>(prop)->value(
+          value.Utf8());
+      break;
+    case rive::DataType::number: {
+      bool ok = false;
+      const double number = value.ToDouble(&ok);
+      if (ok) {
+        static_cast<rive::ViewModelInstanceNumberRuntime*>(prop)->value(
+            static_cast<float>(number));
+      }
+      break;
+    }
+    case rive::DataType::boolean:
+      static_cast<rive::ViewModelInstanceBooleanRuntime*>(prop)->value(value ==
+                                                                       "true");
+      break;
+    case rive::DataType::color:
+      if (std::optional<uint32_t> argb = ParseHexColor(value)) {
+        static_cast<rive::ViewModelInstanceColorRuntime*>(prop)->value(
+            static_cast<int>(*argb));
+      }
+      break;
+    case rive::DataType::enumType:
+      static_cast<rive::ViewModelInstanceEnumRuntime*>(prop)->value(
+          value.Utf8());
+      break;
+    case rive::DataType::assetImage: {
+      auto* image_prop =
+          static_cast<rive::ViewModelInstanceAssetImageRuntime*>(prop);
+      const KURL url = GetDocument().CompleteURL(value);
+      if (value.empty() || !url.IsValid() || !GetExecutionContext()) {
+        image_prop->value(nullptr);
+        break;
+      }
+      const String key = url.GetString();
+      auto cached = image_cache_.find(key.Utf8());
+      if (cached != image_cache_.end()) {
+        image_prop->value(cached->second.get());
+        break;
+      }
+      auto it = image_requests_.find(key);
+      if (it != image_requests_.end()) {
+        // Still loading: wait for it. (A finished request with no cached
+        // image failed; leave the item without an image.)
+        if (!it->value->finished()) {
+          it->value->AddTarget(rive::ref_rcp(instance), property.Utf8());
+        }
+        break;
+      }
+      auto* request = MakeGarbageCollected<RiveImageRequest>(this, key);
+      image_requests_.Set(key, request);
+      request->AddTarget(rive::ref_rcp(instance), property.Utf8());
+      ResourceLoaderOptions options(GetExecutionContext()->GetCurrentWorld());
+      options.initiator_info.name = localName();
+      FetchParameters params(ResourceRequest(url), options);
+      request->Start(
+          ImageResourceContent::Fetch(params, GetDocument().Fetcher()));
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+void HTMLRiveElement::OnListImageLoaded(const String& url,
+                                        ImageResourceContent* content) {
+  auto it = image_requests_.find(url);
+  if (it == image_requests_.end()) {
+    return;
+  }
+  auto targets = it->value->TakeTargets();
+  if (!content || content->ErrorOccurred() || !content->HasImage()) {
+    return;
+  }
+  // The image stays lazily decoded; cc decodes it off the main thread when it
+  // is first rastered.
+  rive::rcp<rive::RenderImage> image =
+      MakeRiveRenderImage(content->GetImage()->PaintImageForCurrentFrame());
+  if (!image) {
+    return;
+  }
+  image_cache_[url.Utf8()] = image;
+  for (auto& [instance, property] : targets) {
+    if (auto* image_prop = instance->propertyImage(property)) {
+      image_prop->value(image.get());
+    }
+  }
+  OnViewModelValuesChanged();
+}
+
+rive::ArtboardComponentList* HTMLRiveElement::FindArtboardList() const {
+  if (!artboard_) {
+    return nullptr;
+  }
+  for (rive::Core* object : artboard_->objects()) {
+    if (object && object->is<rive::ArtboardComponentList>()) {
+      return object->as<rive::ArtboardComponentList>();
+    }
+  }
+  return nullptr;
+}
+
+bool HTMLRiveElement::scrollToListItem(const String& list_path,
+                                       uint32_t index) {
+  rive::ArtboardComponentList* list = FindArtboardList();
+  if (!list || !state_machine_ || index >= listItemCount(list_path)) {
+    return false;
+  }
+  if (rive::ScrollConstraint* scroll = list->scrollConstraint()) {
+    scroll->setScrollIndex(static_cast<float>(index));
+  }
+  // The scroll is resolved, and the item mounted, on the next update.
+  AdvanceInternal(0.0f);
+  AdvanceInternal(0.0f);
+  OnViewModelValuesChanged();
+  return true;
+}
+
+bool HTMLRiveElement::focusListItem(const String& list_path, uint32_t index) {
+  rive::FocusManager* focus_manager =
+      state_machine_ ? state_machine_->focusManager() : nullptr;
+  if (!focus_manager || !scrollToListItem(list_path, index)) {
+    return false;
+  }
+  rive::ArtboardInstance* item =
+      FindArtboardList()->artboardInstance(static_cast<int>(index));
+  if (!item) {
+    return false;
+  }
+  for (rive::Core* object : item->objects()) {
+    if (object && object->is<rive::FocusData>()) {
+      if (rive::rcp<rive::FocusNode> node =
+              object->as<rive::FocusData>()->focusNode()) {
+        focus_manager->setFocus(node);
+        OnRiveFocusChanged();
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+uint32_t HTMLRiveElement::listItemCount(const String& list_path) const {
+  if (!view_model_instance_) {
+    return 0;
+  }
+  rive::ViewModelInstanceListRuntime* list =
+      view_model_instance_->propertyList(list_path.Utf8());
+  if (!list) {
+    return 0;
+  }
+  return static_cast<uint32_t>(list->viewModelInstanceValue()
+                                   ->as<rive::ViewModelInstanceList>()
+                                   ->listItems()
+                                   .size());
+}
+
+String HTMLRiveElement::getListItemValue(const String& list_path,
+                                         uint32_t index,
+                                         const String& property) const {
+  if (index >= listItemCount(list_path)) {
+    return g_empty_string;
+  }
+  rive::rcp<rive::ViewModelInstanceRuntime> item =
+      view_model_instance_->propertyList(list_path.Utf8())
+          ->instanceAt(static_cast<int>(index));
+  rive::ViewModelInstanceValueRuntime* prop =
+      item ? item->property(property.Utf8()) : nullptr;
+  if (!prop) {
+    return g_empty_string;
+  }
+  switch (prop->dataType()) {
+    case rive::DataType::string:
+      return String::FromUTF8(
+          static_cast<rive::ViewModelInstanceStringRuntime*>(prop)->value());
+    case rive::DataType::number:
+      return String::Number(
+          static_cast<rive::ViewModelInstanceNumberRuntime*>(prop)->value());
+    case rive::DataType::boolean:
+      return static_cast<rive::ViewModelInstanceBooleanRuntime*>(prop)->value()
+                 ? "true"
+                 : "false";
+    case rive::DataType::color:
+      return String::Format(
+          "#%08X", static_cast<uint32_t>(
+                       static_cast<rive::ViewModelInstanceColorRuntime*>(prop)
+                           ->value()));
+    case rive::DataType::enumType:
+      return String::FromUTF8(
+          static_cast<rive::ViewModelInstanceEnumRuntime*>(prop)->value());
+    default:
+      return g_empty_string;
+  }
+}
+
 bool HTMLRiveElement::hasFocusNodes() const {
   // hasFocusNodes() is non-const in rive but only reads a cached flag.
   return state_machine_ &&
@@ -587,8 +947,50 @@ bool HTMLRiveElement::moveFocus(const String& direction) {
   } else {
     return false;
   }
+  if (moved) {
+    AlignFocusedToScrollStart();
+  }
   OnRiveFocusChanged();
   return moved;
+}
+
+// With focus-scroll="start", keeps the focused item where the first item
+// sits at rest (the usual TV shelf behaviour) instead of Rive's default of
+// scrolling only as far as needed to keep it visible.
+void HTMLRiveElement::AlignFocusedToScrollStart() {
+  if (!EqualIgnoringASCIICase(FastGetAttribute(FocusScrollAttrName()),
+                              "start") ||
+      !artboard_ || !state_machine_) {
+    return;
+  }
+  rive::FocusManager* focus_manager = state_machine_->focusManager();
+  rive::AABB focused;
+  if (!focus_manager || !focus_manager->primaryFocusBounds(focused)) {
+    return;
+  }
+  for (rive::Core* object : artboard_->objects()) {
+    if (!object || !object->is<rive::ScrollConstraint>()) {
+      continue;
+    }
+    auto* scroll = object->as<rive::ScrollConstraint>();
+    rive::LayoutComponent* content = scroll->content();
+    if (!content || !scroll->constrainsHorizontal()) {
+      continue;
+    }
+    // The constraint offsets the content's children, not the content box,
+    // so the box is where the first item rests.
+    const rive::AABB content_bounds = content->worldBounds();
+    if (focused.minY < content_bounds.minY - 1 ||
+        focused.maxY > content_bounds.maxY + 1) {
+      continue;
+    }
+    const float current =
+        std::clamp(scroll->offsetX(), scroll->maxOffsetX(), 0.0f);
+    const float item_x = focused.minX - current - content_bounds.minX;
+    const float target = std::clamp(-item_x, scroll->maxOffsetX(), 0.0f);
+    scroll->scrollToPosition(target, scroll->effectiveScrollOffsetY());
+    return;
+  }
 }
 
 bool HTMLRiveElement::EnterRiveFocusFromEdge(rive::Direction direction) {
@@ -1247,6 +1649,7 @@ bool HTMLRiveElement::MapOffsetToArtboard(float offset_x,
 
 void HTMLRiveElement::Trace(Visitor* visitor) const {
   visitor->Trace(loader_);
+  visitor->Trace(image_requests_);
   HTMLElement::Trace(visitor);
 }
 

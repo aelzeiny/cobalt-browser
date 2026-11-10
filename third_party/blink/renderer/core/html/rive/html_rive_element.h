@@ -5,7 +5,9 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_RIVE_HTML_RIVE_ELEMENT_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_RIVE_HTML_RIVE_ELEMENT_H_
 
+#include <map>
 #include <memory>
+#include <string>
 
 #include "base/containers/span.h"
 #include "cc/paint/paint_canvas.h"
@@ -14,6 +16,7 @@
 #include "third_party/blink/renderer/core/loader/threadable_loader.h"
 #include "third_party/blink/renderer/core/loader/threadable_loader_client.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
+#include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wextra-semi"
@@ -25,13 +28,20 @@
 #include "third_party/rive/include/rive/file.hpp"
 #include "third_party/rive/include/rive/layout.hpp"
 #include "third_party/rive/include/rive/refcnt.hpp"
+#include "third_party/rive/include/rive/renderer.hpp"
 #include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_runtime.hpp"
 #pragma clang diagnostic pop
 #include "ui/gfx/geometry/size_f.h"
 
+namespace rive {
+class ArtboardComponentList;
+}  // namespace rive
+
 namespace blink {
 
 class KeyboardEvent;
+class ImageResourceContent;
+class RiveImageRequest;
 
 class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
                                           public ThreadableLoaderClient {
@@ -110,6 +120,23 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   String getViewModelEnum(const String& path) const;
   bool fireViewModelTrigger(const String& path);
 
+  // IDL ViewModel lists
+  bool setListItems(const String& list_path,
+                    const String& view_model,
+                    const Vector<Vector<std::pair<String, String>>>& items);
+  bool appendListItems(const String& list_path,
+                       const String& view_model,
+                       const Vector<Vector<std::pair<String, String>>>& items);
+  uint32_t listItemCount(const String& list_path) const;
+  bool focusListItem(const String& list_path, uint32_t index);
+  bool scrollToListItem(const String& list_path, uint32_t index);
+  String getListItemValue(const String& list_path,
+                          uint32_t index,
+                          const String& property) const;
+
+  // Called by RiveImageRequest when a list item's image URL has loaded.
+  void OnListImageLoaded(const String& url, ImageResourceContent* content);
+
   // IDL Focus and navigation
   bool hasFocusNodes() const;
   bool hasRiveFocus() const;
@@ -152,6 +179,16 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   void CancelScheduledAnimation();
   void InvalidateRivePaint();
   void DispatchReportedRiveEvents();
+  void OnViewModelValuesChanged();
+  bool AddListItems(const String& list_path,
+                    const String& view_model,
+                    const Vector<Vector<std::pair<String, String>>>& items,
+                    bool replace);
+  void AlignFocusedToScrollStart();
+  rive::ArtboardComponentList* FindArtboardList() const;
+  void SetListItemValue(rive::ViewModelInstanceRuntime* instance,
+                        const String& property,
+                        const String& value);
   bool HandleKeyboardEvent(const KeyboardEvent& event);
   bool EnterRiveFocusFromEdge(rive::Direction direction);
   void EnterRiveFocusIfNeeded(mojom::blink::FocusType type);
@@ -178,6 +215,11 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   double last_frame_time_ms_ = 0.0;
   String last_event_name_;
   size_t reported_events_seen_ = 0;
+
+  // Image URLs used by list items: in-flight or finished fetches, and the
+  // Rive images made from finished ones.
+  HeapHashMap<String, Member<RiveImageRequest>> image_requests_;
+  std::map<std::string, rive::rcp<rive::RenderImage>> image_cache_;
 };
 
 }  // namespace blink

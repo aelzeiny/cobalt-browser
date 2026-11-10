@@ -50,10 +50,8 @@ SkMatrix ToSkMatrix(const rive::Mat2D& m) {
 }
 
 SkM44 ToSkM44(const rive::Mat2D& m) {
-  return SkM44(m[0], m[2], 0.0f, m[4],
-               m[1], m[3], 0.0f, m[5],
-               0.0f, 0.0f, 1.0f, 0.0f,
-               0.0f, 0.0f, 0.0f, 1.0f);
+  return SkM44(m[0], m[2], 0.0f, m[4], m[1], m[3], 0.0f, m[5], 0.0f, 0.0f, 1.0f,
+               0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 SkBlendMode ToSkBlendMode(rive::BlendMode mode) {
@@ -138,12 +136,8 @@ class RivePaintCanvasRenderPath
 
   void moveTo(float x, float y) override { path_.moveTo(x, y); }
   void lineTo(float x, float y) override { path_.lineTo(x, y); }
-  void cubicTo(float ox,
-               float oy,
-               float ix,
-               float iy,
-               float x,
-               float y) override {
+  void cubicTo(float ox, float oy, float ix, float iy, float x, float y)
+      override {
     path_.cubicTo(ox, oy, ix, iy, x, y);
   }
   void close() override { path_.close(); }
@@ -216,9 +210,7 @@ class RivePaintCanvasRenderPaint
     : public rive::LITE_RTTI_OVERRIDE(rive::RenderPaint,
                                       RivePaintCanvasRenderPaint) {
  public:
-  RivePaintCanvasRenderPaint() {
-    flags_.setAntiAlias(true);
-  }
+  RivePaintCanvasRenderPaint() { flags_.setAntiAlias(true); }
 
   void style(rive::RenderPaintStyle style) override {
     flags_.setStyle(style == rive::RenderPaintStyle::fill
@@ -303,9 +295,9 @@ rive::rcp<rive::RenderShader> RivePaintCanvasFactory::makeLinearGradient(
     sk_colors[i] = SkColor4f::FromColor(static_cast<SkColor>(colors[i]));
   }
   return rive::make_rcp<RivePaintCanvasRenderShader>(
-      cc::PaintShader::MakeLinearGradient(
-          pts, sk_colors.data(), stops, static_cast<int>(count),
-          SkTileMode::kClamp));
+      cc::PaintShader::MakeLinearGradient(pts, sk_colors.data(), stops,
+                                          static_cast<int>(count),
+                                          SkTileMode::kClamp));
 }
 
 rive::rcp<rive::RenderShader> RivePaintCanvasFactory::makeRadialGradient(
@@ -362,6 +354,13 @@ rive::rcp<rive::RenderImage> RivePaintCanvasFactory::decodeImage(
   bitmap.setImmutable();
   return rive::make_rcp<RivePaintCanvasRenderImage>(
       cc::PaintImage::CreateFromBitmap(std::move(bitmap)));
+}
+
+rive::rcp<rive::RenderImage> MakeRiveRenderImage(cc::PaintImage paint_image) {
+  if (!paint_image || paint_image.width() <= 0 || paint_image.height() <= 0) {
+    return nullptr;
+  }
+  return rive::make_rcp<RivePaintCanvasRenderImage>(std::move(paint_image));
 }
 
 RivePaintCanvasRenderer::RivePaintCanvasRenderer(cc::PaintCanvas* canvas)

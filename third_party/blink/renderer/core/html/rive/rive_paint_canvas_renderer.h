@@ -32,10 +32,9 @@ class CORE_EXPORT RivePaintCanvasFactory final : public rive::Factory {
   RivePaintCanvasFactory() = default;
   ~RivePaintCanvasFactory() override = default;
 
-  rive::rcp<rive::RenderBuffer> makeRenderBuffer(
-      rive::RenderBufferType type,
-      rive::RenderBufferFlags flags,
-      size_t size_in_bytes) override;
+  rive::rcp<rive::RenderBuffer> makeRenderBuffer(rive::RenderBufferType type,
+                                                 rive::RenderBufferFlags flags,
+                                                 size_t size_in_bytes) override;
 
   rive::rcp<rive::RenderShader> makeLinearGradient(
       float sx,
@@ -54,9 +53,8 @@ class CORE_EXPORT RivePaintCanvasFactory final : public rive::Factory {
       const float stops[],
       size_t count) override;
 
-  rive::rcp<rive::RenderPath> makeRenderPath(
-      rive::RawPath& raw_path,
-      rive::FillRule fill_rule) override;
+  rive::rcp<rive::RenderPath> makeRenderPath(rive::RawPath& raw_path,
+                                             rive::FillRule fill_rule) override;
 
   rive::rcp<rive::RenderPath> makeEmptyRenderPath() override;
 
@@ -65,6 +63,11 @@ class CORE_EXPORT RivePaintCanvasFactory final : public rive::Factory {
   rive::rcp<rive::RenderImage> decodeImage(
       rive::Span<const uint8_t> encoded_bytes) override;
 };
+
+// Wraps an already-loaded image (e.g. from Blink's image loader, possibly
+// lazily decoded) as a Rive image without decoding it here.
+CORE_EXPORT rive::rcp<rive::RenderImage> MakeRiveRenderImage(
+    cc::PaintImage paint_image);
 
 class CORE_EXPORT RivePaintCanvasRenderer final : public rive::Renderer {
  public:

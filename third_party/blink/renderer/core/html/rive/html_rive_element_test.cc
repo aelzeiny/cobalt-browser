@@ -303,6 +303,45 @@ TEST_F(HTMLRiveElementTest, FocusColorAppliesOnFirstFrameWhenIdle) {
   EXPECT_EQ(black, 0u);
 }
 
+TEST_F(HTMLRiveElementTest, FocusScrollStartPinsFocusedItem) {
+  // list_shelf.riv: 320px cards, 344px apart, scrolling horizontally.
+  SetBodyInnerHTML(R"HTML(
+    <rive-player id="pinned" focus-scroll="start" fit="none" alignment="top-left"
+                 style="width: 1184px; height: 280px;"></rive-player>
+    <rive-player id="default" fit="none" alignment="top-left"
+                 style="width: 1184px; height: 280px;"></rive-player>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+  std::optional<std::vector<uint8_t>> bytes =
+      base::ReadFileToBytes(GetTestDataPath("list_shelf.riv"));
+  ASSERT_TRUE(bytes.has_value());
+  auto* pinned = static_cast<HTMLRiveElement*>(GetElementById("pinned"));
+  auto* plain = static_cast<HTMLRiveElement*>(GetElementById("default"));
+  for (HTMLRiveElement* player : {pinned, plain}) {
+    ASSERT_TRUE(player->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+    ASSERT_TRUE(player->moveFocus("right"));  // Enter on the first card.
+    ASSERT_TRUE(player->moveFocus("right"));  // Second card.
+    player->advance(3.0);                     // Let any scroll settle.
+  }
+  auto render = [](HTMLRiveElement* player) {
+    cc::RecordPaintCanvas record_canvas;
+    player->PaintRive(&record_canvas, gfx::SizeF(1184.0f, 280.0f));
+    SkBitmap bitmap;
+    bitmap.allocN32Pixels(1184, 280);
+    bitmap.eraseColor(SK_ColorTRANSPARENT);
+    SkCanvas sk_canvas(bitmap);
+    record_canvas.ReleaseAsRecord().Playback(&sk_canvas);
+    return bitmap;
+  };
+  SkBitmap pinned_frame = render(pinned);
+  SkBitmap plain_frame = render(plain);
+  // By default nothing scrolls yet (the second card is fully visible), so the
+  // first card is still at the left. Pinned, the second card moved there.
+  EXPECT_EQ(pinned_frame.getColor(160, 100),
+            plain_frame.getColor(344 + 160, 100));
+  EXPECT_NE(pinned_frame.getColor(160, 100), plain_frame.getColor(160, 100));
+}
+
 class HTMLRiveElementFocusTest : public HTMLRiveElementTest {
  protected:
   // Loads focus_nodes_list_order.riv: four focusable buttons stacked
@@ -482,6 +521,92 @@ TEST_F(HTMLRiveElementFocusTest, MovingFocusChangesRenderedFrame) {
   SkBitmap second = render();
   EXPECT_GT(differing_pixels(unfocused, first), 0u);
   EXPECT_GT(differing_pixels(first, second), 0u);
+}
+
+// list_shelf.riv: a horizontal shelf whose cards come from a 100-item
+// `items` list of `Card` view models (title, subtitle, color, focused).
+TEST_F(HTMLRiveElementFocusTest, SetListItemsReplacesListFromScript) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture("list_shelf.riv");
+  ASSERT_EQ(rive_elem->listItemCount("items"), 100u);
+
+  Vector<Vector<std::pair<String, String>>> items;
+  for (int i = 0; i < 4; ++i) {
+    Vector<std::pair<String, String>> item;
+    item.push_back(
+        std::make_pair(String("title"), String::Format("Item %d", i)));
+    item.push_back(std::make_pair(String("color"),
+                                  String(i % 2 ? "#00ff00" : "#80ff0000")));
+    item.push_back(std::make_pair(String("unknown"), String("ignored")));
+    items.push_back(std::move(item));
+  }
+  EXPECT_TRUE(rive_elem->setListItems("items", "Card", items));
+  EXPECT_EQ(rive_elem->listItemCount("items"), 4u);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 2, "title"), "Item 2");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 1, "color"), "#FF00FF00");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 0, "color"), "#80FF0000");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 9, "title"), "");
+  EXPECT_FALSE(rive_elem->setListItems("nope", "Card", items));
+  EXPECT_FALSE(rive_elem->setListItems("items", "Nope", items));
+
+  // The new items can take focus immediately, and report it back.
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 1, "focused"), "true");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 0, "focused"), "false");
+
+  // Appending keeps existing items and focus.
+  Vector<Vector<std::pair<String, String>>> more;
+  Vector<std::pair<String, String>> extra;
+  extra.push_back(std::make_pair(String("title"), String("Appended")));
+  more.push_back(std::move(extra));
+  EXPECT_TRUE(rive_elem->appendListItems("items", "Card", more));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->listItemCount("items"), 5u);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 4, "title"), "Appended");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 2, "title"), "Item 2");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 1, "focused"), "true");
+}
+
+TEST_F(HTMLRiveElementFocusTest, AppendedItemsAreReachableFromTheEnd) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture("list_shelf.riv");
+  ASSERT_TRUE(rive_elem->focusListItem("items", 99));  // Last item.
+  rive_elem->advance(0.5);
+  EXPECT_FALSE(rive_elem->moveFocus("right"));  // Nothing after it yet.
+
+  // A continuation arrives while focus sits on the last item.
+  Vector<Vector<std::pair<String, String>>> more(5);
+  ASSERT_TRUE(rive_elem->appendListItems("items", "Card", more));
+  EXPECT_EQ(rive_elem->listItemCount("items"), 105u);
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 100, "focused"), "true");
+}
+
+TEST_F(HTMLRiveElementFocusTest, FocusListItemRestoresSelection) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture("list_shelf.riv");
+  // Item 50 is far off-screen and virtualized away.
+  EXPECT_TRUE(rive_elem->focusListItem("items", 50));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 50, "focused"), "true");
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 51, "focused"), "true");
+  EXPECT_FALSE(rive_elem->focusListItem("items", 500));
+
+  // Replacing the list (e.g. a recycled shelf) starts over: scrolled back to
+  // the start with nothing focused, so entering lands on the first item.
+  Vector<Vector<std::pair<String, String>>> items(10);
+  EXPECT_TRUE(rive_elem->setListItems("items", "Card", items));
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
+  EXPECT_TRUE(rive_elem->moveFocus("right"));
+  rive_elem->advance(0.016);
+  EXPECT_EQ(rive_elem->getListItemValue("items", 0, "focused"), "true");
+
+  // scrollToListItem scrolls without touching focus.
+  rive_elem->clearFocus();
+  EXPECT_TRUE(rive_elem->scrollToListItem("items", 6));
+  EXPECT_FALSE(rive_elem->hasRiveFocus());
 }
 
 // focus_grid.riv: a 3x2 grid of cards that highlight while focused and fire
