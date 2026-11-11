@@ -10,6 +10,7 @@
 #include "media/filters/source_buffer_stream.h"
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -774,6 +775,31 @@ bool SourceBufferStream::GarbageCollectIfNeeded(base::TimeDelta media_time,
         << ", currently buffered ranges_size=" << ranges_size;
     return false;
   }
+
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  if (!seek_pending_ && !end_of_stream_ && !ranges_.empty() &&
+      base::FeatureList::IsEnabled(kCobaltStreamingSourceBufferGC)) {
+    base::TimeDelta back_evict_time = media_time;
+    if (selected_range_ &&
+        back_evict_time > selected_range_->GetBufferedEndTimestamp()) {
+      back_evict_time = selected_range_->GetBufferedEndTimestamp();
+    }
+    if (range_for_next_append_ != ranges_.end() &&
+        highest_buffered_end_time_in_append_sequence_ != kNoTimestamp &&
+        back_evict_time > highest_buffered_end_time_in_append_sequence_ &&
+        (*range_for_next_append_)->GetStartTimestamp() < back_evict_time) {
+      back_evict_time = (*range_for_next_append_)->GetStartTimestamp();
+    }
+    const base::TimeDelta back_horizon = base::Milliseconds(
+        std::max(0, kCobaltStreamingSourceBufferBackHorizonMs.Get()));
+    if (back_evict_time > back_horizon) {
+      FreeBuffers(std::numeric_limits<size_t>::max(),
+                  back_evict_time - back_horizon,
+                  /*reverse_direction=*/false);
+      ranges_size = GetMemoryUsage();
+    }
+  }
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   size_t effective_memory_limit = memory_limit_;
   if (base::FeatureList::IsEnabled(kMemoryPressureBasedSourceBufferGC)) {

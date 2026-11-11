@@ -560,6 +560,17 @@ BASE_FEATURE_PARAM(bool,
 #else   // BUILDFLAG(IS_ANDROID)
                    true);
 #endif  // BUILDFLAG(IS_ANDROID)
+// Proactively evict already-played GOPs behind the current playback position on
+// every SourceBuffer PrepareAppend, rather than retaining all historical GOPs
+// in DecoderBufferAllocator until the full video buffer budget is reached.
+BASE_FEATURE(kCobaltStreamingSourceBufferGC,
+             "CobaltStreamingSourceBufferGC",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int,
+                   kCobaltStreamingSourceBufferBackHorizonMs,
+                   &kCobaltStreamingSourceBufferGC,
+                   "back_horizon_ms",
+                   1000);
 // When enabled, each feature below replaces the video buffer budget returned by
 // SbMediaGetVideoBufferBudget() for its resolution tier with the value of its
 // "BudgetMB" param.
