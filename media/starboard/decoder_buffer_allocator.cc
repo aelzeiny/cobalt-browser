@@ -49,8 +49,12 @@ const char* ToString(bool value) {
 
 DecoderBufferAllocator::DecoderBufferAllocator()
     : DecoderBufferAllocator(
-          GetSbMediaInterface()->IsBufferPoolAllocateOnDemand(),
-          GetSbMediaInterface()->GetInitialBufferCapacity(),
+          base::FeatureList::IsEnabled(media::kCobaltStreamingSourceBufferGC)
+              ? true
+              : GetSbMediaInterface()->IsBufferPoolAllocateOnDemand(),
+          base::FeatureList::IsEnabled(media::kCobaltStreamingSourceBufferGC)
+              ? 0
+              : GetSbMediaInterface()->GetInitialBufferCapacity(),
           GetSbMediaInterface()->GetBufferAllocationUnit()) {}
 
 DecoderBufferAllocator::DecoderBufferAllocator(

@@ -2392,6 +2392,10 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
             partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
             partition_alloc::PurgeFlags::kLimitDuration);
       }
+      WTF::Partitions::BufferPartition()->PurgeMemory(
+          partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+          partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+          partition_alloc::PurgeFlags::kLimitDuration);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;
