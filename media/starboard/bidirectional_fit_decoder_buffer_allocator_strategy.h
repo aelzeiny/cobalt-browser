@@ -28,52 +28,95 @@ template <typename ReuseAllocatorBase>
 class BidirectionalFitDecoderBufferAllocatorStrategy
     : public DecoderBufferAllocator::Strategy {
  public:
+  static constexpr size_t kAudioAllocationIncrement = 256 * 1024;
+
   BidirectionalFitDecoderBufferAllocatorStrategy(size_t initial_capacity,
                                                  size_t allocation_increment)
-      : fallback_allocator_(/*enable_decommit_on_idle=*/false,
-                            /*enable_page_alignment=*/false),
-        bidirectional_fit_allocator_(&fallback_allocator_,
-                                     initial_capacity,
-                                     kSmallAllocationThreshold,
-                                     allocation_increment) {}
+      : fallback_allocator_(/*enable_decommit=*/true,
+                            /*enable_page_alignment=*/true),
+        audio_allocator_(
+            &fallback_allocator_,
+            /*initial_capacity=*/0,
+            kSmallAllocationThreshold,
+            std::min(allocation_increment > 0 ? allocation_increment
+                                              : kAudioAllocationIncrement,
+                     kAudioAllocationIncrement),
+            /*enable_decommit_on_idle=*/true,
+            /*retain_blocks=*/1,
+            /*conservative_decommit_blocks=*/0,
+            /*aggressive_decommit_on_suspend=*/true,
+            /*memset_on_reclaim=*/false,
+            /*mark_as_cold_on_reclaim=*/false),
+        video_allocator_(&fallback_allocator_,
+                         initial_capacity,
+                         kSmallAllocationThreshold,
+                         allocation_increment,
+                         /*enable_decommit_on_idle=*/true,
+                         /*retain_blocks=*/1,
+                         /*conservative_decommit_blocks=*/0,
+                         /*aggressive_decommit_on_suspend=*/true,
+                         /*memset_on_reclaim=*/false,
+                         /*mark_as_cold_on_reclaim=*/false) {}
 
   // Constructs a strategy with explicit decommit configurations.
   explicit BidirectionalFitDecoderBufferAllocatorStrategy(
       const DecoderBufferAllocator::Strategy::ExperimentConfig& config)
       : fallback_allocator_(config.enable_decommit_on_idle,
                             config.allocate_with_page_alignment),
-        bidirectional_fit_allocator_(&fallback_allocator_,
-                                     config.initial_capacity,
-                                     kSmallAllocationThreshold,
-                                     config.allocation_increment,
-                                     config.enable_decommit_on_idle,
-                                     config.retain_blocks,
-                                     config.conservative_decommit_blocks,
-                                     config.aggressive_decommit_on_suspend,
-                                     config.memset_on_reclaim,
-                                     config.mark_as_cold_on_reclaim) {}
+        audio_allocator_(&fallback_allocator_,
+                         /*initial_capacity=*/0,
+                         kSmallAllocationThreshold,
+                         std::min(config.allocation_increment > 0
+                                      ? config.allocation_increment
+                                      : kAudioAllocationIncrement,
+                                  kAudioAllocationIncrement),
+                         config.enable_decommit_on_idle,
+                         std::min<size_t>(config.retain_blocks, 1),
+                         config.conservative_decommit_blocks,
+                         config.aggressive_decommit_on_suspend,
+                         config.memset_on_reclaim,
+                         config.mark_as_cold_on_reclaim),
+        video_allocator_(&fallback_allocator_,
+                         config.initial_capacity,
+                         kSmallAllocationThreshold,
+                         config.allocation_increment,
+                         config.enable_decommit_on_idle,
+                         config.retain_blocks,
+                         config.conservative_decommit_blocks,
+                         config.aggressive_decommit_on_suspend,
+                         config.memset_on_reclaim,
+                         config.mark_as_cold_on_reclaim) {}
 
   void* Allocate(DemuxerStream::Type type, size_t size) override {
-    return bidirectional_fit_allocator_.Allocate(size);
+    if (type == DemuxerStream::AUDIO) {
+      return audio_allocator_.Allocate(size);
+    }
+    return video_allocator_.Allocate(size);
   }
   void Free(DemuxerStream::Type type, void* p) override {
-    bidirectional_fit_allocator_.Free(p);
+    if (type == DemuxerStream::AUDIO) {
+      audio_allocator_.Free(p);
+      return;
+    }
+    video_allocator_.Free(p);
   }
 
   size_t GetCapacity() const override {
-    return bidirectional_fit_allocator_.GetCapacity();
+    return audio_allocator_.GetCapacity() + video_allocator_.GetCapacity();
   }
 
   size_t GetAllocated() const override {
-    return bidirectional_fit_allocator_.GetAllocated();
+    return audio_allocator_.GetAllocated() + video_allocator_.GetAllocated();
   }
 
   void DecommitAllDecommitableBlocks() override {
-    bidirectional_fit_allocator_.DecommitAllDecommitableBlocks();
+    audio_allocator_.DecommitAllDecommitableBlocks();
+    video_allocator_.DecommitAllDecommitableBlocks();
   }
 
   void TryToDecommitOneBlock(int cadence) override {
-    bidirectional_fit_allocator_.TryToDecommitOneBlock(cadence);
+    audio_allocator_.TryToDecommitOneBlock(cadence);
+    video_allocator_.TryToDecommitOneBlock(cadence);
   }
 
  private:
@@ -83,7 +126,9 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
 
   StarboardMemoryAllocator fallback_allocator_;
   starboard::BidirectionalFitReuseAllocator<ReuseAllocatorBase>
-      bidirectional_fit_allocator_;
+      audio_allocator_;
+  starboard::BidirectionalFitReuseAllocator<ReuseAllocatorBase>
+      video_allocator_;
 };
 
 }  // namespace media
