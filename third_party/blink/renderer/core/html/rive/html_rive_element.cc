@@ -907,6 +907,24 @@ String HTMLRiveElement::getListItemValue(const String& list_path,
   }
 }
 
+bool HTMLRiveElement::setListItemValue(const String& list_path,
+                                       uint32_t index,
+                                       const String& property,
+                                       const String& value) {
+  if (index >= listItemCount(list_path)) {
+    return false;
+  }
+  rive::rcp<rive::ViewModelInstanceRuntime> item =
+      view_model_instance_->propertyList(list_path.Utf8())
+          ->instanceAt(static_cast<int>(index));
+  if (!item || !item->property(property.Utf8())) {
+    return false;
+  }
+  SetListItemValue(item.get(), property, value);
+  OnViewModelValuesChanged();
+  return true;
+}
+
 bool HTMLRiveElement::hasFocusNodes() const {
   // hasFocusNodes() is non-const in rive but only reads a cached flag.
   return state_machine_ &&

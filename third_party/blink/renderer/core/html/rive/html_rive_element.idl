@@ -80,6 +80,10 @@
     boolean scrollToListItem(DOMString listPath, unsigned long index);
     DOMString getListItemValue(DOMString listPath, unsigned long index,
                                DOMString property);
+    // Sets one property of item `index`, parsed like setListItems() values
+    // (e.g. "" clears an image). Returns false if there is no such item.
+    boolean setListItemValue(DOMString listPath, unsigned long index,
+                             DOMString property, DOMString value);
 
     // Focus and navigation within the artboard. moveFocus() accepts "left",
     // "right", "up", "down", "next" or "previous" and returns false when there

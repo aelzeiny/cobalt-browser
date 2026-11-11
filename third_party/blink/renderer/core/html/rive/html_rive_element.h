@@ -133,6 +133,10 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   String getListItemValue(const String& list_path,
                           uint32_t index,
                           const String& property) const;
+  bool setListItemValue(const String& list_path,
+                        uint32_t index,
+                        const String& property,
+                        const String& value);
 
   // Called by RiveImageRequest when a list item's image URL has loaded.
   void OnListImageLoaded(const String& url, ImageResourceContent* content);

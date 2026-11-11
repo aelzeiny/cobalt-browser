@@ -609,6 +609,25 @@ TEST_F(HTMLRiveElementFocusTest, FocusListItemRestoresSelection) {
   EXPECT_FALSE(rive_elem->hasRiveFocus());
 }
 
+TEST_F(HTMLRiveElementFocusTest, SetListItemValueUpdatesOneItem) {
+  HTMLRiveElement* rive_elem = LoadFocusFixture("list_shelf.riv");
+  ASSERT_TRUE(rive_elem->focusListItem("items", 3));
+  rive_elem->advance(0.016);
+
+  EXPECT_TRUE(rive_elem->setListItemValue("items", 5, "title", "Changed"));
+  EXPECT_EQ(rive_elem->getListItemValue("items", 5, "title"), "Changed");
+  EXPECT_TRUE(rive_elem->setListItemValue("items", 5, "color", "#00ff00"));
+  EXPECT_EQ(rive_elem->getListItemValue("items", 5, "color"), "#FF00FF00");
+  EXPECT_FALSE(rive_elem->setListItemValue("items", 5, "unknown", "x"));
+  EXPECT_FALSE(rive_elem->setListItemValue("items", 500, "title", "x"));
+  EXPECT_FALSE(rive_elem->setListItemValue("nope", 5, "title", "x"));
+
+  // Other items, and focus, are untouched.
+  rive_elem->advance(0.016);
+  EXPECT_NE(rive_elem->getListItemValue("items", 4, "title"), "Changed");
+  EXPECT_EQ(rive_elem->getListItemValue("items", 3, "focused"), "true");
+}
+
 // focus_grid.riv: a 3x2 grid of cards that highlight while focused and fire
 // "select-<n>" on Enter. Generated with the Rive CLI from RML.
 TEST_F(HTMLRiveElementFocusTest, GridNavigatesInTwoDimensionsAndSelects) {
