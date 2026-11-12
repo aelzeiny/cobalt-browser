@@ -47,10 +47,12 @@
 #include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "media/base/media_switches.h"
+#include "partition_alloc/memory_reclaimer.h"
 #include "partition_alloc/partition_root.h"
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer/array_buffer_contents.h"
 #include "third_party/blink/renderer/modules/cobalt/h_5_vcc.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_settings/h_5_vcc_settings.h"
+#include "v8/include/v8-statistics.h"
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/public/platform/web_source_buffer.h"
@@ -2396,6 +2398,23 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
           partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
           partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
           partition_alloc::PurgeFlags::kLimitDuration);
+      partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
+      if (ExecutionContext* ctx = GetExecutionContext()) {
+        if (v8::Isolate* isolate = ctx->GetIsolate()) {
+          const base::TimeTicks now = base::TimeTicks::Now();
+          if (now - last_v8_slack_trim_time_ >= base::Seconds(10)) {
+            v8::HeapStatistics heap_stats;
+            isolate->GetHeapStatistics(&heap_stats);
+            constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
+            if (heap_stats.total_heap_size() >
+                heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes) {
+              last_v8_slack_trim_time_ = now;
+              isolate->MemoryPressureNotification(
+                  v8::MemoryPressureLevel::kModerate);
+            }
+          }
+        }
+      }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;

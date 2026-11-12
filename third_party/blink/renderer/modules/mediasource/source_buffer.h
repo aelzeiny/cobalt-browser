@@ -303,6 +303,7 @@ class SourceBuffer final : public EventTarget,
   bool first_segment_appended_logged_ = false;
   size_t successful_append_count_ = 0;
   base::TimeTicks first_segment_append_start_time_;
+  base::TimeTicks last_v8_slack_trim_time_;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   std::unique_ptr<WebSourceBuffer> web_source_buffer_;

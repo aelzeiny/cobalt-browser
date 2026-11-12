@@ -239,7 +239,7 @@ void EmbeddedMetadataReuseAllocatorBase::Free(void* memory) {
       }
       pending_frees_.clear();
     }
-  } else if (enable_decommit_on_idle_ && pending_frees_.size() >= 16) {
+  } else if (enable_decommit_on_idle_ && pending_frees_.size() >= 4) {
     for (auto address_to_free : pending_frees_) {
       bool freed = TryFree(address_to_free);
       SB_DCHECK(freed);
