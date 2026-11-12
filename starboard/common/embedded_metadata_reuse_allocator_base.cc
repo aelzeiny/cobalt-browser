@@ -391,11 +391,19 @@ bool EmbeddedMetadataReuseAllocatorBase::TryFree(void* memory) {
       ReleaseIdleFallbackBlocks();
     } else if (IsFullFallbackBlock(free_block_iter->fallback_allocation_index(),
                                    free_block_iter->address(),
-                                   free_block_iter->size()) &&
-               ActiveFallbackBlockCount() > retain_blocks()) {
-      const intptr_t fb_index = free_block_iter->fallback_allocation_index();
-      RemoveFreeBlock(free_block_iter);
-      ReleaseFallbackBlock(fb_index);
+                                   free_block_iter->size())) {
+      size_t full_free_slabs = 0;
+      for (const auto& candidate : free_blocks_) {
+        if (IsFullFallbackBlock(candidate.fallback_allocation_index(),
+                                candidate.address(), candidate.size())) {
+          ++full_free_slabs;
+        }
+      }
+      if (full_free_slabs > retain_blocks()) {
+        const intptr_t fb_index = free_block_iter->fallback_allocation_index();
+        RemoveFreeBlock(free_block_iter);
+        ReleaseFallbackBlock(fb_index);
+      }
     }
   }
 

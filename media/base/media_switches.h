@@ -241,6 +241,12 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltStreamingSourceBufferGC);
 MEDIA_EXPORT BASE_DECLARE_FEATURE_PARAM(
     int,
     kCobaltStreamingSourceBufferBackHorizonMs);
+MEDIA_EXPORT BASE_DECLARE_FEATURE_PARAM(
+    int,
+    kCobaltStreamingSourceBufferVideoRetentionFloorMB);
+MEDIA_EXPORT BASE_DECLARE_FEATURE_PARAM(
+    int,
+    kCobaltStreamingSourceBufferAudioRetentionFloorKB);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltVideoBufferBudget1080p);
 MEDIA_EXPORT BASE_DECLARE_FEATURE_PARAM(int, kCobaltVideoBufferBudget1080pMB);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kCobaltVideoBufferBudget4kSdr);

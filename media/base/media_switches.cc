@@ -571,6 +571,16 @@ BASE_FEATURE_PARAM(int,
                    &kCobaltStreamingSourceBufferGC,
                    "back_horizon_ms",
                    1000);
+BASE_FEATURE_PARAM(int,
+                   kCobaltStreamingSourceBufferVideoRetentionFloorMB,
+                   &kCobaltStreamingSourceBufferGC,
+                   "video_retention_floor_mb",
+                   12);
+BASE_FEATURE_PARAM(int,
+                   kCobaltStreamingSourceBufferAudioRetentionFloorKB,
+                   &kCobaltStreamingSourceBufferGC,
+                   "audio_retention_floor_kb",
+                   1024);
 // When enabled, each feature below replaces the video buffer budget returned by
 // SbMediaGetVideoBufferBudget() for its resolution tier with the value of its
 // "BudgetMB" param.
@@ -579,36 +589,36 @@ BASE_FEATURE_PARAM(int,
 // "<FeatureName>_budget_mb" param. It never raises the platform's budget.
 BASE_FEATURE(kCobaltVideoBufferBudget1080p,
              "CobaltVideoBufferBudget1080p",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE_PARAM(int,
                    kCobaltVideoBufferBudget1080pMB,
                    &kCobaltVideoBufferBudget1080p,
                    "CobaltVideoBufferBudget1080p_budget_mb",
-                   16);
+                   0);
 BASE_FEATURE(kCobaltVideoBufferBudget4kSdr,
              "CobaltVideoBufferBudget4kSdr",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE_PARAM(int,
                    kCobaltVideoBufferBudget4kSdrMB,
                    &kCobaltVideoBufferBudget4kSdr,
                    "CobaltVideoBufferBudget4kSdr_budget_mb",
-                   48);
+                   0);
 BASE_FEATURE(kCobaltVideoBufferBudget4kHdr,
              "CobaltVideoBufferBudget4kHdr",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE_PARAM(int,
                    kCobaltVideoBufferBudget4kHdrMB,
                    &kCobaltVideoBufferBudget4kHdr,
                    "CobaltVideoBufferBudget4kHdr_budget_mb",
-                   52);
+                   0);
 BASE_FEATURE(kCobaltVideoBufferBudgetAbove4k,
              "CobaltVideoBufferBudgetAbove4k",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE_PARAM(int,
                    kCobaltVideoBufferBudgetAbove4kMB,
                    &kCobaltVideoBufferBudgetAbove4k,
                    "CobaltVideoBufferBudgetAbove4k_budget_mb",
-                   52);
+                   0);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
 #if BUILDFLAG(IS_CHROMEOS)

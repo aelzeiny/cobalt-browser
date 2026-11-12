@@ -779,24 +779,35 @@ bool SourceBufferStream::GarbageCollectIfNeeded(base::TimeDelta media_time,
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   if (!seek_pending_ && !end_of_stream_ && !ranges_.empty() &&
       base::FeatureList::IsEnabled(kCobaltStreamingSourceBufferGC)) {
-    base::TimeDelta back_evict_time = media_time;
-    if (selected_range_ &&
-        back_evict_time > selected_range_->GetBufferedEndTimestamp()) {
-      back_evict_time = selected_range_->GetBufferedEndTimestamp();
-    }
-    if (range_for_next_append_ != ranges_.end() &&
-        highest_buffered_end_time_in_append_sequence_ != kNoTimestamp &&
-        back_evict_time > highest_buffered_end_time_in_append_sequence_ &&
-        (*range_for_next_append_)->GetStartTimestamp() < back_evict_time) {
-      back_evict_time = (*range_for_next_append_)->GetStartTimestamp();
-    }
-    const base::TimeDelta back_horizon = base::Milliseconds(
-        std::max(0, kCobaltStreamingSourceBufferBackHorizonMs.Get()));
-    if (back_evict_time > back_horizon) {
-      FreeBuffers(std::numeric_limits<size_t>::max(),
-                  back_evict_time - back_horizon,
-                  /*reverse_direction=*/false);
-      ranges_size = GetMemoryUsage();
+    const size_t retention_floor_bytes =
+        GetType() == SourceBufferStreamType::kVideo
+            ? static_cast<size_t>(std::max(
+                  0, kCobaltStreamingSourceBufferVideoRetentionFloorMB.Get())) *
+                  1024 * 1024
+            : static_cast<size_t>(std::max(
+                  0, kCobaltStreamingSourceBufferAudioRetentionFloorKB.Get())) *
+                  1024;
+    if (ranges_size + newDataSize > retention_floor_bytes) {
+      base::TimeDelta back_evict_time = media_time;
+      if (selected_range_ &&
+          back_evict_time > selected_range_->GetBufferedEndTimestamp()) {
+        back_evict_time = selected_range_->GetBufferedEndTimestamp();
+      }
+      if (range_for_next_append_ != ranges_.end() &&
+          highest_buffered_end_time_in_append_sequence_ != kNoTimestamp &&
+          back_evict_time > highest_buffered_end_time_in_append_sequence_ &&
+          (*range_for_next_append_)->GetStartTimestamp() < back_evict_time) {
+        back_evict_time = (*range_for_next_append_)->GetStartTimestamp();
+      }
+      const base::TimeDelta back_horizon = base::Milliseconds(
+          std::max(0, kCobaltStreamingSourceBufferBackHorizonMs.Get()));
+      if (back_evict_time > back_horizon) {
+        const size_t bytes_above_floor =
+            ranges_size + newDataSize - retention_floor_bytes;
+        FreeBuffers(bytes_above_floor, back_evict_time - back_horizon,
+                    /*reverse_direction=*/false);
+        ranges_size = GetMemoryUsage();
+      }
     }
   }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
