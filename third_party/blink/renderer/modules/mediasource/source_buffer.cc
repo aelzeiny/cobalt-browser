@@ -1279,6 +1279,10 @@ void SourceBuffer::RemovedFromMediaSource() {
   source_->AssertAttachmentsMutexHeldIfCrossThreadForDebugging();
 
   DVLOG(3) << __func__ << " this=" << this;
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  post_append_reclaim_task_handle_.Cancel();
+  playhead_evict_task_handle_.Cancel();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
   if (pending_remove_start_ != -1) {
     CancelRemove();
   } else {
@@ -1934,6 +1938,7 @@ void SourceBuffer::ContextDestroyed() {
   append_buffer_async_task_handle_.Cancel();
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   post_append_reclaim_task_handle_.Cancel();
+  playhead_evict_task_handle_.Cancel();
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   append_encoded_chunks_async_task_handle_.Cancel();
@@ -2222,6 +2227,7 @@ void SourceBuffer::AppendBufferInternal_Locked(
   }
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   ++successful_append_count_;
+  idle_playhead_evict_ticks_ = 0;
   post_append_reclaim_task_handle_.Cancel();
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
@@ -2416,6 +2422,7 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       ScheduleEvent(event_type_names::kUpdateend);
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
       SchedulePostAppendMemoryReclaim();
+      SchedulePlayheadBehindEviction();
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       break;
   }
@@ -2649,6 +2656,7 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   //    SourceBuffer object.
   ScheduleEvent(event_type_names::kUpdateend);
   SchedulePostAppendMemoryReclaim();
+  SchedulePlayheadBehindEviction();
 }
 
 void SourceBuffer::AppendBufferSyncPartFailed() {
@@ -2691,6 +2699,58 @@ void SourceBuffer::LogFirstSegmentAppendDelay() {
     auto delay = base::TimeTicks::Now() - first_segment_append_start_time_;
     LOG(INFO) << __func__ << ": Append synchronously avoided a delay of "
               << delay.InMicroseconds();
+  }
+}
+
+void SourceBuffer::SchedulePlayheadBehindEviction() {
+  if (IsRemoved() || !first_initialization_segment_received_) {
+    return;
+  }
+  ExecutionContext* ctx = GetExecutionContext();
+  if (!ctx || ctx->IsContextDestroyed()) {
+    return;
+  }
+  if (playhead_evict_task_handle_.IsActive()) {
+    return;
+  }
+  playhead_evict_task_handle_ = PostDelayedCancellableTask(
+      *ctx->GetTaskRunner(TaskType::kMediaElementEvent), FROM_HERE,
+      WTF::BindOnce(&SourceBuffer::RunPlayheadBehindEviction,
+                    WrapWeakPersistent(this)),
+      base::Milliseconds(1500));
+}
+
+void SourceBuffer::RunPlayheadBehindEviction() {
+  if (IsRemoved() || !source_ || !source_->IsOpen() ||
+      !first_initialization_segment_received_) {
+    return;
+  }
+  if (updating_) {
+    SchedulePlayheadBehindEviction();
+    return;
+  }
+  source_->RunUnlessElementGoneOrClosingUs(
+      WTF::BindOnce(&SourceBuffer::RunPlayheadBehindEviction_Locked,
+                    WrapWeakPersistent(this)));
+}
+
+void SourceBuffer::RunPlayheadBehindEviction_Locked(
+    MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */) {
+  if (IsRemoved() || updating_ || !first_initialization_segment_received_) {
+    return;
+  }
+  const double media_time = GetMediaTime();
+  if (!std::isnan(media_time) && media_time > 2.0 &&
+      std::abs(media_time - last_playhead_evict_media_time_) >= 1.2) {
+    last_playhead_evict_media_time_ = media_time;
+    idle_playhead_evict_ticks_ = 0;
+    EvictCodedFrames(media_time, /*new_data_size=*/0);
+    source_->SendUpdatedInfoToMainThreadCache();
+  } else {
+    ++idle_playhead_evict_ticks_;
+  }
+  if (idle_playhead_evict_ticks_ < 6) {
+    SchedulePlayheadBehindEviction();
   }
 }
 
