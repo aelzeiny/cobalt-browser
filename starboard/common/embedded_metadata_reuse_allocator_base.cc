@@ -52,6 +52,10 @@ bool EmbeddedMetadataReuseAllocatorBase::MemoryBlock::Merge(
   SB_DCHECK_GE(fallback_allocation_index_, 0);
   SB_DCHECK_GE(other.fallback_allocation_index_, 0);
 
+  if (fallback_allocation_index_ != other.fallback_allocation_index_) {
+    return false;
+  }
+
   if (AsInteger(address_) + size_ == AsInteger(other.address_)) {
     SB_DCHECK_LE(fallback_allocation_index_, other.fallback_allocation_index_);
 
@@ -225,8 +229,9 @@ void EmbeddedMetadataReuseAllocatorBase::Free(void* memory) {
       total_allocated_in_bytes_ = 0;
       total_allocated_blocks_ = 0;
 
-      if (enable_decommit_on_idle_ ||
-          enable_decommit_only_on_memory_pressure_) {
+      if (enable_decommit_on_idle_) {
+        ReleaseIdleFallbackBlocks();
+      } else if (enable_decommit_only_on_memory_pressure_) {
         ReclaimFallbackBlocks();
       } else {
         EnumerateFallbackAllocations(
@@ -241,6 +246,12 @@ void EmbeddedMetadataReuseAllocatorBase::Free(void* memory) {
       }
       pending_frees_.clear();
     }
+  } else if (enable_decommit_on_idle_ && pending_frees_.size() >= 4) {
+    for (auto address_to_free : pending_frees_) {
+      bool freed = TryFree(address_to_free);
+      SB_DCHECK(freed);
+    }
+    pending_frees_.clear();
   }
 }
 
@@ -375,14 +386,34 @@ bool EmbeddedMetadataReuseAllocatorBase::TryFree(void* memory) {
 
   // Mark this block as free and update the allocated data accordingly.
   MemoryBlock block(metadata->fallback_index, metadata, metadata->size);
-  AddFreeBlock(block);
+  auto free_block_iter = AddFreeBlock(block);
 
   SB_DCHECK_LE(block.size(), total_allocated_in_bytes_);
   total_allocated_in_bytes_ -= block.size();
   --total_allocated_blocks_;
 
-  if ((enable_decommit_on_idle_ || enable_decommit_only_on_memory_pressure_) &&
-      total_allocated_in_bytes_ == 0) {
+  if (enable_decommit_on_idle_) {
+    if (total_allocated_in_bytes_ == 0) {
+      free_blocks_.clear();
+      ReleaseIdleFallbackBlocks();
+    } else if (IsFullFallbackBlock(free_block_iter->fallback_allocation_index(),
+                                   free_block_iter->address(),
+                                   free_block_iter->size())) {
+      size_t full_free_slabs = 0;
+      for (const auto& candidate : free_blocks_) {
+        if (IsFullFallbackBlock(candidate.fallback_allocation_index(),
+                                candidate.address(), candidate.size())) {
+          ++full_free_slabs;
+        }
+      }
+      if (full_free_slabs > retain_blocks()) {
+        const intptr_t fb_index = free_block_iter->fallback_allocation_index();
+        RemoveFreeBlock(free_block_iter);
+        ReleaseFallbackBlock(fb_index);
+      }
+    }
+  } else if (enable_decommit_only_on_memory_pressure_ &&
+             total_allocated_in_bytes_ == 0) {
     free_blocks_.clear();
     ReclaimFallbackBlocks();
   }
