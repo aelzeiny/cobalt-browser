@@ -422,6 +422,7 @@ component("core") {
     "//third_party/blink/renderer/platform/wtf",
     "//third_party/re2",
     "//third_party/rive",
+    "//third_party/rive:rive_renderer_gl",
     "//ui/accessibility:ax_base",
     "//ui/base:base",
     "//ui/base:ui_data_pack",

@@ -331,10 +331,9 @@ rive::rcp<rive::RenderPaint> RivePaintCanvasFactory::makeRenderPaint() {
   return rive::make_rcp<RivePaintCanvasRenderPaint>();
 }
 
-rive::rcp<rive::RenderImage> RivePaintCanvasFactory::decodeImage(
-    rive::Span<const uint8_t> encoded_bytes) {
+SkBitmap DecodeRiveImage(rive::Span<const uint8_t> encoded_bytes) {
   if (encoded_bytes.empty()) {
-    return nullptr;
+    return SkBitmap();
   }
   scoped_refptr<SharedBuffer> buffer = SharedBuffer::Create(
       base::span<const uint8_t>(encoded_bytes.data(), encoded_bytes.size()));
@@ -344,14 +343,23 @@ rive::rcp<rive::RenderImage> RivePaintCanvasFactory::decodeImage(
       ColorBehavior::kTag, cc::AuxImage::kDefault,
       ImageDecoder::kNoDecodedImageByteLimit);
   if (!decoder || decoder->FrameCount() == 0) {
-    return nullptr;
+    return SkBitmap();
   }
   ImageFrame* frame = decoder->DecodeFrameBufferAtIndex(0);
   if (!frame || frame->GetStatus() != ImageFrame::kFrameComplete) {
-    return nullptr;
+    return SkBitmap();
   }
   SkBitmap bitmap = frame->Bitmap();
   bitmap.setImmutable();
+  return bitmap;
+}
+
+rive::rcp<rive::RenderImage> RivePaintCanvasFactory::decodeImage(
+    rive::Span<const uint8_t> encoded_bytes) {
+  SkBitmap bitmap = DecodeRiveImage(encoded_bytes);
+  if (bitmap.drawsNothing()) {
+    return nullptr;
+  }
   return rive::make_rcp<RivePaintCanvasRenderImage>(
       cc::PaintImage::CreateFromBitmap(std::move(bitmap)));
 }

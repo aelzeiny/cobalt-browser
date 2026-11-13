@@ -565,6 +565,8 @@ blink_core_sources_html = [
   "rive/html_rive_element.h",
   "rive/layout_rive.cc",
   "rive/layout_rive.h",
+  "rive/rive_gpu_renderer.cc",
+  "rive/rive_gpu_renderer.h",
   "rive/rive_paint_canvas_renderer.cc",
   "rive/rive_paint_canvas_renderer.h",
   "$root_gen_dir/third_party/blink/renderer/core/html/html_permission_element_strings_map.cc",

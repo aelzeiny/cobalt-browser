@@ -21,6 +21,7 @@
 #include "third_party/blink/renderer/core/execution_context/agent.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
+#include "third_party/blink/renderer/core/html/rive/rive_gpu_renderer.h"
 #include "third_party/blink/renderer/core/html/rive/rive_paint_canvas_renderer.h"
 #include "third_party/blink/renderer/core/html_names.h"
 #include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
@@ -786,10 +787,17 @@ void HTMLRiveElement::OnListImageLoaded(const String& url,
   if (!content || content->ErrorOccurred() || !content->HasImage()) {
     return;
   }
-  // The image stays lazily decoded; cc decodes it off the main thread when it
-  // is first rastered.
+  // With Skia the image stays lazily decoded; cc decodes it off the main
+  // thread when it is first rastered. Rive Renderer uploads it here.
+  cc::PaintImage paint_image = content->GetImage()->PaintImageForCurrentFrame();
+  RiveGpuContext* gpu_context =
+      uses_rive_renderer_ ? RiveGpuContext::Get() : nullptr;
+  if (uses_rive_renderer_ && !gpu_context) {
+    return;
+  }
   rive::rcp<rive::RenderImage> image =
-      MakeRiveRenderImage(content->GetImage()->PaintImageForCurrentFrame());
+      gpu_context ? gpu_context->MakeImage(paint_image)
+                  : MakeRiveRenderImage(std::move(paint_image));
   if (!image) {
     return;
   }
@@ -1096,18 +1104,40 @@ gfx::SizeF HTMLRiveElement::ArtboardSize() const {
                     LayoutReplaced::kDefaultHeight);
 }
 
+void HTMLRiveElement::DrawArtboard(rive::Renderer* renderer,
+                                   const gfx::SizeF& box_size) {
+  const rive::AABB frame(0.0f, 0.0f, box_size.width(), box_size.height());
+  renderer->save();
+  renderer->align(GetRiveFit(), GetRiveAlignment(), frame,
+                  artboard_->bounds());
+  artboard_->draw(renderer);
+  renderer->restore();
+}
+
+cc::Layer* HTMLRiveElement::PaintRiveToLayer(const gfx::Size& box_size) {
+  if (!uses_rive_renderer_ || !artboard_ || box_size.IsEmpty()) {
+    return nullptr;
+  }
+  // Rive Renderer draws into a texture that the player's own layer shows.
+  // Paint is pixel-snapped, so the box is whole device pixels.
+  if (!gpu_surface_) {
+    gpu_surface_ = std::make_unique<RiveGpuSurface>();
+  }
+  if (!gpu_surface_->Draw(box_size, [&](rive::Renderer* renderer) {
+        DrawArtboard(renderer, gfx::SizeF(box_size));
+      })) {
+    return nullptr;
+  }
+  return gpu_surface_->layer();
+}
+
 void HTMLRiveElement::PaintRive(cc::PaintCanvas* canvas,
                                 const gfx::SizeF& box_size) {
-  if (!canvas || !artboard_ || box_size.IsEmpty()) {
+  if (!canvas || !artboard_ || box_size.IsEmpty() || uses_rive_renderer_) {
     return;
   }
-
   RivePaintCanvasRenderer renderer(canvas);
-  renderer.save();
-  const rive::AABB frame(0.0f, 0.0f, box_size.width(), box_size.height());
-  renderer.align(GetRiveFit(), GetRiveAlignment(), frame, artboard_->bounds());
-  artboard_->draw(&renderer);
-  renderer.restore();
+  DrawArtboard(&renderer, box_size);
 }
 
 void HTMLRiveElement::OnAnimationFrame(double high_res_now_ms) {
@@ -1408,10 +1438,22 @@ bool HTMLRiveElement::LoadFromBytes(base::span<const uint8_t> bytes) {
     return false;
   }
 
+  // Rive Renderer if it can run here, else Skia.
+  RiveGpuContext* gpu_context = RiveGpuContext::Get();
+  if (uses_rive_renderer_ != !!gpu_context) {
+    // Images made for the other backend can't be drawn by this one.
+    image_cache_.clear();
+    gpu_surface_.reset();
+  }
+  uses_rive_renderer_ = !!gpu_context;
+  rive::Factory* factory = gpu_context
+                               ? gpu_context->factory()
+                               : &RivePaintCanvasFactory::Instance();
+
   rive::ImportResult result = rive::ImportResult::malformed;
   rive_file_ =
       rive::File::import(rive::Span<const uint8_t>(bytes.data(), bytes.size()),
-                         &RivePaintCanvasFactory::Instance(), &result);
+                         factory, &result);
   if (!rive_file_ || result != rive::ImportResult::success) {
     rive_file_.reset();
     return false;

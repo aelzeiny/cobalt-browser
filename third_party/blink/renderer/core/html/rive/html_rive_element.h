@@ -33,6 +33,14 @@
 #pragma clang diagnostic pop
 #include "ui/gfx/geometry/size_f.h"
 
+namespace cc {
+class Layer;
+}  // namespace cc
+
+namespace gfx {
+class Size;
+}  // namespace gfx
+
 namespace rive {
 class ArtboardComponentList;
 }  // namespace rive
@@ -41,6 +49,7 @@ namespace blink {
 
 class KeyboardEvent;
 class ImageResourceContent;
+class RiveGpuSurface;
 class RiveImageRequest;
 
 class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
@@ -149,10 +158,16 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
 
   // Called by LayoutRive
   gfx::SizeF ArtboardSize() const;
+  // With Rive Renderer: draws into the player's own layer and returns it;
+  // null when painting with Skia (PaintRive) instead.
+  cc::Layer* PaintRiveToLayer(const gfx::Size& box_size);
   void PaintRive(cc::PaintCanvas* canvas, const gfx::SizeF& box_size);
 
   // Called by RiveFrameCallback
   void OnAnimationFrame(double high_res_now_ms);
+
+  // Whether the loaded file draws with Rive Renderer rather than Skia.
+  bool UsesRiveRendererForTesting() const { return uses_rive_renderer_; }
 
   void Trace(Visitor* visitor) const override;
 
@@ -200,6 +215,7 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
 
   rive::Fit GetRiveFit() const;
   rive::Alignment GetRiveAlignment() const;
+  void DrawArtboard(rive::Renderer* renderer, const gfx::SizeF& box_size);
   bool MapOffsetToArtboard(float offset_x,
                            float offset_y,
                            rive::Vec2D* out_point) const;
@@ -209,6 +225,9 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   String loaded_url_;
 
   rive::rcp<rive::File> rive_file_;
+  // The file's paths and paints are made for one backend, picked at load.
+  bool uses_rive_renderer_ = false;
+  std::unique_ptr<RiveGpuSurface> gpu_surface_;
   std::unique_ptr<rive::ArtboardInstance> artboard_;
   std::unique_ptr<rive::StateMachineInstance> state_machine_;
   std::unique_ptr<rive::LinearAnimationInstance> animation_instance_;

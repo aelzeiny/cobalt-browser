@@ -10,6 +10,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/path_service.h"
+#include "base/test/scoped_feature_list.h"
 #include "cc/paint/paint_op_buffer.h"
 #include "cc/paint/record_paint_canvas.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -19,6 +20,7 @@
 #include "third_party/blink/renderer/core/events/keyboard_event.h"
 #include "third_party/blink/renderer/core/execution_context/agent.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
+#include "third_party/blink/renderer/core/html/rive/rive_gpu_renderer.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
 #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
@@ -111,6 +113,49 @@ TEST_F(HTMLRiveElementTest, LoadsAndRendersLikeButtonRiv) {
   paint_record.Playback(&sk_canvas);
 
   EXPECT_GT(CountNonTransparentPixels(bitmap), 100u);
+}
+
+// blink_unittests have no GPU context, so the player falls back to Skia even
+// though Rive Renderer is enabled, and still draws.
+TEST_F(HTMLRiveElementTest, FallsBackToSkiaWithoutGpuContext) {
+  ASSERT_TRUE(base::FeatureList::IsEnabled(kRiveRenderer));
+  EXPECT_EQ(RiveGpuContext::Get(), nullptr);
+
+  SetBodyInnerHTML(R"HTML(
+    <rive-player id="player" style="width: 200px; height: 200px;"></rive-player>
+  )HTML");
+  UpdateAllLifecyclePhasesForTest();
+  auto* rive_elem = static_cast<HTMLRiveElement*>(GetElementById("player"));
+  std::optional<std::vector<uint8_t>> bytes =
+      base::ReadFileToBytes(GetTestDataPath("like_button.riv"));
+  ASSERT_TRUE(bytes.has_value());
+  ASSERT_TRUE(rive_elem->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+  EXPECT_FALSE(rive_elem->UsesRiveRendererForTesting());
+
+  rive_elem->advance(0.016);
+  cc::RecordPaintCanvas record_canvas;
+  rive_elem->PaintRive(&record_canvas, gfx::SizeF(200.0f, 200.0f));
+  SkBitmap bitmap;
+  bitmap.allocN32Pixels(200, 200);
+  bitmap.eraseColor(SK_ColorTRANSPARENT);
+  SkCanvas sk_canvas(bitmap);
+  record_canvas.ReleaseAsRecord().Playback(&sk_canvas);
+  EXPECT_GT(CountNonTransparentPixels(bitmap), 100u);
+}
+
+TEST_F(HTMLRiveElementTest, UsesSkiaWhenRiveRendererDisabled) {
+  base::test::ScopedFeatureList features;
+  features.InitAndDisableFeature(kRiveRenderer);
+  EXPECT_EQ(RiveGpuContext::Get(), nullptr);
+
+  SetBodyInnerHTML(R"HTML(<rive-player id="player"></rive-player>)HTML");
+  UpdateAllLifecyclePhasesForTest();
+  auto* rive_elem = static_cast<HTMLRiveElement*>(GetElementById("player"));
+  std::optional<std::vector<uint8_t>> bytes =
+      base::ReadFileToBytes(GetTestDataPath("like_button.riv"));
+  ASSERT_TRUE(bytes.has_value());
+  ASSERT_TRUE(rive_elem->loadFromBuffer(DOMArrayBuffer::Create(*bytes)));
+  EXPECT_FALSE(rive_elem->UsesRiveRendererForTesting());
 }
 
 TEST_F(HTMLRiveElementTest, LoadsAndRendersListsDemoRiv) {

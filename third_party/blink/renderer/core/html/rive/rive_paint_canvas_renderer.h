@@ -21,6 +21,7 @@
 #include "third_party/rive/include/rive/math/raw_path.hpp"
 #include "third_party/rive/include/rive/renderer.hpp"
 #pragma clang diagnostic pop
+#include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkPath.h"
 
 namespace blink {
@@ -63,6 +64,9 @@ class CORE_EXPORT RivePaintCanvasFactory final : public rive::Factory {
   rive::rcp<rive::RenderImage> decodeImage(
       rive::Span<const uint8_t> encoded_bytes) override;
 };
+
+// Decodes an image embedded in a Rive file; empty on failure.
+CORE_EXPORT SkBitmap DecodeRiveImage(rive::Span<const uint8_t> encoded_bytes);
 
 // Wraps an already-loaded image (e.g. from Blink's image loader, possibly
 // lazily decoded) as a Rive image without decoding it here.

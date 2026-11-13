@@ -9,6 +9,7 @@
 #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
 #include "third_party/blink/renderer/platform/graphics/graphics_context_state_saver.h"
 #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
+#include "third_party/blink/renderer/platform/graphics/paint/foreign_layer_display_item.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 
@@ -54,14 +55,28 @@ PhysicalNaturalSizingInfo LayoutRive::GetNaturalDimensions() const {
 void LayoutRive::PaintReplaced(const PaintInfo& paint_info,
                                const PhysicalOffset& paint_offset) const {
   NOT_DESTROYED();
+  auto* element = static_cast<HTMLRiveElement*>(GetNode());
+  PhysicalRect content_rect = ReplacedContentRect();
+  content_rect.Move(paint_offset);
+  gfx::Rect snapped_rect = ToPixelSnappedRect(content_rect);
+
+  // Rive Renderer's frames go to the compositor as a texture layer, like a
+  // WebGL canvas, rather than being rastered into tiles.
+  if (element && !paint_info.ShouldOmitCompositingInfo()) {
+    if (cc::Layer* layer = element->PaintRiveToLayer(snapped_rect.size())) {
+      layer->SetBounds(snapped_rect.size());
+      RecordForeignLayer(paint_info.context, *this,
+                         DisplayItem::kForeignLayerCanvas, layer,
+                         snapped_rect.origin());
+      return;
+    }
+  }
+
   if (DrawingRecorder::UseCachedDrawingIfPossible(paint_info.context, *this,
                                                   paint_info.phase)) {
     return;
   }
 
-  PhysicalRect content_rect = ReplacedContentRect();
-  content_rect.Move(paint_offset);
-  gfx::Rect snapped_rect = ToPixelSnappedRect(content_rect);
   if (snapped_rect.IsEmpty()) {
     return;
   }
@@ -69,7 +84,6 @@ void LayoutRive::PaintReplaced(const PaintInfo& paint_info,
   DrawingRecorder recorder(paint_info.context, *this, paint_info.phase,
                            snapped_rect);
 
-  auto* element = static_cast<HTMLRiveElement*>(GetNode());
   if (!element) {
     return;
   }
