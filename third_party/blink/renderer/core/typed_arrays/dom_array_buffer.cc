@@ -5,14 +5,20 @@
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
 
 #include <algorithm>
+#include <atomic>
 
 #include "base/containers/buffer_iterator.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/time/time.h"
+#include "build/build_config.h"
+#include "partition_alloc/partition_root.h"
 #include "third_party/blink/renderer/platform/bindings/dom_data_store.h"
 #include "third_party/blink/renderer/platform/bindings/dom_wrapper_world.h"
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/bindings/v8_binding.h"
+#include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
 #include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
+#include "v8/include/v8-statistics.h"
 
 namespace blink {
 
@@ -160,6 +166,115 @@ bool DOMArrayBuffer::TryTransferForInternalUse(v8::Isolate* isolate,
   }
   return true;
 }
+
+#if BUILDFLAG(IS_COBALT)
+namespace {
+
+constexpr size_t kMinExternalAbBaselineBytes = 6 * 1024 * 1024;
+constexpr size_t kMidStreamIncrementalGrowthBytes = 8 * 1024 * 1024;
+constexpr int64_t kMidStreamIncrementalCooldownUs = 2'500'000;
+
+std::atomic<size_t> g_external_ab_baseline_bytes{kMinExternalAbBaselineBytes};
+std::atomic<int64_t> g_last_external_ab_reclaim_us{0};
+std::atomic<int64_t> g_last_midstream_incremental_us{0};
+
+size_t ReadCurrentExternalArrayBufferBytes(v8::Isolate* isolate) {
+  size_t ab_partition_bytes = 0;
+  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+    ab_partition_bytes = WTF::Partitions::ArrayBufferPartition()
+                             ->get_total_size_of_allocated_bytes();
+  }
+  size_t v8_external_bytes = 0;
+  if (isolate) {
+    v8::HeapStatistics heap_stats;
+    isolate->GetHeapStatistics(&heap_stats);
+    v8_external_bytes = heap_stats.external_memory();
+  }
+  return std::max(ab_partition_bytes, v8_external_bytes);
+}
+
+}  // namespace
+
+// static
+size_t DOMArrayBuffer::ObserveExternalArrayBufferBytes(
+    v8::Isolate* isolate,
+    size_t* out_baseline_bytes) {
+  const size_t current_bytes = ReadCurrentExternalArrayBufferBytes(isolate);
+  size_t baseline =
+      g_external_ab_baseline_bytes.load(std::memory_order_relaxed);
+  if (current_bytes < baseline) {
+    baseline = std::max(kMinExternalAbBaselineBytes, current_bytes);
+    g_external_ab_baseline_bytes.store(baseline, std::memory_order_relaxed);
+  }
+  if (out_baseline_bytes) {
+    *out_baseline_bytes = baseline;
+  }
+  return current_bytes;
+}
+
+// static
+size_t DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(
+    v8::Isolate* isolate) {
+  const size_t post_external = ReadCurrentExternalArrayBufferBytes(isolate);
+  // Never clamp below post_external: any external ArrayBuffers remaining right
+  // after GC (such as cc.wasm or live player buffers) are genuinely reachable,
+  // and clamping below them would trigger futile repeat GCs. Whenever JS later
+  // drops or detaches those buffers, ObserveExternalArrayBufferBytes() ratchets
+  // g_external_ab_baseline_bytes back down automatically.
+  const size_t new_baseline =
+      std::max(kMinExternalAbBaselineBytes, post_external);
+  g_external_ab_baseline_bytes.store(new_baseline, std::memory_order_relaxed);
+  return new_baseline;
+}
+
+// static
+bool DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
+    base::TimeDelta min_cooldown) {
+  const int64_t now_us = base::TimeTicks::Now().since_origin().InMicroseconds();
+  int64_t last_us =
+      g_last_external_ab_reclaim_us.load(std::memory_order_relaxed);
+  if (last_us != 0 && now_us - last_us < min_cooldown.InMicroseconds()) {
+    return false;
+  }
+  return g_last_external_ab_reclaim_us.compare_exchange_strong(
+      last_us, now_us, std::memory_order_acq_rel, std::memory_order_relaxed);
+}
+
+// static
+void DOMArrayBuffer::MaybeStartMidStreamIncrementalReclaim(
+    v8::Isolate* isolate) {
+  if (!isolate) {
+    return;
+  }
+  const int64_t now_us = base::TimeTicks::Now().since_origin().InMicroseconds();
+  int64_t last_us =
+      g_last_midstream_incremental_us.load(std::memory_order_relaxed);
+  if (last_us != 0 && now_us - last_us < kMidStreamIncrementalCooldownUs) {
+    return;
+  }
+  size_t baseline = kMinExternalAbBaselineBytes;
+  const size_t current_bytes =
+      ObserveExternalArrayBufferBytes(isolate, &baseline);
+  if (current_bytes <= baseline + kMidStreamIncrementalGrowthBytes) {
+    return;
+  }
+  if (!g_last_midstream_incremental_us.compare_exchange_strong(
+          last_us, now_us, std::memory_order_acq_rel,
+          std::memory_order_relaxed)) {
+    return;
+  }
+  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+    WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+        partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+        partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+        partition_alloc::PurgeFlags::kLimitDuration);
+  }
+  // Non-blocking: starts incremental + concurrent marking with
+  // kReduceMemoryFootprint so dead 16-128 KiB BodyStreamBuffer chunks are swept
+  // during long SABR streams before stacking onto consolidated UMP buffers.
+  isolate->MemoryPressureNotification(v8::MemoryPressureLevel::kModerate);
+}
+#endif  // BUILDFLAG(IS_COBALT)
 
 v8::Maybe<bool> DOMArrayBuffer::TransferDetachable(
     v8::Isolate* isolate,

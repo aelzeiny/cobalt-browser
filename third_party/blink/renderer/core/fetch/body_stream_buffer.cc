@@ -546,7 +546,6 @@ void SchedulePostStreamCloseMemoryReclaim(ScriptState* script_state) {
     return;
   }
   static std::atomic<bool> g_reclaim_pending{false};
-  static std::atomic<int64_t> g_last_stream_reclaim_us{0};
   if (g_reclaim_pending.exchange(true, std::memory_order_acq_rel)) {
     return;
   }
@@ -563,27 +562,22 @@ void SchedulePostStreamCloseMemoryReclaim(ScriptState* script_state) {
                 if (!WTF::Partitions::ArrayBufferPartitionInitialized()) {
                   return;
                 }
-                const size_t ab_bytes =
-                    WTF::Partitions::ArrayBufferPartition()
-                        ->get_total_size_of_allocated_bytes();
-                // 6 MiB cc.wasm linear memory + 2.5 MiB active margin.
-                constexpr size_t kStreamCloseAbThresholdBytes =
-                    (17 * 1024 * 1024) / 2;
-                const int64_t now_us =
-                    base::TimeTicks::Now().since_origin().InMicroseconds();
-                const int64_t last_us =
-                    g_last_stream_reclaim_us.load(std::memory_order_relaxed);
-                if (ab_bytes > kStreamCloseAbThresholdBytes &&
-                    now_us - last_us >= 800'000) {
-                  g_last_stream_reclaim_us.store(now_us,
-                                                 std::memory_order_relaxed);
-                  if (v8::Isolate* isolate = context->GetIsolate()) {
-                    isolate->LowMemoryNotification();
+                v8::Isolate* isolate = context->GetIsolate();
+                size_t baseline_bytes = 0;
+                const size_t current_bytes =
+                    DOMArrayBuffer::ObserveExternalArrayBufferBytes(
+                        isolate, &baseline_bytes);
+                constexpr size_t kStreamCloseGrowthHysteresisBytes =
+                    6 * 1024 * 1024;
+                if (current_bytes >
+                        baseline_bytes + kStreamCloseGrowthHysteresisBytes &&
+                    DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
+                        base::Seconds(4))) {
+                  if (isolate) {
+                    isolate->MemoryPressureNotification(
+                        v8::MemoryPressureLevel::kCritical);
                   }
                   if (IsMainThread()) {
-                    MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
-                        base::MemoryPressureListener::
-                            MEMORY_PRESSURE_LEVEL_CRITICAL);
                     MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
                   }
                   WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
@@ -591,6 +585,8 @@ void SchedulePostStreamCloseMemoryReclaim(ScriptState* script_state) {
                       partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
                       partition_alloc::PurgeFlags::kAggressiveReclaim);
                   partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+                  DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(
+                      isolate);
                 }
               },
               WrapWeakPersistent(ctx)),
@@ -677,6 +673,14 @@ void BodyStreamBuffer::ProcessData(ExceptionState& exception_state) {
             ReadableByteStreamController::Enqueue(
                 script_state_, byte_controller, NotShared(array),
                 PassThroughException(script_state_->GetIsolate()));
+#if BUILDFLAG(IS_COBALT)
+            non_byob_bytes_since_reclaim_check_ += buffer.size();
+            if (non_byob_bytes_since_reclaim_check_ >= 6 * 1024 * 1024) {
+              non_byob_bytes_since_reclaim_check_ = 0;
+              DOMArrayBuffer::MaybeStartMidStreamIncrementalReclaim(
+                  script_state_->GetIsolate());
+            }
+#endif  // BUILDFLAG(IS_COBALT)
           }
           if (try_catch.HasCaught()) {
             return;

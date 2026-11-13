@@ -2740,12 +2740,21 @@ void SourceBuffer::RunPlayheadBehindEviction_Locked(
     return;
   }
   const double media_time = GetMediaTime();
-  if (!std::isnan(media_time) && media_time > 2.0 &&
-      std::abs(media_time - last_playhead_evict_media_time_) >= 1.2) {
-    last_playhead_evict_media_time_ = media_time;
-    idle_playhead_evict_ticks_ = 0;
-    EvictCodedFrames(media_time, /*new_data_size=*/0);
-    source_->SendUpdatedInfoToMainThreadCache();
+  if (!std::isnan(media_time)) {
+    if (media_time < last_playhead_evict_media_time_) {
+      // Reset tracking cleanly on backward seek or loop-to-start without
+      // triggering background eviction (PrepareAppend handles seek GC).
+      last_playhead_evict_media_time_ = media_time;
+      idle_playhead_evict_ticks_ = 0;
+    } else if (media_time > 2.0 &&
+               media_time - last_playhead_evict_media_time_ >= 1.2) {
+      last_playhead_evict_media_time_ = media_time;
+      idle_playhead_evict_ticks_ = 0;
+      EvictCodedFrames(media_time, /*new_data_size=*/0);
+      source_->SendUpdatedInfoToMainThreadCache();
+    } else {
+      ++idle_playhead_evict_ticks_;
+    }
   } else {
     ++idle_playhead_evict_ticks_;
   }
@@ -2783,51 +2792,25 @@ void SourceBuffer::RunPostAppendMemoryReclaim() {
 
 void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
                                                       bool is_post_burst) {
-  static std::atomic<int64_t> g_last_global_reclaim_us{0};
-  static std::atomic<size_t> g_post_gc_external_ab_watermark_bytes{
-      6 * 1024 * 1024};
-
-  constexpr size_t kMinExternalAbBaselineBytes = 6 * 1024 * 1024;
-  constexpr size_t kMaxExternalAbBaselineBytes = 9 * 1024 * 1024;
-  constexpr size_t kMaxIdleJsHeapSlackBytes = 4 * 1024 * 1024;
-  constexpr size_t kPostBurstGrowthHysteresisBytes = 2 * 1024 * 1024;
-  constexpr size_t kMidBurstGrowthHysteresisBytes = 12 * 1024 * 1024;
+  constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
+  constexpr size_t kPostBurstGrowthHysteresisBytes = 6 * 1024 * 1024;
+  constexpr size_t kMidBurstGrowthHysteresisBytes = 16 * 1024 * 1024;
 
   if (is_initial_segment) {
     initial_playback_reclaim_done_ = true;
   }
 
-  size_t ab_partition_bytes = 0;
-  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
-    ab_partition_bytes = WTF::Partitions::ArrayBufferPartition()
-                             ->get_total_size_of_allocated_bytes();
-  }
-  size_t watermark =
-      g_post_gc_external_ab_watermark_bytes.load(std::memory_order_relaxed);
-  if (ab_partition_bytes > 0 && ab_partition_bytes < watermark) {
-    watermark = std::max(kMinExternalAbBaselineBytes, ab_partition_bytes);
-    g_post_gc_external_ab_watermark_bytes.store(watermark,
-                                                std::memory_order_relaxed);
-  }
-
   const base::TimeTicks now = base::TimeTicks::Now();
-  const int64_t now_us = now.since_origin().InMicroseconds();
-  const int64_t last_us =
-      g_last_global_reclaim_us.load(std::memory_order_relaxed);
-  const base::TimeDelta elapsed = base::Microseconds(now_us - last_us);
   bool did_reclaim = false;
 
   if (ExecutionContext* ctx = GetExecutionContext()) {
     if (v8::Isolate* isolate = ctx->GetIsolate()) {
+      size_t watermark = 0;
+      const size_t external_bytes =
+          DOMArrayBuffer::ObserveExternalArrayBufferBytes(isolate, &watermark);
+
       v8::HeapStatistics heap_stats;
       isolate->GetHeapStatistics(&heap_stats);
-      const size_t external_bytes =
-          std::max(ab_partition_bytes, heap_stats.external_memory());
-      if (external_bytes < watermark) {
-        watermark = std::max(kMinExternalAbBaselineBytes, external_bytes);
-        g_post_gc_external_ab_watermark_bytes.store(watermark,
-                                                    std::memory_order_relaxed);
-      }
       const bool js_heap_slack_high =
           heap_stats.total_heap_size() >
           heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
@@ -2837,66 +2820,59 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
       const bool external_ab_growth_high =
           external_bytes > watermark + growth_threshold;
       const base::TimeDelta min_cooldown =
-          is_post_burst ? base::Milliseconds(800) : base::Seconds(2);
+          is_initial_segment
+              ? base::Seconds(1)
+              : (is_post_burst ? base::Seconds(4) : base::Seconds(6));
+      const bool wants_reclaim =
+          is_initial_segment || external_ab_growth_high ||
+          (is_post_burst && js_heap_slack_high);
 
-      if ((is_initial_segment && elapsed >= base::Seconds(1)) ||
-          (elapsed >= min_cooldown &&
-           (external_ab_growth_high || (is_post_burst && js_heap_slack_high)))) {
-        g_last_global_reclaim_us.store(now_us, std::memory_order_relaxed);
+      if (wants_reclaim &&
+          DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
+              min_cooldown)) {
         last_v8_slack_trim_time_ = now;
         did_reclaim = true;
 
-        // 1. Run V8 + Oilpan CppHeap multi-pass GC and eager ArrayBuffer
-        // sweeping FIRST so dead JS wrappers for Strings, ImageResources, and
-        // fetch/UMP ArrayBuffers drop their C++ references before Blink/CC
-        // cache and ParkableString purges run.
-        if (is_initial_segment || external_ab_growth_high) {
+        if (is_initial_segment) {
+          // Watch startup transition only (at most twice per video): perform
+          // deep V8 + Oilpan sweep and evict unused Browse DOM, CC ResourcePool
+          // tiles, and Skia scratch textures across threads.
           isolate->LowMemoryNotification();
+          if (IsMainThread()) {
+            MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
+                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+            MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+            base::MemoryPressureListener::NotifyMemoryPressure(
+                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+            ctx->GetTaskRunner(TaskType::kMediaElementEvent)
+                ->PostDelayedTask(
+                    FROM_HERE, WTF::BindOnce([]() {
+                      if (IsMainThread()) {
+                        MemoryPressureListenerRegistry::Instance()
+                            .OnPurgeMemory();
+                      }
+                      partition_alloc::MemoryReclaimer::Instance()
+                          ->ReclaimAll();
+                    }),
+                    base::Milliseconds(150));
+          }
         } else {
+          // Steady playback: single bounded kReduceMemoryFootprint GC pass
+          // without flushing V8 compilation caches or triggering double
+          // MarkCompact stalls.
           isolate->MemoryPressureNotification(
               v8::MemoryPressureLevel::kCritical);
+          if (IsMainThread()) {
+            MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+          }
         }
 
-        // 2. Now that V8 references are released, purge Blink MemoryCache,
-        // ParkableStrings, DiscardableMemory, and CC/Skia/GPU caches across
-        // both Blink and cross-thread base::MemoryPressureListeners.
-        if (IsMainThread()) {
-          MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
-              base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
-          MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
-          base::MemoryPressureListener::NotifyMemoryPressure(
-              base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
-          ctx->GetTaskRunner(TaskType::kMediaElementEvent)
-              ->PostDelayedTask(
-                  FROM_HERE, WTF::BindOnce([]() {
-                    if (IsMainThread()) {
-                      MemoryPressureListenerRegistry::Instance()
-                          .OnPurgeMemory();
-                    }
-                    partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
-                  }),
-                  base::Milliseconds(150));
-        }
-
-        size_t post_gc_ab_bytes = 0;
-        if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
-          post_gc_ab_bytes = WTF::Partitions::ArrayBufferPartition()
-                                 ->get_total_size_of_allocated_bytes();
-        }
-        v8::HeapStatistics post_stats;
-        isolate->GetHeapStatistics(&post_stats);
-        const size_t post_external =
-            std::max(post_gc_ab_bytes, post_stats.external_memory());
         const size_t new_watermark =
-            std::clamp(post_external, kMinExternalAbBaselineBytes,
-                       kMaxExternalAbBaselineBytes);
-        g_post_gc_external_ab_watermark_bytes.store(new_watermark,
-                                                    std::memory_order_relaxed);
+            DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(isolate);
         external_ab_post_trim_watermark_bytes_ = new_watermark;
       } else if (is_post_burst && IsMainThread()) {
-        // Even if external ArrayBuffer growth did not exceed the GC threshold,
-        // re-park any disk-backed ParkableStrings that were briefly unparked
-        // during the completed append burst.
+        // O(1) re-park for any disk-backed ParkableStrings briefly unparked
+        // (e.g., via Script::GetPositionInfo) during the completed burst.
         MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
       }
     }
