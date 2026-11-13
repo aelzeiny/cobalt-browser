@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/modules/mediasource/source_buffer.h"
 
+#include <algorithm>
 #include <atomic>
 #include <limits>
 #include <memory>
@@ -46,6 +47,7 @@
 #include "base/containers/heap_array.h"
 #include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
+#include "base/memory/memory_pressure_listener.h"
 #include "media/base/media_switches.h"
 #include "partition_alloc/memory_reclaimer.h"
 #include "partition_alloc/partition_root.h"
@@ -2684,11 +2686,12 @@ void SourceBuffer::LogFirstSegmentAppendDelay() {
 void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
   static std::atomic<int64_t> g_last_global_reclaim_us{0};
   static std::atomic<size_t> g_post_gc_external_ab_watermark_bytes{
-      8 * 1024 * 1024};
+      6 * 1024 * 1024};
 
-  constexpr size_t kMinExternalAbBaselineBytes = 8 * 1024 * 1024;
-  constexpr size_t kMaxIdleJsHeapSlackBytes = 5 * 1024 * 1024;
-  constexpr size_t kExternalAbGrowthHysteresisBytes = 10 * 1024 * 1024;
+  constexpr size_t kMinExternalAbBaselineBytes = 6 * 1024 * 1024;
+  constexpr size_t kMaxExternalAbBaselineBytes = 10 * 1024 * 1024;
+  constexpr size_t kMaxIdleJsHeapSlackBytes = 4 * 1024 * 1024;
+  constexpr size_t kExternalAbGrowthHysteresisBytes = 4 * 1024 * 1024;
 
   if (is_initial_segment) {
     initial_playback_reclaim_done_ = true;
@@ -2712,6 +2715,7 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
   const int64_t last_us =
       g_last_global_reclaim_us.load(std::memory_order_relaxed);
   const base::TimeDelta elapsed = base::Microseconds(now_us - last_us);
+  bool did_reclaim = false;
 
   if (ExecutionContext* ctx = GetExecutionContext()) {
     if (v8::Isolate* isolate = ctx->GetIsolate()) {
@@ -2730,23 +2734,35 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
       const bool external_ab_growth_high =
           external_bytes > watermark + kExternalAbGrowthHysteresisBytes;
 
-      if ((is_initial_segment && elapsed >= base::Seconds(3)) ||
-          (elapsed >= base::Seconds(8) &&
+      if ((is_initial_segment && elapsed >= base::Seconds(2)) ||
+          (elapsed >= base::Seconds(4) &&
            (js_heap_slack_high || external_ab_growth_high))) {
         g_last_global_reclaim_us.store(now_us, std::memory_order_relaxed);
         last_v8_slack_trim_time_ = now;
+        did_reclaim = true;
+
+        // 1. Run V8 + Oilpan CppHeap multi-pass GC and eager ArrayBuffer
+        // sweeping FIRST so dead JS wrappers for Strings, ImageResources, and
+        // fetch/UMP ArrayBuffers drop their C++ references before Blink/CC
+        // cache and ParkableString purges run.
+        if (is_initial_segment || external_ab_growth_high) {
+          isolate->LowMemoryNotification();
+        } else {
+          isolate->MemoryPressureNotification(
+              v8::MemoryPressureLevel::kCritical);
+        }
+
+        // 2. Now that V8 references are released, purge Blink MemoryCache,
+        // ParkableStrings, DiscardableMemory, and CC/Skia tile/image caches.
         if (IsMainThread()) {
+          MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
+              base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+          MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
           if (is_initial_segment) {
-            MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
+            base::MemoryPressureListener::NotifyMemoryPressure(
                 base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
           }
-          MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
         }
-        // Run synchronous footprint-reducing GC and eager ArrayBuffer sweeping
-        // so dead fetch/UMP ArrayBuffers and Browse/Startup V8 heap slack are
-        // reclaimed before measuring the post-GC watermark and purging PA.
-        isolate->MemoryPressureNotification(
-            v8::MemoryPressureLevel::kCritical);
 
         size_t post_gc_ab_bytes = 0;
         if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
@@ -2758,7 +2774,8 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
         const size_t post_external =
             std::max(post_gc_ab_bytes, post_stats.external_memory());
         const size_t new_watermark =
-            std::max(kMinExternalAbBaselineBytes, post_external);
+            std::clamp(post_external, kMinExternalAbBaselineBytes,
+                       kMaxExternalAbBaselineBytes);
         g_post_gc_external_ab_watermark_bytes.store(new_watermark,
                                                     std::memory_order_relaxed);
         external_ab_post_trim_watermark_bytes_ = new_watermark;
@@ -2770,13 +2787,17 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
     WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
         partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
         partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
-        partition_alloc::PurgeFlags::kLimitDuration);
+        partition_alloc::PurgeFlags::kAggressiveReclaim);
   }
   WTF::Partitions::BufferPartition()->PurgeMemory(
       partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
       partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
-      partition_alloc::PurgeFlags::kLimitDuration);
-  partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
+      partition_alloc::PurgeFlags::kAggressiveReclaim);
+  if (did_reclaim) {
+    partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+  } else {
+    partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
+  }
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 

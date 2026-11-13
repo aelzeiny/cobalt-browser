@@ -177,7 +177,7 @@ bool ParkableStringManager::ShouldPark(const StringImpl& string) {
 // static
 base::TimeDelta ParkableStringManager::AgingInterval() {
 #if BUILDFLAG(IS_COBALT)
-  return kAgingInterval;
+  return base::Seconds(1);
 #else
   return base::FeatureList::IsEnabled(features::kLessAggressiveParkableString)
              ? kLessAggressiveAgingInterval
@@ -503,6 +503,7 @@ void ParkableStringManager::PurgeMemory() {
   ParkAll(ParkableStringImpl::ParkingMode::kCompressThenToDisk);
   auto parked = EnumerateStrings(parked_strings_);
   for (ParkableStringImpl* str : parked) {
+    str->MaybeAgeOrParkString();
     str->MaybeAgeOrParkString();
   }
   if (auto* discardable = base::DiscardableMemoryAllocator::GetInstance()) {
