@@ -43,9 +43,11 @@
 #include "media/base/stream_parser_buffer.h"
 #include "partition_alloc/partition_alloc.h"
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
+#include "base/containers/heap_array.h"
 #include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
 #include "media/base/media_switches.h"
+#include "partition_alloc/partition_root.h"
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer/array_buffer_contents.h"
 #include "third_party/blink/renderer/modules/cobalt/h_5_vcc.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_settings/h_5_vcc_settings.h"
@@ -654,8 +656,8 @@ void SourceBuffer::appendBuffer(DOMArrayBuffer* data,
     appendTransferredBuffer(data, exception_state);
     return;
   }
-  AppendBufferInternal(data->ByteSpan(), base::ScopedClosureRunner(),
-                       exception_state);
+  AppendBufferInternal(data->ByteSpan(), /*full_array_buffer=*/nullptr,
+                       /*borrow_mode=*/false, exception_state);
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
   AppendBufferInternal(data->ByteSpan(), exception_state);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -672,8 +674,8 @@ void SourceBuffer::appendBuffer(NotShared<DOMArrayBufferView> data,
     appendTransferredBuffer(data, exception_state);
     return;
   }
-  AppendBufferInternal(data->ByteSpan(), base::ScopedClosureRunner(),
-                       exception_state);
+  AppendBufferInternal(data->ByteSpan(), /*full_array_buffer=*/nullptr,
+                       /*borrow_mode=*/false, exception_state);
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
   AppendBufferInternal(data->ByteSpan(), exception_state);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -683,48 +685,19 @@ void SourceBuffer::appendBuffer(NotShared<DOMArrayBufferView> data,
 void SourceBuffer::appendTransferredBuffer(DOMArrayBuffer* data,
                                            ExceptionState& exception_state) {
   DVLOG(2) << __func__ << " this=" << this << " size=" << data->ByteLength();
-  base::ScopedClosureRunner release_runner;
-  // An empty append retains nothing, but must still run the append algorithm
-  // below so that `updateend` fires.
-  if (!data->ByteSpan().empty()) {
-    release_runner = RetainAppendedArrayBuffer(data);
-    if (!release_runner) {
-      // RetainAppendedArrayBuffer() only fails when the underlying
-      // ArrayBuffer has no backing store. This is not expected in practice.
-      // It is a defensive check against appending a span whose memory we
-      // cannot keep alive for the in-place parser.
-      MediaSource::LogAndThrowDOMException(
-          exception_state, DOMExceptionCode::kInvalidStateError,
-          "Unable to retain the appended ArrayBuffer.");
-      return;
-    }
-  }
-  AppendBufferInternal(data->ByteSpan(), std::move(release_runner),
+  AppendBufferInternal(data->ByteSpan(), data, /*borrow_mode=*/true,
                        exception_state);
 }
 
 void SourceBuffer::appendTransferredBuffer(NotShared<DOMArrayBufferView> data,
                                            ExceptionState& exception_state) {
   DVLOG(3) << __func__ << " this=" << this << " size=" << data->byteLength();
-  // Retain the whole backing ArrayBuffer; the view's bytes are a subrange of
-  // it, so this keeps the appended span alive.
-  base::ScopedClosureRunner release_runner;
-  // An empty append retains nothing, but must still run the append algorithm
-  // below so that `updateend` fires.
-  if (!data->ByteSpan().empty()) {
-    release_runner = RetainAppendedArrayBuffer(data->buffer());
-    if (!release_runner) {
-      // RetainAppendedArrayBuffer() only fails when the underlying
-      // ArrayBuffer has no backing store. This is not expected in practice.
-      // It is a defensive check against appending a span whose memory we
-      // cannot keep alive for the in-place parser.
-      MediaSource::LogAndThrowDOMException(
-          exception_state, DOMExceptionCode::kInvalidStateError,
-          "Unable to retain the appended ArrayBuffer.");
-      return;
-    }
-  }
-  AppendBufferInternal(data->ByteSpan(), std::move(release_runner),
+  DOMArrayBuffer* full_buffer =
+      (data->byteOffset() == 0 &&
+       data->byteLength() == data->buffer()->ByteLength())
+          ? data->buffer()
+          : nullptr;
+  AppendBufferInternal(data->ByteSpan(), full_buffer, /*borrow_mode=*/true,
                        exception_state);
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -2080,9 +2053,62 @@ base::ScopedClosureRunner SourceBuffer::RetainAppendedArrayBuffer(
       base::DoNothingWithBoundArgs(std::move(contents)));
 }
 
+base::ScopedClosureRunner SourceBuffer::PrepareBorrowedAppendBuffer(
+    base::span<const unsigned char>* data,
+    DOMArrayBuffer* full_array_buffer) {
+  DCHECK(data);
+  if (data->empty()) {
+    return base::ScopedClosureRunner();
+  }
+
+  constexpr size_t kMinDetachByteLength = 32 * 1024;
+  constexpr size_t kMaxCopySubViewByteLength = 64 * 1024;
+
+  // Eagerly transfer & detach full-buffer media appends (>= 32 KiB) once
+  // initialization has completed so V8 external memory is decremented
+  // synchronously and PartitionAlloc frees the backing store immediately when
+  // BorrowedSegmentedByteQueue pops the parsed segment.
+  if (first_initialization_segment_received_ && successful_append_count_ >= 2 &&
+      full_array_buffer && data->size() >= kMinDetachByteLength) {
+    ExecutionContext* context = GetExecutionContext();
+    v8::Isolate* isolate = context ? context->GetIsolate() : nullptr;
+    ArrayBufferContents transferred_contents;
+    if (full_array_buffer->TryTransferForInternalUse(isolate,
+                                                     transferred_contents)) {
+      *data = transferred_contents.ByteSpan();
+      return base::ScopedClosureRunner(
+          base::DoNothingWithBoundArgs(std::move(transferred_contents)));
+    }
+  }
+
+  // For small buffers (e.g. init segments) or sub-views into a larger
+  // ArrayBuffer, copy only the active slice into compact owned storage so we
+  // neither detach cached JS init segments nor pin a large backing store.
+  if (!full_array_buffer || data->size() <= kMaxCopySubViewByteLength) {
+    auto owned = std::make_unique<base::HeapArray<uint8_t>>(
+        base::HeapArray<uint8_t>::CopiedFrom(*data));
+    *data = owned->as_span();
+    return base::ScopedClosureRunner(
+        base::DoNothingWithBoundArgs(std::move(owned)));
+  }
+
+  base::ScopedClosureRunner retained =
+      RetainAppendedArrayBuffer(full_array_buffer);
+  if (retained) {
+    return retained;
+  }
+
+  auto owned = std::make_unique<base::HeapArray<uint8_t>>(
+      base::HeapArray<uint8_t>::CopiedFrom(*data));
+  *data = owned->as_span();
+  return base::ScopedClosureRunner(
+      base::DoNothingWithBoundArgs(std::move(owned)));
+}
+
 void SourceBuffer::AppendBufferInternal(
     base::span<const unsigned char> data,
-    base::ScopedClosureRunner release_runner,
+    DOMArrayBuffer* full_array_buffer,
+    bool borrow_mode,
     ExceptionState& exception_state) {
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
 void SourceBuffer::AppendBufferInternal(base::span<const unsigned char> data,
@@ -2119,13 +2145,10 @@ void SourceBuffer::AppendBufferInternal(base::span<const unsigned char> data,
   // (applicable especially for MSE-in-Worker case). Note, we must have
   // |source_| and |source_| must have an attachment because !IsRemoved().
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-  // Note `release_runner` is moved into the callback: if the attachment is
-  // closing and the callback is never run, destroying it releases the retained
-  // ArrayBuffer.
-  if (!source_->RunUnlessElementGoneOrClosingUs(
-          WTF::BindOnce(&SourceBuffer::AppendBufferInternal_Locked,
-                        WrapPersistent(this), data, std::move(release_runner),
-                        WTF::Unretained(&exception_state)))) {
+  if (!source_->RunUnlessElementGoneOrClosingUs(WTF::BindOnce(
+          &SourceBuffer::AppendBufferInternal_Locked, WrapPersistent(this),
+          data, WrapPersistent(full_array_buffer), borrow_mode,
+          WTF::Unretained(&exception_state)))) {
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
   if (!source_->RunUnlessElementGoneOrClosingUs(WTF::BindOnce(
           &SourceBuffer::AppendBufferInternal_Locked, WrapPersistent(this),
@@ -2142,7 +2165,8 @@ void SourceBuffer::AppendBufferInternal(base::span<const unsigned char> data,
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
 void SourceBuffer::AppendBufferInternal_Locked(
     base::span<const unsigned char> data,
-    base::ScopedClosureRunner release_runner,
+    DOMArrayBuffer* full_array_buffer,
+    bool borrow_mode,
     ExceptionState* exception_state,
     MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */) {
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -2169,8 +2193,10 @@ void SourceBuffer::AppendBufferInternal_Locked(
   // just a single async segment parser loop run later, with nothing added to
   // the parser's input buffer here synchronously.
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-  // `release_runner` is null unless the appended ArrayBuffer is retained for
-  // us, in which case the parser may borrow `data` instead of copying it.
+  base::ScopedClosureRunner release_runner;
+  if (borrow_mode && !data.empty()) {
+    release_runner = PrepareBorrowedAppendBuffer(&data, full_array_buffer);
+  }
   const bool append_succeeded =
       web_source_buffer_->AppendToParseBuffer(data, std::move(release_runner));
 #else   // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -2184,6 +2210,9 @@ void SourceBuffer::AppendBufferInternal_Locked(
                                     TRACE_ID_LOCAL(this));
     return;
   }
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  ++successful_append_count_;
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   // 3. Set the updating attribute to true.
   updating_ = true;
@@ -2356,6 +2385,14 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
                                         "type", "nextPieceDelay");
       return;
     case media::StreamParser::ParseStatus::kSuccess:
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+      if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+        WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+            partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+            partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+            partition_alloc::PurgeFlags::kLimitDuration);
+      }
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;
 
