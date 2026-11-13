@@ -187,6 +187,7 @@ OwnedSegmentedByteQueue::~OwnedSegmentedByteQueue() = default;
 
 void OwnedSegmentedByteQueue::Reset() {
   queue_.Reset();
+  queue_.MaybeShrinkIdleBuffer();
 }
 
 bool OwnedSegmentedByteQueue::Push(base::span<const uint8_t> data,

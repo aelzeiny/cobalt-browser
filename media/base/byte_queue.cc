@@ -104,9 +104,26 @@ void ByteQueue::Pop(int count) {
   offset_ += count;
   used_ -= count;
 
-  // Move the offset back to 0 if we have reached the end of the buffer.
-  if (offset_ == size_) {
-    DCHECK_EQ(used_, 0);
+  // Move the offset back to 0 when the queue drains empty, and release
+  // oversized high-water scratch blocks so multi-MB appends do not remain
+  // pinned when idle.
+  if (used_ == 0) {
+    offset_ = 0;
+    MaybeShrinkIdleBuffer();
+  }
+}
+
+void ByteQueue::MaybeShrinkIdleBuffer() {
+  constexpr size_t kMaxIdleQueueSize = 64 * 1024;
+  if (used_ != 0 || size_ <= kMaxIdleQueueSize) {
+    return;
+  }
+  uint8_t* new_buffer = nullptr;
+  if (base::UncheckedMalloc(kDefaultQueueSize,
+                            reinterpret_cast<void**>(&new_buffer)) &&
+      new_buffer) {
+    buffer_.reset(new_buffer);
+    size_ = kDefaultQueueSize;
     offset_ = 0;
   }
 }
