@@ -451,6 +451,12 @@ StreamParser::ParseStatus MP4StreamParser::Parse(
       return ParseStatus::kSuccessHasMoreData;
     }
   }
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  if (state_ == kParsingBoxes && scratch_frame_buf_.capacity() > 64 * 1024) {
+    scratch_frame_buf_.clear();
+    scratch_frame_buf_.shrink_to_fit();
+  }
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
   return ParseStatus::kSuccess;
 }
 

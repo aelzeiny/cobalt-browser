@@ -77,6 +77,10 @@ void BorrowedSegmentedByteQueue::Pop(size_t count) {
   }
 
   segments_.erase(segments_.begin(), segments_.begin() + fully_consumed);
+  if (total_bytes_ == 0u) {
+    scratch_.reset();
+    segments_.shrink_to_fit();
+  }
 }
 
 size_t BorrowedSegmentedByteQueue::size() const {
@@ -183,6 +187,7 @@ OwnedSegmentedByteQueue::~OwnedSegmentedByteQueue() = default;
 
 void OwnedSegmentedByteQueue::Reset() {
   queue_.Reset();
+  queue_.MaybeShrinkIdleBuffer();
 }
 
 bool OwnedSegmentedByteQueue::Push(base::span<const uint8_t> data,
