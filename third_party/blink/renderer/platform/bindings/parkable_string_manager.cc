@@ -18,6 +18,11 @@
 #include "build/buildflag.h"
 #include "base/trace_event/process_memory_dump.h"
 #include "base/trace_event/trace_event.h"
+#if BUILDFLAG(IS_COBALT)
+#include "base/memory/discardable_memory_allocator.h"
+#include "partition_alloc/partition_root.h"
+#include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
+#endif  // BUILDFLAG(IS_COBALT)
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/bindings/parkable_string.h"
@@ -171,17 +176,19 @@ bool ParkableStringManager::ShouldPark(const StringImpl& string) {
 
 // static
 base::TimeDelta ParkableStringManager::AgingInterval() {
+#if BUILDFLAG(IS_COBALT)
+  return base::Seconds(1);
+#else
   return base::FeatureList::IsEnabled(features::kLessAggressiveParkableString)
              ? kLessAggressiveAgingInterval
              : kAgingInterval;
+#endif
 }
 
 #if BUILDFLAG(IS_COBALT)
 // static
 base::TimeDelta ParkableStringManager::FirstParkingDelay() {
-  return base::FeatureList::IsEnabled(features::kLessAggressiveParkableString)
-             ? kFirstParkingDelay
-             : kCobaltFirstParkingDelay;
+  return kCobaltFirstParkingDelay;
 }
 #endif
 
@@ -332,6 +339,12 @@ void ParkableStringManager::OnParked(ParkableStringImpl* newly_parked_string) {
   DCHECK(IsMainThread());
   DCHECK(newly_parked_string->may_be_parked());
   MoveString(newly_parked_string, &unparked_strings_, &parked_strings_);
+#if BUILDFLAG(IS_COBALT)
+  WTF::Partitions::BufferPartition()->PurgeMemory(
+      partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+      partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+      partition_alloc::PurgeFlags::kLimitDuration);
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 void ParkableStringManager::OnWrittenToDisk(
@@ -339,6 +352,12 @@ void ParkableStringManager::OnWrittenToDisk(
   DCHECK(IsMainThread());
   DCHECK(newly_written_string->may_be_parked());
   MoveString(newly_written_string, &parked_strings_, &on_disk_strings_);
+#if BUILDFLAG(IS_COBALT)
+  WTF::Partitions::BufferPartition()->PurgeMemory(
+      partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+      partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+      partition_alloc::PurgeFlags::kLimitDuration);
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 void ParkableStringManager::OnUnparked(ParkableStringImpl* was_parked_string,
@@ -480,7 +499,19 @@ void ParkableStringManager::PurgeMemory() {
   DCHECK(IsMainThread());
   DCHECK(CompressionEnabled());
 
+#if BUILDFLAG(IS_COBALT)
+  ParkAll(ParkableStringImpl::ParkingMode::kCompressThenToDisk);
+  auto parked = EnumerateStrings(parked_strings_);
+  for (ParkableStringImpl* str : parked) {
+    str->MaybeAgeOrParkString();
+    str->MaybeAgeOrParkString();
+  }
+  if (auto* discardable = base::DiscardableMemoryAllocator::GetInstance()) {
+    discardable->ReleaseFreeMemory();
+  }
+#else
   ParkAll(ParkableStringImpl::ParkingMode::kCompress);
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 ParkableStringManager::Statistics ParkableStringManager::ComputeStatistics()
@@ -583,11 +614,17 @@ bool ParkableStringManager::IsPaused() const {
     return true;
   }
 
+#if BUILDFLAG(IS_COBALT)
+  // Cobalt runs a single foreground TV WebContents that is never backgrounded
+  // during active browsing/playback. Allow string aging and parking once loaded.
+  return rail_mode_ == RAILMode::kLoad;
+#else
   if (!base::FeatureList::IsEnabled(features::kLessAggressiveParkableString)) {
     return false;
   }
 
   return !(backgrounded_ && (rail_mode_ != RAILMode::kLoad));
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 bool ParkableStringManager::HasPendingWork() const {
