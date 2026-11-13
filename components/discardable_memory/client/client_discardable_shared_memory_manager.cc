@@ -471,6 +471,23 @@ void ClientDiscardableSharedMemoryManager::ReleaseFreeMemory() {
   base::AutoLock lock(lock_);
   size_t heap_size_prior_to_releasing_memory = heap_->GetSize();
 
+#if BUILDFLAG(IS_COBALT)
+  const auto now = base::TimeTicks::Now();
+  for (auto it = allocated_memory_.begin(); it != allocated_memory_.end();) {
+    auto prev = it++;
+    DiscardableMemoryImpl* mem = *prev;
+    DCHECK_EQ(&lock_, &mem->manager_->lock_);
+    mem->manager_->lock_.AssertAcquired();
+    auto span = mem->Purge(now);
+    if (span) {
+      allocated_memory_.erase(prev);
+      if (span->shared_memory()) {
+        heap_->MergeIntoFreeLists(std::move(span));
+      }
+    }
+  }
+#endif  // BUILDFLAG(IS_COBALT)
+
   // Release both purged and free memory.
   heap_->ReleasePurgedMemory();
   heap_->ReleaseFreeMemory();
