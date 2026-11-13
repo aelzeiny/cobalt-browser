@@ -4,6 +4,7 @@
 
 #include "third_party/rive/cobalt/rive_renderer_gl.h"
 
+#include <string_view>
 #include <utility>
 
 #include "gpu/command_buffer/client/gles2_lib.h"
@@ -65,10 +66,20 @@ std::unique_ptr<RendererGL> RendererGL::Create(
 
 RendererGL::RendererGL(gpu::gles2::GLES2Interface* gl,
                        std::unique_ptr<rive::gpu::RenderContext> render_context)
-    : gl_(gl), render_context_(std::move(render_context)) {}
+    : gl_(gl), render_context_(std::move(render_context)) {
+  const char* extensions =
+      reinterpret_cast<const char*>(gl_->GetString(GL_EXTENSIONS));
+  has_copy_texture_ =
+      extensions &&
+      std::string_view(extensions).find("GL_CHROMIUM_copy_texture") !=
+          std::string_view::npos;
+}
 
 RendererGL::~RendererGL() {
   gles2::SetGLContext(gl_);
+  if (copy_fbo_) {
+    gl_->DeleteFramebuffers(1, &copy_fbo_);
+  }
   render_context_.reset();
 }
 
@@ -171,9 +182,25 @@ void RendererGL::Draw(Target& target,
   render_context_->flush({.renderTarget = target.target_.get()});
   impl->unbindGLInternalResources();
   if (target.offscreen_texture_) {
-    gl_->CopySubTextureCHROMIUM(target.offscreen_texture_, 0, GL_TEXTURE_2D,
-                                texture, 0, 0, 0, 0, 0, target.width(),
-                                target.height(), false, false, false);
+    if (has_copy_texture_) {
+      gl_->CopySubTextureCHROMIUM(target.offscreen_texture_, 0, GL_TEXTURE_2D,
+                                  texture, 0, 0, 0, 0, 0, target.width(),
+                                  target.height(), false, false, false);
+    } else {
+      if (!copy_fbo_) {
+        gl_->GenFramebuffers(1, &copy_fbo_);
+      }
+      gl_->BindFramebuffer(GL_FRAMEBUFFER, copy_fbo_);
+      gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_TEXTURE_2D, target.offscreen_texture_, 0);
+      gl_->BindTexture(GL_TEXTURE_2D, texture);
+      gl_->CopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, target.width(),
+                             target.height());
+      gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_TEXTURE_2D, 0, 0);
+      gl_->BindTexture(GL_TEXTURE_2D, 0);
+      gl_->BindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
   }
 }
 

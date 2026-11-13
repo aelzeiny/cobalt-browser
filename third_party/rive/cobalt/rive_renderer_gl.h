@@ -89,6 +89,8 @@ class RendererGL {
 
   gpu::gles2::GLES2Interface* const gl_;
   std::unique_ptr<rive::gpu::RenderContext> render_context_;
+  bool has_copy_texture_ = false;
+  uint32_t copy_fbo_ = 0;
 };
 
 }  // namespace cobalt_rive
