@@ -777,7 +777,7 @@ bool SourceBufferStream::GarbageCollectIfNeeded(base::TimeDelta media_time,
   }
 
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-  if (!seek_pending_ && !end_of_stream_ && !ranges_.empty() &&
+  if (!end_of_stream_ && !ranges_.empty() &&
       base::FeatureList::IsEnabled(kCobaltStreamingSourceBufferGC)) {
     const size_t retention_floor_bytes =
         GetType() == SourceBufferStreamType::kVideo
@@ -787,7 +787,7 @@ bool SourceBufferStream::GarbageCollectIfNeeded(base::TimeDelta media_time,
             : static_cast<size_t>(std::max(
                   0, kCobaltStreamingSourceBufferAudioRetentionFloorKB.Get())) *
                   1024;
-    if (ranges_size + newDataSize > retention_floor_bytes) {
+    if (!seek_pending_ && ranges_size + newDataSize > retention_floor_bytes) {
       base::TimeDelta back_evict_time = media_time;
       if (selected_range_ &&
           back_evict_time > selected_range_->GetBufferedEndTimestamp()) {
@@ -807,6 +807,40 @@ bool SourceBufferStream::GarbageCollectIfNeeded(base::TimeDelta media_time,
         FreeBuffers(bytes_above_floor, back_evict_time - back_horizon,
                     /*reverse_direction=*/false);
         ranges_size = GetMemoryUsage();
+      }
+    }
+    if (ranges_.size() > 1 &&
+        ranges_size + newDataSize > retention_floor_bytes) {
+      const SourceBufferRange* next_append_range =
+          range_for_next_append_ != ranges_.end()
+              ? range_for_next_append_->get()
+              : nullptr;
+      if (ranges_.front().get() != selected_range_ &&
+          ranges_.front().get() != next_append_range) {
+        const size_t orphan_front_bytes = std::min(
+            ranges_.front()->GetMemoryUsage(),
+            ranges_size + newDataSize - retention_floor_bytes);
+        if (orphan_front_bytes > 0) {
+          FreeBuffers(orphan_front_bytes, media_time,
+                      /*reverse_direction=*/false);
+          ranges_size = GetMemoryUsage();
+        }
+      }
+      next_append_range = range_for_next_append_ != ranges_.end()
+                              ? range_for_next_append_->get()
+                              : nullptr;
+      if (ranges_.size() > 1 &&
+          ranges_size + newDataSize > retention_floor_bytes &&
+          ranges_.back().get() != selected_range_ &&
+          ranges_.back().get() != next_append_range) {
+        const size_t orphan_back_bytes = std::min(
+            ranges_.back()->GetMemoryUsage(),
+            ranges_size + newDataSize - retention_floor_bytes);
+        if (orphan_back_bytes > 0) {
+          FreeBuffers(orphan_back_bytes, media_time,
+                      /*reverse_direction=*/true);
+          ranges_size = GetMemoryUsage();
+        }
       }
     }
   }

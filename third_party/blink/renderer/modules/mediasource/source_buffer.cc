@@ -52,6 +52,7 @@
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer/array_buffer_contents.h"
 #include "third_party/blink/renderer/modules/cobalt/h_5_vcc.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_settings/h_5_vcc_settings.h"
+#include "third_party/blink/renderer/platform/instrumentation/memory_pressure_listener.h"
 #include "v8/include/v8-statistics.h"
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #include "third_party/blink/public/platform/task_type.h"
@@ -694,12 +695,7 @@ void SourceBuffer::appendTransferredBuffer(DOMArrayBuffer* data,
 void SourceBuffer::appendTransferredBuffer(NotShared<DOMArrayBufferView> data,
                                            ExceptionState& exception_state) {
   DVLOG(3) << __func__ << " this=" << this << " size=" << data->byteLength();
-  DOMArrayBuffer* full_buffer =
-      (data->byteOffset() == 0 &&
-       data->byteLength() == data->buffer()->ByteLength())
-          ? data->buffer()
-          : nullptr;
-  AppendBufferInternal(data->ByteSpan(), full_buffer, /*borrow_mode=*/true,
+  AppendBufferInternal(data->ByteSpan(), data->buffer(), /*borrow_mode=*/true,
                        exception_state);
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -2065,13 +2061,18 @@ base::ScopedClosureRunner SourceBuffer::PrepareBorrowedAppendBuffer(
 
   constexpr size_t kMinDetachByteLength = 32 * 1024;
   constexpr size_t kMaxCopySubViewByteLength = 64 * 1024;
+  const bool is_full_buffer =
+      full_array_buffer &&
+      data->data() ==
+          static_cast<const unsigned char*>(full_array_buffer->Data()) &&
+      data->size() == full_array_buffer->ByteLength();
 
   // Eagerly transfer & detach full-buffer media appends (>= 32 KiB) once
   // initialization has completed so V8 external memory is decremented
   // synchronously and PartitionAlloc frees the backing store immediately when
   // BorrowedSegmentedByteQueue pops the parsed segment.
   if (first_initialization_segment_received_ && successful_append_count_ >= 2 &&
-      full_array_buffer && data->size() >= kMinDetachByteLength) {
+      is_full_buffer && data->size() >= kMinDetachByteLength) {
     ExecutionContext* context = GetExecutionContext();
     v8::Isolate* isolate = context ? context->GetIsolate() : nullptr;
     ArrayBufferContents transferred_contents;
@@ -2083,10 +2084,12 @@ base::ScopedClosureRunner SourceBuffer::PrepareBorrowedAppendBuffer(
     }
   }
 
-  // For small buffers (e.g. init segments) or sub-views into a larger
-  // ArrayBuffer, copy only the active slice into compact owned storage so we
-  // neither detach cached JS init segments nor pin a large backing store.
-  if (!full_array_buffer || data->size() <= kMaxCopySubViewByteLength) {
+  // For small buffers (e.g. init segments) or small sub-views into a much
+  // larger ArrayBuffer, copy only the active slice into compact owned storage
+  // so we neither detach cached JS init segments nor pin a disproportionately
+  // large backing store.
+  if (!full_array_buffer || data->size() <= kMaxCopySubViewByteLength ||
+      data->size() * 2 < full_array_buffer->ByteLength()) {
     auto owned = std::make_unique<base::HeapArray<uint8_t>>(
         base::HeapArray<uint8_t>::CopiedFrom(*data));
     *data = owned->as_span();
@@ -2388,57 +2391,8 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       return;
     case media::StreamParser::ParseStatus::kSuccess:
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-      size_t ab_partition_bytes = 0;
-      if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
-        auto* ab_partition = WTF::Partitions::ArrayBufferPartition();
-        ab_partition->PurgeMemory(
-            partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
-            partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
-            partition_alloc::PurgeFlags::kLimitDuration);
-        ab_partition_bytes = ab_partition->get_total_size_of_allocated_bytes();
-      }
-      constexpr size_t kMinExternalAbBaselineBytes = 8 * 1024 * 1024;
-      if (ab_partition_bytes < external_ab_post_trim_watermark_bytes_) {
-        external_ab_post_trim_watermark_bytes_ =
-            std::max(kMinExternalAbBaselineBytes, ab_partition_bytes);
-      }
-      WTF::Partitions::BufferPartition()->PurgeMemory(
-          partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
-          partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
-          partition_alloc::PurgeFlags::kLimitDuration);
-      partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
-      if (ExecutionContext* ctx = GetExecutionContext()) {
-        if (v8::Isolate* isolate = ctx->GetIsolate()) {
-          const base::TimeTicks now = base::TimeTicks::Now();
-          if (now - last_v8_slack_trim_time_ >= base::Seconds(10)) {
-            v8::HeapStatistics heap_stats;
-            isolate->GetHeapStatistics(&heap_stats);
-            const size_t external_bytes =
-                std::max(ab_partition_bytes, heap_stats.external_memory());
-            if (external_bytes < external_ab_post_trim_watermark_bytes_) {
-              external_ab_post_trim_watermark_bytes_ =
-                  std::max(kMinExternalAbBaselineBytes, external_bytes);
-            }
-            constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
-            constexpr size_t kExternalAbGrowthHysteresisBytes =
-                12 * 1024 * 1024;
-            const bool js_heap_slack_high =
-                heap_stats.total_heap_size() >
-                heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
-            const bool external_ab_growth_high =
-                external_bytes > external_ab_post_trim_watermark_bytes_ +
-                                     kExternalAbGrowthHysteresisBytes;
-            if (js_heap_slack_high || external_ab_growth_high) {
-              last_v8_slack_trim_time_ = now;
-              if (external_ab_growth_high) {
-                external_ab_post_trim_watermark_bytes_ = external_bytes;
-              }
-              isolate->MemoryPressureNotification(
-                  v8::MemoryPressureLevel::kModerate);
-            }
-          }
-        }
-      }
+      ReclaimExternalAndTransitionMemory(!initial_playback_reclaim_done_ &&
+                                         first_initialization_segment_received_);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;
@@ -2667,6 +2621,8 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   // This function implements the handling of append success in
   // AppendBufferAsyncPart_Locked() as is, when `parse_result` is
   // media::StreamParser::ParseStatus::kSuccess.
+  ReclaimExternalAndTransitionMemory(!initial_playback_reclaim_done_ &&
+                                     first_initialization_segment_received_);
 
   // 3. Set the updating attribute to false.
   updating_ = false;
@@ -2723,6 +2679,104 @@ void SourceBuffer::LogFirstSegmentAppendDelay() {
     LOG(INFO) << __func__ << ": Append synchronously avoided a delay of "
               << delay.InMicroseconds();
   }
+}
+
+void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
+  static std::atomic<int64_t> g_last_global_reclaim_us{0};
+  static std::atomic<size_t> g_post_gc_external_ab_watermark_bytes{
+      8 * 1024 * 1024};
+
+  constexpr size_t kMinExternalAbBaselineBytes = 8 * 1024 * 1024;
+  constexpr size_t kMaxIdleJsHeapSlackBytes = 5 * 1024 * 1024;
+  constexpr size_t kExternalAbGrowthHysteresisBytes = 10 * 1024 * 1024;
+
+  if (is_initial_segment) {
+    initial_playback_reclaim_done_ = true;
+  }
+
+  size_t ab_partition_bytes = 0;
+  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+    ab_partition_bytes = WTF::Partitions::ArrayBufferPartition()
+                             ->get_total_size_of_allocated_bytes();
+  }
+  size_t watermark =
+      g_post_gc_external_ab_watermark_bytes.load(std::memory_order_relaxed);
+  if (ab_partition_bytes > 0 && ab_partition_bytes < watermark) {
+    watermark = std::max(kMinExternalAbBaselineBytes, ab_partition_bytes);
+    g_post_gc_external_ab_watermark_bytes.store(watermark,
+                                                std::memory_order_relaxed);
+  }
+
+  const base::TimeTicks now = base::TimeTicks::Now();
+  const int64_t now_us = now.since_origin().InMicroseconds();
+  const int64_t last_us =
+      g_last_global_reclaim_us.load(std::memory_order_relaxed);
+  const base::TimeDelta elapsed = base::Microseconds(now_us - last_us);
+
+  if (ExecutionContext* ctx = GetExecutionContext()) {
+    if (v8::Isolate* isolate = ctx->GetIsolate()) {
+      v8::HeapStatistics heap_stats;
+      isolate->GetHeapStatistics(&heap_stats);
+      const size_t external_bytes =
+          std::max(ab_partition_bytes, heap_stats.external_memory());
+      if (external_bytes < watermark) {
+        watermark = std::max(kMinExternalAbBaselineBytes, external_bytes);
+        g_post_gc_external_ab_watermark_bytes.store(watermark,
+                                                    std::memory_order_relaxed);
+      }
+      const bool js_heap_slack_high =
+          heap_stats.total_heap_size() >
+          heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
+      const bool external_ab_growth_high =
+          external_bytes > watermark + kExternalAbGrowthHysteresisBytes;
+
+      if ((is_initial_segment && elapsed >= base::Seconds(3)) ||
+          (elapsed >= base::Seconds(8) &&
+           (js_heap_slack_high || external_ab_growth_high))) {
+        g_last_global_reclaim_us.store(now_us, std::memory_order_relaxed);
+        last_v8_slack_trim_time_ = now;
+        if (IsMainThread()) {
+          if (is_initial_segment) {
+            MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
+                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+          }
+          MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+        }
+        // Run synchronous footprint-reducing GC and eager ArrayBuffer sweeping
+        // so dead fetch/UMP ArrayBuffers and Browse/Startup V8 heap slack are
+        // reclaimed before measuring the post-GC watermark and purging PA.
+        isolate->MemoryPressureNotification(
+            v8::MemoryPressureLevel::kCritical);
+
+        size_t post_gc_ab_bytes = 0;
+        if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+          post_gc_ab_bytes = WTF::Partitions::ArrayBufferPartition()
+                                 ->get_total_size_of_allocated_bytes();
+        }
+        v8::HeapStatistics post_stats;
+        isolate->GetHeapStatistics(&post_stats);
+        const size_t post_external =
+            std::max(post_gc_ab_bytes, post_stats.external_memory());
+        const size_t new_watermark =
+            std::max(kMinExternalAbBaselineBytes, post_external);
+        g_post_gc_external_ab_watermark_bytes.store(new_watermark,
+                                                    std::memory_order_relaxed);
+        external_ab_post_trim_watermark_bytes_ = new_watermark;
+      }
+    }
+  }
+
+  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+    WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+        partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+        partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+        partition_alloc::PurgeFlags::kLimitDuration);
+  }
+  WTF::Partitions::BufferPartition()->PurgeMemory(
+      partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+      partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+      partition_alloc::PurgeFlags::kLimitDuration);
+  partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 

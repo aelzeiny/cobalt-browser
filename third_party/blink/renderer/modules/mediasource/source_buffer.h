@@ -297,10 +297,12 @@ class SourceBuffer final : public EventTarget,
       MediaSourceAttachmentSupplement::ExclusiveKey passkey);
 
   void LogFirstSegmentAppendDelay();
+  void ReclaimExternalAndTransitionMemory(bool is_initial_segment);
 
   const bool append_first_segment_synchronously_;
   bool first_segment_appended_ = false;
   bool first_segment_appended_logged_ = false;
+  bool initial_playback_reclaim_done_ = false;
   size_t successful_append_count_ = 0;
   base::TimeTicks first_segment_append_start_time_;
   base::TimeTicks last_v8_slack_trim_time_;
