@@ -78,8 +78,8 @@ CommandLinePreprocessor::GetCobaltParamSwitchDefaults() {
        // Disable decommitting pooled pages to prevent virtual memory
        // fragmentation.
        "--no-decommit-pooled-pages,"
-       // Disable v8 concurrent marking by default.
-       "--no-concurrent-marking"},
+       // Enable V8 and Oilpan CppHeap concurrent marking on background threads.
+       "--concurrent-marking"},
       // Enable precise memory info so we can make accurate client-side
       // measurements.
       {::switches::kEnableBlinkFeatures, "PreciseMemoryInfo"},

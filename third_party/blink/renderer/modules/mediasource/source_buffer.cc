@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/modules/mediasource/source_buffer.h"
 
+#include <algorithm>
 #include <atomic>
 #include <limits>
 #include <memory>
@@ -46,11 +47,15 @@
 #include "base/containers/heap_array.h"
 #include "base/feature_list.h"
 #include "base/functional/callback_helpers.h"
+#include "base/memory/memory_pressure_listener.h"
 #include "media/base/media_switches.h"
+#include "partition_alloc/memory_reclaimer.h"
 #include "partition_alloc/partition_root.h"
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer/array_buffer_contents.h"
 #include "third_party/blink/renderer/modules/cobalt/h_5_vcc.h"
 #include "third_party/blink/renderer/modules/cobalt/h5vcc_settings/h_5_vcc_settings.h"
+#include "third_party/blink/renderer/platform/instrumentation/memory_pressure_listener.h"
+#include "v8/include/v8-statistics.h"
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/public/platform/web_source_buffer.h"
@@ -692,12 +697,7 @@ void SourceBuffer::appendTransferredBuffer(DOMArrayBuffer* data,
 void SourceBuffer::appendTransferredBuffer(NotShared<DOMArrayBufferView> data,
                                            ExceptionState& exception_state) {
   DVLOG(3) << __func__ << " this=" << this << " size=" << data->byteLength();
-  DOMArrayBuffer* full_buffer =
-      (data->byteOffset() == 0 &&
-       data->byteLength() == data->buffer()->ByteLength())
-          ? data->buffer()
-          : nullptr;
-  AppendBufferInternal(data->ByteSpan(), full_buffer, /*borrow_mode=*/true,
+  AppendBufferInternal(data->ByteSpan(), data->buffer(), /*borrow_mode=*/true,
                        exception_state);
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
@@ -1279,6 +1279,10 @@ void SourceBuffer::RemovedFromMediaSource() {
   source_->AssertAttachmentsMutexHeldIfCrossThreadForDebugging();
 
   DVLOG(3) << __func__ << " this=" << this;
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  post_append_reclaim_task_handle_.Cancel();
+  playhead_evict_task_handle_.Cancel();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
   if (pending_remove_start_ != -1) {
     CancelRemove();
   } else {
@@ -1932,6 +1936,10 @@ bool SourceBuffer::HasPendingActivity() const {
 
 void SourceBuffer::ContextDestroyed() {
   append_buffer_async_task_handle_.Cancel();
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  post_append_reclaim_task_handle_.Cancel();
+  playhead_evict_task_handle_.Cancel();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   append_encoded_chunks_async_task_handle_.Cancel();
   pending_chunks_to_buffer_.reset();
@@ -2063,13 +2071,18 @@ base::ScopedClosureRunner SourceBuffer::PrepareBorrowedAppendBuffer(
 
   constexpr size_t kMinDetachByteLength = 32 * 1024;
   constexpr size_t kMaxCopySubViewByteLength = 64 * 1024;
+  const bool is_full_buffer =
+      full_array_buffer &&
+      data->data() ==
+          static_cast<const unsigned char*>(full_array_buffer->Data()) &&
+      data->size() == full_array_buffer->ByteLength();
 
   // Eagerly transfer & detach full-buffer media appends (>= 32 KiB) once
   // initialization has completed so V8 external memory is decremented
   // synchronously and PartitionAlloc frees the backing store immediately when
   // BorrowedSegmentedByteQueue pops the parsed segment.
   if (first_initialization_segment_received_ && successful_append_count_ >= 2 &&
-      full_array_buffer && data->size() >= kMinDetachByteLength) {
+      is_full_buffer && data->size() >= kMinDetachByteLength) {
     ExecutionContext* context = GetExecutionContext();
     v8::Isolate* isolate = context ? context->GetIsolate() : nullptr;
     ArrayBufferContents transferred_contents;
@@ -2081,10 +2094,12 @@ base::ScopedClosureRunner SourceBuffer::PrepareBorrowedAppendBuffer(
     }
   }
 
-  // For small buffers (e.g. init segments) or sub-views into a larger
-  // ArrayBuffer, copy only the active slice into compact owned storage so we
-  // neither detach cached JS init segments nor pin a large backing store.
-  if (!full_array_buffer || data->size() <= kMaxCopySubViewByteLength) {
+  // For small buffers (e.g. init segments) or small sub-views into a much
+  // larger ArrayBuffer, copy only the active slice into compact owned storage
+  // so we neither detach cached JS init segments nor pin a disproportionately
+  // large backing store.
+  if (!full_array_buffer || data->size() <= kMaxCopySubViewByteLength ||
+      data->size() * 2 < full_array_buffer->ByteLength()) {
     auto owned = std::make_unique<base::HeapArray<uint8_t>>(
         base::HeapArray<uint8_t>::CopiedFrom(*data));
     *data = owned->as_span();
@@ -2212,6 +2227,8 @@ void SourceBuffer::AppendBufferInternal_Locked(
   }
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   ++successful_append_count_;
+  idle_playhead_evict_ticks_ = 0;
+  post_append_reclaim_task_handle_.Cancel();
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   // 3. Set the updating attribute to true.
@@ -2386,12 +2403,10 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       return;
     case media::StreamParser::ParseStatus::kSuccess:
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-      if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
-        WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
-            partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
-            partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
-            partition_alloc::PurgeFlags::kLimitDuration);
-      }
+      ReclaimExternalAndTransitionMemory(
+          !initial_playback_reclaim_done_ &&
+              first_initialization_segment_received_,
+          /*is_post_burst=*/false);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;
@@ -2405,6 +2420,10 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       // 5. Queue a task to fire a simple event named updateend at this
       //    SourceBuffer object.
       ScheduleEvent(event_type_names::kUpdateend);
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+      SchedulePostAppendMemoryReclaim();
+      SchedulePlayheadBehindEviction();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       break;
   }
 
@@ -2620,6 +2639,9 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   // This function implements the handling of append success in
   // AppendBufferAsyncPart_Locked() as is, when `parse_result` is
   // media::StreamParser::ParseStatus::kSuccess.
+  ReclaimExternalAndTransitionMemory(!initial_playback_reclaim_done_ &&
+                                         first_initialization_segment_received_,
+                                     /*is_post_burst=*/false);
 
   // 3. Set the updating attribute to false.
   updating_ = false;
@@ -2633,6 +2655,8 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   // 5. Queue a task to fire a simple event named updateend at this
   //    SourceBuffer object.
   ScheduleEvent(event_type_names::kUpdateend);
+  SchedulePostAppendMemoryReclaim();
+  SchedulePlayheadBehindEviction();
 }
 
 void SourceBuffer::AppendBufferSyncPartFailed() {
@@ -2675,6 +2699,199 @@ void SourceBuffer::LogFirstSegmentAppendDelay() {
     auto delay = base::TimeTicks::Now() - first_segment_append_start_time_;
     LOG(INFO) << __func__ << ": Append synchronously avoided a delay of "
               << delay.InMicroseconds();
+  }
+}
+
+void SourceBuffer::SchedulePlayheadBehindEviction() {
+  if (IsRemoved() || !first_initialization_segment_received_) {
+    return;
+  }
+  ExecutionContext* ctx = GetExecutionContext();
+  if (!ctx || ctx->IsContextDestroyed()) {
+    return;
+  }
+  if (playhead_evict_task_handle_.IsActive()) {
+    return;
+  }
+  playhead_evict_task_handle_ = PostDelayedCancellableTask(
+      *ctx->GetTaskRunner(TaskType::kMediaElementEvent), FROM_HERE,
+      WTF::BindOnce(&SourceBuffer::RunPlayheadBehindEviction,
+                    WrapWeakPersistent(this)),
+      base::Milliseconds(1500));
+}
+
+void SourceBuffer::RunPlayheadBehindEviction() {
+  if (IsRemoved() || !source_ || !source_->IsOpen() ||
+      !first_initialization_segment_received_) {
+    return;
+  }
+  if (updating_) {
+    SchedulePlayheadBehindEviction();
+    return;
+  }
+  source_->RunUnlessElementGoneOrClosingUs(
+      WTF::BindOnce(&SourceBuffer::RunPlayheadBehindEviction_Locked,
+                    WrapWeakPersistent(this)));
+}
+
+void SourceBuffer::RunPlayheadBehindEviction_Locked(
+    MediaSourceAttachmentSupplement::ExclusiveKey /* passkey */) {
+  if (IsRemoved() || updating_ || !first_initialization_segment_received_) {
+    return;
+  }
+  const double media_time = GetMediaTime();
+  if (!std::isnan(media_time)) {
+    if (media_time < last_playhead_evict_media_time_) {
+      // Reset tracking cleanly on backward seek or loop-to-start without
+      // triggering background eviction (PrepareAppend handles seek GC).
+      last_playhead_evict_media_time_ = media_time;
+      idle_playhead_evict_ticks_ = 0;
+    } else if (media_time > 2.0 &&
+               media_time - last_playhead_evict_media_time_ >= 1.2) {
+      last_playhead_evict_media_time_ = media_time;
+      idle_playhead_evict_ticks_ = 0;
+      EvictCodedFrames(media_time, /*new_data_size=*/0);
+      source_->SendUpdatedInfoToMainThreadCache();
+    } else {
+      ++idle_playhead_evict_ticks_;
+    }
+  } else {
+    ++idle_playhead_evict_ticks_;
+  }
+  if (idle_playhead_evict_ticks_ < 6) {
+    SchedulePlayheadBehindEviction();
+  }
+}
+
+void SourceBuffer::SchedulePostAppendMemoryReclaim() {
+  ExecutionContext* ctx = GetExecutionContext();
+  if (!ctx || ctx->IsContextDestroyed()) {
+    return;
+  }
+  post_append_reclaim_task_handle_ = PostDelayedCancellableTask(
+      *ctx->GetTaskRunner(TaskType::kMediaElementEvent), FROM_HERE,
+      WTF::BindOnce(&SourceBuffer::RunPostAppendMemoryReclaim,
+                    WrapWeakPersistent(this)),
+      base::Milliseconds(250));
+}
+
+void SourceBuffer::RunPostAppendMemoryReclaim() {
+  if (IsRemoved() || updating_) {
+    return;
+  }
+  const bool force_post_initial_burst = !post_initial_burst_reclaim_done_ &&
+                                        first_initialization_segment_received_ &&
+                                        successful_append_count_ >= 2;
+  if (force_post_initial_burst) {
+    post_initial_burst_reclaim_done_ = true;
+  }
+  ReclaimExternalAndTransitionMemory(
+      /*is_initial_segment=*/force_post_initial_burst,
+      /*is_post_burst=*/true);
+}
+
+void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
+                                                      bool is_post_burst) {
+  constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
+  constexpr size_t kPostBurstGrowthHysteresisBytes = 6 * 1024 * 1024;
+  constexpr size_t kMidBurstGrowthHysteresisBytes = 16 * 1024 * 1024;
+
+  if (is_initial_segment) {
+    initial_playback_reclaim_done_ = true;
+  }
+
+  const base::TimeTicks now = base::TimeTicks::Now();
+  bool did_reclaim = false;
+
+  if (ExecutionContext* ctx = GetExecutionContext()) {
+    if (v8::Isolate* isolate = ctx->GetIsolate()) {
+      size_t watermark = 0;
+      const size_t external_bytes =
+          DOMArrayBuffer::ObserveExternalArrayBufferBytes(isolate, &watermark);
+
+      v8::HeapStatistics heap_stats;
+      isolate->GetHeapStatistics(&heap_stats);
+      const bool js_heap_slack_high =
+          heap_stats.total_heap_size() >
+          heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
+      const size_t growth_threshold = is_post_burst
+                                          ? kPostBurstGrowthHysteresisBytes
+                                          : kMidBurstGrowthHysteresisBytes;
+      const bool external_ab_growth_high =
+          external_bytes > watermark + growth_threshold;
+      const base::TimeDelta min_cooldown =
+          is_initial_segment
+              ? base::Seconds(1)
+              : (is_post_burst ? base::Seconds(4) : base::Seconds(6));
+      const bool wants_reclaim =
+          is_initial_segment || external_ab_growth_high ||
+          (is_post_burst && js_heap_slack_high);
+
+      if (wants_reclaim &&
+          DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
+              min_cooldown)) {
+        last_v8_slack_trim_time_ = now;
+        did_reclaim = true;
+
+        if (is_initial_segment) {
+          // Watch startup transition only (at most twice per video): perform
+          // deep V8 + Oilpan sweep and evict unused Browse DOM, CC ResourcePool
+          // tiles, and Skia scratch textures across threads.
+          isolate->LowMemoryNotification();
+          if (IsMainThread()) {
+            MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
+                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+            MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+            base::MemoryPressureListener::NotifyMemoryPressure(
+                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+            ctx->GetTaskRunner(TaskType::kMediaElementEvent)
+                ->PostDelayedTask(
+                    FROM_HERE, WTF::BindOnce([]() {
+                      if (IsMainThread()) {
+                        MemoryPressureListenerRegistry::Instance()
+                            .OnPurgeMemory();
+                      }
+                      partition_alloc::MemoryReclaimer::Instance()
+                          ->ReclaimAll();
+                    }),
+                    base::Milliseconds(150));
+          }
+        } else {
+          // Steady playback: single bounded kReduceMemoryFootprint GC pass
+          // without flushing V8 compilation caches or triggering double
+          // MarkCompact stalls.
+          isolate->MemoryPressureNotification(
+              v8::MemoryPressureLevel::kCritical);
+          if (IsMainThread()) {
+            MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+          }
+        }
+
+        const size_t new_watermark =
+            DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(isolate);
+        external_ab_post_trim_watermark_bytes_ = new_watermark;
+      } else if (is_post_burst && IsMainThread()) {
+        // O(1) re-park for any disk-backed ParkableStrings briefly unparked
+        // (e.g., via Script::GetPositionInfo) during the completed burst.
+        MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+      }
+    }
+  }
+
+  if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+    WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+        partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+        partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+        partition_alloc::PurgeFlags::kAggressiveReclaim);
+  }
+  WTF::Partitions::BufferPartition()->PurgeMemory(
+      partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+      partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+      partition_alloc::PurgeFlags::kAggressiveReclaim);
+  if (did_reclaim || is_post_burst) {
+    partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+  } else {
+    partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
   }
 }
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
