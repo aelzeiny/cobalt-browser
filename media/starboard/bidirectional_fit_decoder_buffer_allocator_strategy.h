@@ -29,7 +29,6 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
     : public DecoderBufferAllocator::Strategy {
  public:
   static constexpr size_t kAudioAllocationIncrement = 256 * 1024;
-  static constexpr size_t kMaxVideoAllocationIncrement = 1024 * 1024;
 
   BidirectionalFitDecoderBufferAllocatorStrategy(size_t initial_capacity,
                                                  size_t allocation_increment)
@@ -48,19 +47,16 @@ class BidirectionalFitDecoderBufferAllocatorStrategy
             /*aggressive_decommit_on_suspend=*/true,
             /*memset_on_reclaim=*/false,
             /*mark_as_cold_on_reclaim=*/false),
-        video_allocator_(
-            &fallback_allocator_,
-            initial_capacity,
-            kSmallAllocationThreshold,
-            std::min(allocation_increment > 0 ? allocation_increment
-                                              : kMaxVideoAllocationIncrement,
-                     kMaxVideoAllocationIncrement),
-            /*enable_decommit_on_idle=*/true,
-            /*retain_blocks=*/2,
-            /*conservative_decommit_blocks=*/0,
-            /*aggressive_decommit_on_suspend=*/true,
-            /*memset_on_reclaim=*/false,
-            /*mark_as_cold_on_reclaim=*/false) {}
+        video_allocator_(&fallback_allocator_,
+                         initial_capacity,
+                         kSmallAllocationThreshold,
+                         allocation_increment,
+                         /*enable_decommit_on_idle=*/true,
+                         /*retain_blocks=*/2,
+                         /*conservative_decommit_blocks=*/0,
+                         /*aggressive_decommit_on_suspend=*/true,
+                         /*memset_on_reclaim=*/false,
+                         /*mark_as_cold_on_reclaim=*/false) {}
 
   // Constructs a strategy with explicit decommit configurations.
   explicit BidirectionalFitDecoderBufferAllocatorStrategy(

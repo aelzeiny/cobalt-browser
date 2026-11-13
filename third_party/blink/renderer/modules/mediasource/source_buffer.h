@@ -304,6 +304,7 @@ class SourceBuffer final : public EventTarget,
   size_t successful_append_count_ = 0;
   base::TimeTicks first_segment_append_start_time_;
   base::TimeTicks last_v8_slack_trim_time_;
+  size_t external_ab_post_trim_watermark_bytes_ = 8 * 1024 * 1024;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   std::unique_ptr<WebSourceBuffer> web_source_buffer_;

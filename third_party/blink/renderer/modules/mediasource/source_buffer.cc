@@ -2388,11 +2388,19 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       return;
     case media::StreamParser::ParseStatus::kSuccess:
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
+      size_t ab_partition_bytes = 0;
       if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
-        WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+        auto* ab_partition = WTF::Partitions::ArrayBufferPartition();
+        ab_partition->PurgeMemory(
             partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
             partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
             partition_alloc::PurgeFlags::kLimitDuration);
+        ab_partition_bytes = ab_partition->get_total_size_of_allocated_bytes();
+      }
+      constexpr size_t kMinExternalAbBaselineBytes = 8 * 1024 * 1024;
+      if (ab_partition_bytes < external_ab_post_trim_watermark_bytes_) {
+        external_ab_post_trim_watermark_bytes_ =
+            std::max(kMinExternalAbBaselineBytes, ab_partition_bytes);
       }
       WTF::Partitions::BufferPartition()->PurgeMemory(
           partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
@@ -2405,10 +2413,26 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
           if (now - last_v8_slack_trim_time_ >= base::Seconds(10)) {
             v8::HeapStatistics heap_stats;
             isolate->GetHeapStatistics(&heap_stats);
+            const size_t external_bytes =
+                std::max(ab_partition_bytes, heap_stats.external_memory());
+            if (external_bytes < external_ab_post_trim_watermark_bytes_) {
+              external_ab_post_trim_watermark_bytes_ =
+                  std::max(kMinExternalAbBaselineBytes, external_bytes);
+            }
             constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
-            if (heap_stats.total_heap_size() >
-                heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes) {
+            constexpr size_t kExternalAbGrowthHysteresisBytes =
+                12 * 1024 * 1024;
+            const bool js_heap_slack_high =
+                heap_stats.total_heap_size() >
+                heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
+            const bool external_ab_growth_high =
+                external_bytes > external_ab_post_trim_watermark_bytes_ +
+                                     kExternalAbGrowthHysteresisBytes;
+            if (js_heap_slack_high || external_ab_growth_high) {
               last_v8_slack_trim_time_ = now;
+              if (external_ab_growth_high) {
+                external_ab_post_trim_watermark_bytes_ = external_bytes;
+              }
               isolate->MemoryPressureNotification(
                   v8::MemoryPressureLevel::kModerate);
             }
