@@ -82,13 +82,34 @@ class ReuseAllocatorBase : public Allocator {
   // Reclaims all backing allocations to the base idle pool (subclass-driven).
   void ReclaimFallbackBlocks();
 
+  // Returns true if `[address, size]` spans the entire active fallback block
+  // at `fallback_index`.
+  bool IsFullFallbackBlock(intptr_t fallback_index,
+                           const void* address,
+                           size_t size) const;
+
+  // Count of currently active (`kActiveInUse`) non-null fallback blocks.
+  size_t ActiveFallbackBlockCount() const;
+
+  size_t retain_blocks() const { return retain_blocks_; }
+
+  // Immediately decommits and frees a single empty fallback block back to the
+  // fallback allocator and decrements `capacity_`.
+  void ReleaseFallbackBlock(intptr_t fallback_index);
+
+  // Releases idle fallback blocks beyond `retain_blocks_` when the allocator
+  // drains to zero allocated bytes.
+  void ReleaseIdleFallbackBlocks();
+
   // Enumerates fallback backing allocations. Templated to allow zero-cost
   // compiler inlining for capturing lambdas and avoid std::function overhead.
   template <typename Func>
   void EnumerateFallbackAllocations(Func callback) const {
     for (size_t i = 0; i < fallback_allocations_.size(); ++i) {
-      callback(static_cast<intptr_t>(i), fallback_allocations_[i].address,
-               fallback_allocations_[i].size);
+      if (fallback_allocations_[i].address != nullptr) {
+        callback(static_cast<intptr_t>(i), fallback_allocations_[i].address,
+                 fallback_allocations_[i].size);
+      }
     }
   }
 
@@ -106,6 +127,8 @@ class ReuseAllocatorBase : public Allocator {
     kIdleFreed,
     // Reclaimed to base pool, successfully decommitted via MADV_DONTNEED.
     kIdleDecommitted,
+    // Freed back to fallback_allocator_; slot may be reused.
+    kReleased,
   };
 
   struct FallbackAllocation {

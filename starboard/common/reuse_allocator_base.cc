@@ -44,7 +44,9 @@ ReuseAllocatorBase::ReuseAllocatorBase(Allocator* fallback_allocator,
 
 ReuseAllocatorBase::~ReuseAllocatorBase() {
   for (const auto& fallback_allocation : fallback_allocations_) {
-    fallback_allocator_->Free(fallback_allocation.address);
+    if (fallback_allocation.address != nullptr) {
+      fallback_allocator_->Free(fallback_allocation.address);
+    }
   }
 }
 
@@ -55,8 +57,10 @@ void ReuseAllocatorBase::DecommitAllDecommitableBlocks() {
     // instantly drops the process RSS to prevent the OS Out-Of-Memory killer
     // from terminating the app in background/suspended states.
     for (auto& fallback_block : fallback_allocations_) {
-      if (fallback_block.state != kActiveInUse &&
-          fallback_block.state != kIdleDecommitted) {
+      if (fallback_block.address != nullptr &&
+          fallback_block.state != kActiveInUse &&
+          fallback_block.state != kIdleDecommitted &&
+          fallback_block.state != kReleased) {
         fallback_allocator_->Decommit(fallback_block.address,
                                       fallback_block.size,
                                       DecommitMode::kAggressive);
@@ -70,6 +74,9 @@ void ReuseAllocatorBase::DecommitAllDecommitableBlocks() {
     }
     for (auto it = fallback_allocations_.rbegin();
          it != fallback_allocations_.rend(); ++it) {
+      if (it->address == nullptr) {
+        continue;
+      }
       if (it->state == kIdlePendingDecommit) {
         fallback_allocator_->Decommit(it->address, it->size,
                                       DecommitMode::kAggressive);
@@ -92,7 +99,8 @@ std::pair<void*, intptr_t> ReuseAllocatorBase::AllocateFallbackBlock(
 
   for (size_t i = 0; i < fallback_allocations_.size(); ++i) {
     auto& fallback_block = fallback_allocations_[i];
-    if (fallback_block.state != kActiveInUse &&
+    if (fallback_block.address != nullptr &&
+        fallback_block.state != kActiveInUse &&
         fallback_block.size >= *size_to_try &&
         MemoryIsAligned(fallback_block.address, alignment)) {
       fallback_block.state = kActiveInUse;
@@ -107,9 +115,17 @@ std::pair<void*, intptr_t> ReuseAllocatorBase::AllocateFallbackBlock(
 
   void* ptr = fallback_allocator_->AllocateForAlignment(size_to_try, alignment);
   if (ptr != nullptr) {
+    capacity_ += *size_to_try;
+    for (size_t i = 0; i < fallback_allocations_.size(); ++i) {
+      if (fallback_allocations_[i].address == nullptr) {
+        fallback_allocations_[i].address = ptr;
+        fallback_allocations_[i].size = *size_to_try;
+        fallback_allocations_[i].state = kActiveInUse;
+        return {ptr, static_cast<intptr_t>(i)};
+      }
+    }
     intptr_t index = static_cast<intptr_t>(fallback_allocations_.size());
     fallback_allocations_.emplace_back(ptr, *size_to_try);
-    capacity_ += *size_to_try;
     return {ptr, index};
   }
   return {nullptr, -1};
@@ -119,8 +135,14 @@ void ReuseAllocatorBase::ReclaimFallbackBlocks() {
   SB_LOG(INFO) << "Allocator reached idle state, reclaiming "
                << fallback_allocations_.size() << " fallback allocations.";
   block_decommit_attempt_count_ = 0;
+  size_t seen_non_null = 0;
   for (size_t i = 0; i < fallback_allocations_.size(); ++i) {
     auto& fallback_block = fallback_allocations_[i];
+    if (fallback_block.address == nullptr ||
+        fallback_block.state == kReleased) {
+      continue;
+    }
+    const size_t slot_rank = seen_non_null++;
 
     // Do nothing if the block has already been decommitted or freed.
     if (fallback_block.state == kIdleDecommitted ||
@@ -135,9 +157,9 @@ void ReuseAllocatorBase::ReclaimFallbackBlocks() {
       fallback_allocator_->Decommit(fallback_block.address, fallback_block.size,
                                     DecommitMode::kCold);
     }
-    if (i < retain_blocks_) {
+    if (slot_rank < retain_blocks_) {
       fallback_block.state = kIdleRetained;
-    } else if (i < retain_blocks_ + conservative_decommit_blocks_) {
+    } else if (slot_rank < retain_blocks_ + conservative_decommit_blocks_) {
       fallback_block.state = kIdlePendingFree;
       has_pending_decommits_ = true;
     } else {
@@ -145,6 +167,62 @@ void ReuseAllocatorBase::ReclaimFallbackBlocks() {
       has_pending_decommits_ = true;
     }
   }
+}
+
+bool ReuseAllocatorBase::IsFullFallbackBlock(intptr_t fallback_index,
+                                             const void* address,
+                                             size_t size) const {
+  if (!IsValidFallbackIndex(fallback_index)) {
+    return false;
+  }
+  const auto& fb = fallback_allocations_[static_cast<size_t>(fallback_index)];
+  return fb.address != nullptr && fb.state == kActiveInUse &&
+         fb.address == address && fb.size == size;
+}
+
+size_t ReuseAllocatorBase::ActiveFallbackBlockCount() const {
+  size_t active = 0;
+  for (const auto& fb : fallback_allocations_) {
+    if (fb.address != nullptr && fb.state == kActiveInUse) {
+      ++active;
+    }
+  }
+  return active;
+}
+
+void ReuseAllocatorBase::ReleaseFallbackBlock(intptr_t fallback_index) {
+  if (!IsValidFallbackIndex(fallback_index)) {
+    return;
+  }
+  auto& fb = fallback_allocations_[static_cast<size_t>(fallback_index)];
+  if (fb.address == nullptr) {
+    return;
+  }
+  fallback_allocator_->Decommit(fb.address, fb.size, DecommitMode::kAggressive);
+  fallback_allocator_->Free(fb.address);
+  SB_DCHECK_LE(fb.size, capacity_);
+  capacity_ -= fb.size;
+  fb.address = nullptr;
+  fb.size = 0;
+  fb.state = kReleased;
+}
+
+void ReuseAllocatorBase::ReleaseIdleFallbackBlocks() {
+  block_decommit_attempt_count_ = 0;
+  size_t retained = 0;
+  for (size_t i = 0; i < fallback_allocations_.size(); ++i) {
+    auto& fb = fallback_allocations_[i];
+    if (fb.address == nullptr || fb.state == kReleased) {
+      continue;
+    }
+    if (retained < retain_blocks_) {
+      fb.state = kIdleRetained;
+      ++retained;
+    } else {
+      ReleaseFallbackBlock(static_cast<intptr_t>(i));
+    }
+  }
+  has_pending_decommits_ = false;
 }
 
 // TODO(b/454441375): Move this to be in sync with the declaration order.
@@ -157,6 +235,9 @@ void ReuseAllocatorBase::TryToDecommitOneBlock(int cadence) {
   if (block_decommit_attempt_count_ % effective_cadence == 0) {
     for (auto it = fallback_allocations_.rbegin();
          it != fallback_allocations_.rend(); ++it) {
+      if (it->address == nullptr) {
+        continue;
+      }
       if (it->state == kIdlePendingDecommit) {
         fallback_allocator_->Decommit(it->address, it->size,
                                       DecommitMode::kAggressive);
