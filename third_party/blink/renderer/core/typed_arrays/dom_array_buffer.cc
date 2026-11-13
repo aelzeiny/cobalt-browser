@@ -145,6 +145,22 @@ bool DOMArrayBuffer::ShareNonSharedForInternalUse(ArrayBufferContents& result) {
   return true;
 }
 
+bool DOMArrayBuffer::TryTransferForInternalUse(v8::Isolate* isolate,
+                                               ArrayBufferContents& result) {
+  if (!isolate || IsShared() || !detach_key_.IsEmpty() || IsDetached() ||
+      !Content()->BackingStore() || !Content()->Data() ||
+      !IsDetachable(isolate)) {
+    return false;
+  }
+  bool detach_ok = false;
+  if (!TransferDetachable(isolate, v8::Local<v8::Value>(), result)
+           .To(&detach_ok) ||
+      !detach_ok) {
+    return false;
+  }
+  return true;
+}
+
 v8::Maybe<bool> DOMArrayBuffer::TransferDetachable(
     v8::Isolate* isolate,
     v8::Local<v8::Value> detach_key,

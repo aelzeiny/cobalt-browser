@@ -9,6 +9,7 @@
 #include "base/auto_reset.h"
 #include "base/compiler_specific.h"
 #include "base/numerics/safe_conversions.h"
+#include "partition_alloc/partition_root.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_throw_dom_exception.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/fetch/body.h"
@@ -30,6 +31,7 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/cached_metadata_handler.h"
 #include "third_party/blink/renderer/platform/network/encoded_form_data.h"
 #include "third_party/blink/renderer/platform/scheduler/public/frame_or_worker_scheduler.h"
+#include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 #include "v8/include/v8.h"
 
@@ -530,6 +532,9 @@ void BodyStreamBuffer::CancelConsumer() {
   if (consumer_) {
     consumer_->Cancel();
     consumer_ = nullptr;
+    WTF::Partitions::BufferPartition()->PurgeMemory(
+        partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+        partition_alloc::PurgeFlags::kLimitDuration);
   }
 }
 
@@ -560,6 +565,8 @@ void BodyStreamBuffer::ProcessData(ExceptionState& exception_state) {
       }
       if (!byob_view) {
         CHECK(!array);
+        constexpr size_t kMaxNonByobChunkBytes = 128 * 1024;
+        buffer = buffer.first(std::min(buffer.size(), kMaxNonByobChunkBytes));
         array = DOMUint8Array::CreateOrNull(base::as_bytes(buffer));
       }
       result = consumer_->EndRead(buffer.size());
