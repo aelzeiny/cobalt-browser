@@ -37,8 +37,12 @@ class MEDIA_EXPORT ByteQueue {
 
   ~ByteQueue();
 
-  // Reset the queue to the empty state.
+  // Reset the queue to the empty state. Preserves backing storage capacity for
+  // scratch callers (e.g. BorrowedSegmentedByteQueue::PeekLinearizedData).
   void Reset();
+
+  // Releases oversized backing storage once the queue drains completely empty.
+  void MaybeShrinkIdleBuffer();
 
   // Appends new bytes onto the end of the queue. If allocation failure occurs,
   // then the append of `data` is not done and returns false. Otherwise, returns
