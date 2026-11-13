@@ -90,7 +90,7 @@ TEST(CobaltSwitchDefaultsTest, MergeJavaScriptFlags) {
 
   // V8 flags are last-wins, so defaults are prepended and the caller's flags
   // come last.
-  EXPECT_EQ(std::string("--no-decommit-pooled-pages --no-concurrent-marking,"
+  EXPECT_EQ(std::string("--no-decommit-pooled-pages --concurrent-marking,"
                         "--expose-gc"),
             GetSwitchValue(cmd_line_pxr, blink::switches::kJavaScriptFlags));
 }

@@ -4,12 +4,19 @@
 
 #include "third_party/blink/renderer/core/fetch/body_stream_buffer.h"
 
+#include <atomic>
 #include <memory>
 
 #include "base/auto_reset.h"
 #include "base/compiler_specific.h"
+#include "base/memory/memory_pressure_listener.h"
 #include "base/numerics/safe_conversions.h"
+#include "base/time/time.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
+#include "partition_alloc/memory_reclaimer.h"
 #include "partition_alloc/partition_root.h"
+#include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_throw_dom_exception.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/fetch/body.h"
@@ -28,6 +35,7 @@
 #include "third_party/blink/renderer/platform/bindings/v8_throw_exception.h"
 #include "third_party/blink/renderer/platform/blob/blob_data.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/instrumentation/memory_pressure_listener.h"
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/cached_metadata_handler.h"
 #include "third_party/blink/renderer/platform/network/encoded_form_data.h"
 #include "third_party/blink/renderer/platform/scheduler/public/frame_or_worker_scheduler.h"
@@ -526,6 +534,68 @@ void BodyStreamBuffer::RaiseOOMError() {
   CancelConsumer();
 }
 
+#if BUILDFLAG(IS_COBALT)
+namespace {
+
+void SchedulePostStreamCloseMemoryReclaim(ScriptState* script_state) {
+  if (!script_state || !script_state->ContextIsValid()) {
+    return;
+  }
+  ExecutionContext* ctx = ExecutionContext::From(script_state);
+  if (!ctx || ctx->IsContextDestroyed()) {
+    return;
+  }
+  static std::atomic<bool> g_reclaim_pending{false};
+  if (g_reclaim_pending.exchange(true, std::memory_order_acq_rel)) {
+    return;
+  }
+  ctx->GetTaskRunner(TaskType::kNetworking)
+      ->PostDelayedTask(
+          FROM_HERE,
+          WTF::BindOnce(
+              [](WeakPersistent<ExecutionContext> weak_ctx) {
+                g_reclaim_pending.store(false, std::memory_order_release);
+                ExecutionContext* context = weak_ctx.Get();
+                if (!context || context->IsContextDestroyed()) {
+                  return;
+                }
+                if (!WTF::Partitions::ArrayBufferPartitionInitialized()) {
+                  return;
+                }
+                v8::Isolate* isolate = context->GetIsolate();
+                size_t baseline_bytes = 0;
+                const size_t current_bytes =
+                    DOMArrayBuffer::ObserveExternalArrayBufferBytes(
+                        isolate, &baseline_bytes);
+                constexpr size_t kStreamCloseGrowthHysteresisBytes =
+                    6 * 1024 * 1024;
+                if (current_bytes >
+                        baseline_bytes + kStreamCloseGrowthHysteresisBytes &&
+                    DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
+                        base::Seconds(4))) {
+                  if (isolate) {
+                    isolate->MemoryPressureNotification(
+                        v8::MemoryPressureLevel::kCritical);
+                  }
+                  if (IsMainThread()) {
+                    MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
+                  }
+                  WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+                      partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+                      partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+                      partition_alloc::PurgeFlags::kAggressiveReclaim);
+                  partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+                  DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(
+                      isolate);
+                }
+              },
+              WrapWeakPersistent(ctx)),
+          base::Milliseconds(150));
+}
+
+}  // namespace
+#endif  // BUILDFLAG(IS_COBALT)
+
 void BodyStreamBuffer::CancelConsumer() {
   side_data_blob_.reset();
   virtual_time_pauser_.UnpauseVirtualTime();
@@ -535,6 +605,15 @@ void BodyStreamBuffer::CancelConsumer() {
     WTF::Partitions::BufferPartition()->PurgeMemory(
         partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
         partition_alloc::PurgeFlags::kLimitDuration);
+#if BUILDFLAG(IS_COBALT)
+    if (WTF::Partitions::ArrayBufferPartitionInitialized()) {
+      WTF::Partitions::ArrayBufferPartition()->PurgeMemory(
+          partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
+          partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
+          partition_alloc::PurgeFlags::kLimitDuration);
+    }
+    SchedulePostStreamCloseMemoryReclaim(script_state_);
+#endif  // BUILDFLAG(IS_COBALT)
   }
 }
 
@@ -594,6 +673,14 @@ void BodyStreamBuffer::ProcessData(ExceptionState& exception_state) {
             ReadableByteStreamController::Enqueue(
                 script_state_, byte_controller, NotShared(array),
                 PassThroughException(script_state_->GetIsolate()));
+#if BUILDFLAG(IS_COBALT)
+            non_byob_bytes_since_reclaim_check_ += buffer.size();
+            if (non_byob_bytes_since_reclaim_check_ >= 6 * 1024 * 1024) {
+              non_byob_bytes_since_reclaim_check_ = 0;
+              DOMArrayBuffer::MaybeStartMidStreamIncrementalReclaim(
+                  script_state_->GetIsolate());
+            }
+#endif  // BUILDFLAG(IS_COBALT)
           }
           if (try_catch.HasCaught()) {
             return;
