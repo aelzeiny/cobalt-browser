@@ -547,8 +547,13 @@ void DiscardableSharedMemoryManager::OnMemoryPressure(
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+#if BUILDFLAG(IS_COBALT)
+      // Purge all unlocked segments on moderate pressure in Cobalt.
+      ReduceMemoryUsageUntilWithinLimit(0);
+#else
       // Purge memory until usage is within half of |memory_limit_|.
       ReduceMemoryUsageUntilWithinLimit(memory_limit_ / 2);
+#endif
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
       // Purge everything possible when pressure is critical.

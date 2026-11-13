@@ -99,11 +99,11 @@ class PLATFORM_EXPORT ParkableStringManager : public RAILModeObserver {
 #if BUILDFLAG(IS_COBALT)
   // For Cobalt, the web application runs in a single dedicated process that is
   // long-lived. Initial bootstrap scripts and page templates are loaded within
-  // the first few seconds of launch. Reducing the initial parking delay to 10
+  // the first few seconds of launch. Reducing the initial parking delay to 2
   // seconds avoids CPU contention during bootstrap while allowing unreferenced
-  // startup string memory to be reclaimed promptly rather than lingering for a
-  // full minute.
-  constexpr static base::TimeDelta kCobaltFirstParkingDelay{base::Seconds(10)};
+  // startup string memory to be compressed and written to disk before video
+  // playback transitions begin.
+  constexpr static base::TimeDelta kCobaltFirstParkingDelay{base::Seconds(2)};
 #endif
 
   static const char* kAllocatorDumpName;
