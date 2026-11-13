@@ -47,7 +47,7 @@ TEST(CobaltSwitchDefaultsAndroidTest, DefaultSwitchesApplied) {
             cmd_line.GetSwitchValueASCII(::switches::kAutoplayPolicy));
   EXPECT_EQ("2", cmd_line.GetSwitchValueASCII(::switches::kNumRasterThreads));
   EXPECT_FALSE(cmd_line.HasSwitch(switches::kMaxHttpCacheSize));
-  EXPECT_EQ("--no-decommit-pooled-pages,--no-concurrent-marking",
+  EXPECT_EQ("--no-decommit-pooled-pages,--concurrent-marking",
             cmd_line.GetSwitchValueASCII(blink::switches::kJavaScriptFlags));
   EXPECT_EQ("PreciseMemoryInfo",
             cmd_line.GetSwitchValueASCII(::switches::kEnableBlinkFeatures));
@@ -103,7 +103,7 @@ TEST(CobaltSwitchDefaultsAndroidTest, MergeFeaturesAndFlagsWithUserOverrides) {
       "DeferAudioFocusUntilAudible",
       cmd_line.GetSwitchValueASCII(::switches::kDisableFeatures));
   EXPECT_EQ(
-      "--no-decommit-pooled-pages,--no-concurrent-marking,"
+      "--no-decommit-pooled-pages,--concurrent-marking,"
       "--test-flag,--another-flag",
       cmd_line.GetSwitchValueASCII(blink::switches::kJavaScriptFlags));
   EXPECT_EQ("TestBlinkFeature,PreciseMemoryInfo",

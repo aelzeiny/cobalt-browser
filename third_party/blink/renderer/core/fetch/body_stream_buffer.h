@@ -6,6 +6,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FETCH_BODY_STREAM_BUFFER_H_
 
 #include "base/types/pass_key.h"
+#include "build/build_config.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/network/public/mojom/chunked_data_pipe_getter.mojom-blink.h"
 #include "third_party/blink/public/platform/scheduler/web_scoped_virtual_time_pauser.h"
@@ -178,6 +179,10 @@ class CORE_EXPORT BodyStreamBuffer final
 
   // TODO(ricea): Remove remaining uses of |stream_broken_|.
   bool stream_broken_ = false;
+
+#if BUILDFLAG(IS_COBALT)
+  size_t non_byob_bytes_since_reclaim_check_ = 0;
+#endif  // BUILDFLAG(IS_COBALT)
 
   // Used to remain alive when there's a loader_.
   SelfKeepAlive<BodyStreamBuffer> keep_alive_;
