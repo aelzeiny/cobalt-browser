@@ -9,6 +9,8 @@
 
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
+#include "base/time/time.h"
+#include "build/build_config.h"
 #include "partition_alloc/oom.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/typed_arrays/array_buffer/array_buffer_contents.h"
@@ -102,6 +104,15 @@ class CORE_EXPORT DOMArrayBuffer : public DOMArrayBufferBase {
   // leaves this ArrayBuffer untouched if it cannot be cleanly detached.
   bool TryTransferForInternalUse(v8::Isolate* isolate,
                                  ArrayBufferContents& result);
+
+#if BUILDFLAG(IS_COBALT)
+  static size_t ObserveExternalArrayBufferBytes(v8::Isolate* isolate,
+                                                size_t* out_baseline_bytes);
+  static size_t RecordPostGcExternalArrayBufferBaseline(v8::Isolate* isolate);
+  static bool TryClaimExternalArrayBufferReclaimSlot(
+      base::TimeDelta min_cooldown);
+  static void MaybeStartMidStreamIncrementalReclaim(v8::Isolate* isolate);
+#endif  // BUILDFLAG(IS_COBALT)
 
   v8::Local<v8::Value> Wrap(ScriptState*) override;
 
