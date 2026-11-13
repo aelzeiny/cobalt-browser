@@ -1,9 +1,9 @@
 #ifndef _RIVE_NESTED_STATE_MACHINE_HPP_
 #define _RIVE_NESTED_STATE_MACHINE_HPP_
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/generated/animation/nested_state_machine_base.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/generated/animation/nested_state_machine_base.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/math/vec2d.hpp"
 #include <memory>
 
 namespace rive
@@ -39,6 +39,12 @@ public:
       int pointerId = 0,
       PointerButton button = PointerButton::primary);
   HitResult pointerExit(Vec2D position, int pointerId = 0);
+  HitResult pointerMiss(
+      Vec2D position,
+      ListenerType hitType,
+      float timeStamp = 0,
+      int pointerId = 0,
+      PointerButton button = PointerButton::primary);
   HitResult pointerScroll(
       Vec2D position,
       const ScrollEvent& event,

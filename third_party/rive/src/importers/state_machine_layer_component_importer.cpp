@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/importers/state_machine_layer_component_importer.hpp"
-#include "third_party/rive/include/rive/animation/listener_action.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer_component.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_action.hpp"
+#include "rive/importers/state_machine_layer_component_importer.hpp"
+#include "rive/animation/listener_action.hpp"
+#include "rive/animation/state_machine_layer_component.hpp"
+#include "rive/animation/state_machine_fire_action.hpp"
 
 using namespace rive;
 

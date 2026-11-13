@@ -1,10 +1,10 @@
 #ifndef _RIVE_JOYSTICK_HPP_
 #define _RIVE_JOYSTICK_HPP_
-#include "third_party/rive/include/rive/generated/joystick_base.hpp"
-#include "third_party/rive/include/rive/intrinsically_sizeable.hpp"
-#include "third_party/rive/include/rive/joystick_flags.hpp"
-#include "third_party/rive/include/rive/animation/nested_remap_animation.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/generated/joystick_base.hpp"
+#include "rive/intrinsically_sizeable.hpp"
+#include "rive/joystick_flags.hpp"
+#include "rive/animation/nested_remap_animation.hpp"
+#include "rive/math/mat2d.hpp"
 #include <stdio.h>
 #include <memory>
 

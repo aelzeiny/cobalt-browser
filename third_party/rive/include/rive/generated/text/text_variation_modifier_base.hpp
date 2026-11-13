@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_VARIATION_MODIFIER_BASE_HPP_
 #define _RIVE_TEXT_VARIATION_MODIFIER_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/text/text_shape_modifier.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/text/text_shape_modifier.hpp"
 namespace rive
 {
 class TextVariationModifierBase : public TextShapeModifier

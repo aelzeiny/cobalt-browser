@@ -3,8 +3,8 @@
 
 #include <cstdint>
 #include <vector>
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/span.hpp"
+#include "rive/refcnt.hpp"
 
 namespace rive
 {

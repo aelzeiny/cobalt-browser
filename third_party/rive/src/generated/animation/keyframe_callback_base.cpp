@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/keyframe_callback_base.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_callback.hpp"
+#include "rive/generated/animation/keyframe_callback_base.hpp"
+#include "rive/animation/keyframe_callback.hpp"
 
 using namespace rive;
 

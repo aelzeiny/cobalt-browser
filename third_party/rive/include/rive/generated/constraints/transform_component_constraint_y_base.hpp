@@ -1,8 +1,8 @@
 #ifndef _RIVE_TRANSFORM_COMPONENT_CONSTRAINT_YBASE_HPP_
 #define _RIVE_TRANSFORM_COMPONENT_CONSTRAINT_YBASE_HPP_
-#include "third_party/rive/include/rive/constraints/transform_component_constraint.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/constraints/transform_component_constraint.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class TransformComponentConstraintYBase : public TransformComponentConstraint

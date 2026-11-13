@@ -6,6 +6,7 @@
 
 // The console imports every lane gets.
 export const kLaneConsole = [
+    'console.caller',
     'console.log',
     'console.debug',
     'console.info',
@@ -16,6 +17,7 @@ export const kLaneConsole = [
 // [module, name or null for all of it, kinds, refusal or null], the
 // first match deciding.
 const kLaneImportRules = [
+    ['rive_rt_v1', 'now', ['job', 'worker'], null],
     ['rive_lanes_v1', 'wait_within', [], 'blocks on a signal, which only the main lane may; a worker awaits Signal.next or Port.receive instead'],
     ['rive_shared_v1', 'region_lock', ['job', 'worker'], 'locks a shared region, which the audio thread may not wait on; share through atomics, rings and snapshots instead'],
     ['rive_shared_v1', 'read_done', [], null],
@@ -23,6 +25,7 @@ const kLaneImportRules = [
     ['rive_lane_v1', null, ['job', 'worker', 'processor'], null],
     ['rive_job_v1', null, ['job'], null],
     ['rive_worker_v1', null, ['worker'], null],
+    ['env', 'console.caller', ['job', 'worker', 'processor'], null],
     ['env', 'console.log', ['job', 'worker', 'processor'], null],
     ['env', 'console.debug', ['job', 'worker', 'processor'], null],
     ['env', 'console.info', ['job', 'worker', 'processor'], null],
@@ -71,13 +74,24 @@ export const kLaneStates = {
 // What a processor event carries for a console line, in place of a state.
 export const kProcessorEventLog = 0xffffffff;
 
-// The most 64 KiB pages a job instance's memory may have grown to for another
-// job to reuse it, as memory never shrinks.
-export const kReuseMaxPages = 256;
-
 // How long a processor's init may run in milliseconds, natively per step and in
 // a worklet as a whole, far longer than a block as it may build tables.
 export const kProcessorInitMs = 1000;
+
+// Where a parallel call's control block keeps each word, in bytes from its
+// start. The words its parts race on sit 128 bytes apart, each alone on a cache
+// line, Apple's included. The claim takes 8 bytes, so no grain can wrap it.
+export const kParallelThunk = 0;
+export const kParallelArgs = 4;
+export const kParallelParts = 8;
+export const kParallelCount = 12;
+export const kParallelAtOnce = 16;
+export const kParallelCallerParks = 20;
+export const kParallelGeneration = 128;
+export const kParallelArrived = 256;
+export const kParallelSleepers = 384;
+export const kParallelClaim = 512;
+export const kParallelStop = 640;
 
 // The exports a lane module may carry besides its entries.
 export const kLaneAllocExport = '__rive_lane_alloc';

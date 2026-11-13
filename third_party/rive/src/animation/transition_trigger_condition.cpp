@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/transition_trigger_condition.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_trigger.hpp"
-#include "third_party/rive/include/rive/animation/transition_condition_op.hpp"
+#include "rive/animation/transition_trigger_condition.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/animation/state_machine_trigger.hpp"
+#include "rive/animation/transition_condition_op.hpp"
 
 using namespace rive;
 

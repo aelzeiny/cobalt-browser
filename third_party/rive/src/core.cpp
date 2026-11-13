@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/core.hpp"
+#include "rive/core.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/data_bind/data_bind.hpp"
 
 #include <cassert>
 

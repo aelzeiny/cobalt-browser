@@ -1,7 +1,7 @@
 #ifndef _RIVE_POINTS_COMMON_PATH_BASE_HPP_
 #define _RIVE_POINTS_COMMON_PATH_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/shapes/path.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

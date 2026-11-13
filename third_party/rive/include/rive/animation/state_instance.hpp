@@ -3,11 +3,12 @@
 
 #include <string>
 #include <stddef.h>
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/span.hpp"
 
 namespace rive
 {
+class BlendAccumulator;
 class LayerState;
 class StateMachineInstance;
 class ArtboardInstance;
@@ -30,6 +31,15 @@ public:
   /// state.
   virtual bool keepGoing() const = 0;
   virtual void clearSpilledTime() {}
+
+  /// The state machine's accumulator for the properties several of its
+  /// layers key (see StateMachineInstance): what this state applies to
+  /// those properties goes to it.
+  virtual void layerAccumulator(BlendAccumulator* accumulator) {}
+  /// Starts the state over, as a new instance of it would, so a layer going
+  /// back to it can reuse this one. False if it can't: the layer then makes
+  /// a new one.
+  virtual bool restart() { return false; }
 
   const LayerState* state() const;
 };

@@ -1,13 +1,13 @@
-#include "third_party/rive/include/rive/profiler/rive_profile.hpp"
-#include "third_party/rive/include/rive/core/vector_binary_writer.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
+#include "rive/profiler/rive_profile.hpp"
+#include "rive/core/vector_binary_writer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_host.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/nested_artboard.hpp"
 #include <algorithm>
 
 #ifdef RIVE_MICROPROFILE
-#include "third_party/rive/include/rive/profiler/microprofile_emscripten.h"
+#include "rive/profiler/microprofile_emscripten.h"
 #include "microprofile.h"
 
 namespace

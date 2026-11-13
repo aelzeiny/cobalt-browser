@@ -1,6 +1,6 @@
 #ifndef _RIVE_STATE_MACHINE_LAYER_COMPONENT_BASE_HPP_
 #define _RIVE_STATE_MACHINE_LAYER_COMPONENT_BASE_HPP_
-#include "third_party/rive/include/rive/core.hpp"
+#include "rive/core.hpp"
 namespace rive
 {
 class StateMachineLayerComponentBase : public Core

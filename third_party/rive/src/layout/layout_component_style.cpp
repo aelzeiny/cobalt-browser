@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/layout/layout_component_style.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/core_context.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/layout/layout_component_style.hpp"
+#include "rive/layout/layout_style_applier.hpp"
+#include "rive/layout/grid_track.hpp"
 #ifdef WITH_RIVE_LAYOUT
 // YGStyle is only forward declared in the headers; the setters below need it.
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
+#include "rive/layout/layout_data.hpp"
 #endif
 #include <vector>
 
@@ -76,6 +76,13 @@ void LayoutComponentStyle::applyItemStyle(
   style.positionType() = positionType();
   style.aspectRatio() = YGFloatOptional(
       aspectRatio() > 0 ? aspectRatio() : NAN);
+  // A data binding can write any value. Out of range reads as auto, so the
+  // flex, absolute and grid paths agree on it instead of each reading the
+  // stray bits its own way.
+  const auto axisValue = aspectRatioAxisValue();
+  style.aspectRatioAxis() = axisValue <= YGAspectRatioAxisHeight
+                                ? YGAspectRatioAxis(axisValue)
+                                : YGAspectRatioAxisAuto;
 
   const auto startEdge = context.isLTR ? YGEdgeLeft : YGEdgeRight;
   const auto endEdge = context.isLTR ? YGEdgeRight : YGEdgeLeft;
@@ -468,6 +475,10 @@ void LayoutComponentStyle::flexWrapValueChanged() { markLayoutNodeDirty(); }
 
 void LayoutComponentStyle::flexBasisChanged() { markLayoutNodeDirty(); }
 void LayoutComponentStyle::aspectRatioChanged() { markLayoutNodeDirty(); }
+void LayoutComponentStyle::aspectRatioAxisValueChanged()
+{
+  markLayoutNodeDirty();
+}
 void LayoutComponentStyle::gapHorizontalChanged() { markLayoutNodeDirty(); }
 void LayoutComponentStyle::gapVerticalChanged() { markLayoutNodeDirty(); }
 void LayoutComponentStyle::maxWidthChanged() { markLayoutNodeDirty(); }

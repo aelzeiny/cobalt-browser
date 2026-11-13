@@ -1,7 +1,7 @@
 #ifndef _RIVE_MESH_HOST_HPP_
 #define _RIVE_MESH_HOST_HPP_
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/vec2d.hpp"
 
 namespace rive
 {

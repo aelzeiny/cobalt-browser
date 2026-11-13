@@ -3,11 +3,11 @@
 // call through: geometry stays in module memory as RawPath and syncs to the
 // host lazily; every native contact is a u32 handle crossing a rive_*_v1
 // import. Compiled only into the script module (never the runtime).
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/wasm/module_render.hpp"
-#include "third_party/rive/include/rive/wasm/rive_bindings_v1.h"
+#include "rive/factory.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/renderer.hpp"
+#include "rive/wasm/module_render.hpp"
+#include "rive/wasm/rive_bindings_v1.h"
 
 #include <stdio.h>
 

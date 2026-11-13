@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/inputs/keyboard_input_base.hpp"
-#include "third_party/rive/include/rive/inputs/keyboard_input.hpp"
+#include "rive/generated/inputs/keyboard_input_base.hpp"
+#include "rive/inputs/keyboard_input.hpp"
 
 using namespace rive;
 

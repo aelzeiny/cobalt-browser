@@ -1,7 +1,7 @@
 #ifndef _RIVE_CUSTOM_PROPERTY_COLOR_BASE_HPP_
 #define _RIVE_CUSTOM_PROPERTY_COLOR_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_color_type.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
+#include "rive/core/field_types/core_color_type.hpp"
+#include "rive/custom_property.hpp"
 namespace rive
 {
 class CustomPropertyColorBase : public CustomProperty

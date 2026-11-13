@@ -1,8 +1,8 @@
 #ifndef _RIVE_WASM_NET_WIRE_HPP_
 #define _RIVE_WASM_NET_WIRE_HPP_
 
-#include "third_party/rive/include/rive/scriptnet/http.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/scriptnet/http.hpp"
+#include "rive/span.hpp"
 
 #include <cstdint>
 #include <cstring>

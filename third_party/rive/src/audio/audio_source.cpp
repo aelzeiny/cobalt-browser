@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
+#include "rive/audio/audio_source.hpp"
 #ifdef WITH_RIVE_AUDIO
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
-#include "third_party/rive/include/rive/audio/audio_reader.hpp"
-#include "third_party/rive/include/rive/audio/audio_reader.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_sound.hpp"
+#include "rive/audio/audio_reader.hpp"
+#include <algorithm>
 #endif
 
 using namespace rive;
@@ -111,17 +111,6 @@ public:
 
   uint32_t sampleRate() { return (uint32_t)m_decoder.outputSampleRate; }
 
-  uint64_t lengthInFrames()
-  {
-    ma_uint64 length;
-    if (ma_data_source_get_length_in_pcm_frames(&m_decoder, &length) !=
-        MA_SUCCESS)
-    {
-      return 0;
-    }
-    return (uint64_t)length;
-  }
-
 private:
   ma_decoder m_decoder;
 };
@@ -162,13 +151,14 @@ float AudioSource::duration()
     }
     return m_duration = (float)bufferedSamples().size() / (float)(ch * sr);
   }
-  AudioSourceDecoder audioDecoder(m_fileBytes);
-  uint32_t sr = audioDecoder.sampleRate();
-  if (sr == 0)
+  // A reader's seek table corrects an MP3 header that miscounts its frames.
+  auto reader = makeReader(0, 0);
+  if (reader == nullptr || reader->sampleRate() == 0)
   {
     return m_duration = 0.0f;
   }
-  return m_duration = (float)audioDecoder.lengthInFrames() / (float)sr;
+  return m_duration = (float)reader->lengthInFrames() /
+                      (float)reader->sampleRate();
 }
 
 AudioFormat AudioSource::format() const
@@ -222,33 +212,28 @@ rcp<AudioReader> AudioSource::makeReader(
     uint32_t numChannels,
     uint32_t sampleRate)
 {
-  if (m_isBuffered)
-  {
-    return nullptr;
-  }
-
   rive::rcp<rive::AudioSource> rcSource = rive::rcp<rive::AudioSource>(this);
   rcSource->ref();
-  auto reader = rcp<AudioReader>(new AudioReader(rcSource, numChannels));
-
-  ma_decoder_config config = ma_decoder_config_init(
-      ma_format_f32,
-      numChannels,
-      sampleRate);
-
-  if (ma_decoder_init_memory(
-          m_fileBytes.data(),
-          m_fileBytes.size(),
-          &config,
-          reader->decoder()) != MA_SUCCESS)
+  auto reader = rcp<AudioReader>(new AudioReader(rcSource));
+  if (!m_isBuffered)
   {
-    fprintf(
-        stderr,
-        "AudioSource::makeReader - Failed to initialize decoder.\n");
-    return nullptr;
+    // Native format, so the reader's own converter carries across a loop.
+    ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
+    config.seekPointCount = kDecoderSeekPoints;
+    if (ma_decoder_init_memory(
+            m_fileBytes.data(),
+            m_fileBytes.size(),
+            &config,
+            &reader->m_decoder) != MA_SUCCESS)
+    {
+      fprintf(
+          stderr,
+          "AudioSource::makeReader - Failed to initialize decoder.\n");
+      return nullptr;
+    }
+    reader->m_decoding = true;
   }
-
-  return reader;
+  return reader->init(numChannels, sampleRate) ? reader : nullptr;
 }
 #else
 rcp<AudioSource> AudioSource::MakeAudioSource(rive::Span<uint8_t> fileBytes)

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/transition_self_comparator_base.hpp"
-#include "third_party/rive/include/rive/animation/transition_self_comparator.hpp"
+#include "rive/generated/animation/transition_self_comparator_base.hpp"
+#include "rive/animation/transition_self_comparator.hpp"
 
 using namespace rive;
 

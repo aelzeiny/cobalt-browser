@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_PROPERTY_ASSET_FONT_HPP_
 #define _RIVE_VIEW_MODEL_PROPERTY_ASSET_FONT_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_property_asset_font_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_property_asset_font_base.hpp"
 #include <stdio.h>
 namespace rive
 {

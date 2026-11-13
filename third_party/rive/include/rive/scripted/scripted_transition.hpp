@@ -1,8 +1,8 @@
 #ifndef _RIVE_SCRIPTED_TRANSITION_HPP_
 #define _RIVE_SCRIPTED_TRANSITION_HPP_
-#include "third_party/rive/include/rive/generated/scripted/scripted_transition_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_list_item_consumer.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/scripted/scripted_transition_base.hpp"
+#include "rive/data_bind/data_bind_list_item_consumer.hpp"
+#include "rive/refcnt.hpp"
 #include <memory>
 #include <string>
 #include <unordered_map>

@@ -1,7 +1,7 @@
 #ifndef _RIVE_SEMANTIC_DIRT_HPP_
 #define _RIVE_SEMANTIC_DIRT_HPP_
 
-#include "third_party/rive/include/rive/enums.hpp"
+#include "rive/enums.hpp"
 #include <cstdint>
 
 namespace rive

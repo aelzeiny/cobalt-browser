@@ -1,7 +1,7 @@
 #ifndef _RIVE_PATH_MEASURE_HPP_
 #define _RIVE_PATH_MEASURE_HPP_
 
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
+#include "rive/math/contour_measure.hpp"
 #include <vector>
 
 namespace rive

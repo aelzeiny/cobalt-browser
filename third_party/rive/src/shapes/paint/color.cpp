@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
+#include "rive/shapes/paint/color.hpp"
 
-#include "third_party/rive/include/rive/math/simd.hpp"
+#include "rive/math/simd.hpp"
 #include <algorithm>
 #include <stdio.h>
 

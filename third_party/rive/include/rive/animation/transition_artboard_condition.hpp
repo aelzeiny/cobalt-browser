@@ -1,6 +1,6 @@
 #ifndef _RIVE_TRANSITION_ARTBOARD_CONDITION_HPP_
 #define _RIVE_TRANSITION_ARTBOARD_CONDITION_HPP_
-#include "third_party/rive/include/rive/generated/animation/transition_artboard_condition_base.hpp"
+#include "rive/generated/animation/transition_artboard_condition_base.hpp"
 #include <stdio.h>
 namespace rive
 {

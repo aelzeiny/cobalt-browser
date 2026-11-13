@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/listener_types/listener_input_type_pointer_button_base.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_pointer_button.hpp"
+#include "rive/generated/animation/listener_types/listener_input_type_pointer_button_base.hpp"
+#include "rive/animation/listener_types/listener_input_type_pointer_button.hpp"
 
 using namespace rive;
 

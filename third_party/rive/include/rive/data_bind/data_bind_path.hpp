@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_BIND_PATH_HPP_
 #define _RIVE_DATA_BIND_PATH_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/data_bind_path_base.hpp"
+#include "rive/generated/data_bind/data_bind_path_base.hpp"
 #include <stdio.h>
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class File;

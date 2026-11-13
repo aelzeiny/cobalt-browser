@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_BIND_PATH_BASE_HPP_
 #define _RIVE_DATA_BIND_PATH_BASE_HPP_
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bytes_type.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_bytes_type.hpp"
+#include "rive/span.hpp"
 namespace rive
 {
 class DataBindPathBase : public Core

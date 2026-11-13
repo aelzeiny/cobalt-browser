@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_ENUM_HPP_
 #define _RIVE_DATA_ENUM_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/data_enum_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/viewmodel/data_enum_base.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
+#include "rive/refcnt.hpp"
 #include <stdio.h>
 namespace rive
 {

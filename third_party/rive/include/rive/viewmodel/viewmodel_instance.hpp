@@ -1,12 +1,12 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/symbol_type.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_base.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/symbol_type.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/component.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/refcnt.hpp"
 #include <cstdint>
 #include <stdio.h>
 #include <vector>
@@ -27,6 +27,13 @@ private:
   LazyVector<DataBindContainer*> m_dependents;
   std::vector<std::pair<SymbolType, ViewModelInstanceValue*>> m_propertySymbols;
   ViewModel* m_ViewModel = nullptr;
+#ifdef TESTING
+  /// Set while the import deferred this file level instance's values
+  /// (ViewModel::deferInstanceBody), to catch whatever reads them before
+  /// they are decoded.
+  bool m_testingBodyDeferred = false;
+  friend class ViewModel;
+#endif
   void rebindDependents();
   void rebindProperties();
 

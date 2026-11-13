@@ -1,9 +1,9 @@
 #ifndef _RIVE_TEXT_STYLE_BASE_HPP_
 #define _RIVE_TEXT_STYLE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/text/text_style_reference.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/text/text_style_reference.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif
@@ -79,6 +79,7 @@ public:
     }
     RIVE_EDITOR_CHANGING(fontAssetIdPropertyKey, &m_FontAssetId, &value);
     m_FontAssetId = value;
+    RIVE_EDITOR_CHANGED(fontAssetIdChanged());
     notifyPropertyChanged(fontAssetIdPropertyKey);
   }
 
@@ -118,6 +119,7 @@ protected:
   virtual void fontSizeChanged() {}
   virtual void lineHeightChanged() {}
   virtual void letterSpacingChanged() {}
+  virtual void fontAssetIdChanged() {}
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/text/text_style_ext.inl"
 #endif

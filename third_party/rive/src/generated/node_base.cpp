@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/node_base.hpp"
-#include "third_party/rive/include/rive/node.hpp"
+#include "rive/generated/node_base.hpp"
+#include "rive/node.hpp"
 
 using namespace rive;
 

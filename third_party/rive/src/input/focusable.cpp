@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/text/text_input.hpp"
 
 using namespace rive;
 

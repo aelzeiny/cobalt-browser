@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/state_machine_fire_event.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/event.hpp"
+#include "rive/animation/state_machine_fire_event.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/artboard.hpp"
+#include "rive/event.hpp"
 
 using namespace rive;
 

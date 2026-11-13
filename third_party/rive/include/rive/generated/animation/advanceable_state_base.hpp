@@ -1,7 +1,7 @@
 #ifndef _RIVE_ADVANCEABLE_STATE_BASE_HPP_
 #define _RIVE_ADVANCEABLE_STATE_BASE_HPP_
-#include "third_party/rive/include/rive/animation/layer_state.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/layer_state.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class AdvanceableStateBase : public LayerState

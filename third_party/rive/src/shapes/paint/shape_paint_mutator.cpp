@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/shapes/paint/shape_paint_mutator.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/shape_paint_mutator.hpp"
+#include "rive/artboard.hpp"
+#include "rive/component.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
 
 using namespace rive;
 

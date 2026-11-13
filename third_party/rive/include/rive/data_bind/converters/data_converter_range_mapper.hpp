@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_CONVERTER_RANGE_MAPPER_HPP_
 #define _RIVE_DATA_CONVERTER_RANGE_MAPPER_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_range_mapper_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
+#include "rive/generated/data_bind/converters/data_converter_range_mapper_base.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
 #include <stdio.h>
 namespace rive
 {

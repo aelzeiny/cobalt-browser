@@ -3,13 +3,13 @@
 
 #include <vector>
 #include <unordered_map>
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/gesture_click_phase.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/pointer_button.hpp"
-#include "third_party/rive/include/rive/process_event_result.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/core.hpp"
+#include "rive/gesture_click_phase.hpp"
+#include "rive/listener_type.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/pointer_button.hpp"
+#include "rive/process_event_result.hpp"
 
 namespace rive
 {
@@ -61,6 +61,26 @@ public:
       std::vector<std::pair<int, PointerButton>>& dragEnded);
   virtual void enable(int pointerId = 0);
   virtual void disable(int pointerId = 0);
+  /// Whether disable() has turned this group off for pointerId. Checked per
+  /// pointer: the consumed flag disable() also sets is shared by every
+  /// pointer, so another pointer's next event clears it.
+  bool isPointerDisabled(int pointerId)
+  {
+    // Checked for every group on every event, and almost always none of
+    // them is disabled: skip the lookup then.
+    if (m_disabledPointers == 0)
+    {
+      return false;
+    }
+    auto pointer = findPointerData(pointerId);
+    return pointer != nullptr && pointer->phase == GestureClickPhase::disabled;
+  }
+  /// Whether pointerId is over this group, as of its last processed event.
+  bool isPointerHovered(int pointerId)
+  {
+    auto pointer = findPointerData(pointerId);
+    return pointer != nullptr && pointer->isHovered;
+  }
   bool isConsumed() { return m_isConsumed; }
   virtual bool canEarlyOut(Component* drawable);
   virtual bool needsDownListener(Component* drawable);
@@ -86,10 +106,17 @@ protected:
   /// The data for an already-tracked pointer, or nullptr. Unlike
   /// pointerData() this never starts tracking one.
   _PointerData* findPointerData(int id);
+  /// Whether a pointer other than pointerId is pressed on this group.
+  bool hasPressedPointerOtherThan(int pointerId);
 
 private:
   // Consumed listeners aren't processed again in the current frame
   bool m_isConsumed = false;
+  // How many pointers disable() has turned off, counted as they go in and
+  // out of the disabled phase through disable(), enable() and
+  // releaseEvent(). Another write that replaces the phase leaves it high,
+  // which only costs isPointerDisabled its shortcut.
+  uint32_t m_disabledPointers = 0;
   const StateMachineListener* m_listener;
   std::unordered_map<int, _PointerData*> m_pointers;
   std::vector<_PointerData*> m_pointersPool;

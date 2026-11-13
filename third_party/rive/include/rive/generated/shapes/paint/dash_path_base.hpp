@@ -1,8 +1,8 @@
 #ifndef _RIVE_DASH_PATH_BASE_HPP_
 #define _RIVE_DASH_PATH_BASE_HPP_
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/container_component.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class DashPathBase : public ContainerComponent

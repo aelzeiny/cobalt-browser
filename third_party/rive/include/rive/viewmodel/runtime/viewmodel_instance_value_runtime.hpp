@@ -3,9 +3,9 @@
 
 #include <string>
 #include <stdint.h>
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_value_dependent.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_type.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_value_dependent.hpp"
+#include "rive/data_bind/data_values/data_type.hpp"
 
 namespace rive
 {

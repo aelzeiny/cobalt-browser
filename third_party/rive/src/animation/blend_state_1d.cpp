@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/animation/blend_state_1d.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_instance.hpp"
+#include "rive/animation/blend_state_1d.hpp"
+#include "rive/animation/blend_state_1d_instance.hpp"
 
 using namespace rive;
 

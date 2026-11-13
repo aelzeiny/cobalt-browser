@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_enum.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
+#include "rive/data_bind/context/context_value_enum.hpp"
+#include "rive/data_bind/data_values/data_value_enum.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/scripted/scripted_transition.hpp"
 
 using namespace rive;
 

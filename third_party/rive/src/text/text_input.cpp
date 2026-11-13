@@ -1,14 +1,15 @@
-#include "third_party/rive/include/rive/text/text_input.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/text/text_input_cursor.hpp"
-#include "third_party/rive/include/rive/text/text_input_drawable.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
+#include "rive/text/text_input.hpp"
+#include "rive/text/text_language.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/text/text_input_cursor.hpp"
+#include "rive/text/text_input_drawable.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/layout_component.hpp"
 #include <algorithm>
 
 #if defined(__EMSCRIPTEN__)
@@ -103,6 +104,24 @@ void TextInput::selectionRadiusChanged()
 }
 
 void TextInput::multilineChanged() { updateMultiline(true); }
+
+void TextInput::languageChanged()
+{
+#ifdef WITH_RIVE_TEXT
+  m_rawTextInput.language(TextLanguages::intern(language()));
+#endif
+  markShapeDirty();
+}
+
+bool TextInput::deserialize(uint16_t propertyKey, BinaryReader& reader)
+{
+  if (propertyKey == languageIdPropertyKey)
+  {
+    m_Language = TextLanguages::readManifestTag(reader);
+    return true;
+  }
+  return TextInputBase::deserialize(propertyKey, reader);
+}
 
 void TextInput::obscuredChanged()
 {
@@ -299,8 +318,11 @@ StatusCode TextInput::onAddedClean(CoreContext* context)
   m_rawTextInput.obscured(obscured());
   m_rawTextInput.maxCharacters(maxCharacters());
   m_rawTextInput.maxLines(maxLines());
+  m_rawTextInput.language(TextLanguages::intern(language()));
   syncDisplayedTextFromSource(false);
+  m_fallbackFontsGeneration = Font::fallbackFontsGeneration();
 #endif
+  m_languageGeneration = TextLanguages::generation();
 
   if (parent() != nullptr)
   {
@@ -436,12 +458,15 @@ void TextInput::controlSize(
   m_layoutWidth = size.x;
   m_layoutHeight = size.y;
 #ifdef WITH_RIVE_TEXT
+  bool hugsWidth = widthScaleType == LayoutScaleType::hug;
+#ifdef WITH_RIVE_LAYOUT
   // A legacy file encodes a hugging layout as fixed scales, so ask the layout
-  // sizing us rather than going by the scale type alone.
+  // sizing us rather than going by the scale type alone. Without the layout
+  // engine nothing sizes to content, so the scale type is all there is.
   LayoutComponent* layout = contentSizingLayout(parent());
-  m_rawTextInput.hugsWidth(
-      widthScaleType == LayoutScaleType::hug ||
-      (layout != nullptr && layout->hugsContentWidth()));
+  hugsWidth = hugsWidth || (layout != nullptr && layout->hugsContentWidth());
+#endif
+  m_rawTextInput.hugsWidth(hugsWidth);
 #endif
   updateMultiline();
 }
@@ -490,6 +515,7 @@ void TextInput::syncDisplayedTextFromSource(bool preserveCursor)
   else
   {
     m_rawTextInput.text(nextDisplayText);
+    m_caretPlaced = false;
   }
 #endif
 }
@@ -598,6 +624,7 @@ bool TextInput::keyInput(
 #ifdef WITH_RIVE_TEXT
   if (isPressed)
   {
+    m_caretPlaced = true;
     switch (value)
     {
       case Key::z:
@@ -694,6 +721,7 @@ bool TextInput::keyInput(
 bool TextInput::textInput(const std::string& value)
 {
 #ifdef WITH_RIVE_TEXT
+  m_caretPlaced = true;
   std::string textToInsert = multiline() ? value : strippedLineBreaks(value);
   if (textToInsert.empty())
   {
@@ -737,12 +765,19 @@ void TextInput::focused()
 {
   m_focused = true;
 #ifdef WITH_RIVE_TEXT
-  // Keyboard focus selects the text browser style, pointer focus keeps the
-  // caret the press placed.
+  // Keyboard focus selects the text browser style. Any other focus keeps the
+  // caret the user placed (a press places it before focusing), but text set
+  // from outside leaves it at the start, so it goes after the text, ready to
+  // type.
   if (selectAllOnFocus() || focusedByTraversal())
   {
     m_rawTextInput.selectAll();
   }
+  else if (!m_caretPlaced)
+  {
+    m_rawTextInput.moveCursorToEnd();
+  }
+  m_caretPlaced = true;
 #endif
   markPaintDirty();
 }
@@ -931,6 +966,7 @@ void TextInput::startDrag(Vec2D worldPosition)
 {
 #ifdef WITH_RIVE_TEXT
   m_isDragging = true;
+  m_caretPlaced = true;
   m_lastDragWorldPosition = worldPosition;
 
   Vec2D localPos;
@@ -1055,6 +1091,26 @@ bool TextInput::advanceComponent(float elapsedSeconds, AdvanceFlags flags)
   if (updateAlignment())
   {
     addDirt(ComponentDirt::TextShape);
+  }
+  // Inherited language shapes with the system's, which a host may change,
+  // and so may the fallback fonts (see Text::advanceComponent).
+  uint32_t languages = TextLanguages::generation();
+  bool reshape = languages != m_languageGeneration;
+  m_languageGeneration = languages;
+#ifdef WITH_RIVE_TEXT
+  uint32_t fallbacks = Font::fallbackFontsGeneration();
+  reshape |= fallbacks != m_fallbackFontsGeneration;
+  m_fallbackFontsGeneration = fallbacks;
+#endif
+  if (reshape)
+  {
+#ifdef WITH_RIVE_TEXT
+    m_rawTextInput.markShapeDirty();
+#endif
+    addDirt(ComponentDirt::TextShape);
+#ifdef WITH_RIVE_LAYOUT
+    markLayoutNodeDirty();
+#endif
   }
   bool keepGoing = advanceDrag(elapsedSeconds);
   if ((flags & AdvanceFlags::Animate) == AdvanceFlags::Animate &&

@@ -1,8 +1,8 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/module_tier_ladder.hpp"
-#include "third_party/rive/include/rive/wasm/aot_artifact.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
+#include "rive/wasm/module_tier_ladder.hpp"
+#include "rive/wasm/aot_artifact.hpp"
+#include "rive/wasm/wasm_lane.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -21,6 +21,17 @@ TierSpecies bootTierSpecies()
 #else
   return TierSpecies::o3;
 #endif
+}
+
+std::vector<TierSpecies> aotTargetSpecies(
+    const std::string& target,
+    bool hardwareBounds)
+{
+  if (hardwareBounds && target == kAotTargetAndroidAarch64)
+  {
+    return {TierSpecies::o3, TierSpecies::hw};
+  }
+  return {TierSpecies::o3};
 }
 
 int x86_64Level(
@@ -44,6 +55,8 @@ int x86_64Level(
 } // namespace rive
 
 #ifdef RIVE_WASM_TIER_LADDER
+
+#include "wasm_export.h"
 
 #include <algorithm>
 #include <atomic>
@@ -237,6 +250,11 @@ static int hostX86_64Level()
 #else
   return 0;
 #endif
+}
+
+std::string wamrcHwGuardFlag()
+{
+  return "--rive-hw-guard=" + std::to_string(WASM_RIVE_HW_GUARD_SIZE);
 }
 
 std::string loaderBinaryPath()
@@ -686,8 +704,7 @@ bool ModuleTierLadder::enabledLocked()
     return false;
   }
   wamrcVersion();
-  m_disabledReason = m_wamrcUsable ? ""
-                                   : m_wamrcPath + " is not our patched wamrc";
+  m_disabledReason = m_wamrcUsable ? "" : m_wamrcPath + " " + m_wamrcProblem;
   return m_wamrcUsable;
 }
 
@@ -750,18 +767,29 @@ const std::string& ModuleTierLadder::wamrcVersion()
     auto accepts = [&](const char* flag) {
       return probeWamrc(m_wamrcPath, flag, nullptr);
     };
-    // Only our patched wamrc takes --rive-interrupt; say so once rather
-    // than fail each compile quietly.
-    m_wamrcUsable = accepts("--rive-interrupt");
+    // Only our patched wamrc takes --rive-interrupt, and only a current one
+    // the guard flag; say so once rather than fail each compile quietly.
+    m_wamrcProblem.clear();
+    if (!accepts("--rive-interrupt"))
+    {
+      m_wamrcProblem = "is not our patched wamrc; build wamrc from our WAMR "
+                       "patches (runtime/scripting/wamr_patches)";
+    }
+    else if (!accepts(wamrcHwGuardFlag().c_str()))
+    {
+      m_wamrcProblem = "predates our current WAMR patches; rebuild wamrc "
+                       "from the current patches "
+                       "(runtime/scripting/wamr_patches)";
+    }
+    m_wamrcUsable = m_wamrcProblem.empty();
     m_wamrcTunes = accepts("--tune-cpu=generic");
     if (!m_wamrcUsable)
     {
       fprintf(
           stderr,
-          "wasm aot: %s lacks --rive-interrupt; build wamrc from "
-          "our patched WAMR (runtime/scripting/wamr_patches). AOT "
-          "is off.\n",
-          m_wamrcPath.c_str());
+          "wasm aot: %s %s. AOT is off.\n",
+          m_wamrcPath.c_str(),
+          m_wamrcProblem.c_str());
     }
 #endif
   }
@@ -808,7 +836,8 @@ std::string ModuleTierLadder::keyedCacheDir()
   // it whenever species flags change or stale artifacts get served on a
   // cache hit.
   const std::string& version = wamrcVersion();
-  return m_cacheDir + "/" + version + "-r13" + (m_wamrcTunes ? "t" : "");
+  return m_cacheDir + "/" + version + "-r18-g" +
+         std::to_string(WASM_RIVE_HW_GUARD_SIZE) + (m_wamrcTunes ? "t" : "");
 }
 
 // Device artifacts sit apart from this machine's, which share their names.
@@ -1288,6 +1317,7 @@ std::string ModuleTierLadder::runWamrc(Job& job)
     // builds with WASM_DISABLE_STACK_HW_BOUND_CHECK).
     args.push_back("--bounds-checks=0");
     args.push_back("--stack-bounds-checks=1");
+    args.push_back(wamrcHwGuardFlag());
   }
   else
   {
@@ -1321,8 +1351,19 @@ std::string ModuleTierLadder::runWamrc(Job& job)
   {
     // The platform clobbers x18; reserve it here so safety does not
     // depend on the wamrc we were handed. Features need an explicit cpu.
+#if defined(_WIN32)
+    // An x64 wamrc runs here under emulation and would compile for x64.
+    args.push_back("--target=aarch64v8");
+    args.push_back("--target-abi=msvc");
+#endif
     args.push_back("--cpu=generic");
+#if defined(__APPLE__)
+    // Every Apple silicon Mac has single instruction atomics, which make
+    // parallel calls' barriers cheaper than load and store exclusive loops.
+    args.push_back("--cpu-features=+reserve-x18,+lse");
+#else
     args.push_back("--cpu-features=+reserve-x18");
+#endif
 #if defined(__APPLE__)
     // Generic scheduling turns float compare chains into mispredicted
     // branches (up to 1.5x slower); tuning leaves the ISA baseline alone.

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/data_bind_context_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
+#include "rive/generated/data_bind/data_bind_context_base.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
 
 using namespace rive;
 

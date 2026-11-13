@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/animation/animation_state.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/animation_state_instance.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/animation/animation_state.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/animation_state_instance.hpp"
+#include "rive/core_context.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

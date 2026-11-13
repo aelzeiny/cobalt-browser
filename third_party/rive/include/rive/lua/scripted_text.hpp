@@ -2,8 +2,8 @@
 #define _RIVE_SCRIPTED_TEXT_HPP_
 
 #if defined(WITH_RIVE_SCRIPTING) && defined(WITH_RIVE_TEXT)
-#include "third_party/rive/include/rive/lua/rive_lua_libs.hpp"
-#include "third_party/rive/include/rive/text/raw_text.hpp"
+#include "rive/lua/rive_lua_libs.hpp"
+#include "rive/text/raw_text.hpp"
 
 namespace rive
 {

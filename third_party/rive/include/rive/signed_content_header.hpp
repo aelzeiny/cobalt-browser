@@ -1,7 +1,7 @@
 #ifndef _RIVE_SIGNED_CONTENT_HEADER_HPP_
 #define _RIVE_SIGNED_CONTENT_HEADER_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 #include <cstddef>
 

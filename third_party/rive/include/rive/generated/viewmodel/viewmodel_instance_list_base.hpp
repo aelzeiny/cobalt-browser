@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_LIST_BASE_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_LIST_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
 namespace rive
 {
 class ViewModelInstanceListBase : public ViewModelInstanceValue

@@ -1,8 +1,8 @@
 #ifndef _RIVE_BITMAP_CACHE_HPP_
 #define _RIVE_BITMAP_CACHE_HPP_
-#include "third_party/rive/include/rive/generated/bitmap_cache_base.hpp"
+#include "rive/generated/bitmap_cache_base.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/include/rive/offscreen_raster.hpp"
+#include "rive/offscreen_raster.hpp"
 #endif
 #include <cstdint>
 

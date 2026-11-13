@@ -1,8 +1,8 @@
 #ifdef RIVE_WASM_MODULE
 // The script module's ScriptingContext: enough for the compiled-in binding
 // files, whose only host contact is factory() and the print/pcall policy.
-#include "third_party/rive/include/rive/lua/rive_lua_libs.hpp"
-#include "third_party/rive/include/rive/wasm/module_render.hpp"
+#include "rive/lua/rive_lua_libs.hpp"
+#include "rive/wasm/module_render.hpp"
 
 #include "lualib.h"
 

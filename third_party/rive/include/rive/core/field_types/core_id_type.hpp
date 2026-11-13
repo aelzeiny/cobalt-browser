@@ -1,7 +1,7 @@
 #ifndef _RIVE_CORE_ID_TYPE_HPP_
 #define _RIVE_CORE_ID_TYPE_HPP_
 
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/core/id.hpp"
 
 namespace rive
 {

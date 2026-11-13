@@ -1,11 +1,11 @@
 #ifndef _RIVE_LIST_PATH_HPP_
 #define _RIVE_LIST_PATH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/list_path_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_list_item_consumer.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/property_symbol_dependent.hpp"
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
+#include "rive/generated/shapes/list_path_base.hpp"
+#include "rive/data_bind/data_bind_list_item_consumer.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/property_symbol_dependent.hpp"
+#include "rive/shapes/vertex.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -5,7 +5,7 @@
 #ifndef _RIVE_NOOP_FACTORY_HPP_
 #define _RIVE_NOOP_FACTORY_HPP_
 
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/factory.hpp"
 
 namespace rive
 {

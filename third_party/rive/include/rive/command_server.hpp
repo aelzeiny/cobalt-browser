@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "third_party/rive/include/rive/command_queue.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/command_queue.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/math/mat2d.hpp"
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -283,11 +283,6 @@ private:
   std::vector<Subscription> m_propertySubscriptions;
 
   // Dependencies
-  // When a file gets deleted artboards and state machines become invalid.
-  // Here we hold a reference to the artboard only because that artboard has a
-  // dependency to the State Machine.
-  std::unordered_map<FileHandle, std::vector<ArtboardHandle>>
-      m_fileDependencies;
   // When an artboard gets deleted the state machine associated with it is
   // also now invalid.
   std::unordered_map<ArtboardHandle, std::vector<StateMachineHandle>>
@@ -307,6 +302,15 @@ private:
   std::mutex m_stateMachineAccessMutex;
 
   std::unordered_map<DrawKey, CommandServerDrawCallback> m_uniqueDraws;
+
+#ifdef WITH_RIVE_SCRIPTING_WASM
+  // Collects every script heap after a batch that drew, or after a run of
+  // batches with no draw.
+  void collectScriptHeaps(bool drew);
+  uint32_t m_batchesSinceCollection = 0;
+  // Files with script VMs, held until nothing else does.
+  std::vector<rcp<File>> m_scriptFiles;
+#endif
 
   class CommandFileAssetLoader;
   rcp<GlobalAssetRegistry> m_globalAssetRegistry;

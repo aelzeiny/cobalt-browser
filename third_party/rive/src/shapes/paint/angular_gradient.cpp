@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/shapes/paint/angular_gradient.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/shapes/paint/angular_gradient.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
+#include "rive/math/mat2d.hpp"
 
 using namespace rive;
 

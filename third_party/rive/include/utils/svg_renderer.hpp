@@ -5,9 +5,9 @@
 #ifndef _RIVE_SVG_RENDERER_HPP_
 #define _RIVE_SVG_RENDERER_HPP_
 
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/utils/svg_factory.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/renderer.hpp"
+#include "utils/svg_factory.hpp"
 #include <iomanip>
 #include <sstream>
 #include <string>

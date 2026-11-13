@@ -1,6 +1,6 @@
 #ifndef _RIVE_SCRIPT_INPUT_TRIGGER_BASE_HPP_
 #define _RIVE_SCRIPT_INPUT_TRIGGER_BASE_HPP_
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
+#include "rive/custom_property_trigger.hpp"
 namespace rive
 {
 class ScriptInputTriggerBase : public CustomPropertyTrigger

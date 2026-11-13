@@ -5,8 +5,8 @@
 #ifndef _RIVE_RENDERER_UTILS_HPP_
 #define _RIVE_RENDERER_UTILS_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/core/type_conversions.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/core/type_conversions.hpp"
 #include <string>
 
 template <size_t N, typename T> class AutoSTArray

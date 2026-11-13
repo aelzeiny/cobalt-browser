@@ -1,6 +1,6 @@
 #ifndef _RIVE_MESH_VERTEX_HPP_
 #define _RIVE_MESH_VERTEX_HPP_
-#include "third_party/rive/include/rive/generated/shapes/mesh_vertex_base.hpp"
+#include "rive/generated/shapes/mesh_vertex_base.hpp"
 #include <stdio.h>
 namespace rive
 {

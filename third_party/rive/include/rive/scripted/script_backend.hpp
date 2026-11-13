@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/scroll_event.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/listener_type.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/scroll_event.hpp"
 
 #include <string>
 #include <unordered_set>
@@ -54,6 +54,13 @@ public:
   /// changes scale without reflowing anything.
   void displayScale(float scale);
   float displayScale() const { return m_displayScale; }
+
+  /// Async work a script started on this backend (a fetch, an image decode,
+  /// a lane's result) just settled its promise, outside any call into the
+  /// objects. The continuation may have changed state an object reads, so
+  /// each one runs what it would otherwise skip until something changed (see
+  /// ScriptedObject::asyncWorkDelivered).
+  void asyncWorkDelivered();
 
   /// The editor stores generator refs per context; backends without that
   /// remap return the ref unchanged.

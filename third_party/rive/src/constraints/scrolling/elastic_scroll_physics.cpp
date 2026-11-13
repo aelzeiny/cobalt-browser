@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/constraints/scrolling/elastic_scroll_physics.hpp"
+#include "rive/constraints/scrolling/elastic_scroll_physics.hpp"
 #include "math.h"
 
 using namespace rive;

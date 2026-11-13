@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/foreground_layout_drawable_base.hpp"
-#include "third_party/rive/include/rive/foreground_layout_drawable.hpp"
+#include "rive/generated/foreground_layout_drawable_base.hpp"
+#include "rive/foreground_layout_drawable.hpp"
 
 using namespace rive;
 

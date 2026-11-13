@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_VALUE_ASSET_FONT_HPP_
 #define _RIVE_DATA_VALUE_ASSET_FONT_HPP_
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/text_engine.hpp"
 
 #include <iostream>
 namespace rive

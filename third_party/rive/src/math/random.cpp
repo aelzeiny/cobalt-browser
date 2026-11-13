@@ -2,7 +2,7 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/math/random.hpp"
+#include "rive/math/random.hpp"
 
 namespace rive
 {

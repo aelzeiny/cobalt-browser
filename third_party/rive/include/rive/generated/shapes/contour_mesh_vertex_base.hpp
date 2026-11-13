@@ -1,6 +1,6 @@
 #ifndef _RIVE_CONTOUR_MESH_VERTEX_BASE_HPP_
 #define _RIVE_CONTOUR_MESH_VERTEX_BASE_HPP_
-#include "third_party/rive/include/rive/shapes/mesh_vertex.hpp"
+#include "rive/shapes/mesh_vertex.hpp"
 namespace rive
 {
 class ContourMeshVertexBase : public MeshVertex

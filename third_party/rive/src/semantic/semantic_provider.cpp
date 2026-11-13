@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/semantic/semantic_provider.hpp"
+#include "rive/semantic/semantic_provider.hpp"
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_data.hpp"
-#include "third_party/rive/src/semantic/semantic_inference_registry.hpp"
+#include "rive/artboard.hpp"
+#include "rive/component.hpp"
+#include "rive/container_component.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/node.hpp"
+#include "rive/semantic/semantic_data.hpp"
+#include "semantic_inference_registry.hpp"
 
 using namespace rive;
 

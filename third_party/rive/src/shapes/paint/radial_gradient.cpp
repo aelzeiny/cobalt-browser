@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/shapes/paint/radial_gradient.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/shapes/paint/radial_gradient.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
 
 using namespace rive;
 

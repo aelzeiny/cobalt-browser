@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/text/text_style_axis_base.hpp"
-#include "third_party/rive/include/rive/text/text_style_axis.hpp"
+#include "rive/generated/text/text_style_axis_base.hpp"
+#include "rive/text/text_style_axis.hpp"
 
 using namespace rive;
 

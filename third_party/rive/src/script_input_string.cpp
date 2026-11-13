@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/scripted_object_importer.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/script_input_string.hpp"
-#include "third_party/rive/include/rive/custom_property_container.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/scripted_object_importer.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/script_input_string.hpp"
+#include "rive/custom_property_container.hpp"
 
 using namespace rive;
 

@@ -2,8 +2,8 @@
  * Copyright 2023 Rive
  */
 
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/png/png.h"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "png.h"
 #include <algorithm>
 #include <cassert>
 #include <string.h>

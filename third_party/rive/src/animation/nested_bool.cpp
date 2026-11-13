@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/nested_bool.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/container_component.hpp"
 
 using namespace rive;
 class StateMachineInstance;

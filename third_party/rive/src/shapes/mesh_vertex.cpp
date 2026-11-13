@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/mesh_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/mesh.hpp"
+#include "rive/shapes/mesh_vertex.hpp"
+#include "rive/shapes/mesh.hpp"
 
 using namespace rive;
 void MeshVertex::markGeometryDirty()

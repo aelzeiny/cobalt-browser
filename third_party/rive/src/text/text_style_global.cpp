@@ -1,18 +1,18 @@
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/text/text_style_instance.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/text/text_style_global.hpp"
+#include "rive/artboard.hpp"
+#include "rive/backboard.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/file.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/text/text_style_instance.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
 
 using namespace rive;
 
@@ -47,10 +47,14 @@ int TextStyleGlobal::referencedArtboardId() { return artboardId(); }
 
 TextStylePaint* TextStyleGlobal::firstTextStylePaint(const Artboard* artboard)
 {
-  if (artboard == nullptr)
+  // A body the import deferred is only decoded when it may hold one: most
+  // artboards a text names by index, or anyListensToRuns looks through, are
+  // not style artboards.
+  if (artboard == nullptr || !artboard->mayHaveTextStylePaint())
   {
     return nullptr;
   }
+  artboard = artboard->decoded();
   for (Core* object : artboard->objects())
   {
     if (object != nullptr && object->is<TextStylePaint>())
@@ -330,6 +334,11 @@ rcp<ViewModelInstance> TextStyleGlobal::styleViewModelInstance() const
 StateMachineInstance* TextStyleGlobal::runStateMachine() const
 {
   return listensToRuns() ? m_instance->stateMachine() : nullptr;
+}
+
+StateMachineInstance* TextStyleGlobal::styleStateMachine() const
+{
+  return m_instance != nullptr ? m_instance->stateMachine() : nullptr;
 }
 
 void TextStyleGlobal::listItem(const rcp<ViewModelInstance>& value)

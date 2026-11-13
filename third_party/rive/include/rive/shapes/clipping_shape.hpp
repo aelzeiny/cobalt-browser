@@ -1,11 +1,11 @@
 #ifndef _RIVE_CLIPPING_SHAPE_HPP_
 #define _RIVE_CLIPPING_SHAPE_HPP_
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/generated/shapes/clipping_shape_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
+#include "rive/renderer.hpp"
+#include "rive/generated/shapes/clipping_shape_base.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/drawable.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <vector>
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/keyed_object_base.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
+#include "rive/generated/animation/keyed_object_base.hpp"
+#include "rive/animation/keyed_object.hpp"
 
 using namespace rive;
 

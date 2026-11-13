@@ -1,14 +1,14 @@
 #ifndef _RIVE_DASH_PATH_HPP_
 #define _RIVE_DASH_PATH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/dash_path_base.hpp"
+#include "rive/generated/shapes/paint/dash_path_base.hpp"
 
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/renderer.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/math/path_measure.hpp"
 #include <vector>
 
 namespace rive

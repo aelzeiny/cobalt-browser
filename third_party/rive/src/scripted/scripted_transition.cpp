@@ -1,16 +1,16 @@
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/drawable_flag.hpp"
-#include "third_party/rive/include/rive/enums.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/scripted/scripted_transition.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/artboard.hpp"
+#include "rive/file.hpp"
+#include "rive/component.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/drawable_flag.hpp"
+#include "rive/enums.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
 #ifdef WITH_RIVE_LAYOUT
-#include "third_party/rive/include/rive/layout_component.hpp"
+#include "rive/layout_component.hpp"
 #endif
 
 using namespace rive;

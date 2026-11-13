@@ -1,7 +1,7 @@
 #ifndef _RIVE_RECTANGLE_HPP_
 #define _RIVE_RECTANGLE_HPP_
-#include "third_party/rive/include/rive/generated/shapes/rectangle_base.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
+#include "rive/generated/shapes/rectangle_base.hpp"
+#include "rive/shapes/straight_vertex.hpp"
 
 namespace rive
 {

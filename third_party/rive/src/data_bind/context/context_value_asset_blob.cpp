@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_asset_blob.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_asset_blob.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_blob.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/data_bind/context/context_value_asset_blob.hpp"
+#include "rive/data_bind/data_values/data_value_asset_blob.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_blob.hpp"
+#include "rive/file.hpp"
 
 using namespace rive;
 

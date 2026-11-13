@@ -1,6 +1,6 @@
 #ifndef _RIVE_ANGULAR_GRADIENT_BASE_HPP_
 #define _RIVE_ANGULAR_GRADIENT_BASE_HPP_
-#include "third_party/rive/include/rive/shapes/paint/linear_gradient.hpp"
+#include "rive/shapes/paint/linear_gradient.hpp"
 namespace rive
 {
 class AngularGradientBase : public LinearGradient

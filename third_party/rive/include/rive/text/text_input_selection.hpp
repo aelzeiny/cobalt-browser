@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_INPUT_SELECTION_HPP_
 #define _RIVE_TEXT_INPUT_SELECTION_HPP_
-#include "third_party/rive/include/rive/generated/text/text_input_selection_base.hpp"
+#include "rive/generated/text/text_input_selection_base.hpp"
 
 namespace rive
 {

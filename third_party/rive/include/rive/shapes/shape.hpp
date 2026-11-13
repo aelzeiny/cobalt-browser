@@ -1,12 +1,12 @@
 #ifndef _RIVE_SHAPE_HPP_
 #define _RIVE_SHAPE_HPP_
 
-#include "third_party/rive/include/rive/hit_info.hpp"
-#include "third_party/rive/include/rive/generated/shapes/shape_base.hpp"
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
-#include "third_party/rive/include/rive/drawable_flag.hpp"
+#include "rive/hit_info.hpp"
+#include "rive/generated/shapes/shape_base.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
+#include "rive/layout/layout_participant.hpp"
+#include "rive/drawable_flag.hpp"
 #include <vector>
 
 namespace rive

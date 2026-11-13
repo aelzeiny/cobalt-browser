@@ -1,6 +1,6 @@
 #ifndef _RIVE_DASH_HPP_
 #define _RIVE_DASH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/dash_base.hpp"
+#include "rive/generated/shapes/paint/dash_base.hpp"
 #include <stdio.h>
 namespace rive
 {

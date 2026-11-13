@@ -1,8 +1,8 @@
 #ifndef _RIVE_TYPED_CHILDREN_HPP_
 #define _RIVE_TYPED_CHILDREN_HPP_
 
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core.hpp"
+#include "rive/span.hpp"
 
 namespace rive
 {

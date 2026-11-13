@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_FOLLOW_PATH_MODIFIER_HPP_
 #define _RIVE_TEXT_FOLLOW_PATH_MODIFIER_HPP_
-#include "third_party/rive/include/rive/generated/text/text_follow_path_modifier_base.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
+#include "rive/generated/text/text_follow_path_modifier_base.hpp"
+#include "rive/math/path_measure.hpp"
+#include "rive/math/transform_components.hpp"
 namespace rive
 {
 struct TransformGlyphArg;

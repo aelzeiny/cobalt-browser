@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_input_drawable.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
+#include "rive/text/text_input_drawable.hpp"
+#include "rive/text/text_input.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
 
 using namespace rive;
 
@@ -34,7 +34,7 @@ void TextInputDrawable::draw(Renderer* renderer)
 {
   for (auto shapePaint : m_ShapePaints)
   {
-    if (!shapePaint->isVisible())
+    if (!shapePaint->shouldDraw())
     {
       continue;
     }

@@ -1,9 +1,9 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/wasm_workers.hpp"
-#include "third_party/rive/include/rive/async/job_pool.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_jobs.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_policy.hpp"
+#include "rive/wasm/wasm_workers.hpp"
+#include "rive/async/job_pool.hpp"
+#include "rive/wasm/wasm_jobs.hpp"
+#include "rive/wasm/wasm_lane_policy.hpp"
 
 #ifndef __EMSCRIPTEN__
 #include "wasm_export.h"
@@ -190,7 +190,7 @@ private:
   void runnerMain(Runner* runner)
   {
 #ifndef __EMSCRIPTEN__
-    ensureLaneThreadEnv();
+    ensureWasmThreadEnv();
 #endif
     Clock::time_point idleSince = Clock::now();
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -664,6 +664,8 @@ WasmWorker::Step WasmWorker::run()
   {
     result = step();
   }
+  // The next step may run on another runner thread.
+  forgetRecentRegions();
   if (result == Step::done)
   {
     // Only the stepping thread can hold what its trap left locked.

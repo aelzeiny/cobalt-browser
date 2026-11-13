@@ -67,6 +67,12 @@ uint32_t rive_web_rt_zone_name(uint32_t vmHandle, double epochSeconds, char* buf
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     return rtZoneNameImpl(vm, epochSeconds, buffer, capacity);
 }
+uint32_t rive_web_rt_arg(uint32_t vmHandle, const char* name, uint32_t nameLength, char* buffer, uint32_t capacity)
+{
+    WasmScriptingVM* vm = bootVmFromHandle(vmHandle);
+    WasmStringArg nameUtf8(vm, name, nameLength);
+    return rtArgImpl(vm, nameUtf8.data(), nameUtf8.size(), buffer, capacity);
+}
 uint32_t rive_web_data_view_model(uint32_t vmHandle, uint32_t object)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
@@ -508,6 +514,17 @@ uint32_t rive_web_artboard_gamepad_event(uint32_t vmHandle, uint32_t artboard, c
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     return artboardGamepadEventImpl(vm, artboard, payload, byteCount);
 }
+uint32_t rive_web_artboard_keyboard_event(uint32_t vmHandle, uint32_t artboard, uint32_t key, uint32_t modifiers, uint32_t isPressed, uint32_t isRepeat)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return artboardKeyboardEventImpl(vm, artboard, key, modifiers, isPressed, isRepeat);
+}
+uint32_t rive_web_artboard_text_event(uint32_t vmHandle, uint32_t artboard, const char* text, uint32_t length)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    WasmStringArg textUtf8(vm, text, length);
+    return artboardTextEventImpl(vm, artboard, textUtf8.data(), textUtf8.size());
+}
 uint32_t rive_web_artboard_animation(uint32_t vmHandle, uint32_t artboard, const char* name, uint32_t length)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
@@ -664,6 +681,56 @@ uint32_t rive_web_audio_source_channels(uint32_t vmHandle, uint32_t source)
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     return audioSourceChannelsImpl(vm, source);
 }
+uint32_t rive_web_audio_source_to_blob(uint32_t vmHandle, uint32_t source, uint32_t sampleRate, uint32_t channels)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioSourceToBlobImpl(vm, source, sampleRate, channels);
+}
+uint32_t rive_web_audio_stream(uint32_t vmHandle, uint32_t source, uint32_t sampleRate, uint32_t channels, uint32_t chunkFrames, uint32_t bufferFrames)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamImpl(vm, source, sampleRate, channels, chunkFrames, bufferFrames);
+}
+uint32_t rive_web_audio_stream_ring(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamRingImpl(vm, stream);
+}
+uint32_t rive_web_audio_stream_seeks(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamSeeksImpl(vm, stream);
+}
+uint32_t rive_web_audio_stream_channels(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamChannelsImpl(vm, stream);
+}
+uint32_t rive_web_audio_stream_sample_rate(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamSampleRateImpl(vm, stream);
+}
+uint32_t rive_web_audio_stream_seek_frame(uint32_t vmHandle, uint32_t stream, double frame)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamSeekFrameImpl(vm, stream, frame);
+}
+void rive_web_audio_stream_set_loop(uint32_t vmHandle, uint32_t stream, uint32_t loop)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    audioStreamSetLoopImpl(vm, stream, loop);
+}
+uint32_t rive_web_audio_stream_ended(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioStreamEndedImpl(vm, stream);
+}
+void rive_web_audio_stream_release(uint32_t vmHandle, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    audioStreamReleaseImpl(vm, stream);
+}
 uint32_t rive_web_audio_play(uint32_t vmHandle, uint32_t source)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
@@ -703,6 +770,16 @@ uint32_t rive_web_audio_sample_rate(uint32_t vmHandle)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     return audioSampleRateImpl(vm);
+}
+uint32_t rive_web_audio_processor_sample_rate(uint32_t vmHandle)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioProcessorSampleRateImpl(vm);
+}
+uint32_t rive_web_audio_processor_channels(uint32_t vmHandle)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return audioProcessorChannelsImpl(vm);
 }
 void rive_web_audio_sound_release(uint32_t vmHandle, uint32_t sound)
 {
@@ -1273,6 +1350,11 @@ void rive_web_image_decode_cancel(uint32_t vmHandle, uint32_t token)
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     imageDecodeCancelImpl(vm, token);
 }
+uint32_t rive_web_image_load(uint32_t vmHandle, const uint8_t* bytes, uint32_t byteCount)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    return imageLoadImpl(vm, bytes, byteCount);
+}
 uint32_t rive_web_font_from_asset(uint32_t vmHandle, uint32_t object, const char* name, uint32_t length)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
@@ -1586,6 +1668,12 @@ uint32_t rive_web_file_bindable_data(uint32_t vmHandle, uint32_t bindable)
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
     return fileBindableDataImpl(vm, bindable);
 }
+uint32_t rive_web_file_host_bindable(uint32_t vmHandle, uint32_t object, const char* name, uint32_t nameLength, uint32_t useDefault)
+{
+    WasmScriptingVM* vm = vmFromHandle(vmHandle);
+    WasmStringArg nameUtf8(vm, name, nameLength);
+    return fileHostBindableImpl(vm, object, nameUtf8.data(), nameUtf8.size(), useDefault);
+}
 uint32_t rive_web_file_bindable_equal(uint32_t vmHandle, uint32_t a, uint32_t b)
 {
     WasmScriptingVM* vm = vmFromHandle(vmHandle);
@@ -1656,6 +1744,18 @@ uint32_t rive_web_jobs_join_any(uint32_t vmHandle, const uint32_t* jobs, uint32_
     WasmScriptingVM* vm = bootVmFromHandle(vmHandle);
     return jobsJoinAnyImpl(vm, jobs, count, timeoutSeconds);
 }
+uint32_t rive_web_parallel_size(uint32_t vmHandle)
+{
+    WasmScriptingVM* vm = bootVmFromHandle(vmHandle);
+    return parallelSizeImpl(vm);
+}
+#ifdef RIVE_WASM_PARALLEL
+uint32_t rive_web_parallel_run(uint32_t vmHandle, uint32_t control)
+{
+    WasmScriptingVM* vm = bootVmFromHandle(vmHandle);
+    return parallelRunImpl(vm, control);
+}
+#endif
 uint32_t rive_web_shared_region_create(uint32_t vmHandle, uint32_t size)
 {
     WasmScriptingVM* vm = bootVmFromHandle(vmHandle);
@@ -1818,6 +1918,7 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_rt_utc_offset,
     (void*)rive_web_rt_is_dst,
     (void*)rive_web_rt_zone_name,
+    (void*)rive_web_rt_arg,
     (void*)rive_web_data_view_model,
     (void*)rive_web_data_root_view_model,
     (void*)rive_web_data_global_view_model,
@@ -1902,6 +2003,8 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_artboard_pointer_event,
     (void*)rive_web_artboard_scroll_event,
     (void*)rive_web_artboard_gamepad_event,
+    (void*)rive_web_artboard_keyboard_event,
+    (void*)rive_web_artboard_text_event,
     (void*)rive_web_artboard_animation,
     (void*)rive_web_artboard_animation_release,
     (void*)rive_web_artboard_animation_duration,
@@ -1936,6 +2039,16 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_audio_source_duration,
     (void*)rive_web_audio_source_sample_rate,
     (void*)rive_web_audio_source_channels,
+    (void*)rive_web_audio_source_to_blob,
+    (void*)rive_web_audio_stream,
+    (void*)rive_web_audio_stream_ring,
+    (void*)rive_web_audio_stream_seeks,
+    (void*)rive_web_audio_stream_channels,
+    (void*)rive_web_audio_stream_sample_rate,
+    (void*)rive_web_audio_stream_seek_frame,
+    (void*)rive_web_audio_stream_set_loop,
+    (void*)rive_web_audio_stream_ended,
+    (void*)rive_web_audio_stream_release,
     (void*)rive_web_audio_play,
     (void*)rive_web_audio_play_at_time,
     (void*)rive_web_audio_play_in_time,
@@ -1944,6 +2057,8 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_audio_time,
     (void*)rive_web_audio_time_frame,
     (void*)rive_web_audio_sample_rate,
+    (void*)rive_web_audio_processor_sample_rate,
+    (void*)rive_web_audio_processor_channels,
     (void*)rive_web_audio_sound_release,
     (void*)rive_web_audio_sound_play,
     (void*)rive_web_audio_sound_pause,
@@ -2060,6 +2175,7 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_image_release,
     (void*)rive_web_image_decode,
     (void*)rive_web_image_decode_cancel,
+    (void*)rive_web_image_load,
     (void*)rive_web_font_from_asset,
 #ifdef WITH_RIVE_TEXT
     (void*)rive_web_font_decode,
@@ -2183,6 +2299,7 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_file_bindable_release,
     (void*)rive_web_file_bindable_name,
     (void*)rive_web_file_bindable_data,
+    (void*)rive_web_file_host_bindable,
     (void*)rive_web_file_bindable_equal,
     (void*)rive_web_lanes_start,
     (void*)rive_web_lanes_state,
@@ -2197,6 +2314,12 @@ static void* const kRiveWebCalls[] = {
     (void*)rive_web_jobs_threads,
     (void*)rive_web_jobs_join,
     (void*)rive_web_jobs_join_any,
+    (void*)rive_web_parallel_size,
+#ifdef RIVE_WASM_PARALLEL
+    (void*)rive_web_parallel_run,
+#else
+    nullptr,
+#endif
     (void*)rive_web_shared_region_create,
     (void*)rive_web_shared_region_size,
     (void*)rive_web_shared_region_lock,

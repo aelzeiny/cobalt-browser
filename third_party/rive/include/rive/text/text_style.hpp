@@ -1,11 +1,11 @@
 #ifndef _RIVE_TEXT_STYLE_HPP_
 #define _RIVE_TEXT_STYLE_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_base.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/text/text_variation_helper.hpp"
+#include "rive/generated/text/text_style_base.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/text/text_variation_helper.hpp"
 
 namespace rive
 {
@@ -16,6 +16,7 @@ class Renderer;
 class RenderPath;
 class RenderPaint;
 
+class File;
 class TextVariationHelper;
 class TextStyleAxis;
 class TextStyleFeature;
@@ -63,7 +64,10 @@ protected:
   void fontSizeChanged() override;
   void lineHeightChanged() override;
   void letterSpacingChanged() override;
+  void fontAssetIdChanged() override;
   FontAsset* fontAsset() const { return (FontAsset*)m_fileAsset.get(); }
+  /// Gives a clone this style's font and the file its keys name fonts in.
+  void cloneFontInto(TextStyle* twin) const;
 
 private:
   void metricsChanged();
@@ -91,6 +95,9 @@ private:
   mutable std::vector<Font::Feature> m_features;
   TextInterface* m_text = nullptr;
   TextStyleOwner* m_owner = nullptr;
+  /// The file this style was imported from: a keyframe names its font by
+  /// index into that file's assets. Instances never outlive their file.
+  File* m_file = nullptr;
 };
 } // namespace rive
 

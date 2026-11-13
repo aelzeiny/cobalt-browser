@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_VIEWMODEL_CONSUMER_HPP_
 #define _RIVE_DATA_VIEWMODEL_CONSUMER_HPP_
-#include "third_party/rive/include/rive/core.hpp"
+#include "rive/core.hpp"
 namespace rive
 {
 class ViewModelInstance;

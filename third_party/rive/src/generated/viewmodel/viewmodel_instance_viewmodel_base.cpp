@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
 
 using namespace rive;
 

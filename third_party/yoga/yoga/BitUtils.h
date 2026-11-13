@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_BITUTILS_H_
-#define THIRD_PARTY_YOGA_YOGA_BITUTILS_H_
-
 #include <bitset>
 #include <cstdio>
 #include <cstdint>
@@ -74,5 +71,3 @@ inline void setBooleanData(uint8_t& flags, size_t index, bool value) {
 } // namespace detail
 } // namespace yoga
 } // namespace facebook
-
-#endif  // THIRD_PARTY_YOGA_YOGA_BITUTILS_H_

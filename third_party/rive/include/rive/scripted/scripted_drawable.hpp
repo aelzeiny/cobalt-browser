@@ -1,13 +1,13 @@
 #ifndef _RIVE_SCRIPTED_DRAWABLE_HPP_
 #define _RIVE_SCRIPTED_DRAWABLE_HPP_
-#include "third_party/rive/include/rive/generated/scripted/scripted_drawable_base.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/listener_group.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/custom_property_group.hpp"
+#include "rive/generated/scripted/scripted_drawable_base.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/listener_group.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/custom_property_group.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -71,6 +71,9 @@ public:
   // script; the handler may have changed state (e.g. fired a trigger on a
   // scripted artboard) that only the next scriptAdvance can consume.
   void wakeAdvance();
+  // A continuation is a handler too: what it stored only advance() and
+  // draw() can show.
+  void asyncWorkDelivered() override { wakeAdvance(); }
   /// Whether a scroll gesture this script claimed is still in flight.
   bool scrollLatched() const { return m_scrollLatched; }
   void scrollLatched(bool value)

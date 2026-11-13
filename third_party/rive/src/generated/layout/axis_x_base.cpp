@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/axis_x_base.hpp"
-#include "third_party/rive/include/rive/layout/axis_x.hpp"
+#include "rive/generated/layout/axis_x_base.hpp"
+#include "rive/layout/axis_x.hpp"
 
 using namespace rive;
 

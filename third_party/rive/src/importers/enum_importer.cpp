@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/importers/enum_importer.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
+#include "rive/importers/enum_importer.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
 
 using namespace rive;
 

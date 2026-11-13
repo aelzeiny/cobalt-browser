@@ -1,7 +1,7 @@
 #ifndef _RIVE_STRING_TEMPLATE_ARGUMENT_NUMBER_BASE_HPP_
 #define _RIVE_STRING_TEMPLATE_ARGUMENT_NUMBER_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument.hpp"
 namespace rive
 {
 class StringTemplateArgumentNumberBase : public StringTemplateArgument

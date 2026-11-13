@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_SHAPE_MODIFIER_BASE_HPP_
 #define _RIVE_TEXT_SHAPE_MODIFIER_BASE_HPP_
-#include "third_party/rive/include/rive/text/text_modifier.hpp"
+#include "rive/text/text_modifier.hpp"
 namespace rive
 {
 class TextShapeModifierBase : public TextModifier

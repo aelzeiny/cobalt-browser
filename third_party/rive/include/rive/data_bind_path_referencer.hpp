@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_BIND_PATH_REFERENCER_HPP_
 #define _RIVE_DATA_BIND_PATH_REFERENCER_HPP_
 #include <stdio.h>
-#include "third_party/rive/include/rive/data_bind/data_bind_path.hpp"
+#include "rive/data_bind/data_bind_path.hpp"
 namespace rive
 {
 class File;

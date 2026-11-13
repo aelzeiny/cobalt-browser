@@ -3,8 +3,8 @@
 #include <vector>
 #include <unordered_set>
 
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/aabb.hpp"
 
 #ifdef TESTING
 // When building for testing we use an ordered map for the EdgeMap so we can get

@@ -1,17 +1,17 @@
-#include "third_party/rive/include/rive/math/hit_test.hpp"
-#include "third_party/rive/include/rive/shapes/image.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_style.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/layout.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_drawable.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/clip_result.hpp"
+#include "rive/math/hit_test.hpp"
+#include "rive/shapes/image.hpp"
+#include "rive/node.hpp"
+#include "rive/layout/layout_node_style.hpp"
+#include "rive/layout/layout_participant.hpp"
+#include "rive/backboard.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/layout.hpp"
+#include "rive/layout/n_slicer.hpp"
+#include "rive/shapes/mesh_drawable.hpp"
+#include "rive/artboard.hpp"
+#include "rive/clip_result.hpp"
 #include <cassert>
 
 using namespace rive;
@@ -41,7 +41,7 @@ void Image::draw(Renderer* renderer)
         renderer,
         renderImage,
         imageSampler(),
-        blendMode(),
+        renderBlendMode(),
         renderOpacity(),
         additiveness());
   }
@@ -52,7 +52,7 @@ void Image::draw(Renderer* renderer)
     renderer->drawImage(
         renderImage,
         imageSampler(),
-        blendMode(),
+        renderBlendMode(),
         renderOpacity(),
         additiveness());
   }
@@ -72,7 +72,12 @@ Core* Image::hitTest(HitInfo* hinfo, const Mat2D& xform)
 {
   // TODO: handle clip?
 
-  auto renderImage = imageAsset()->renderImage();
+  auto asset = imageAsset();
+  auto renderImage = asset != nullptr ? asset->renderImage() : nullptr;
+  if (renderImage == nullptr)
+  {
+    return nullptr;
+  }
   float width = (float)renderImage->width();
   float height = (float)renderImage->height();
 
@@ -95,6 +100,45 @@ Core* Image::hitTest(HitInfo* hinfo, const Mat2D& xform)
   return nullptr;
 }
 
+bool Image::hitTestPoint(
+    const Vec2D& position,
+    bool skipOnUnclipped,
+    bool isPrimaryHit)
+{
+  // Only the target tests its own geometry; as an ancestor the image just
+  // passes the test up the tree.
+  if (!isPrimaryHit)
+  {
+    return Drawable::hitTestPoint(position, skipOnUnclipped, isPrimaryHit);
+  }
+  // Hit what draw() draws: nothing until the asset has a decoded image.
+  // Opacity is ignored, as it is for shapes, so a transparent image can
+  // still be a hit area.
+  ImageAsset* asset = imageAsset();
+  if (asset == nullptr || asset->renderImage() == nullptr)
+  {
+    return false;
+  }
+  if (m_Mesh != nullptr)
+  {
+    if (!m_Mesh->hitTest(position))
+    {
+      return false;
+    }
+  }
+  else
+  {
+    Mat2D inverseWorld;
+    if (!worldTransform().invert(&inverseWorld) ||
+        !localBounds().contains(inverseWorld * position))
+    {
+      return false;
+    }
+  }
+  // Geometry hit, now check hidden state and clipping ancestors.
+  return Drawable::hitTestPoint(position, skipOnUnclipped, isPrimaryHit);
+}
+
 StatusCode Image::import(ImportStack& importStack)
 {
   auto result = registerReferencer(importStack);
@@ -109,6 +153,8 @@ StatusCode Image::import(ImportStack& importStack)
   int major = importStack.majorVersion();
   int minor = importStack.minorVersion();
   m_layoutScaleSeparate = major > 7 || (major == 7 && minor >= 2);
+  // See File::minorVersion.
+  m_isPointerTarget = major > 7 || (major == 7 && minor >= 5);
   return Super::import(importStack);
 }
 
@@ -121,6 +167,7 @@ void Image::setAsset(rcp<FileAsset> asset)
 {
   if (asset != nullptr && asset->is<ImageAsset>())
   {
+    const bool assetChanged = m_fileAsset.get() != asset.get();
     FileAssetReferencer::setAsset(asset);
 
     // If we have a mesh and we're in the source artboard, let's initialize
@@ -130,6 +177,14 @@ void Image::setAsset(rcp<FileAsset> asset)
       m_Mesh->onAssetLoaded(imageAsset()->renderImage());
     }
     updateImageScale();
+    if (assetChanged && artboard() != nullptr)
+    {
+      // An asset swap changes pixels even when fit and measurement stay
+      // the same. Keep the immediate redraw and schedule a paint update so
+      // enclosing caches are invalidated when a nested artboard advances.
+      artboard()->changed();
+      addDirt(ComponentDirt::Paint);
+    }
   }
 }
 
@@ -171,6 +226,7 @@ Core* Image::clone() const
 {
   Image* twin = ImageBase::clone()->as<Image>();
   twin->m_layoutScaleSeparate = m_layoutScaleSeparate;
+  twin->m_isPointerTarget = m_isPointerTarget;
   if (m_fileAsset != nullptr)
   {
     twin->setAsset(m_fileAsset);
@@ -496,7 +552,7 @@ ImageSampler Image::imageSampler() const
 }
 
 #ifdef TESTING
-#include "third_party/rive/include/rive/shapes/mesh.hpp"
+#include "rive/shapes/mesh.hpp"
 Mesh* Image::mesh() const { return static_cast<Mesh*>(m_Mesh); };
 #endif
 

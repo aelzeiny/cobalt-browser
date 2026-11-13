@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/simd.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/simd.hpp"
 #include <algorithm>
 #include <cmath>
 

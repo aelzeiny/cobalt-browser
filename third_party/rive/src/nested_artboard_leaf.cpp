@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/nested_artboard_leaf.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/nested_artboard_leaf.hpp"
+#include "rive/renderer.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

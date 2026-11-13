@@ -3,14 +3,14 @@
 
 #include <string>
 #include <vector>
-#include "third_party/rive/include/rive/animation/state_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state.hpp"
-#include "third_party/rive/include/rive/animation/layer_state_flags.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/animation_reset.hpp"
-#include "third_party/rive/include/rive/animation/animation_reset_factory.hpp"
-#include "third_party/rive/include/rive/animation/blend_accumulator.hpp"
+#include "rive/animation/state_instance.hpp"
+#include "rive/animation/blend_state.hpp"
+#include "rive/animation/layer_state_flags.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/animation_reset.hpp"
+#include "rive/animation/animation_reset_factory.hpp"
+#include "rive/animation/blend_accumulator.hpp"
 
 namespace rive
 {
@@ -69,6 +69,11 @@ public:
   }
 
   bool keepGoing() const override { return m_KeepGoing; }
+
+  void layerAccumulator(BlendAccumulator* accumulator) override
+  {
+    m_accumulator.parent(accumulator);
+  }
 
   void advance(float seconds, StateMachineInstance* stateMachineInstance)
       override

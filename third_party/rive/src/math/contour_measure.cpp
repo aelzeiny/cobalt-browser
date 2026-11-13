@@ -2,12 +2,12 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/core/type_conversions.hpp"
-#include "third_party/rive/include/rive/math/raw_path_utils.hpp"
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/wangs_formula.hpp"
-#include "third_party/rive/include/rive/profiler/profiler_macros.h"
+#include "rive/core/type_conversions.hpp"
+#include "rive/math/raw_path_utils.hpp"
+#include "rive/math/contour_measure.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/wangs_formula.hpp"
+#include "rive/profiler/profiler_macros.h"
 #include <cmath>
 #include <limits>
 

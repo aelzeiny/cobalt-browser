@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_virtualizer.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/virtual_layout.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/constraints/scrolling/scroll_virtualizer.hpp"
+#include "rive/constraints/scrolling/virtual_layout.hpp"
 #include <algorithm>
 #include <set>
 

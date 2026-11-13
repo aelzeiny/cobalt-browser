@@ -2,9 +2,9 @@
 #ifndef _RIVE_TEXT_ASSET_IMPORTER_HPP_
 #define _RIVE_TEXT_ASSET_IMPORTER_HPP_
 
-#include "third_party/rive/include/rive/importers/file_asset_importer.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/importers/file_asset_importer.hpp"
+#include "rive/simple_array.hpp"
+#include "rive/span.hpp"
 #include <vector>
 
 namespace rive

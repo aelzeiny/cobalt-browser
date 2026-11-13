@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "third_party/rive/include/rive/async/threading.hpp"
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/async/threading.hpp"
+#include "rive/rive_types.hpp"
 
 #include <atomic>
 #include <type_traits>

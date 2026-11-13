@@ -1,9 +1,9 @@
 #ifndef _RIVE_BLEND_STATE_DIRECT_INSTANCE_HPP_
 #define _RIVE_BLEND_STATE_DIRECT_INSTANCE_HPP_
 
-#include "third_party/rive/include/rive/animation/blend_state_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct.hpp"
-#include "third_party/rive/include/rive/animation/blend_animation_direct.hpp"
+#include "rive/animation/blend_state_instance.hpp"
+#include "rive/animation/blend_state_direct.hpp"
+#include "rive/animation/blend_animation_direct.hpp"
 
 namespace rive
 {

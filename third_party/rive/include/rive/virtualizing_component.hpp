@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIRTUALIZING_COMPONENT_HPP_
 #define _RIVE_VIRTUALIZING_COMPONENT_HPP_
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/math/vec2d.hpp"
 #include <stdio.h>
 #include <vector>
 namespace rive

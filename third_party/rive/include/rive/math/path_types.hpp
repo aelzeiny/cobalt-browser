@@ -5,7 +5,7 @@
 #ifndef _RIVE_PATH_TYPES_HPP_
 #define _RIVE_PATH_TYPES_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 
 namespace rive
 {

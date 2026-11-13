@@ -1,14 +1,14 @@
 #ifndef _RIVE_DATA_BIND_HPP_
 #define _RIVE_DATA_BIND_HPP_
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/generated/data_bind/data_bind_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_type.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_value_dependent.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/generated/data_bind/data_bind_base.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/data_values/data_type.hpp"
+#include "rive/viewmodel/viewmodel_value_dependent.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 namespace rive
@@ -51,7 +51,7 @@ public:
   void dirt(ComponentDirt value) { m_Dirt = value; };
   void addDirt(ComponentDirt value, bool recurse) override;
   DataConverter* converter() const { return m_dataConverter; };
-  void converter(DataConverter* value) { m_dataConverter = value; };
+  void converter(DataConverter* value);
   ViewModelInstanceValue* source() const { return m_Source.get(); };
   void source(rcp<ViewModelInstanceValue> value);
   void clearSource();

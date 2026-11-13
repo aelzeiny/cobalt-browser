@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/joystick.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
+#include "rive/joystick.hpp"
+#include "rive/artboard.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
 
 using namespace rive;
 

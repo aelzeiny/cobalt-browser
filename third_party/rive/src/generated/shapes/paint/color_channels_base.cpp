@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/color_channels_base.hpp"
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/shapes/paint/solid_color.hpp"
-#include "third_party/rive/include/rive/shapes/paint/gradient_stop.hpp"
+#include "rive/generated/shapes/paint/color_channels_base.hpp"
+#include "rive/core.hpp"
+#include "rive/shapes/paint/solid_color.hpp"
+#include "rive/shapes/paint/gradient_stop.hpp"
 using namespace rive;
 ColorChannelsBase* ColorChannelsBase::from(Core* object)
 {

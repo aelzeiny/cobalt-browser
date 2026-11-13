@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/scripted/decoded_file.hpp"
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/scripted/decoded_file.hpp"
+#include "rive/bindable_artboard.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
 
 using namespace rive;
 
@@ -38,4 +38,13 @@ DecodedBindable rive::decodedBindable(const File& file, const char* name)
         bindable.artboard->artboard());
   }
   return bindable;
+}
+
+rcp<BindableArtboard> rive::hostBindableArtboard(
+    const File& file,
+    const char* name)
+{
+  Artboard* artboard = name != nullptr ? file.artboard(std::string(name))
+                                       : file.artboard();
+  return artboard != nullptr ? make_rcp<BindableArtboard>(artboard) : nullptr;
 }

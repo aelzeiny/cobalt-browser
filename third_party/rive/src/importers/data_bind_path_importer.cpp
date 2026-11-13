@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/data_bind/data_bind_path.hpp"
-#include "third_party/rive/include/rive/importers/data_bind_path_importer.hpp"
+#include "rive/data_bind/data_bind_path.hpp"
+#include "rive/importers/data_bind_path_importer.hpp"
 
 using namespace rive;
 

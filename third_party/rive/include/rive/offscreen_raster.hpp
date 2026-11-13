@@ -3,9 +3,9 @@
 
 #ifdef RIVE_CANVAS
 
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/refcnt.hpp"
 
 #include <cstdint>
 

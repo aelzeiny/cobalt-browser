@@ -1,8 +1,8 @@
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/raw_text_input.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/text/raw_text_input.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/factory.hpp"
+#include "rive/span.hpp"
 
 using namespace rive;
 
@@ -431,6 +431,21 @@ void RawTextInput::font(rcp<Font> value)
   flag(Flags::shapeDirty | Flags::measureDirty | Flags::selectionDirty);
 }
 
+void RawTextInput::language(TextLanguageId value)
+{
+  if (m_textRun.language == value)
+  {
+    return;
+  }
+  m_textRun.language = value;
+  markShapeDirty();
+}
+
+void RawTextInput::markShapeDirty()
+{
+  flag(Flags::shapeDirty | Flags::measureDirty | Flags::selectionDirty);
+}
+
 void RawTextInput::computeVisualPositionFromCursor()
 {
   m_cursorVisualPosition = cursorVisualPosition(m_cursor.end());
@@ -469,6 +484,7 @@ void RawTextInput::ensureShape()
         m_alignWidth,
         m_verticalAlign,
         m_alignHeight);
+    flag(Flags::shaped);
   }
 }
 
@@ -480,10 +496,12 @@ RawTextInput::Flags RawTextInput::update(Factory* factory)
     return updated;
   }
   bool updateTextPath = false;
-  if (flagged(Flags::shapeDirty))
+  ensureShape();
+  // Whether shaped just now or by an edit since the last update -- a select
+  // or a caret move shapes the text it needs at once.
+  if (unflag(Flags::shaped))
   {
     updated |= Flags::shapeDirty;
-    ensureShape();
     updateTextPath = true;
   }
   if (unflag(Flags::selectionDirty))
@@ -586,7 +604,7 @@ void RawTextInput::buildTextPaths(Factory* factory)
       }
 
       const OrderedLine& orderedLine = orderedLines[lineIndex];
-      float x = line.startX;
+      float x = orderedLine.startX();
       float renderY = y + line.baseline;
       for (auto glyphItr : orderedLine)
       {
@@ -707,13 +725,28 @@ void RawTextInput::selectWord()
   flag(Flags::selectionDirty);
 }
 
+CursorPosition RawTextInput::positionAtIndex(uint32_t codePointIndex)
+{
+  // There is no shaping without a font.
+  if (m_textRun.font == nullptr)
+  {
+    return CursorPosition(codePointIndex);
+  }
+  ensureShape();
+  return CursorPosition::atIndex(codePointIndex, m_shape);
+}
+
 void RawTextInput::selectAll()
 {
-  ensureShape();
   m_idealCursorX = -1.0f;
-  CursorPosition start = CursorPosition::atIndex(0, m_shape);
-  CursorPosition end = CursorPosition::atIndex((uint32_t)length(), m_shape);
-  m_cursor = Cursor(start, end);
+  m_cursor = Cursor(positionAtIndex(0), positionAtIndex((uint32_t)length()));
+  flag(Flags::selectionDirty);
+}
+
+void RawTextInput::moveCursorToEnd()
+{
+  m_idealCursorX = -1.0f;
+  m_cursor = Cursor::collapsed(positionAtIndex((uint32_t)length()));
   flag(Flags::selectionDirty);
 }
 

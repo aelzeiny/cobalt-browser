@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/elastic_interpolator_base.hpp"
-#include "third_party/rive/include/rive/animation/elastic_interpolator.hpp"
+#include "rive/generated/animation/elastic_interpolator_base.hpp"
+#include "rive/animation/elastic_interpolator.hpp"
 
 using namespace rive;
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/text/utf.hpp"
-#include "third_party/rive/include/rive/core/type_conversions.hpp"
+#include "rive/text/utf.hpp"
+#include "rive/core/type_conversions.hpp"
 
 using namespace rive;
 

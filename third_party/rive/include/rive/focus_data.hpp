@@ -1,14 +1,15 @@
 #ifndef _RIVE_FOCUS_DATA_HPP_
 #define _RIVE_FOCUS_DATA_HPP_
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/generated/focus_data_base.hpp"
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/input/gamepad_listener.hpp"
-#include "third_party/rive/include/rive/input/keyboard_listener.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/generated/focus_data_base.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/input/gamepad_listener.hpp"
+#include "rive/input/keyboard_listener.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/refcnt.hpp"
 #include <vector>
 
 namespace rive
@@ -43,6 +44,14 @@ public:
   /// Unregister a keyboard listener.
   void removeKeyboardListener(KeyboardListener* listener);
 
+  /// Register a listener for the capture phase of key events, which runs
+  /// before the bubble and outermost first. Flags this node's FocusNode so
+  /// FocusManager::keyInput knows to run that phase at all.
+  void addCaptureKeyboardListener(KeyboardListener* listener);
+
+  /// Unregister a capture-phase keyboard listener.
+  void removeCaptureKeyboardListener(KeyboardListener* listener);
+
   /// Register a listener to be notified of text input events.
   void addTextInputListener(KeyboardListener* listener);
 
@@ -73,7 +82,16 @@ public:
   bool isEligibleForFocusTraversal() const override;
 
   // Focusable interface implementation
+  /// The bubble. A TextInput parent edits first, once, when any keyboard
+  /// listener opted it in; then every normal listener is offered the key.
   bool keyInput(
+      Key value,
+      KeyModifiers modifiers,
+      bool isPressed,
+      bool isRepeat) override;
+  /// The capture phase: every capture listener is offered the key, as
+  /// peers, and any one of them claiming it claims it for the node.
+  bool captureKeyInput(
       Key value,
       KeyModifiers modifiers,
       bool isPressed,
@@ -82,7 +100,7 @@ public:
   /// Forwards to the parent TextInput's selection (mirroring how
   /// key/text input special-case a TextInput parent).
   bool selectedText(std::string& outText) const override;
-  /// True when the parent is a TextInput (same special case).
+  /// A TextInput parent or text-input listeners.
   bool acceptsTextInput() const override;
   /// Forwards to the parent TextInput (same special case): it asks to blur
   /// on an outside press and owns the hit test for it.
@@ -100,7 +118,8 @@ public:
   Artboard* focusableArtboard() const override { return artboard(); }
   bool acceptsKeyboardInput() const override
   {
-    return !m_keyboardListeners.empty() || !m_textInputListeners.empty();
+    return !m_keyboardListeners.empty() ||
+           !m_captureKeyboardListeners.empty() || !m_textInputListeners.empty();
   }
 
   // Component overrides for update cycle
@@ -119,10 +138,14 @@ private:
       class ScrollConstraint* constraint,
       const AABB& elementBounds);
   rcp<FocusNode> m_focusNode;
-  std::vector<FocusListener*> m_focusListeners;
-  std::vector<KeyboardListener*> m_keyboardListeners;
-  std::vector<KeyboardListener*> m_textInputListeners;
-  std::vector<GamepadListener*> m_gamepadListeners;
+  // Lazy: most FocusData have no listeners of a given kind (text input and
+  // gamepad ones are rare, capture ones rarer), and a FocusData exists per
+  // artboard instance, so per list row.
+  LazyVector<FocusListener*> m_focusListeners;
+  LazyVector<KeyboardListener*> m_keyboardListeners;
+  LazyVector<KeyboardListener*> m_captureKeyboardListeners;
+  LazyVector<KeyboardListener*> m_textInputListeners;
+  LazyVector<GamepadListener*> m_gamepadListeners;
 };
 } // namespace rive
 

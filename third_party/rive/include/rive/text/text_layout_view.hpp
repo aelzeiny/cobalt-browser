@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_LAYOUT_VIEW_HPP_
 #define _RIVE_TEXT_LAYOUT_VIEW_HPP_
 
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
+#include "rive/text/glyph_lookup.hpp"
 
 namespace rive
 {

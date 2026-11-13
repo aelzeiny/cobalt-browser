@@ -1,6 +1,6 @@
 #ifndef _RIVE_NESTED_ARTBOARD_LEAF_HPP_
 #define _RIVE_NESTED_ARTBOARD_LEAF_HPP_
-#include "third_party/rive/include/rive/generated/nested_artboard_leaf_base.hpp"
+#include "rive/generated/nested_artboard_leaf_base.hpp"
 #include <stdio.h>
 namespace rive
 {

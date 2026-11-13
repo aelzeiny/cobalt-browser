@@ -1,8 +1,8 @@
 #ifndef _RIVE_TRANSITION_VALUE_STRING_COMPARATOR_BASE_HPP_
 #define _RIVE_TRANSITION_VALUE_STRING_COMPARATOR_BASE_HPP_
 #include <string>
-#include "third_party/rive/include/rive/animation/transition_value_comparator.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
+#include "rive/animation/transition_value_comparator.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
 namespace rive
 {
 class TransitionValueStringComparatorBase : public TransitionValueComparator

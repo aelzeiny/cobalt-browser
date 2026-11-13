@@ -7,9 +7,9 @@
 
 #include <type_traits>
 
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/enums.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/enums.hpp"
+#include "rive/math/math_types.hpp"
 
 namespace rive::math
 {

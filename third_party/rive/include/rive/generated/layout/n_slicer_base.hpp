@@ -1,6 +1,6 @@
 #ifndef _RIVE_N_SLICER_BASE_HPP_
 #define _RIVE_N_SLICER_BASE_HPP_
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/container_component.hpp"
 namespace rive
 {
 class NSlicerBase : public ContainerComponent

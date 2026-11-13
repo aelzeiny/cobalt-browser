@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/bones/weight.hpp"
-#include "third_party/rive/include/rive/bones/cubic_weight.hpp"
-#include "third_party/rive/include/rive/bones/skinnable.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
+#include "rive/bones/weight.hpp"
+#include "rive/bones/cubic_weight.hpp"
+#include "rive/bones/skinnable.hpp"
+#include "rive/container_component.hpp"
+#include "rive/shapes/cubic_vertex.hpp"
+#include "rive/shapes/vertex.hpp"
 
 using namespace rive;
 

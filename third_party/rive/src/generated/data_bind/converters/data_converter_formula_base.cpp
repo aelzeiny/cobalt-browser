@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_formula_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_formula.hpp"
+#include "rive/generated/data_bind/converters/data_converter_formula_base.hpp"
+#include "rive/data_bind/converters/data_converter_formula.hpp"
 
 using namespace rive;
 

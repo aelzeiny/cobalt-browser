@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/virtualizing_component.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/component.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/virtualizing_component.hpp"
 
 using namespace rive;
 

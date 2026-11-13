@@ -1,38 +1,78 @@
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/layer_state.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/animation/layer_state.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/animation/layer_state_flags.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/layer_state.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/artboard.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/animation/state_machine_input.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/animation/layer_state.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/animation/layer_state_flags.hpp"
 #ifndef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/animation/transition_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_viewmodel_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_self_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_artboard_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_asset_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_boolean_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_color_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_enum_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_number_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_string_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_trigger_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_integer.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind_flags.hpp"
+#include "rive/animation/transition_condition.hpp"
+#include "rive/animation/transition_property_viewmodel_comparator.hpp"
+#include "rive/animation/transition_self_comparator.hpp"
+#include "rive/animation/transition_value_artboard_comparator.hpp"
+#include "rive/animation/transition_value_asset_comparator.hpp"
+#include "rive/animation/transition_value_boolean_comparator.hpp"
+#include "rive/animation/transition_value_color_comparator.hpp"
+#include "rive/animation/transition_value_enum_comparator.hpp"
+#include "rive/animation/transition_value_number_comparator.hpp"
+#include "rive/animation/transition_value_string_comparator.hpp"
+#include "rive/animation/transition_value_trigger_comparator.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
+#include "rive/data_bind/bindable_property_enum.hpp"
+#include "rive/data_bind/bindable_property_integer.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/bindable_property_trigger.hpp"
+#include "rive/data_bind_flags.hpp"
+#include "rive/animation/animation_state.hpp"
+#include "rive/animation/blend_animation.hpp"
+#include "rive/animation/blend_state.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/deferred_decode_lock.hpp"
+#include "rive/generated/bones/bone_base.hpp"
+#include "rive/generated/bones/root_bone_base.hpp"
+#include "rive/generated/constraints/constraint_base.hpp"
+#include "rive/generated/constraints/follow_path_constraint_base.hpp"
+#include "rive/generated/constraints/ik_constraint_base.hpp"
+#include "rive/generated/draw_rules_base.hpp"
+#include "rive/generated/layout/layout_sizing_style_base.hpp"
+#include "rive/generated/shapes/clipping_shape_base.hpp"
+#include "rive/generated/solo_base.hpp"
+#include "rive/generated/text/text_value_run_base.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/generated/layout/layout_component_style_base.hpp"
+#include "rive/generated/layout_component_base.hpp"
+#include "rive/generated/node_base.hpp"
+#include "rive/generated/shapes/cubic_asymmetric_vertex_base.hpp"
+#include "rive/generated/shapes/cubic_detached_vertex_base.hpp"
+#include "rive/generated/shapes/cubic_mirrored_vertex_base.hpp"
+#include "rive/generated/shapes/paint/color_channels_base.hpp"
+#include "rive/generated/shapes/paint/feather_base.hpp"
+#include "rive/generated/shapes/paint/gradient_stop_base.hpp"
+#include "rive/generated/shapes/paint/solid_color_base.hpp"
+#include "rive/generated/shapes/paint/stroke_base.hpp"
+#include "rive/generated/shapes/paint/trim_path_base.hpp"
+#include "rive/generated/shapes/parametric_path_base.hpp"
+#include "rive/generated/shapes/straight_vertex_base.hpp"
+#include "rive/generated/shapes/vertex_base.hpp"
+#include "rive/generated/transform_component_base.hpp"
+#include "rive/generated/world_transform_component_base.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include <cstring>
+#include <map>
+#include <mutex>
+#include <set>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #endif
 
@@ -228,6 +268,352 @@ StatusCode StateMachine::onAddedDirty(CoreContext* context)
   return StatusCode::Ok;
 }
 
+#ifndef WITH_RIVE_EDITOR
+// See LayerState::transitionsReadObjects. Any view model condition counts,
+// subclasses (artboard and focus conditions) included.
+static bool transitionsReadObjects(const LayerState* state)
+{
+  for (size_t i = 0, count = state->transitionCount(); i < count; i++)
+  {
+    auto transition = state->transition(i);
+    if (transition == nullptr)
+    {
+      continue;
+    }
+    for (size_t j = 0, conditions = transition->conditionCount();
+         j < conditions;
+         j++)
+    {
+      auto condition = transition->condition(j);
+      if (condition != nullptr &&
+          condition->is<TransitionViewModelCondition>() &&
+          condition->as<TransitionViewModelCondition>()->readsObjectProperty())
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// How a property several layers key is collected and set once a frame, or
+// false when it isn't. Setting it only to its final value skips the
+// intermediate sets, so its setter must do nothing those would have needed:
+// store the value and invalidate (mark dirt, call changed(), mark a layout
+// node dirty, re-collapse a Solo's children), from which everything is
+// recomputed off the final value. Each key is checked against every override
+// of its hook. A property that isn't listed keeps being set by each layer, as
+// before. Left out on purpose:
+// - positionLeft/Top/Right/Bottom and positionType, whose hook writes them;
+// - a layout's scale types, whose hook sets its intrinsicallySizedValue from
+//   them, over what a bind or a layer set it to;
+// - a layout's direction, whose hook clears the layout animation it
+//   inherits, which a later layer's width and height keyframes read to pick
+//   their mix;
+// - a text run's style id, whose hook keeps the current style when the id
+//   names none, so its result depends on the intermediate ids;
+// - nested inputs and nested animations' controls, custom properties and
+//   scripts' inputs, whose setters reach other machines and scripts;
+// - Joystick x/y, applied by the joystick itself;
+// - numbers kept as bits or computed (the scroll and bitmask properties),
+//   and uints that interpolate (color channels).
+static bool layerAccumulatedKind(uint16_t key, BlendAccumulator::Kind& kind)
+{
+  using Kind = BlendAccumulator::Kind;
+  switch (key)
+  {
+    // xArtboard and yArtboard are counted as these (see
+    // BlendAccumulator::storageKey).
+    case NodeBase::xPropertyKey:
+    case NodeBase::yPropertyKey:
+    case TransformComponentBase::rotationPropertyKey:
+    case TransformComponentBase::scaleXPropertyKey:
+    case TransformComponentBase::scaleYPropertyKey:
+    case WorldTransformComponentBase::opacityPropertyKey:
+    case LayoutComponentBase::widthPropertyKey:
+    case LayoutComponentBase::heightPropertyKey:
+    case LayoutComponentStyleBase::cornerRadiusTLPropertyKey:
+    case LayoutComponentStyleBase::cornerRadiusTRPropertyKey:
+    case LayoutComponentStyleBase::cornerRadiusBLPropertyKey:
+    case LayoutComponentStyleBase::cornerRadiusBRPropertyKey:
+    case ParametricPathBase::widthPropertyKey:
+    case ParametricPathBase::heightPropertyKey:
+    case VertexBase::xPropertyKey:
+    case VertexBase::yPropertyKey:
+    case StraightVertexBase::radiusPropertyKey:
+    case CubicAsymmetricVertexBase::rotationPropertyKey:
+    case CubicAsymmetricVertexBase::inDistancePropertyKey:
+    case CubicAsymmetricVertexBase::outDistancePropertyKey:
+    case CubicMirroredVertexBase::rotationPropertyKey:
+    case CubicMirroredVertexBase::distancePropertyKey:
+    case CubicDetachedVertexBase::inRotationPropertyKey:
+    case CubicDetachedVertexBase::inDistancePropertyKey:
+    case CubicDetachedVertexBase::outRotationPropertyKey:
+    case CubicDetachedVertexBase::outDistancePropertyKey:
+    case GradientStopBase::positionPropertyKey:
+    case StrokeBase::thicknessPropertyKey:
+    case TrimPathBase::startPropertyKey:
+    case TrimPathBase::endPropertyKey:
+    case TrimPathBase::offsetPropertyKey:
+    case FeatherBase::strengthPropertyKey:
+    case BoneBase::lengthPropertyKey:
+    case RootBoneBase::xPropertyKey:
+    case RootBoneBase::yPropertyKey:
+    case ConstraintBase::strengthPropertyKey:
+    case FollowPathConstraintBase::distancePropertyKey:
+      kind = Kind::number;
+      return true;
+    case SolidColorBase::colorValuePropertyKey:
+    case GradientStopBase::colorValuePropertyKey:
+      kind = Kind::color;
+      return true;
+    case SoloBase::activeComponentIdPropertyKey:
+    case DrawRulesBase::drawTargetIdPropertyKey:
+      kind = Kind::id;
+      return true;
+    case LayoutSizingStyleBase::displayValuePropertyKey:
+    case LayoutComponentStyleBase::layoutAlignmentTypePropertyKey:
+      kind = Kind::uint;
+      return true;
+    case ClippingShapeBase::isVisiblePropertyKey:
+    case FeatherBase::innerPropertyKey:
+    case FollowPathConstraintBase::orientPropertyKey:
+    case IKConstraintBase::invertDirectionPropertyKey:
+      kind = Kind::boolean;
+      return true;
+    case TextValueRunBase::textPropertyKey:
+      kind = Kind::string;
+      return true;
+  }
+  return false;
+}
+
+// Whether a layer keys another property of the object that key's value
+// depends on. Its set at the flush would then land out of order with that
+// property's writes.
+static bool entangledWithKeyed(
+    uint32_t objectId,
+    uint16_t key,
+    const std::map<std::pair<uint32_t, uint16_t>, int>& layersKeying)
+{
+  auto keyed = [&](uint16_t other) {
+    return layersKeying.count({objectId, other}) != 0;
+  };
+  switch (key)
+  {
+    // The color channels read and write colorValue: one keyed alongside it
+    // would mix from a stale color.
+    case SolidColorBase::colorValuePropertyKey:
+    case GradientStopBase::colorValuePropertyKey:
+      return keyed(ColorChannelsBase::colorRedPropertyKey) ||
+             keyed(ColorChannelsBase::colorGreenPropertyKey) ||
+             keyed(ColorChannelsBase::colorBluePropertyKey) ||
+             keyed(ColorChannelsBase::colorAlphaPropertyKey);
+  }
+  return false;
+}
+
+static void addKeyed(
+    const LinearAnimation* animation,
+    std::set<std::pair<uint32_t, uint16_t>>& keyed)
+{
+  if (animation == nullptr)
+  {
+    return;
+  }
+  // Without decoding a deferred body: this runs as the machine's first
+  // instance is made, before any of its states play.
+  animation->forEachKeyedProperty([&](uint32_t objectId, uint32_t propertyKey) {
+    keyed.insert(
+        {objectId, (uint16_t)BlendAccumulator::storageKey((int)propertyKey)});
+  });
+}
+
+const std::vector<StateMachine::LayerConflict>& StateMachine::layerConflicts()
+    const
+{
+  if (m_layerConflictsReady.load(std::memory_order_acquire))
+  {
+    return m_layerConflicts;
+  }
+  // The decode lock first: reading deferred bodies takes it
+  // (LinearAnimation::forEachKeyedProperty), and a decode on this thread may
+  // already hold it, so the two are always taken in this order.
+  std::lock_guard<std::recursive_mutex> decodeLock(deferredDecodeMutex());
+  static std::mutex mutex;
+  std::lock_guard<std::mutex> lock(mutex);
+  if (m_layerConflictsReady.load(std::memory_order_relaxed))
+  {
+    return m_layerConflicts;
+  }
+  // How many layers key each (object, property).
+  std::map<std::pair<uint32_t, uint16_t>, int> layersKeying;
+  for (auto& layer : m_Layers)
+  {
+    std::set<std::pair<uint32_t, uint16_t>> keyed;
+    for (size_t i = 0, count = layer->stateCount(); i < count; i++)
+    {
+      const LayerState* state = layer->state(i);
+      if (state == nullptr)
+      {
+        continue;
+      }
+      if (state->is<AnimationState>())
+      {
+        addKeyed(state->as<AnimationState>()->animation(), keyed);
+      }
+      else if (state->is<BlendState>())
+      {
+        for (const BlendAnimation* blend :
+             state->as<BlendState>()->animations())
+        {
+          addKeyed(blend->animation(), keyed);
+        }
+      }
+    }
+    for (const auto& entry : keyed)
+    {
+      layersKeying[entry]++;
+    }
+  }
+  for (const auto& entry : layersKeying)
+  {
+    const uint32_t objectId = entry.first.first;
+    const uint16_t key = entry.first.second;
+    BlendAccumulator::Kind kind;
+    if (entry.second < 2 || !layerAccumulatedKind(key, kind) ||
+        entangledWithKeyed(objectId, key, layersKeying))
+    {
+      continue;
+    }
+    m_layerConflicts.push_back({objectId, key, kind});
+  }
+  m_layerConflictsReady.store(true, std::memory_order_release);
+  return m_layerConflicts;
+}
+
+// The bindable's type and the value it holds before (or without) a bind, as
+// a key, for the types whose instances can share. False for the others.
+static bool bindableShareKey(
+    const BindableProperty* bindable,
+    std::string& value)
+{
+  auto put = [&value](const void* bytes, size_t size) {
+    value.assign(static_cast<const char*>(bytes), size);
+  };
+  switch (bindable->coreType())
+  {
+    case BindablePropertyNumberBase::typeKey:
+    {
+      float v = bindable->as<BindablePropertyNumber>()->propertyValue();
+      put(&v, sizeof(v));
+      return true;
+    }
+    case BindablePropertyIntegerBase::typeKey:
+    {
+      uint32_t v = bindable->as<BindablePropertyInteger>()->propertyValue();
+      put(&v, sizeof(v));
+      return true;
+    }
+    case BindablePropertyBooleanBase::typeKey:
+    {
+      bool v = bindable->as<BindablePropertyBoolean>()->propertyValue();
+      put(&v, sizeof(v));
+      return true;
+    }
+    case BindablePropertyColorBase::typeKey:
+    {
+      int v = bindable->as<BindablePropertyColor>()->propertyValue();
+      put(&v, sizeof(v));
+      return true;
+    }
+    case BindablePropertyEnumBase::typeKey:
+    {
+      auto v = bindable->as<BindablePropertyEnum>()->propertyValue();
+      put(&v, sizeof(v));
+      return true;
+    }
+    case BindablePropertyStringBase::typeKey:
+      value = bindable->as<BindablePropertyString>()->propertyValue();
+      return true;
+    default:
+      return false;
+  }
+}
+
+const std::vector<int32_t>& StateMachine::bindableTwins() const
+{
+  if (m_bindableTwinsReady.load(std::memory_order_acquire))
+  {
+    return m_bindableTwins;
+  }
+  static std::mutex mutex;
+  std::lock_guard<std::mutex> lock(mutex);
+  if (m_bindableTwinsReady.load(std::memory_order_relaxed))
+  {
+    return m_bindableTwins;
+  }
+  // A bindable shares only if one bind writes it, and that bind is a plain
+  // source-to-target one: a listener action's bindable also takes the
+  // action's input and writes it back through a bind to source.
+  const auto unshared = DataBindFlags::ToSource | DataBindFlags::TwoWay |
+                        DataBindFlags::NameBased;
+  std::unordered_map<const Core*, int> bindsInto;
+  for (auto& dataBind : m_dataBinds)
+  {
+    if (dataBind->target() != nullptr)
+    {
+      bindsInto[dataBind->target()]++;
+    }
+  }
+  using Key = std::
+      tuple<uint16_t, uint32_t, uint32_t, std::vector<uint32_t>, std::string>;
+  std::map<Key, int32_t> first;
+  std::vector<int32_t> twins(m_dataBinds.size(), -1);
+  bool anyTwins = false;
+  std::string value;
+  for (size_t i = 0; i < m_dataBinds.size(); i++)
+  {
+    const DataBind* dataBind = m_dataBinds[i].get();
+    const Core* target = dataBind->target();
+    if (target == nullptr || !target->is<BindableProperty>() ||
+        bindsInto[target] != 1 || !dataBind->is<DataBindContext>() ||
+        dataBind->converter() != nullptr ||
+        (static_cast<DataBindFlags>(dataBind->flags()) & unshared) !=
+            DataBindFlags::None)
+    {
+      continue;
+    }
+    const auto& path = dataBind->as<DataBindContext>()->sourcePathIds();
+    if (path.empty() ||
+        !bindableShareKey(target->as<BindableProperty>(), value))
+    {
+      continue;
+    }
+    Key key{
+        target->coreType(),
+        dataBind->flags(),
+        dataBind->propertyKey(),
+        path,
+        value};
+    auto found = first.find(key);
+    if (found == first.end())
+    {
+      first.emplace(std::move(key), static_cast<int32_t>(i));
+      continue;
+    }
+    twins[i] = found->second;
+    anyTwins = true;
+  }
+  if (anyTwins)
+  {
+    m_bindableTwins = std::move(twins);
+  }
+  m_bindableTwinsReady.store(true, std::memory_order_release);
+  return m_bindableTwins;
+}
+#endif
+
 StatusCode StateMachine::onAddedClean(CoreContext* context)
 {
   StatusCode code;
@@ -281,6 +667,7 @@ StatusCode StateMachine::onAddedClean(CoreContext* context)
       {
         state->transitionsSettleSafe(isSettleSafe(state, untracked));
         state->transitionsIgnoreTime(transitionsIgnoreTime(state));
+        state->transitionsReadObjects(transitionsReadObjects(state));
         m_readsComponentTriggers = m_readsComponentTriggers ||
                                    anyViewModelCondition(
                                        state,

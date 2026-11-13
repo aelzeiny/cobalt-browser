@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/backboard.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
 
 using namespace rive;
 
@@ -62,15 +62,36 @@ void DataConverter::copy(const DataConverter& object)
   auto dataBinds = object.dataBinds();
   for (auto dataBind : dataBinds)
   {
-    auto dataBindClone = dataBind->clone()->as<DataBind>();
-    dataBindClone->target(this);
-    dataBindClone->file(dataBind->file());
-    addDataBind(dataBindClone);
+    // Binds on a converter's properties can use converters of their own, so
+    // each clone takes a clone of its bind's converter along.
+    addDataBind(dataBind->cloneWithTarget(this));
   }
   DataConverterBase::copy(object);
 }
 
-bool DataConverter::advance(float elapsedTime) { return false; }
+bool DataConverter::advance(float elapsedTime)
+{
+  return advanceDataBinds(elapsedTime);
+}
+
+bool DataConverter::mayAdvance() const { return mayAdvanceDataBinds(); }
+
+AdvancingComponent::QuietState DataConverter::advanceQuietState() const
+{
+  return dataBindsQuietState();
+}
+
+void DataConverter::dataBindsChanged()
+{
+  // The binds and converters that use this converter may have cached answers
+  // built on its own. One nobody asked yet (a clone being built) has no users
+  // to tell.
+  if (mayAdvanceCached())
+  {
+    mayAdvanceChanged();
+  }
+  DataBindContainer::dataBindsChanged();
+}
 
 #ifdef WITH_RIVE_EDITOR
 void DataConverter::editorPrepareForDestruction()

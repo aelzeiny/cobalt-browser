@@ -1,9 +1,9 @@
 #ifndef _RIVE_EFFECTS_CONTAINER_HPP_
 #define _RIVE_EFFECTS_CONTAINER_HPP_
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/shapes/path_flags.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/shapes/path_flags.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/math/mat2d.hpp"
 #include <vector>
 
 namespace rive

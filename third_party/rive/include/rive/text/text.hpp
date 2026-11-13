@@ -1,25 +1,27 @@
 #ifndef _RIVE_TEXT_CORE_HPP_
 #define _RIVE_TEXT_CORE_HPP_
-#include "third_party/rive/include/rive/generated/text/text_base.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/text/text_style_geometry.hpp"
-#include "third_party/rive/include/rive/text/text_style_on_demand.hpp"
-#include "third_party/rive/include/rive/data_bind/host_data_context_consumer.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_list_item_consumer.hpp"
-#include "third_party/rive/include/rive/viewmodel/symbol_type.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/property_symbol_dependent.hpp"
-#include "third_party/rive/include/rive/dirtyable.hpp"
-#include "third_party/rive/include/rive/enums.hpp"
+#include "rive/generated/text/text_base.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/text/text_language.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/simple_array.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/text/text_style_geometry.hpp"
+#include "rive/text/text_style_on_demand.hpp"
+#include "rive/data_bind/host_data_context_consumer.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/data_bind/data_bind_list_item_consumer.hpp"
+#include "rive/viewmodel/symbol_type.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/property_symbol_dependent.hpp"
+#include "rive/dirtyable.hpp"
+#include "rive/enums.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
@@ -74,20 +76,41 @@ private:
   std::vector<Unichar> m_value;
   std::vector<TextRun> m_runs;
 
+  template <typename T> static void growTo(std::vector<T>& list, size_t count)
+  {
+    if (count > list.capacity())
+    {
+      list.reserve(std::max(count, list.capacity() * 2));
+    }
+  }
+
 public:
   bool empty() const;
   void clear();
+  // Room for [unichars] characters in [runs] runs: exactly that the first
+  // time, and past it at least double, the way appending grows, so a text
+  // that grows a little at a time doesn't reallocate on every styling.
+  void reserve(size_t unichars, size_t runs)
+  {
+    growTo(m_value, unichars);
+    growTo(m_runs, runs);
+  }
   void append(
       rcp<Font> font,
       float size,
       float lineHeight,
       float letterSpacing,
       const std::string& text,
-      uint16_t styleId);
+      uint16_t styleId,
+      TextLanguageId language = TextLanguages::none);
   const std::vector<Unichar>& unichars() const { return m_value; }
   const std::vector<TextRun>& runs() const { return m_runs; }
 
   void swapRuns(std::vector<TextRun>& otherRuns) { m_runs.swap(otherRuns); }
+
+  /// Whether [other] holds the same characters in the same runs, so shapes
+  /// the same.
+  bool sameAs(const StyledText& other) const;
 };
 
 struct TextBoundsInfo
@@ -225,6 +248,15 @@ public:
   void file(File* value) { m_file = value; }
   File* file() const { return m_file; }
 
+  StatusCode onAddedDirty(CoreContext* context) override;
+  bool deserialize(uint16_t propertyKey, BinaryReader& reader) override;
+  // A file carries languageId in place of language, resolved into it while
+  // decoding (see deserialize), so there is no index to keep.
+  void setLanguageId(uint32_t value) override {}
+  uint32_t languageId() override { return -1; }
+  /// The Text's interned language, none when it inherits the system's.
+  TextLanguageId languageSlot() const { return m_languageSlot; }
+
   void draw(Renderer* renderer) override;
   Core* hitTest(HitInfo*, const Mat2D&) override;
   void addRun(TextValueRun* run);
@@ -294,6 +326,10 @@ public:
   BoundsFidelity paintedWorldBounds(AABB* out) override;
 
   AABB localBounds() const override;
+  /// localBounds() in the space the glyphs are drawn in, before m_transform
+  /// offsets them by the origin and scales them to fit. What a paint image
+  /// on this text's styles fits to.
+  AABB glyphSpaceBounds() const;
   AABB constraintBounds() const override { return localBounds(); }
   void originXChanged() override;
   void originYChanged() override;
@@ -378,6 +414,17 @@ public:
   /// textStyle name, else the first style. Null when the item has neither
   /// style symbol.
   TextStyleReference* resolveListRunStyle(ViewModelInstance* instance);
+  /// The style a run whose styleId is data bound to [value] draws: the one a
+  /// list run naming that style would (a handle showing it, else one
+  /// instanced on demand), except that a style with a state machine gets an
+  /// instance of its own per bound run. Null when [value] names no text
+  /// style.
+  TextStyleReference* boundRunStyle(
+      ViewModelInstanceArtboard* value,
+      const TextValueRun* run);
+  /// A run now draws another style: drops the on-demand styles no run draws
+  /// any more and re-shapes.
+  void runStyleChanged();
   /// Whether a run of this Text may use a style that listens to its runs
   /// (see TextStyleShareInfo::listensToRuns), so the state machines of
   /// this Text's artboard forward pointers to those styles' state machines.
@@ -385,6 +432,10 @@ public:
   /// Appends to [out] the state machines of this Text's styles that listen
   /// to the runs drawn with them (see TextStyleReference::runStateMachine).
   void runStateMachines(std::vector<StateMachineInstance*>& out);
+  /// Appends to [out] the state machines of all this Text's styles, whether
+  /// or not they listen to the runs (see
+  /// TextStyleReference::styleStateMachine).
+  void styleStateMachines(std::vector<StateMachineInstance*>& out);
 #ifdef TESTING
   size_t onDemandStyleCount() const { return m_onDemandStyles.size(); }
 #endif
@@ -398,6 +449,15 @@ public:
     return false;
 #endif
   }
+  // What asked for a shape: Text counts its shapes by it (TESTING).
+  enum class ShapeSource : uint8_t
+  {
+    update,
+    measure,
+    fit,
+    modifier,
+    count,
+  };
 #ifdef TESTING
   const std::vector<OrderedLine>& orderedLines() const
   {
@@ -415,6 +475,7 @@ public:
 #endif
 
 protected:
+  void languageChanged() override;
   void alignValueChanged() override;
   void sizingValueChanged() override;
   void overflowValueChanged() override;
@@ -464,6 +525,9 @@ private:
   // through fitParagraphSpacing(), never directly, so a stale value from a
   // previous fit can't leak into a paint-only rebuild.
   float m_fitFontScale = 1.0f;
+  // The width m_lines were last broken at (see breakShapeLines), here for
+  // the padding after m_fitFontScale.
+  float m_brokenWidth = NAN;
   std::vector<TextModifierGroup*> m_modifierGroups;
 
   StyledText m_styledText;
@@ -515,11 +579,37 @@ private:
   /// style [value] holds (see resolveListRunStyle).
   TextStyleReference* globalStyleReference(
       ViewModelInstanceArtboard* value,
-      ViewModelInstance* item);
+      ViewModelInstance* item,
+      const TextValueRun* owner = nullptr);
   TextStyleReference* styleReferenceNamed(const std::string& name);
   TextStyleReference* firstStyleReference();
   void resolveListRunStyles();
   void pruneOnDemandStyles();
+
+  // A new box size needs new line breaks but, mostly, not a new shape (see
+  // markLinesDirty): the next paint rebuild breaks m_shape again first.
+  bool m_linesDirty = false;
+  void markLinesDirty(bool sendToLayout);
+
+  // What m_lines were last broken at (with m_brokenWidth), so update()
+  // only breaks them again when one of these, or the shape, changed. These
+  // and m_linesDirty fill the padding after m_listItemsDirty.
+  bool m_linesBroken = false;
+  uint8_t m_brokenAlign = 0;
+  uint8_t m_brokenWrap = 0;
+  uint8_t m_brokenWordBreak = 0;
+  // Whether a build sized the style paths for their glyphs yet (see
+  // reserveGlyphPaths), also in that padding.
+  bool m_glyphPathsReserved = false;
+  /// Sizes each style's paths for the outlines of every glyph this Text
+  /// draws with it, so its first build doesn't grow them an outline at a
+  /// time. Only for a build that draws every glyph of the shape, and only
+  /// when every outline is cached or can be without a font starting its
+  /// cache over.
+  void reserveGlyphPaths();
+  // Breaks m_shape into m_lines unless they already hold those lines.
+  // Returns whether m_lines changed.
+  bool breakShapeLines(bool shapeChanged);
 
   // What measure() last reported to the layout and what update() last
   // shaped, as measureKey hashes. Equal means the layout has already sized
@@ -528,6 +618,59 @@ private:
   uint64_t m_measuredKey = 0;
   uint64_t m_shapedKey = 1;
   uint64_t measureKey(const StyledText& styled, float fontScale) const;
+
+  // Shapes are memoized. Before shaping, update(), measure() and a fit
+  // look for a shape already made from the same styled text (see
+  // reusableShape): m_shape, or the spare.
+  //
+  // The spare is a shape measure() or a fit made that update() hasn't taken
+  // yet: the layout measures a changed text right before the update that
+  // shapes it. Neither ever writes m_shape, which m_orderedLines points into
+  // until the next update. update() takes the spare, or drops it, so it only
+  // exists between the two.
+  struct SpareShape
+  {
+    StyledText styled;
+    SimpleArray<Paragraph> shape;
+    // Font::fallbackGeneration(), read before the shape was made.
+    uint32_t fallbacks = 0;
+  };
+  std::unique_ptr<SpareShape> m_spare;
+  // m_shape, or the spare's, when it was made from [styled] under the
+  // fallback fonts of generation [fallbacks]; null otherwise.
+  const SimpleArray<Paragraph>* reusableShape(
+      const StyledText& styled,
+      uint32_t fallbacks) const;
+  // Makes [styled]'s shape, by [source], into the spare, unless m_shape or
+  // the spare is it already; returns it. May take [styled]'s contents.
+  const SimpleArray<Paragraph>& spareShapeFor(
+      StyledText& styled,
+      ShapeSource source);
+  // Hands the spare [shape], made from [styled] under the fallback fonts of
+  // generation [fallbacks].
+  void spareShape(
+      StyledText& styled,
+      SimpleArray<Paragraph>&& shape,
+      uint32_t fallbacks);
+  SimpleArray<Paragraph> shapeStyled(
+      const StyledText& styled,
+      ShapeSource source);
+#ifdef TESTING
+  size_t m_shapeCounts[(size_t)ShapeSource::count] = {};
+  size_t m_lineBreakCount = 0;
+
+public:
+  // How many times this text has shaped its runs, in all or for [source].
+  size_t shapeCount() const;
+  size_t shapeCount(ShapeSource source) const
+  {
+    return m_shapeCounts[(size_t)source];
+  }
+  // How many times update() broke m_shape into lines.
+  size_t lineBreakCount() const { return m_lineBreakCount; }
+
+private:
+#endif
 
 #endif
   File* m_file = nullptr;
@@ -559,6 +702,18 @@ private:
     all = layoutSizesBox | fitFontSizeResizesBox,
   };
   FileFeatures m_fileFeatures = FileFeatures::all;
+  TextLanguageId m_languageSlot = TextLanguages::none;
+  // TextLanguages::generation() when the shape was last marked for it, so a
+  // change to the system languages reshapes on the next advance.
+  uint32_t m_languageGeneration = 0;
+#ifdef WITH_RIVE_TEXT
+  // Font::fallbackGeneration(), read before m_shape was made (see
+  // reusableShape); here for the padding after m_fileFeatures.
+  uint32_t m_shapeFallbacks = 0;
+  // Font::fallbackFontsGeneration() when the shape was last marked for it,
+  // so new fallback fonts reshape on the next advance.
+  uint32_t m_fallbackFontsGeneration = 0;
+#endif
   bool hasFileFeature(FileFeatures feature) const
   {
     return enums::is_flag_set(m_fileFeatures, feature);

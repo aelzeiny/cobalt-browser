@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/blend_state_direct.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_number.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct_instance.hpp"
+#include "rive/animation/blend_state_direct.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_number.hpp"
+#include "rive/animation/blend_state_direct_instance.hpp"
 
 using namespace rive;
 

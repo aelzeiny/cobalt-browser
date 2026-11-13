@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/animation/state_machine_listener_single.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_machine_base.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/listener_input_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/animation/state_machine_listener_single.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/generated/animation/state_machine_base.hpp"
+#include "rive/artboard.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/listener_input_change.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
 
 using namespace rive;
 

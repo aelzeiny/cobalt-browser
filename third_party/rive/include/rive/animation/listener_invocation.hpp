@@ -1,13 +1,13 @@
 #ifndef _RIVE_LISTENER_INVOCATION_HPP_
 #define _RIVE_LISTENER_INVOCATION_HPP_
 
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/input/gamepad_snapshot.hpp"
-#include "third_party/rive/include/rive/input/standard_gamepad.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/pointer_button.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/input/gamepad_snapshot.hpp"
+#include "rive/input/standard_gamepad.hpp"
+#include "rive/listener_type.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/pointer_button.hpp"
 
 #include <string>
 #include <type_traits>

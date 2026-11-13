@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 
 using namespace rive;
 

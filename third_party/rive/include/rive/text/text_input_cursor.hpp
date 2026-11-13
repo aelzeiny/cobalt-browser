@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_INPUT_CURSOR_HPP_
 #define _RIVE_TEXT_INPUT_CURSOR_HPP_
-#include "third_party/rive/include/rive/generated/text/text_input_cursor_base.hpp"
+#include "rive/generated/text/text_input_cursor_base.hpp"
 #include <stdio.h>
 namespace rive
 {

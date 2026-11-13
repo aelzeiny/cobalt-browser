@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/text/text_style_on_demand.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_style_instance.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/text/text_style_on_demand.hpp"
+#include "rive/artboard.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/file.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_style_instance.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
 
 using namespace rive;
 
@@ -19,11 +19,13 @@ TextStyleOnDemand::TextStyleOnDemand(
     rcp<DataContext> parent,
     Text* text,
     rcp<ViewModelInstance> item,
-    rcp<ViewModelInstance> valuesSource)
+    rcp<ViewModelInstance> valuesSource,
+    const TextValueRun* owner)
     : m_source(source)
     , m_crossFile(std::move(crossFile))
     , m_boundViewModelInstance(std::move(boundViewModelInstance))
     , m_item(std::move(item))
+    , m_owner(owner)
 {
   // View model ids are per file: the style's view model lives in the file
   // that owns the style artboard.
@@ -100,6 +102,11 @@ bool TextStyleOnDemand::listensToRuns() const
 StateMachineInstance* TextStyleOnDemand::runStateMachine() const
 {
   return listensToRuns() ? m_instance->stateMachine() : nullptr;
+}
+
+StateMachineInstance* TextStyleOnDemand::styleStateMachine() const
+{
+  return m_instance != nullptr ? m_instance->stateMachine() : nullptr;
 }
 
 void TextStyleOnDemand::listItem(const rcp<ViewModelInstance>& value)

@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/animation/state_machine_fire_trigger.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_trigger.hpp"
+#include "rive/animation/state_machine_fire_trigger.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_trigger.hpp"
 
 using namespace rive;
 

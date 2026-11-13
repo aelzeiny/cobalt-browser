@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/draw_target.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/draw_target.hpp"
+#include "rive/core_context.hpp"
+#include "rive/drawable.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

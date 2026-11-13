@@ -1,9 +1,9 @@
 #ifndef _RIVE_GRADIENT_STOP_BASE_HPP_
 #define _RIVE_GRADIENT_STOP_BASE_HPP_
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_color_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/generated/shapes/paint/color_channels_base.hpp"
+#include "rive/component.hpp"
+#include "rive/core/field_types/core_color_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/generated/shapes/paint/color_channels_base.hpp"
 namespace rive
 {
 class GradientStopBase : public Component, public ColorChannelsBase

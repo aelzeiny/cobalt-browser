@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_VALUE_LIST_HPP_
 #define _RIVE_DATA_VALUE_LIST_HPP_
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_list.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
 
 #include <stdio.h>
 namespace rive

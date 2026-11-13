@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_gamepad.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/input/gamepad_snapshot.hpp"
-#include "third_party/rive/include/rive/input/standard_gamepad.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_button_phase.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_input.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_input_kind.hpp"
+#include "rive/animation/listener_types/listener_input_type_gamepad.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/input/gamepad_snapshot.hpp"
+#include "rive/input/standard_gamepad.hpp"
+#include "rive/inputs/gamepad_button_phase.hpp"
+#include "rive/inputs/gamepad_input.hpp"
+#include "rive/inputs/gamepad_input_kind.hpp"
 
 using namespace rive;
 

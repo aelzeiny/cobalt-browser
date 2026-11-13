@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/layout.hpp"
+#include "rive/layout.hpp"
 
 using namespace rive;
 

@@ -1,9 +1,9 @@
 #ifndef _RIVE_LAYOUT_NODE_STYLE_HPP_
 #define _RIVE_LAYOUT_NODE_STYLE_HPP_
-#include "third_party/rive/include/rive/generated/layout/layout_node_style_base.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
+#include "rive/generated/layout/layout_node_style_base.hpp"
+#include "rive/component.hpp"
+#include "rive/container_component.hpp"
+#include "rive/layout/layout_node_provider.hpp"
 namespace rive
 {
 // Sizing style for a layout participant. Its properties change at runtime (data

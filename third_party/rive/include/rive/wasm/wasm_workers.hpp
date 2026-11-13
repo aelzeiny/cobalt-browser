@@ -3,11 +3,11 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/async/threading.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_shared.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_signal_wait.hpp"
+#include "rive/async/threading.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/wasm/wasm_lane.hpp"
+#include "rive/wasm/wasm_shared.hpp"
+#include "rive/wasm/wasm_signal_wait.hpp"
 
 #include <atomic>
 #include <chrono>

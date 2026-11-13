@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/constraints/scrolling/virtual_layout.hpp"
+#include "rive/constraints/scrolling/virtual_layout.hpp"
 #include <cmath>
 
 using namespace rive;

@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCROLL_BAR_CONSTRAINT_PROXY_HPP_
 #define _RIVE_SCROLL_BAR_CONSTRAINT_PROXY_HPP_
 #include <stdio.h>
-#include "third_party/rive/include/rive/constraints/draggable_constraint.hpp"
+#include "rive/constraints/draggable_constraint.hpp"
 namespace rive
 {
 class ScrollBarConstraint;
@@ -40,6 +40,8 @@ public:
   ~TrackDraggableProxy() {}
   bool startDrag(Vec2D mousePosition, float timeStamp = 0) override;
   bool drag(Vec2D mousePosition, float timeStamp = 0) override { return true; }
+  // A track press acts once, so another finger taking over presses nothing.
+  void restartDrag(Vec2D position, float timeStamp) override {}
   bool endDrag(Vec2D mousePosition, float timeStamp = 0) override
   {
     return true;

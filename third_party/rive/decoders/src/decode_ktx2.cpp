@@ -12,9 +12,9 @@
 //
 // Spec: https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html
 
-#include "third_party/rive/include/rive/decoders/decode_ktx2.hpp"
-#include "third_party/rive/decoders/include/rive/decoders/astc_footprints.hpp"
-#include "third_party/rive/decoders/include/rive/decoders/texture_decoder.hpp"
+#include "rive/decoders/decode_ktx2.hpp"
+#include "rive/decoders/astc_footprints.hpp"
+#include "rive/decoders/texture_decoder.hpp"
 
 #include <algorithm>
 #include <cstdio>

@@ -1,8 +1,9 @@
 #ifndef _RIVE_STATE_MACHINE_LISTENER_BASE_HPP_
 #define _RIVE_STATE_MACHINE_LISTENER_BASE_HPP_
-#include "third_party/rive/include/rive/animation/state_machine_component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/animation/state_machine_component.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class StateMachineListenerBase : public StateMachineComponent
@@ -16,9 +17,13 @@ public:
   uint16_t coreType() const override { return typeKey; }
 
   static const uint16_t targetIdPropertyKey = 224;
+  static const uint16_t phaseValuePropertyKey = 535;
+  static const uint16_t listenerFlagsPropertyKey = 1137;
 
 protected:
   Id m_TargetId = kEmptyId;
+  uint8_t m_PhaseValue = 0;
+  uint8_t m_ListenerFlags = 0;
 
 public:
   inline Id targetId() const { return m_TargetId; }
@@ -33,10 +38,36 @@ public:
     notifyPropertyChanged(targetIdPropertyKey);
   }
 
+  inline uint8_t phaseValue() const { return m_PhaseValue; }
+  void phaseValue(uint8_t value)
+  {
+    if (m_PhaseValue == value)
+    {
+      return;
+    }
+    RIVE_EDITOR_CHANGING(phaseValuePropertyKey, &m_PhaseValue, &value);
+    m_PhaseValue = value;
+    notifyPropertyChanged(phaseValuePropertyKey);
+  }
+
+  inline uint8_t listenerFlags() const { return m_ListenerFlags; }
+  void listenerFlags(uint8_t value)
+  {
+    if (m_ListenerFlags == value)
+    {
+      return;
+    }
+    RIVE_EDITOR_CHANGING(listenerFlagsPropertyKey, &m_ListenerFlags, &value);
+    m_ListenerFlags = value;
+    notifyPropertyChanged(listenerFlagsPropertyKey);
+  }
+
   Core* clone() const override;
   void copy(const StateMachineListenerBase& object)
   {
     m_TargetId = object.m_TargetId;
+    m_PhaseValue = object.m_PhaseValue;
+    m_ListenerFlags = object.m_ListenerFlags;
     StateMachineComponent::copy(object);
   }
 
@@ -46,6 +77,12 @@ public:
     {
       case targetIdPropertyKey:
         m_TargetId = CoreIdType::runtimeDeserialize(reader);
+        return true;
+      case phaseValuePropertyKey:
+        m_PhaseValue = CoreUintType::deserialize(reader);
+        return true;
+      case listenerFlagsPropertyKey:
+        m_ListenerFlags = CoreUintType::deserialize(reader);
         return true;
     }
     return StateMachineComponent::deserialize(propertyKey, reader);

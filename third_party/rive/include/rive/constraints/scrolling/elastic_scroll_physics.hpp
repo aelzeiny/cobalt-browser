@@ -1,6 +1,6 @@
 #ifndef _RIVE_ELASTIC_SCROLL_PHYSICS_HPP_
 #define _RIVE_ELASTIC_SCROLL_PHYSICS_HPP_
-#include "third_party/rive/include/rive/generated/constraints/scrolling/elastic_scroll_physics_base.hpp"
+#include "rive/generated/constraints/scrolling/elastic_scroll_physics_base.hpp"
 #include <memory>
 #include <stdio.h>
 namespace rive

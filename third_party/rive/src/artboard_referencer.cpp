@@ -1,13 +1,13 @@
-#include "third_party/rive/include/rive/artboard_referencer.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard_leaf.hpp"
-#include "third_party/rive/include/rive/nested_artboard_layout.hpp"
-#include "third_party/rive/include/rive/script_input_artboard.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_image.hpp"
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/artboard_referencer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/nested_artboard_leaf.hpp"
+#include "rive/nested_artboard_layout.hpp"
+#include "rive/script_input_artboard.hpp"
+#include "rive/shapes/paint/paint_image.hpp"
+#include "rive/text/text_style_global.hpp"
+#include "rive/file.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
 
 using namespace rive;
 
@@ -22,10 +22,10 @@ Artboard* ArtboardReferencer::findArtboard(
   }
   if (viewModelInstanceArtboard->asset() != nullptr)
   {
-    if (!parentArtboard || !parentArtboard->isAncestor(
-                               viewModelInstanceArtboard->asset()->artboard()))
+    Artboard* source = viewModelInstanceArtboard->asset()->source();
+    if (!parentArtboard || !parentArtboard->isAncestor(source))
     {
-      return viewModelInstanceArtboard->asset()->artboard();
+      return source;
     }
     return nullptr;
   }

@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_INPUT_DRAWABLE_HPP_
 #define _RIVE_TEXT_INPUT_DRAWABLE_HPP_
 
-#include "third_party/rive/include/rive/generated/text/text_input_drawable_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
+#include "rive/generated/text/text_input_drawable_base.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
 
 namespace rive
 {

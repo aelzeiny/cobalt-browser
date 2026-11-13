@@ -21,6 +21,7 @@ bool YGLayout::operator==(YGLayout layout) const {
       lastOwnerDirection == layout.lastOwnerDirection &&
       nextCachedMeasurementsIndex == layout.nextCachedMeasurementsIndex &&
       cachedLayout == layout.cachedLayout &&
+      extraCachedMeasurements == layout.extraCachedMeasurements &&
       computedFlexBasis == layout.computedFlexBasis;
 
   for (uint32_t i = 0; i < YG_MAX_CACHED_RESULT_COUNT && isEqual; ++i) {

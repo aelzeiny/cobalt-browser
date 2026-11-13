@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout_component.hpp"
 #ifdef WITH_RIVE_LAYOUT
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
+#include "rive/layout/layout_data.hpp"
 #endif
 #include <cmath>
 
@@ -110,10 +110,18 @@ void GridTrack::syncContainerStyle(
     }
     lists[track->collection()].push_back(gridTrackSize(track));
   }
-  ygStyle.setGridTemplateColumns(std::move(lists[0]));
-  ygStyle.setGridTemplateRows(std::move(lists[1]));
-  ygStyle.setGridAutoColumns(std::move(lists[2]));
-  ygStyle.setGridAutoRows(std::move(lists[3]));
+  // Yoga allocates the track lists on their first write, so a layout with no
+  // tracks, such as any flex layout, writes them only to clear old ones.
+  if (!lists[0].empty() || !lists[1].empty() || !lists[2].empty() ||
+      !lists[3].empty() || !ygStyle.gridTemplateColumns().empty() ||
+      !ygStyle.gridTemplateRows().empty() ||
+      !ygStyle.gridAutoColumns().empty() || !ygStyle.gridAutoRows().empty())
+  {
+    ygStyle.setGridTemplateColumns(std::move(lists[0]));
+    ygStyle.setGridTemplateRows(std::move(lists[1]));
+    ygStyle.setGridAutoColumns(std::move(lists[2]));
+    ygStyle.setGridAutoRows(std::move(lists[3]));
+  }
   ygStyle.setJustifyItems((YGJustify)justifyItemsValue);
 }
 

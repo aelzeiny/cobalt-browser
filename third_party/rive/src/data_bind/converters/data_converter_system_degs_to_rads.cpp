@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_system_degs_to_rads.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind_flags.hpp"
+#include "rive/data_bind/converters/data_converter_system_degs_to_rads.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind_flags.hpp"
 
 using namespace rive;
 

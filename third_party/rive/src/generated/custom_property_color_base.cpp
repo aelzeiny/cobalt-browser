@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/custom_property_color_base.hpp"
-#include "third_party/rive/include/rive/custom_property_color.hpp"
+#include "rive/generated/custom_property_color_base.hpp"
+#include "rive/custom_property_color.hpp"
 
 using namespace rive;
 

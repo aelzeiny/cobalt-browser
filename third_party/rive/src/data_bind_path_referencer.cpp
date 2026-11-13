@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/data_bind_path_referencer.hpp"
-#include "third_party/rive/include/rive/importers/data_bind_path_importer.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/data_bind_path_referencer.hpp"
+#include "rive/importers/data_bind_path_importer.hpp"
+#include "rive/file.hpp"
 
 using namespace rive;
 

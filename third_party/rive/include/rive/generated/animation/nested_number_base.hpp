@@ -1,7 +1,7 @@
 #ifndef _RIVE_NESTED_NUMBER_BASE_HPP_
 #define _RIVE_NESTED_NUMBER_BASE_HPP_
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class NestedNumberBase : public NestedInput

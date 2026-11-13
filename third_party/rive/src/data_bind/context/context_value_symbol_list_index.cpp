@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
+#include "rive/data_bind/context/context_value_symbol_list_index.hpp"
+#include "rive/data_bind/data_values/data_value_symbol_list_index.hpp"
+#include "rive/generated/core_registry.hpp"
 
 using namespace rive;
 

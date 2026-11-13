@@ -24,6 +24,20 @@ struct ScriptingLimits
   /// to the device; read when each pool is made.
   uint32_t jobThreads = 0;
   uint32_t workerThreads = 0;
+  /// The most memory a job's instance may have grown to and still be kept
+  /// for the next job of its script module, which then starts without
+  /// instantiating. Each module keeps at most one per job thread. 0 keeps
+  /// none.
+  uint64_t jobReuseBytes = 64ull << 20;
+  /// Runs every parallel call one part at a time on the caller's thread,
+  /// as a host without threads does, so code that writes the heap in place
+  /// cannot race. Parallel.size() is then 1.
+  bool parallelSafeMode = false;
+  /// As many as fit in half the device's address space.
+  static constexpr uint32_t kHardwareBoundsDefault = UINT32_MAX;
+  /// How many script memories may use hardware bounds at once, each reserving
+  /// 4 GB of address space but no RAM. 0 turns them off. Native only.
+  uint32_t hardwareBoundsMemories = kHardwareBoundsDefault;
 
   /// Safe from any thread.
   static void set(const ScriptingLimits& limits);
@@ -48,6 +62,9 @@ constexpr uint32_t kWorkerStopGraceMs = 50;
 /// thread and elsewhere.
 constexpr uint32_t kMainWaitMs = 100;
 constexpr uint32_t kLaneWaitMs = 2000;
+/// How long a VM whose print sink takes any thread may go without a poll
+/// before a thread of its own hands over its lanes' console lines.
+constexpr uint32_t kLaneLogStallMs = 500;
 } // namespace lane_timing
 
 } // namespace rive

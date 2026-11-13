@@ -1,13 +1,13 @@
-#include "third_party/rive/include/rive/shapes/paint/artboard_paint_source.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/shapes/paint/artboard_paint_source.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/artboard.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/renderer.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/include/rive/offscreen_raster.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_canvas_host.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
+#include "rive/offscreen_raster.hpp"
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/renderer/render_canvas.hpp"
 #endif
 
 #include <algorithm>
@@ -330,7 +330,7 @@ bool ArtboardPaintSource::applyTo(
   float opacity = 1.0f;
   if (haveCtm && renderer->currentModulatedOpacity(&opacity))
   {
-    if (Renderer* fresh = host->compositeRenderer())
+    if (Renderer* fresh = host->compositeRenderer(renderer))
     {
       target->renderer = fresh;
       target->transform = ctm;
@@ -340,7 +340,7 @@ bool ArtboardPaintSource::applyTo(
   paint->modulatedImage(image.get(), sampler, imageTransform);
   return true;
 #else
-  // Offscreen canvases are compiled out; the paint draws without an image.
+  // Offscreen canvases are compiled out; the paint has no image to draw.
   (void)host;
   (void)paint;
   (void)sampler;

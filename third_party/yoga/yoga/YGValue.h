@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_YGVALUE_H_
-#define THIRD_PARTY_YOGA_YOGA_YGVALUE_H_
-
 #include <yoga/YGEnums.h>
 #include <yoga/YGMacros.h>
 
@@ -60,5 +57,3 @@ inline YGValue operator-(const YGValue& value) {
   return {-value.value, value.unit};
 }
 #endif
-
-#endif  // THIRD_PARTY_YOGA_YOGA_YGVALUE_H_

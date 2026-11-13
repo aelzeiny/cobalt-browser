@@ -1,32 +1,32 @@
 #ifndef _RIVE_ARTBOARD_HPP_
 #define _RIVE_ARTBOARD_HPP_
 
-#include "third_party/rive/include/rive/advance_flags.hpp"
-#include "third_party/rive/include/rive/resetting_component.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/generated/artboard_base.hpp"
-#include "third_party/rive/include/rive/hit_info.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
-#include "third_party/rive/include/rive/sidecar.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/event.hpp"
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/typed_children.hpp"
-#include "third_party/rive/include/rive/virtualizing_component.hpp"
-#include "third_party/rive/include/rive/watermark.hpp"
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_node.hpp"
-#include "third_party/rive/include/rive/scripting_slots.hpp"
+#include "rive/advance_flags.hpp"
+#include "rive/resetting_component.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/core_context.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/generated/artboard_base.hpp"
+#include "rive/hit_info.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/sidecar.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/renderer.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/event.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/typed_children.hpp"
+#include "rive/virtualizing_component.hpp"
+#include "rive/watermark.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/semantic/semantic_node.hpp"
+#include "rive/scripting_slots.hpp"
 
 #include <memory>
 #include <queue>
@@ -41,6 +41,7 @@ class KeyFrame;
 class ArtboardComponentList;
 class ArtboardHost;
 class File;
+struct DeferredArtboardBody;
 class Drawable;
 class Factory;
 namespace gpu
@@ -189,8 +190,22 @@ private:
   bool m_FrameOrigin = true;
   // In the padding after the flags above; see quietHostRow.
   uint32_t m_quietHostRow = kNoQuietRow;
-  std::unordered_set<LayoutComponent*> m_dirtyLayout;
+  // Layouts whose style changed since the last sync, each once, in the order
+  // they were marked. Each says it's listed: a layout in its flags, and an
+  // artboard listed by its host in m_listedInHostDirtyLayout, as an artboard
+  // can be listed by its host and by itself at once.
+  std::vector<LayoutComponent*> m_dirtyLayout;
   bool m_isCleaningDirtyLayouts = false;
+  // Set by an adoptFocusManager that left the tree to the host, cleared by the
+  // next buildFocusTree. Sits in padding.
+  bool m_focusTreeDeferred = false;
+  // In the padding too; see m_dirtyLayout.
+  bool m_listedInHostDirtyLayout = false;
+  // In the padding too; see listRow.
+  uint32_t m_listRow = kNoQuietRow;
+  bool listedAsDirty(LayoutComponent* layout);
+  void listedAsDirty(LayoutComponent* layout, bool value);
+  void leaveDirtyLayouts();
   std::unique_ptr<KeyFrameInterpolator> m_ownedInheritedInterpolator;
   // Live clones of the scripted interpolators this instance's layout styles
   // use. Allocated on first use; see statefulInterpolator().
@@ -200,6 +215,9 @@ private:
   bool m_updatesOwnLayout = true;
   bool m_hostTransformMarkedDirty = false;
   bool m_didChange = true;
+  // Set while a layer mask draws a range of this artboard into its own canvas;
+  // see drawsMaskedRange. The last byte of padding before m_changeSerial.
+  bool m_drawsMaskedRange = false;
   // In the padding after the flags above. Bumped by every change that
   // reaches this artboard -- component dirt, changed() and its own
   // rotation/scale, which m_contentRevision leaves out -- so a state machine
@@ -239,15 +257,16 @@ private:
   bool sharesLayoutWithHost() const;
   void cloneObjectDataBinds(const Core* object, Core* clone, Artboard* artboard)
       const;
-  // Lazily-built index of this artboard's data binds that target keyframes,
-  // keyed by the (shared) keyframe. Keyframe binds live in dataBinds() but
-  // are never applied directly (keyframes aren't Components); instead a
-  // playing LinearAnimationInstance clones them onto per-instance holders and
-  // resolves them via keyFrameValueHolder. Built once from dataBinds(); the
-  // source artboard's binds don't change at runtime. `mutable` so the const
-  // accessors below can populate it on first use.
-  // Source-only state: animations, state machines, rejected objects and the
-  // keyframe-bind index. Null on every instance. See ArtboardSourceState.
+  // Sizes [clone]'s children and dependents for the ones [source] has, which
+  // the clone ends up with once initialized, so they don't grow an entry at
+  // a time.
+  static void reserveLikeSource(Core* clone, const Core* source);
+  // Sizes the lists an instance fills while it clones and initializes (its
+  // data binds, drawables, advancing components and the like) for the
+  // entries [source] has, which the instance ends up with too.
+  void reserveListsLike(const Artboard& source);
+  // Source-only state: animations, state machines, rejected objects and a
+  // deferred body. Null on every instance. See ArtboardSourceState.
   mutable Sidecar<ArtboardSourceState> m_sourceState;
   // Views onto this artboard's own source state, each falling back to a
   // shared empty when none was allocated -- every instance, and any artboard
@@ -256,8 +275,34 @@ private:
   const std::vector<LinearAnimation*>& ownAnimations() const;
   const std::vector<StateMachine*>& ownStateMachines() const;
   const std::vector<Core*>& ownInvalidObjects() const;
-  void buildKeyFrameSourceBindsIndex() const;
   void initScriptedObjects();
+
+  // File::import hands a source the body it skipped, to decode on first use.
+  // Takes ownership of [body].
+  void deferBody(
+      File* file,
+      DeferredArtboardBody* body,
+      bool hasTextStylePaint,
+      bool hasStateMachineListener);
+  // Frees what a body that failed to decode had imported, leaving the record
+  // alone, for initialize() to make an empty artboard of it.
+  void discardBody();
+  // A new, initialized artboard with this one's record and nothing else,
+  // to stand in for it once its body failed part way through initialize
+  // (ArtboardDeferral::standIn).
+  Artboard* makeEmptyStandIn() const;
+  // The artboard whose body this thread is decoding, if any (see
+  // File::decodeArtboardBody).
+  static const Artboard*& decodingArtboard();
+  // Fails when a pending body is read by anything but its own decode: every
+  // path to a source's body must decode it first. Defined in every build, as
+  // code built with TESTING may link a runtime built without it.
+  void assertBodyAvailable() const;
+#ifdef TESTING
+#define RIVE_ASSERT_ARTBOARD_BODY() assertBodyAvailable()
+#else
+#define RIVE_ASSERT_ARTBOARD_BODY()
+#endif
 
   // Variable that tracks whenever the draw order changes. It is used by the
   // state machine controllers to sort their hittable components when they are
@@ -352,18 +397,16 @@ public:
   static uint64_t sm_dirtNotifications;
   // Runs of collapsed components updateComponents skipped in one step.
   static uint64_t sm_collapsedRunSkips;
+  // Focus trees built (buildFocusTree calls that had a manager) across every
+  // artboard.
+  static uint64_t sm_focusTreeBuilds;
   static void incFrameId() { sm_frameId++; }
 #elif WITH_RIVE_TOOLS
   static void incFrameId() { sm_frameId++; }
 #endif
   void updateDataBinds(bool applyTargetToSource = true) override;
-  // The data bind (if any) targeting the given keyframe's value, resolved
-  // from this artboard's serialized keyframe binds. Used by
-  // LinearAnimationInstance to lazily build per-instance value holders. Call
-  // on the source artboard (see Artboard::artboardSource()).
-  DataBind* keyFrameSourceBind(const KeyFrame* keyframe) const;
-  // True if any of this artboard's data binds target a keyframe. Cheap gate
-  // so playback in files without keyframe binds does no per-keyframe work.
+  // True if any of this artboard's animations has a bind on a keyframe
+  // (LinearAnimation::keyFrameBinds). A cheap gate, which decodes nothing.
   bool hasKeyFrameSourceBinds() const;
   void host(ArtboardHost* artboardHost);
   ArtboardHost* host() const;
@@ -376,6 +419,11 @@ public:
   static constexpr uint32_t kNoQuietRow = 0xFFFFFFFF;
   uint32_t quietHostRow() const { return m_quietHostRow; }
   void quietHostRow(uint32_t row) { m_quietHostRow = row; }
+  /// The row of its host list this artboard was last put in, kNoQuietRow
+  /// before any. The list may have moved it out since; see
+  /// ArtboardComponentList::showsInARow.
+  uint32_t listRow() const { return m_listRow; }
+  void listRow(uint32_t row) { m_listRow = row; }
   void wakeIfQuietRow()
   {
     if (m_quietHostRow != kNoQuietRow)
@@ -383,12 +431,39 @@ public:
       wakeQuietRow();
     }
   }
+  /// For a root artboard whose state machine settled with only its scripts'
+  /// async work outstanding (see StateMachineInstance::advanceAndApply): marks
+  /// it, and the artboards it hosts, quiet as a list does a quiet row, so
+  /// whatever could change any of them wakes it, and returns true. Returns
+  /// false, marking nothing, when a change could go unheard: it is hosted
+  /// itself, has work of its own waiting, polls a bind, or hosts something
+  /// that can't report a change (see hostedSkippableWhileCollapsed).
+  bool markQuietAwaitingAsync();
+  /// Whether the mark markQuietAwaitingAsync set is still there: nothing
+  /// has woken this root since.
+  bool quietAwaitingAsync() const
+  {
+    return m_host == nullptr && m_quietHostRow != kNoQuietRow;
+  }
   /// Whether this artboard's own per-frame work as a row (advanceInternal,
-  /// updateDataBinds, reset and updatePass) would currently do nothing.
-  /// `never` for artboards whose content can't say (hosted artboards,
-  /// scripts, joysticks, resettables, advancing converters, advancing
-  /// components that can't report).
+  /// updateDataBinds, reset and updatePass) would currently do nothing,
+  /// what it hosts included. `never` for artboards whose content can't say
+  /// (scripts, joysticks, resettables, advancing converters, advancing
+  /// components that can't report, such as an artboard paint).
   AdvancingComponent::QuietState rowQuietState();
+  /// Marks the artboards this one hosts in nested artboards, and theirs, as
+  /// quiet with it, so whatever wakes one of them wakes this row: a list row
+  /// goes quiet with all of them (see NestedArtboard::quietState). A nested
+  /// list's rows are already marked by that list.
+  void markHostedQuiet();
+  /// Whether, once marked, a collapsed host above this artboard can skip its
+  /// advances. Each one notes where the change sequence stands for the
+  /// machines below that read pending changes, so none may (see
+  /// NestedArtboard::skippableWhileCollapsed). A list's rows go quiet only
+  /// while every change their machines read wakes them, and a list passes a
+  /// wake on only from a quiet row, so every list needs all its rows quiet.
+  /// An artboard paint's source is neither checked nor marked.
+  bool hostedSkippableWhileCollapsed() const;
   void addedToHost()
   {
     setLayoutFlag(LayoutComponentFlags::JustAddedToHost, true);
@@ -418,8 +493,11 @@ public:
   /// FocusManager, tearing down the tree built against the previous one and
   /// rebuilding it against [manager]. This is the entry point for a host that
   /// owns the manager — a parent artboard sharing its own, or Dart/the editor
-  /// supplying one.
-  void adoptFocusManager(FocusManager* manager);
+  /// supplying one. With [buildTree] false the old tree is still torn down,
+  /// but the new one is left to the host, which builds it where it belongs;
+  /// until it does, [focusTreeDeferred] is true.
+  void adoptFocusManager(FocusManager* manager, bool buildTree = true);
+  bool focusTreeDeferred() const { return m_focusTreeDeferred; }
 
 #ifdef WITH_RIVE_TOOLS
   /// Set an external parent FocusNode for this artboard's root-level focus
@@ -525,7 +603,19 @@ public:
   bool validateObjects();
   StatusCode initialize();
   bool didChange() { return m_didChange; }
+  // For a host that leaves this artboard undrawn because none of it can
+  // show: takes the change as a draw would, so the next one reaches the
+  // parent artboard again.
+  void skipDraw() { m_didChange = false; }
+  // Whether a layer mask is drawing a range of this artboard into its own
+  // canvas. A clip pushed on the frame's renderer before the range isn't on
+  // that canvas's renderer, though its owner still reads as clipping.
+  bool drawsMaskedRange() const { return m_drawsMaskedRange; }
   uint32_t changeSerial() const { return m_changeSerial; }
+  // Moves the change serial alone: a value the artboard's objects will be
+  // set to changed (see BlendAccumulator's layer mode), so a pose resting on
+  // it must re-apply, as it would after the set itself.
+  void noteChange() { m_changeSerial++; }
 
   // The BitmapCache child of this artboard, if one exists. Its presence
   // enables cache-as-bitmap rendering. Populated during initialize().
@@ -849,25 +939,69 @@ public:
   const ShapePaintPath* backgroundPath() { return &mutableRenderPaths().local; }
 #endif
 
-  const std::vector<Core*>& objects() const { return m_Objects; }
+  const std::vector<Core*>& objects() const
+  {
+    RIVE_ASSERT_ARTBOARD_BODY();
+    return m_Objects;
+  }
   template <typename T> TypedChildren<T> objects()
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     return TypedChildren<T>(Span<Core*>(m_Objects.data(), m_Objects.size()));
   }
 
+  /// Whether File::import skipped this source's body (its components,
+  /// animations and state machines; see FileImportOptions) and it
+  /// isn't decoded yet. The record is always there: name, size, view model,
+  /// default state machine.
+  bool hasDeferredBody() const;
+  /// Decodes the body if the import deferred it. instance() and the File's
+  /// artboard() accessors do, so only code reaching a source some other way
+  /// (a reference's artboard) and reading its body needs to (decoded()).
+  /// Safe on any thread.
+  void ensureDecoded() const;
+  /// Decodes the body if the import deferred it, and returns the artboard
+  /// to use: this one, or, when its body failed part way through initialize
+  /// (a malformed file), an empty artboard with the same record standing in
+  /// for it. instance() and the File's artboard() accessors go through it.
+  const Artboard* decoded() const;
+  Artboard* decoded()
+  {
+    return const_cast<Artboard*>(static_cast<const Artboard*>(this)->decoded());
+  }
+  /// Whether decoded() hands out [artboard]: this one, or what stands in for
+  /// a body that failed. Never decodes; a body still pending has handed out
+  /// nothing but this.
+  bool handsOut(const Artboard* artboard) const;
+  /// Whether the body failed to decode (a malformed file), which leaves the
+  /// artboard, or the one decoded() hands out in its place, empty.
+  bool failedToDecode() const;
+  /// What the import saw in a body it deferred: whether it may hold a text
+  /// style paint or a state machine listener. Always true once decoded,
+  /// when the objects themselves can be looked at.
+  bool mayHaveTextStylePaint() const;
+  bool mayHaveStateMachineListener() const;
+
   const std::vector<NestedArtboard*>& nestedArtboards() const
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     return m_NestedArtboards.view();
   }
   /// Whether this artboard holds nested artboards or artboard lists, which
   /// make state machines of their own as they advance.
-  bool hostsArtboards() const { return !m_ArtboardHosts.empty(); }
+  bool hostsArtboards() const
+  {
+    RIVE_ASSERT_ARTBOARD_BODY();
+    return !m_ArtboardHosts.empty();
+  }
   /// Whether this artboard runs scripts: scripted components, scripts in its
-  /// state machines, or scripted converters on their data binds. Each
-  /// instance keeps its scripts' state. Walks the artboard on every call.
+  /// state machines, or scripted converters on their data binds, those on
+  /// its animations' keyframes included. Each instance keeps its scripts'
+  /// state. Walks the artboard on every call.
   bool usesScripts() const;
   const std::vector<ArtboardHost*>& artboardHosts() const
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     return m_ArtboardHosts;
   }
   const std::vector<ArtboardComponentList*>& artboardComponentLists() const
@@ -943,6 +1077,7 @@ public:
 
   template <typename T = Component> T* find(const std::string& name)
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     for (auto object : m_Objects)
     {
       if (object != nullptr && object->is<T>() &&
@@ -956,6 +1091,7 @@ public:
 
   template <typename T = Component> size_t count()
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     size_t count = 0;
     for (auto object : m_Objects)
     {
@@ -969,6 +1105,7 @@ public:
 
   template <typename T = Component> T* objectAt(size_t index)
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     size_t count = 0;
     for (auto object : m_Objects)
     {
@@ -985,6 +1122,7 @@ public:
 
   int objectIndex(Core* component) const
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     int count = 0;
     for (auto object : m_Objects)
     {
@@ -999,6 +1137,7 @@ public:
 
   template <typename T = Component> std::vector<T*> find()
   {
+    RIVE_ASSERT_ARTBOARD_BODY();
     std::vector<T*> results;
     for (auto object : m_Objects)
     {
@@ -1050,6 +1189,14 @@ public:
   template <typename T = ArtboardInstance>
   std::unique_ptr<T> instance(Factory* factory = nullptr) const
   {
+    // A source whose body the import deferred is decoded by its first
+    // instance (with its own factory, not the override). One whose body
+    // failed part way through initialize instances what stands in for it.
+    const Artboard* source = decoded();
+    if (source != this)
+    {
+      return source->instance<T>(factory);
+    }
     std::unique_ptr<T> artboardClone(new T);
     artboardClone->copy(*this);
 
@@ -1065,6 +1212,7 @@ public:
     artboardClone->m_instanceCount = m_instanceCount;
 #endif
     artboardClone->m_artboardSource = isInstance() ? m_artboardSource : this;
+    artboardClone->reserveListsLike(*this);
     cloneObjectDataBinds(this, artboardClone.get(), artboardClone.get());
 
     std::vector<Core*>& cloneObjects = artboardClone->m_Objects;
@@ -1073,6 +1221,7 @@ public:
     // instance holding up to its own object count again in unused capacity.
     cloneObjects.reserve(m_Objects.size());
     cloneObjects.push_back(artboardClone.get());
+    reserveLikeSource(artboardClone.get(), this);
 
     if (!m_Objects.empty())
     {
@@ -1082,6 +1231,10 @@ public:
       {
         auto object = *itr;
         cloneObjects.push_back(object == nullptr ? nullptr : object->clone());
+        if (object != nullptr && cloneObjects.back() != nullptr)
+        {
+          reserveLikeSource(cloneObjects.back(), object);
+        }
         // For each object, clone its data bind objects and target their
         // clones
         cloneObjectDataBinds(object, cloneObjects.back(), artboardClone.get());

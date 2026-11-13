@@ -1,7 +1,7 @@
 #ifndef _RIVE_TRIANGLE_HPP_
 #define _RIVE_TRIANGLE_HPP_
-#include "third_party/rive/include/rive/generated/shapes/triangle_base.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
+#include "rive/generated/shapes/triangle_base.hpp"
+#include "rive/shapes/straight_vertex.hpp"
 
 namespace rive
 {

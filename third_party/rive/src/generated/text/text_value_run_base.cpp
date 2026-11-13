@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/text/text_value_run_base.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
+#include "rive/generated/text/text_value_run_base.hpp"
+#include "rive/text/text_value_run.hpp"
 
 using namespace rive;
 

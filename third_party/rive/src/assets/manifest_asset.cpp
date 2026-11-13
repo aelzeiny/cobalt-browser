@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/assets/manifest_asset.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/manifest_sections.hpp"
+#include "rive/assets/manifest_asset.hpp"
+#include "rive/factory.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/span.hpp"
+#include "rive/manifest_sections.hpp"
 #include <cstring>
 
 using namespace rive;

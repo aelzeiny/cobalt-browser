@@ -1,34 +1,34 @@
 #ifndef _RIVE_TRANSITION_VIEW_MODEL_CONDITION_HPP_
 #define _RIVE_TRANSITION_VIEW_MODEL_CONDITION_HPP_
-#include "third_party/rive/include/rive/generated/animation/transition_viewmodel_condition_base.hpp"
-#include "third_party/rive/include/rive/animation/transition_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_artboard_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_viewmodel_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_condition_op.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_integer.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/transition_self_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_artboard_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_asset_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_number_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_boolean_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_string_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_color_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_enum_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_trigger_comparator.hpp"
-#include "third_party/rive/include/rive/animation/artboard_property.hpp"
+#include "rive/generated/animation/transition_viewmodel_condition_base.hpp"
+#include "rive/animation/transition_comparator.hpp"
+#include "rive/animation/transition_property_artboard_comparator.hpp"
+#include "rive/animation/transition_property_viewmodel_comparator.hpp"
+#include "rive/animation/transition_condition_op.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/data_bind/bindable_property.hpp"
+#include "rive/data_bind/bindable_property_artboard.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
+#include "rive/data_bind/bindable_property_enum.hpp"
+#include "rive/data_bind/bindable_property_integer.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/bindable_property_trigger.hpp"
+#include "rive/data_bind/bindable_property_viewmodel.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/animation/transition_self_comparator.hpp"
+#include "rive/animation/transition_value_artboard_comparator.hpp"
+#include "rive/animation/transition_value_asset_comparator.hpp"
+#include "rive/animation/transition_value_number_comparator.hpp"
+#include "rive/animation/transition_value_boolean_comparator.hpp"
+#include "rive/animation/transition_value_string_comparator.hpp"
+#include "rive/animation/transition_value_color_comparator.hpp"
+#include "rive/animation/transition_value_enum_comparator.hpp"
+#include "rive/animation/transition_value_trigger_comparator.hpp"
+#include "rive/animation/artboard_property.hpp"
 #include <cstdint>
 #include <stdio.h>
 namespace rive
@@ -509,12 +509,10 @@ public:
       {
         if (dataBind->is<DataBindContext>())
         {
-          const auto& sourcePathIds = dataBind->as<DataBindContext>()
-                                          ->sourcePathIds();
           // A root-only source path marks "My ViewModel" for
           // transition comparands. Resolve it from the state machine
           // data context.
-          if (sourcePathIds.size() == 1)
+          if (dataBind->as<DataBindContext>()->sourcePathLength() == 1)
           {
             auto dataContext = stateMachineInstance->dataContext();
             if (dataContext != nullptr &&
@@ -758,6 +756,11 @@ public:
   // model or component) or a "changed" (Self) comparison. Errs on the side
   // of yes, since a no only saves the per-layer change windows.
   bool readsPendingChange() const;
+  // Whether either side reads a property of an object in the artboard (a
+  // component's, or the artboard's own), which the layers before this one
+  // may have written to the state machine's accumulator but not yet to the
+  // object (see StateMachineInstance).
+  bool readsObjectProperty() const;
 #ifdef WITH_RIVE_EDITOR
   void setComparatorsForEditor(
       TransitionComparator* left,

@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/importers/scripted_object_importer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/importers/scripted_object_importer.hpp"
 
 using namespace rive;
 

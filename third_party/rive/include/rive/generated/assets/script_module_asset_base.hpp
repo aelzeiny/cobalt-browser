@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCRIPT_MODULE_ASSET_BASE_HPP_
 #define _RIVE_SCRIPT_MODULE_ASSET_BASE_HPP_
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 namespace rive
 {
 class ScriptModuleAssetBase : public FileAsset
@@ -29,6 +29,7 @@ public:
     }
     RIVE_EDITOR_CHANGING(languagePropertyKey, &m_Language, &value);
     m_Language = value;
+    RIVE_EDITOR_CHANGED(languageChanged());
     notifyPropertyChanged(languagePropertyKey);
   }
 
@@ -51,6 +52,7 @@ public:
   }
 
 protected:
+  virtual void languageChanged() {}
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/assets/script_module_asset_ext.inl"
 #endif

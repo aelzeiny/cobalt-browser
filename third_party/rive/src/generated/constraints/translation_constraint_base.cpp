@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/constraints/translation_constraint_base.hpp"
-#include "third_party/rive/include/rive/constraints/translation_constraint.hpp"
+#include "rive/generated/constraints/translation_constraint_base.hpp"
+#include "rive/constraints/translation_constraint.hpp"
 
 using namespace rive;
 

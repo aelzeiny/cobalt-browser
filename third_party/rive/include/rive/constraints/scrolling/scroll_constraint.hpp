@@ -1,13 +1,13 @@
 #ifndef _RIVE_SCROLL_CONSTRAINT_HPP_
 #define _RIVE_SCROLL_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/scrolling/scroll_constraint_base.hpp"
-#include "third_party/rive/include/rive/advance_flags.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/constraints/layout_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_physics.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
+#include "rive/generated/constraints/scrolling/scroll_constraint_base.hpp"
+#include "rive/advance_flags.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/constraints/layout_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_physics.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/transform_components.hpp"
 #include <stdio.h>
 namespace rive
 {

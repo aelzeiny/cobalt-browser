@@ -1,21 +1,22 @@
 
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_physics.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_range_mapper.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_interpolator.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/script_input_artboard.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/backboard.hpp"
+#include "rive/file.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/constraints/scrolling/scroll_physics.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/file.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/data_bind/converters/data_converter_range_mapper.hpp"
+#include "rive/data_bind/converters/data_converter_interpolator.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/script_input_artboard.hpp"
 #include <algorithm>
 #include <unordered_set>
 #include <utility>
@@ -24,34 +25,13 @@ using namespace rive;
 
 namespace
 {
-// Flags each referencer whose reference lies on a nested artboard cycle, which
-// would make instancing recurse without end. The editor never exports those.
-std::vector<bool> closesNestedArtboardCycle(
-    const std::vector<ArtboardReferencer*>& referencers,
-    const std::unordered_map<int, Artboard*>& artboards)
+// Iterative Tarjan: the strongly connected component of each node. Components
+// complete in reverse topological order, so an edge between two components
+// always runs from the higher number to the lower one. Recursing could
+// overflow on large files.
+std::vector<int> stronglyConnectedComponents(
+    const std::vector<std::vector<int>>& edges)
 {
-  std::unordered_map<Artboard*, int> nodes;
-  auto node = [&](Artboard* artboard) {
-    return nodes.emplace(artboard, (int)nodes.size()).first->second;
-  };
-  std::vector<std::pair<int, int>> references(referencers.size(), {-1, -1});
-  std::vector<std::vector<int>> edges;
-  for (size_t i = 0; i < referencers.size(); i++)
-  {
-    Artboard* nesting = referencers[i]->nestingArtboard();
-    auto nested = artboards.find(referencers[i]->referencedArtboardId());
-    if (nesting == nullptr || nested == artboards.end() ||
-        nested->second == nullptr)
-    {
-      continue;
-    }
-    references[i] = {node(nesting), node(nested->second)};
-    edges.resize(nodes.size());
-    edges[references[i].first].push_back(references[i].second);
-  }
-
-  // Iterative Tarjan: a reference closes a cycle when both its ends share a
-  // strongly connected component. Recursing could overflow on large files.
   const size_t count = edges.size();
   std::vector<int> order(count, -1);
   std::vector<int> lowLink(count, 0);
@@ -107,15 +87,156 @@ std::vector<bool> closesNestedArtboardCycle(
       }
     }
   }
+  return component;
+}
 
+// The strongly connected components of the nesting graph: an edge from each
+// referencer's nesting artboard to the artboard it references, plus the
+// edges of bodies the import deferred. Only artboards on an edge get one. A
+// reference closes a cycle, which would make instancing recurse without end,
+// when both its ends share a component. The editor never exports those.
+std::unordered_map<const Artboard*, int> computeNestingComponents(
+    const std::vector<ArtboardReferencer*>& referencers,
+    const std::vector<std::pair<Artboard*, int>>& deferredEdges,
+    const std::unordered_map<int, Artboard*>& artboards)
+{
+  std::vector<Artboard*> artboardOf;
+  std::unordered_map<Artboard*, int> nodes;
+  auto node = [&](Artboard* artboard) {
+    auto inserted = nodes.emplace(artboard, (int)nodes.size());
+    if (inserted.second)
+    {
+      artboardOf.push_back(artboard);
+    }
+    return inserted.first->second;
+  };
+  std::vector<std::vector<int>> edges;
+  auto addEdge = [&](Artboard* nesting, int referencedArtboardId) {
+    auto nested = artboards.find(referencedArtboardId);
+    if (nesting == nullptr || nested == artboards.end() ||
+        nested->second == nullptr)
+    {
+      return;
+    }
+    int from = node(nesting);
+    int to = node(nested->second);
+    edges.resize(nodes.size());
+    edges[from].push_back(to);
+  };
+  for (auto referencer : referencers)
+  {
+    addEdge(referencer->nestingArtboard(), referencer->referencedArtboardId());
+  }
+  for (auto& edge : deferredEdges)
+  {
+    addEdge(edge.first, edge.second);
+  }
+
+  auto component = stronglyConnectedComponents(edges);
+  std::unordered_map<const Artboard*, int> components;
+  for (size_t i = 0; i < component.size(); i++)
+  {
+    components[artboardOf[i]] = component[i];
+  }
+  return components;
+}
+
+// Flags each referencer whose reference lies on a nesting cycle: both its
+// ends share a component.
+std::vector<bool> closesNestedArtboardCycle(
+    const std::vector<ArtboardReferencer*>& referencers,
+    const std::unordered_map<int, Artboard*>& artboards,
+    const std::unordered_map<const Artboard*, int>& components)
+{
   std::vector<bool> closesCycle(referencers.size(), false);
   for (size_t i = 0; i < referencers.size(); i++)
   {
-    closesCycle[i] = references[i].first != -1 &&
-                     component[references[i].first] ==
-                         component[references[i].second];
+    auto nesting = components.find(referencers[i]->nestingArtboard());
+    auto nested = artboards.find(referencers[i]->referencedArtboardId());
+    if (nesting == components.end() || nested == artboards.end())
+    {
+      continue;
+    }
+    auto nestedComponent = components.find(nested->second);
+    closesCycle[i] = nestedComponent != components.end() &&
+                     nestedComponent->second == nesting->second;
   }
   return closesCycle;
+}
+
+// Gives each bind on a file level converter (on its properties, formula tokens,
+// template arguments or script inputs) a clone of the converter it uses. Every
+// bind that uses a converter clones it, so a converter's own binds have to
+// resolve before anything clones the converter. Binds whose converter leads
+// back to the converter they sit on are left without one: cloning it would
+// recurse without end. The editor never exports those. Returns the binds it
+// handled.
+std::unordered_set<DataBind*> resolveConverterDataBinds(
+    const std::vector<DataConverter*>& converters)
+{
+  const size_t count = converters.size();
+  std::unordered_map<DataConverter*, int> indices;
+  for (size_t i = 0; i < count; i++)
+  {
+    indices.emplace(converters[i], (int)i);
+  }
+  auto converterIndex = [&](DataBind* dataBind) {
+    auto index = (size_t)dataBind->converterId();
+    return index < count ? (int)index : -1;
+  };
+  std::vector<std::vector<int>> edges(count);
+  for (size_t i = 0; i < count; i++)
+  {
+    for (auto dataBind : converters[i]->dataBinds())
+    {
+      int to = converterIndex(dataBind);
+      if (to != -1)
+      {
+        edges[i].push_back(to);
+      }
+    }
+    // A group clones the converters of its items, which brings their binds.
+    if (converters[i]->is<DataConverterGroup>())
+    {
+      for (auto item : converters[i]->as<DataConverterGroup>()->items())
+      {
+        auto itr = indices.find(item->converter());
+        if (itr != indices.end())
+        {
+          edges[i].push_back(itr->second);
+        }
+      }
+    }
+  }
+
+  // Lower components never use higher ones, so resolving in component order
+  // finishes every converter before a bind clones it.
+  auto component = stronglyConnectedComponents(edges);
+  std::vector<int> order(count);
+  for (size_t i = 0; i < count; i++)
+  {
+    order[i] = (int)i;
+  }
+  std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+    return component[a] < component[b];
+  });
+  std::unordered_set<DataBind*> resolved;
+  for (int i : order)
+  {
+    for (auto dataBind : converters[i]->dataBinds())
+    {
+      resolved.insert(dataBind);
+      int to = converterIndex(dataBind);
+      // Already set when a partial import re-resolves the file's converters.
+      if (to == -1 || component[to] == component[i] ||
+          dataBind->converter() != nullptr)
+      {
+        continue;
+      }
+      dataBind->converter(converters[to]->clone()->as<DataConverter>());
+    }
+  }
+  return resolved;
 }
 } // namespace
 
@@ -173,11 +294,59 @@ void BackboardImporter::addArtboard(Artboard* artboard)
 
 void BackboardImporter::addMissingArtboard() { m_NextArtboardId++; }
 
+void BackboardImporter::addDeferredNestingEdge(
+    Artboard* nesting,
+    int referencedArtboardId)
+{
+  m_deferredNestingEdges.push_back({nesting, referencedArtboardId});
+}
+
+void BackboardImporter::seedArtboardLookup(
+    const std::unordered_map<int, Artboard*>& lookup)
+{
+  // Outlives this importer: the file's, or the decode's own.
+  m_seededArtboardLookup = &lookup;
+}
+
+void BackboardImporter::seedFileAssets(
+    const std::vector<rcp<FileAsset>>& assets)
+{
+  // Their ids were made unique when the file imported them (addFileAsset).
+  // Outlives this importer, as the lookup does.
+  m_seededFileAssets = &assets;
+}
+
+void BackboardImporter::seedDataConverters(
+    const std::vector<DataConverter*>& converters)
+{
+  m_DataConverters = converters;
+  m_convertersSeeded = true;
+}
+
 StatusCode BackboardImporter::resolve()
 {
+  if (m_forwardTo != nullptr)
+  {
+    for (auto referencer : m_DataConverterReferencers)
+    {
+      m_forwardTo->addDataConverterReferencer(referencer);
+    }
+    m_DataConverterReferencers.clear();
+  }
+  std::unordered_map<const Artboard*, int> computed;
+  if (m_nestingComponents == nullptr)
+  {
+    computed = computeNestingComponents(
+        m_ArtboardsReferencers,
+        m_deferredNestingEdges,
+        artboardLookup());
+  }
+  const auto& components = m_nestingComponents != nullptr ? *m_nestingComponents
+                                                          : computed;
   auto closesCycle = closesNestedArtboardCycle(
       m_ArtboardsReferencers,
-      m_ArtboardLookup);
+      artboardLookup(),
+      components);
   for (size_t i = 0; i < m_ArtboardsReferencers.size(); i++)
   {
     if (closesCycle[i])
@@ -185,8 +354,8 @@ StatusCode BackboardImporter::resolve()
       continue;
     }
     auto nestedArtboard = m_ArtboardsReferencers[i];
-    auto itr = m_ArtboardLookup.find(nestedArtboard->referencedArtboardId());
-    if (itr != m_ArtboardLookup.end())
+    auto itr = artboardLookup().find(nestedArtboard->referencedArtboardId());
+    if (itr != artboardLookup().end())
     {
       auto artboard = itr->second;
       if (artboard != nullptr)
@@ -198,16 +367,23 @@ StatusCode BackboardImporter::resolve()
   for (auto referencer : m_FileAssetReferencers)
   {
     auto index = (size_t)referencer->assetId();
-    if (index >= m_FileAssets.size())
+    const std::vector<rcp<FileAsset>>& fileAssets = *assets();
+    if (index >= fileAssets.size())
     {
       continue;
     }
-    auto asset = m_FileAssets[index];
+    auto asset = fileAssets[index];
     referencer->setAsset(asset);
   }
 
+  // Seeded converters were bound when the file imported them; binding them
+  // again would only rewrite what other threads may be reading.
   for (auto converter : m_DataConverters)
   {
+    if (m_convertersSeeded)
+    {
+      break;
+    }
     if (converter->is<DataConverterRangeMapper>())
     {
       size_t converterId = converter->as<DataConverterRangeMapper>()
@@ -240,8 +416,18 @@ StatusCode BackboardImporter::resolve()
     // incomplete
     referencer->converter(m_DataConverters[index]);
   }
+  // Seeded converters' own binds resolved when the file imported them too.
+  std::unordered_set<DataBind*> converterDataBinds;
+  if (!m_convertersSeeded)
+  {
+    converterDataBinds = resolveConverterDataBinds(m_DataConverters);
+  }
   for (auto referencer : m_DataConverterReferencers)
   {
+    if (converterDataBinds.count(referencer) != 0)
+    {
+      continue;
+    }
     auto index = (size_t)referencer->converterId();
     if (index >= m_DataConverters.size() || index < 0)
     {
@@ -251,6 +437,10 @@ StatusCode BackboardImporter::resolve()
         m_DataConverters[index]->clone()->as<DataConverter>());
   }
 
+  if (m_keepsResolution && m_file != nullptr)
+  {
+    m_file->keepArtboardResolution(m_ArtboardLookup, std::move(computed));
+  }
   return StatusCode::Ok;
 }
 
@@ -288,16 +478,26 @@ void BackboardImporter::addPhysics(ScrollPhysics* physics)
   m_physics.push_back(physics);
 }
 
-void BackboardImporter::addViewModelInstance(ViewModelInstance* instance)
+void BackboardImporter::addViewModelInstance(
+    ViewModelInstance* instance,
+    bool listed)
 {
   if (m_file == nullptr)
   {
     return;
   }
   auto viewModel = m_file->viewModel((size_t)instance->viewModelId());
-  if (viewModel != nullptr)
+  if (viewModel == nullptr)
+  {
+    return;
+  }
+  if (listed)
   {
     viewModel->addInstance(instance);
+  }
+  else
+  {
+    instance->viewModel(viewModel);
   }
 }
 

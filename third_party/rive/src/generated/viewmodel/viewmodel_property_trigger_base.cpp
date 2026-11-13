@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_property_trigger_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_trigger.hpp"
+#include "rive/generated/viewmodel/viewmodel_property_trigger_base.hpp"
+#include "rive/viewmodel/viewmodel_property_trigger.hpp"
 
 using namespace rive;
 

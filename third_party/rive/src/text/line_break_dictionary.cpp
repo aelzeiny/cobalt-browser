@@ -2,7 +2,7 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/include/rive/text/line_break_dictionary.hpp"
+#include "rive/text/line_break_dictionary.hpp"
 
 #ifdef RIVE_LINE_BREAK_DICTIONARIES
 #include <algorithm>

@@ -1,11 +1,11 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/wasm_jobs.hpp"
-#include "third_party/rive/include/rive/async/timeouts.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_policy.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_shared.hpp"
+#include "rive/wasm/wasm_jobs.hpp"
+#include "rive/async/timeouts.hpp"
+#include "rive/wasm/wasm_lane.hpp"
+#include "rive/wasm/wasm_lane_policy.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/wasm/wasm_shared.hpp"
 
 #ifndef __EMSCRIPTEN__
 #include "wasm_export.h"
@@ -38,6 +38,9 @@ JobPool*& poolSlot()
   static JobPool* pool = nullptr;
   return pool;
 }
+
+// Whether configurePool chose the pool, under the pool mutex.
+bool s_poolConfigured = false;
 
 uint32_t defaultThreadCount()
 {
@@ -74,6 +77,28 @@ void WasmJobs::configurePool(
   std::lock_guard<LaneMutex> lock(poolMutex());
   delete poolSlot();
   poolSlot() = new JobPool(threads, schedule, seed);
+  s_poolConfigured = true;
+}
+
+#if defined(WITH_RIVE_TOOLS) || defined(TESTING)
+void WasmJobs::resetPool()
+{
+  std::lock_guard<LaneMutex> lock(poolMutex());
+  delete poolSlot();
+  poolSlot() = nullptr;
+  s_poolConfigured = false;
+}
+#endif
+
+uint32_t WasmJobs::poolThreads(bool* chosen)
+{
+  std::lock_guard<LaneMutex> lock(poolMutex());
+  if (chosen != nullptr)
+  {
+    *chosen = s_poolConfigured || ScriptingLimits::get().jobThreads != 0;
+  }
+  return poolSlot() != nullptr ? poolSlot()->threadCount()
+                               : defaultThreadCount();
 }
 
 JobPool& WasmJobs::pool()
@@ -98,8 +123,15 @@ uint32_t jobCancelled(wasm_exec_env_t)
   return job != nullptr && job->cancelRequested() ? 1 : 0;
 }
 
+uint32_t jobReusePages(wasm_exec_env_t)
+{
+  WasmJob* job = WasmJob::current();
+  return job != nullptr ? job->reuseMaxPages() : 0;
+}
+
 NativeSymbol kJobNatives[] = {
     {"cancelled", (void*)jobCancelled, "()i", nullptr},
+    {"reuse_pages", (void*)jobReusePages, "()i", nullptr},
 };
 
 constexpr uint32_t kJobStack = 256 * 1024;
@@ -149,7 +181,7 @@ void WasmJob::park()
 {
   if (!m_module->resets || hasFailure() ||
       wasm_memory_get_cur_page_count(wasm_runtime_get_default_memory(
-          (wasm_module_inst_t)m_instance)) > lane_layout::kReuseMaxPages)
+          (wasm_module_inst_t)m_instance)) > m_module->reuseMaxPages)
   {
     return;
   }
@@ -198,14 +230,16 @@ EM_JS_DEPS(riveWebJobs, "$stringToNewUTF8");
 EM_JS(char*, riveWebJobRun,
       (uint32_t lane, uint32_t moduleId, const uint8_t* module,
        uint32_t moduleSize, uint32_t entry, const uint8_t* input,
-       uint32_t inputSize, const int32_t* cancel, void* output), {
+       uint32_t inputSize, const int32_t* cancel, uint32_t reuseMaxPages,
+       void* output), {
     const result = Module['riveScripting']['runJob'](
         lane,
         moduleId,
         () => HEAPU8.slice(module, module + moduleSize),
         entry,
         HEAPU8.slice(input, input + inputSize),
-        () => Atomics.load(HEAP32, cancel >> 2));
+        () => Atomics.load(HEAP32, cancel >> 2),
+        reuseMaxPages);
     if (!result.ok) {
         return stringToNewUTF8(result.error);
     }
@@ -242,6 +276,7 @@ bool WasmJob::execute()
       input.data(),
       (uint32_t)input.size(),
       (const int32_t*)&m_cancelWord,
+      m_module->reuseMaxPages,
       &m_output);
   if (error != nullptr)
   {
@@ -268,7 +303,7 @@ WasmJob* WasmJob::current() { return WasmLane::currentOf<WasmJob>(); }
 void WasmJob::run()
 {
 #ifndef __EMSCRIPTEN__
-  ensureLaneThreadEnv();
+  ensureWasmThreadEnv();
 #endif
   WasmLane* outerLane = WasmLane::setCurrent(this);
   bool ok = execute();

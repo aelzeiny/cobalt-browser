@@ -2,10 +2,10 @@
 #define _RIVE_RAW_TEXT_INPUT_HPP_
 
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/cursor.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/fully_shaped_text.hpp"
-#include "third_party/rive/include/rive/text/text_selection_path.hpp"
+#include "rive/text/cursor.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/fully_shaped_text.hpp"
+#include "rive/text/text_selection_path.hpp"
 
 namespace rive
 {
@@ -73,6 +73,15 @@ public:
   rcp<Font> font() const { return m_textRun.font; }
   void font(rcp<Font> value);
 
+  /// The interned language the text shapes with (see TextLanguages), none
+  /// to inherit the system's.
+  TextLanguageId language() const { return m_textRun.language; }
+  void language(TextLanguageId value);
+
+  /// Shapes again on the next update, for a change the input can't see
+  /// itself, like new system languages.
+  void markShapeDirty();
+
   float paragraphSpacing() const { return m_paragraphSpacing; }
   void paragraphSpacing(float value);
 
@@ -114,7 +123,11 @@ public:
     obscured = 1 << 4,
     // measure() has run, so the layout's width is known.
     measured = 1 << 5,
-    hugsWidth = 1 << 6
+    hugsWidth = 1 << 6,
+    // Shaped since update() last built the paths. Shaping clears
+    // shapeDirty, and editing shapes on demand, so this is what tells
+    // update() its paths are out of date.
+    shaped = 1 << 7
   };
 
   Flags update(Factory* factory);
@@ -165,6 +178,9 @@ public:
 
   // Selects the entire text.
   void selectAll();
+
+  // Collapses the cursor after the last character.
+  void moveCursorToEnd();
 
   // Selects the visual line at the cursor.
   void selectLine();
@@ -230,6 +246,10 @@ private:
       size_t count,
       bool withRestOfParagraph);
   void ensureShape();
+  // The position at a code point index. Its line is resolved now when the
+  // text can be shaped, else left for update() to resolve once the font
+  // arrives: a focus can select or place the caret before then.
+  CursorPosition positionAtIndex(uint32_t codePointIndex);
   std::vector<Unichar>& shapeableText();
   void buildTextPaths(Factory* factory);
   void computeVisualPositionFromCursor();

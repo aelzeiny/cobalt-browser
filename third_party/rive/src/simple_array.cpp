@@ -1,5 +1,5 @@
 #ifdef TESTING
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/simple_array.hpp"
 namespace rive
 {
 namespace SimpleArrayTesting

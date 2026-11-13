@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/nested_simple_animation_base.hpp"
-#include "third_party/rive/include/rive/animation/nested_simple_animation.hpp"
+#include "rive/generated/animation/nested_simple_animation_base.hpp"
+#include "rive/animation/nested_simple_animation.hpp"
 
 using namespace rive;
 

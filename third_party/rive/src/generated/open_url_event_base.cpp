@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/open_url_event_base.hpp"
-#include "third_party/rive/include/rive/open_url_event.hpp"
+#include "rive/generated/open_url_event_base.hpp"
+#include "rive/open_url_event.hpp"
 
 using namespace rive;
 

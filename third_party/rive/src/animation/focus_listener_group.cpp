@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/focus_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
+#include "rive/animation/focus_listener_group.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/focus_data.hpp"
 
 using namespace rive;
 

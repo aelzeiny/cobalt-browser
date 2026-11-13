@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_STYLE_BACKGROUND_BASE_HPP_
 #define _RIVE_TEXT_STYLE_BACKGROUND_BASE_HPP_
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/container_component.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class TextStyleBackgroundBase : public ContainerComponent

@@ -1,11 +1,11 @@
 #ifndef _RIVE_TRANSFORM_COMPONENT_HPP_
 #define _RIVE_TRANSFORM_COMPONENT_HPP_
-#include "third_party/rive/include/rive/generated/transform_component_base.hpp"
-#include "third_party/rive/include/rive/intrinsically_sizeable.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/layout/layout_measure_mode.hpp"
+#include "rive/generated/transform_component_base.hpp"
+#include "rive/intrinsically_sizeable.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/layout/layout_measure_mode.hpp"
 
 namespace rive
 {

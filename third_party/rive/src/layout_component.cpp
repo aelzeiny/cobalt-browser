@@ -1,41 +1,32 @@
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/constraints/layout_constraint.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/intrinsically_sizeable.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/component_origin.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
-#include "third_party/rive/include/rive/nested_artboard_layout.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/solo.hpp"
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
-#include "third_party/rive/include/rive/layout/layout_component_style.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/constraints/layout_constraint.hpp"
+#include "rive/drawable.hpp"
+#include "rive/factory.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/intrinsically_sizeable.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/component_origin.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout/layout_style_applier.hpp"
+#include "rive/nested_artboard_layout.hpp"
+#include "rive/node.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/solo.hpp"
+#include "rive/layout/layout_data.hpp"
+#include "rive/layout/layout_component_style.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 #ifdef WITH_RIVE_LAYOUT
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/google/yoga_grid_shim.hpp"
-#ifndef YGNodeSetGridVirtualContributions_DEFINED
-#define YGNodeSetGridVirtualContributions_DEFINED
-inline bool YGNodeSetGridVirtualContributions(const void*, const void*, size_t, const void*, size_t) { return false; }
+#include "rive/transform_component.hpp"
+#include "yoga/YGEnums.h"
+#include "yoga/YGFloatOptional.h"
 #endif
-#include "third_party/yoga/yoga/YGEnums.h"
-#include "third_party/rive/google/yoga_grid_shim.hpp"
-#ifndef YGNodeSetGridVirtualContributions_DEFINED
-#define YGNodeSetGridVirtualContributions_DEFINED
-inline bool YGNodeSetGridVirtualContributions(const void*, const void*, size_t, const void*, size_t) { return false; }
-#endif
-#include "third_party/yoga/yoga/YGFloatOptional.h"
-#endif
+#include <algorithm>
 #include <vector>
 
 using namespace rive;
@@ -65,6 +56,26 @@ bool rive::joinsLayoutThroughContainer(Component* component)
       component->as<Drawable>()->drawableFlags());
   return (flags & DrawableFlag::ParticipatesInLayout) ==
          DrawableFlag::ParticipatesInLayout;
+}
+
+bool rive::reachesLayoutProvider(Component* component)
+{
+  if (LayoutNodeProvider::from(component) != nullptr)
+  {
+    return true;
+  }
+  if (!isTransparentLayoutContainer(component))
+  {
+    return false;
+  }
+  for (auto* child : component->as<ContainerComponent>()->children())
+  {
+    if (reachesLayoutProvider(child))
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 namespace
@@ -718,7 +729,12 @@ StatusCode LayoutComponent::onAddedDirty(CoreContext* context)
     return StatusCode::MissingObject;
   }
   m_style = static_cast<LayoutComponentStyle*>(coreStyle);
-  addChild(m_style);
+  // A style that names us as its parent joins our children on its own, so
+  // adding it here too would list it twice.
+  if (context->resolve(m_style->parentId()) != this)
+  {
+    addChild(m_style);
+  }
 #ifdef WITH_RIVE_LAYOUT
   refreshStyleDisplayHidden();
   // We contribute sizing the style cannot see; it contributes the rest.
@@ -1013,8 +1029,8 @@ bool LayoutComponent::isGridContainer()
 float LayoutComponent::gridLines(bool rows, std::vector<float>& out)
 {
   const auto& layout = m_layoutData->node.getLayout();
-  out.clear();
-  (void)layout; return 0.0f;
+  out = rows ? layout.gridRowLineOffsets : layout.gridColumnLineOffsets;
+  return rows ? layout.gridRowGap : layout.gridColumnGap;
 }
 
 void LayoutComponent::virtualGridContributions(
@@ -1426,23 +1442,61 @@ void LayoutComponent::clearLayoutChildren()
   YGNodeRemoveAllChildren(&ourNode);
 }
 
+#ifdef TESTING
+uint32_t LayoutComponent::sm_layoutChildRebuilds = 0;
+LayoutComponent* LayoutComponent::sm_countSyncsOf = nullptr;
+uint32_t LayoutComponent::sm_countedSyncs = 0;
+#endif
+
 void LayoutComponent::syncLayoutChildren()
 {
+#ifdef TESTING
+  if (this == sm_countSyncsOf)
+  {
+    sm_countedSyncs++;
+  }
+#endif
   YGNode& ourNode = m_layoutData->node;
-  YGNodeRemoveAllChildren(&ourNode);
   std::vector<void*> nodes;
+  // A sync mostly finds the children it had, so this usually fits them.
+  nodes.reserve(ourNode.getChildren().size());
   forEachLayoutProvider(
       this,
       [&nodes](Component*, LayoutNodeProvider* provider) {
         provider->collectLayoutNodes(nodes);
       });
-  int index = 0;
-  for (auto* node : nodes)
+  const auto& children = ourNode.getChildren();
+  if (!children.empty() && nodes.size() == children.size() &&
+      std::equal(nodes.begin(), nodes.end(), children.begin()))
   {
-    auto* child = static_cast<YGNode*>(node);
-    ourNode.insertChild(child, index++);
-    child->setOwner(&ourNode);
+    // The same children in the same order: reset them as removing and adding
+    // them again would, but keep Yoga's list instead of freeing and regrowing
+    // it.
+    const bool owned = children.front()->getOwner() == &ourNode;
+    for (auto* child : children)
+    {
+      if (owned)
+      {
+        child->setLayout(YGNode().getLayout());
+      }
+      child->setOwner(&ourNode);
+    }
     ourNode.markDirtyAndPropagate();
+  }
+  else
+  {
+#ifdef TESTING
+    sm_layoutChildRebuilds++;
+#endif
+    YGNodeRemoveAllChildren(&ourNode);
+    int index = 0;
+    for (auto* node : nodes)
+    {
+      auto* child = static_cast<YGNode*>(node);
+      ourNode.insertChild(child, index++);
+      child->setOwner(&ourNode);
+      ourNode.markDirtyAndPropagate();
+    }
   }
   markLayoutNodeDirty();
 }
@@ -2113,7 +2167,12 @@ void LayoutComponent::positionTypeChanged()
     // appropriately.
     if (!hasLayoutFlag(LayoutComponentFlags::PositionLeftChanged))
     {
-      m_style->positionLeft(layoutBounds().left());
+      // Left is the inset from the parent's right side under RTL.
+      auto* parent = layoutParent();
+      m_style->positionLeft(
+          parent != nullptr && actualDirection() == LayoutDirection::rtl
+              ? parent->layoutBounds().width() - layoutBounds().right()
+              : layoutBounds().left());
     }
     if (!hasLayoutFlag(LayoutComponentFlags::PositionTopChanged))
     {
@@ -2252,7 +2311,8 @@ void LayoutComponent::calculateLayoutInternal(
 LayoutComponent::~LayoutComponent()
 {
   delete m_virtualGrid;
-  if (artboard() != nullptr)
+  // An artboard leaves the dirty layouts in ~Artboard, while it's still whole.
+  if (artboard() != nullptr && artboard() != this)
   {
     artboard()->cleanLayout(this);
   }

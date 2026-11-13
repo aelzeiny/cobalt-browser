@@ -1,10 +1,10 @@
 #ifndef _RIVE_SEMANTIC_DATA_HPP_
 #define _RIVE_SEMANTIC_DATA_HPP_
 
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/generated/semantic/semantic_data_base.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_node.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/generated/semantic/semantic_data_base.hpp"
+#include "rive/semantic/semantic_node.hpp"
+#include "rive/refcnt.hpp"
 
 #include <vector>
 

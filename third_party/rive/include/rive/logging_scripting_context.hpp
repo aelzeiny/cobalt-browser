@@ -5,7 +5,7 @@
 #ifndef _RIVE_LOGGING_SCRIPTING_CONTEXT_HPP_
 #define _RIVE_LOGGING_SCRIPTING_CONTEXT_HPP_
 
-#include "third_party/rive/include/rive/command_queue.hpp"
+#include "rive/command_queue.hpp"
 
 #include <cstddef>
 #include <functional>

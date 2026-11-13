@@ -2,14 +2,14 @@
  * Copyright 2024 Rive
  */
 
-#include "third_party/rive/include/rive/animation/transition_focus_condition.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/transition_condition_op.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_component_comparator.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/node.hpp"
+#include "rive/animation/transition_focus_condition.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/transition_condition_op.hpp"
+#include "rive/animation/transition_property_component_comparator.hpp"
+#include "rive/artboard.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/node.hpp"
 
 using namespace rive;
 

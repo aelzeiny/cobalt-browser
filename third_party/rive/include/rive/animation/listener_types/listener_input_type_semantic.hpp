@@ -1,7 +1,7 @@
 #ifndef _RIVE_LISTENER_INPUT_TYPE_SEMANTIC_HPP_
 #define _RIVE_LISTENER_INPUT_TYPE_SEMANTIC_HPP_
 
-#include "third_party/rive/include/rive/generated/animation/listener_types/listener_input_type_semantic_base.hpp"
+#include "rive/generated/animation/listener_types/listener_input_type_semantic_base.hpp"
 
 #include <vector>
 

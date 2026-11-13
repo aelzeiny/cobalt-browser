@@ -10,7 +10,7 @@
 #include <vector>
 
 #ifdef WITH_RIVE_SCRIPTING_LUAU
-#include "third_party/rive/include/rive/lua/scripting_vm.hpp"
+#include "rive/lua/scripting_vm.hpp"
 namespace rive
 {
 using ScriptingVMSlot = rcp<ScriptingVM>;

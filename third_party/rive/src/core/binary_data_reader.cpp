@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/core/binary_data_reader.hpp"
-#include "third_party/rive/include/rive/core/reader.h"
+#include "rive/core/binary_data_reader.hpp"
+#include "rive/core/reader.h"
 
 using namespace rive;
 

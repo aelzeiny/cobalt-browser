@@ -1,8 +1,8 @@
 #ifndef _RIVE_LISTENER_INPUT_TYPE_EVENT_BASE_HPP_
 #define _RIVE_LISTENER_INPUT_TYPE_EVENT_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class ListenerInputTypeEventBase : public ListenerInputType

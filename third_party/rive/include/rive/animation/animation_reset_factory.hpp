@@ -3,10 +3,10 @@
 
 #include <string>
 #include <mutex>
-#include "third_party/rive/include/rive/animation/animation_reset.hpp"
-#include "third_party/rive/include/rive/animation/state_instance.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/animation/animation_reset.hpp"
+#include "rive/animation/state_instance.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/artboard.hpp"
 
 namespace rive
 {
@@ -15,11 +15,6 @@ class AnimationResetFactory
 {
   static std::vector<std::unique_ptr<AnimationReset>> m_resources;
   static std::mutex m_mutex;
-
-private:
-  static void fromState(
-      StateInstance* stateInstance,
-      std::vector<const LinearAnimation*>& animations);
 
 public:
   static std::unique_ptr<AnimationReset> getInstance();

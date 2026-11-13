@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_boolean_negate.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_boolean.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_boolean_negate.hpp"
+#include "rive/data_bind/data_values/data_value_boolean.hpp"
 
 using namespace rive;
 

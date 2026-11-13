@@ -1,8 +1,8 @@
 #ifndef _RIVE_STATE_MACHINE_FIRE_TRIGGER_BASE_HPP_
 #define _RIVE_STATE_MACHINE_FIRE_TRIGGER_BASE_HPP_
-#include "third_party/rive/include/rive/animation/state_machine_fire_action.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bytes_type.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/animation/state_machine_fire_action.hpp"
+#include "rive/core/field_types/core_bytes_type.hpp"
+#include "rive/span.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

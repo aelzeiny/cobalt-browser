@@ -3,9 +3,9 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/async/job_pool.hpp"
-#include "third_party/rive/include/rive/async/threading.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
+#include "rive/async/job_pool.hpp"
+#include "rive/async/threading.hpp"
+#include "rive/wasm/wasm_lane.hpp"
 
 #include <atomic>
 #include <memory>
@@ -145,6 +145,9 @@ public:
 #endif
   /// Whether a processor's init has yet to run.
   bool starting() const;
+  /// The format a processor started now renders in, all 0 when it would not
+  /// play.
+  static ProcessorFormat format();
 };
 
 } // namespace rive

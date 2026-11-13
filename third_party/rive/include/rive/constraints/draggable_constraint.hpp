@@ -1,12 +1,12 @@
 #ifndef _RIVE_DRAGGABLE_CONSTRAINT_HPP_
 #define _RIVE_DRAGGABLE_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/draggable_constraint_base.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/listener_group.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/process_event_result.hpp"
-#include "third_party/rive/include/rive/scroll_event.hpp"
+#include "rive/generated/constraints/draggable_constraint_base.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/drawable.hpp"
+#include "rive/listener_group.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/process_event_result.hpp"
+#include "rive/scroll_event.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -30,6 +30,11 @@ public:
   virtual bool startDrag(Vec2D mousePosition, float timeStamp = 0) = 0;
   virtual bool drag(Vec2D mousePosition, float timeStamp = 0) = 0;
   virtual bool endDrag(Vec2D mousePosition, float timeStamp = 0) = 0;
+  /// Starts the drag again at position, without the velocity it had.
+  virtual void restartDrag(Vec2D position, float timeStamp)
+  {
+    startDrag(position, timeStamp);
+  }
   /// Whether this proxy would move for the event. One at its edge declines,
   /// handing the gesture to the next candidate under the cursor.
   virtual bool wantsScroll(const ScrollEvent& event) { return false; }
@@ -121,12 +126,17 @@ public:
   bool cancelPointer(int pointerId, Vec2D position, float timeStamp) override;
 
 private:
+  bool isDragPointer(int pointerId) const
+  {
+    return m_hasDragPointer && m_dragPointerId == pointerId;
+  }
+
   DraggableConstraint* m_constraint;
   DraggableProxy* m_draggable;
-  // The pointer whose drag has actually scrolled, or -1. Held by id rather
-  // than as a bool: cancellation walks every tracked pointer, and the dragEnd
-  // belongs to the pointer that scrolled, not to whichever is visited first.
-  int m_scrollingPointerId = -1;
+  // The pointer the drag follows: a proxy keeps one last position, so moves
+  // from two pointers would measure the gap between them. -1 is a valid id.
+  bool m_hasDragPointer = false;
+  int m_dragPointerId = 0;
 };
 } // namespace rive
 

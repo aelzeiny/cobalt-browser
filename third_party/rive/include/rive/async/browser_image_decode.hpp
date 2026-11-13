@@ -6,7 +6,7 @@
 
 #ifdef __EMSCRIPTEN__
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 #include <functional>
 

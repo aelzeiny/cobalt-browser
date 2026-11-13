@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group.hpp"
-#include "third_party/rive/include/rive/importers/data_converter_group_importer.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
+#include "rive/backboard.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/importers/data_converter_group_importer.hpp"
+#include "rive/importers/backboard_importer.hpp"
 
 using namespace rive;
 
@@ -34,6 +34,14 @@ StatusCode DataConverterGroupItem::import(ImportStack& importStack)
   }
   dataConveterGroupImporter->group()->addItem(this);
   return Super::import(importStack);
+}
+
+void DataConverterGroupItem::converter(DataConverter* value)
+{
+  m_dataConverter = value;
+  // A group may advance when an item's converter does, and the item doesn't
+  // know its group to tell it alone.
+  DataBindContainer::mayAdvanceChanged();
 }
 
 Core* DataConverterGroupItem::clone() const

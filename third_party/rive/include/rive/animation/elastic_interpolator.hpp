@@ -1,8 +1,8 @@
 #ifndef _RIVE_ELASTIC_INTERPOLATOR_HPP_
 #define _RIVE_ELASTIC_INTERPOLATOR_HPP_
-#include "third_party/rive/include/rive/generated/animation/elastic_interpolator_base.hpp"
-#include "third_party/rive/include/rive/animation/elastic_ease.hpp"
-#include "third_party/rive/include/rive/animation/easing.hpp"
+#include "rive/generated/animation/elastic_interpolator_base.hpp"
+#include "rive/animation/elastic_ease.hpp"
+#include "rive/animation/easing.hpp"
 
 namespace rive
 {

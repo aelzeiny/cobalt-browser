@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_semantic.hpp"
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/inputs/semantic_input.hpp"
+#include "rive/animation/listener_types/listener_input_type_semantic.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/inputs/semantic_input.hpp"
 
 using namespace rive;
 

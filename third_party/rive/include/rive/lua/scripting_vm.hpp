@@ -2,9 +2,9 @@
 #ifndef _RIVE_SCRIPTING_VM_HPP_
 #define _RIVE_SCRIPTING_VM_HPP_
 
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/scripted/script_backend.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/scripted/script_backend.hpp"
+#include "rive/span.hpp"
 #include <memory>
 #include <unordered_set>
 

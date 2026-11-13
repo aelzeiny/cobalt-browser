@@ -2,18 +2,22 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text_engine.hpp"
 
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/font_hb.hpp"
+#include "rive/text/font_hb.hpp"
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/renderer_utils.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
+#include "rive/factory.hpp"
+#include "rive/renderer_utils.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/text/text_language.hpp"
 
 #include "hb.h"
 #include "hb-ot.h"
 #include <algorithm>
+#include <atomic>
+#include <cstring>
+#include <mutex>
 #include <unordered_set>
 
 // harfbuzz's own file loader is compiled out (HB_NO_OPEN/HB_NO_MMAP keep it
@@ -28,16 +32,139 @@
 
 extern "C"
 {
-#include "third_party/sheenbidi/Headers/SheenBidi.h"
+#include "SheenBidi.h"
 }
 
 // Initialized to null. Client can set this to a callback.
 rive::Font::FallbackProc rive::Font::gFallbackProc;
+rive::Font::FallbackRequestProc rive::Font::gFallbackRequestProc;
 
 bool rive::Font::gFallbackProcEnabled = true;
 
+#ifdef TESTING
+std::atomic<uint64_t> HBFont::sm_variantsMade{0};
+std::atomic<uint64_t> HBFont::sm_glyphPathsDrawn{0};
+void (*HBFont::sm_variantDying)() = nullptr;
+std::atomic<uint64_t> HBFont::sm_variantsCompared{0};
+#endif
+
 namespace
 {
+std::atomic<uint32_t> g_fallbackGeneration{0};
+std::atomic<uint32_t> g_fallbackFontsGeneration{0};
+// The proc and flag the generation last moved for. Written under
+// g_fallbackMutex, and only after the generation moved, so a caller that
+// reads them equal to the current ones also reads that generation or a
+// later one.
+std::atomic<rive::Font::FallbackProc> g_seenFallbackProc{nullptr};
+std::atomic<rive::Font::FallbackRequestProc> g_seenFallbackRequestProc{nullptr};
+std::atomic<bool> g_seenFallbackProcEnabled{true};
+std::mutex g_fallbackMutex;
+} // namespace
+
+uint32_t rive::Font::fallbackGeneration()
+{
+  if (g_seenFallbackProc.load(std::memory_order_acquire) != gFallbackProc ||
+      g_seenFallbackRequestProc.load(std::memory_order_acquire) !=
+          gFallbackRequestProc ||
+      g_seenFallbackProcEnabled.load(std::memory_order_acquire) !=
+          gFallbackProcEnabled)
+  {
+    std::lock_guard<std::mutex> lock(g_fallbackMutex);
+    FallbackProc proc = gFallbackProc;
+    FallbackRequestProc requestProc = gFallbackRequestProc;
+    bool enabled = gFallbackProcEnabled;
+    if (g_seenFallbackProc.load(std::memory_order_relaxed) != proc ||
+        g_seenFallbackRequestProc.load(std::memory_order_relaxed) !=
+            requestProc ||
+        g_seenFallbackProcEnabled.load(std::memory_order_relaxed) != enabled)
+    {
+      g_fallbackGeneration.fetch_add(1, std::memory_order_relaxed);
+      // Another proc picks from other fonts; turning them off or on doesn't
+      // (see fallbackFontsGeneration).
+      if (g_seenFallbackProc.load(std::memory_order_relaxed) != proc ||
+          g_seenFallbackRequestProc.load(std::memory_order_relaxed) !=
+              requestProc)
+      {
+        g_fallbackFontsGeneration.fetch_add(1, std::memory_order_release);
+      }
+      g_seenFallbackProc.store(proc, std::memory_order_release);
+      g_seenFallbackRequestProc.store(requestProc, std::memory_order_release);
+      g_seenFallbackProcEnabled.store(enabled, std::memory_order_release);
+    }
+  }
+  return g_fallbackGeneration.load(std::memory_order_acquire);
+}
+
+uint32_t rive::Font::fallbackFontsGeneration()
+{
+  // Notices a new proc first.
+  fallbackGeneration();
+  return g_fallbackFontsGeneration.load(std::memory_order_acquire);
+}
+
+void rive::Font::fallbackFontsChanged()
+{
+  // fallbackGeneration first: text that reshapes for the new fonts then
+  // also sees that its cached shapes are stale.
+  g_fallbackGeneration.fetch_add(1, std::memory_order_acq_rel);
+  g_fallbackFontsGeneration.fetch_add(1, std::memory_order_acq_rel);
+}
+
+namespace
+{
+// A number for the calling thread that no other thread, then or later, gets.
+uint64_t threadToken()
+{
+  static std::atomic<uint64_t> s_nextToken{1};
+  thread_local uint64_t token = s_nextToken.fetch_add(
+      1,
+      std::memory_order_relaxed);
+  return token;
+}
+
+// A hash of what tells variants apart: the thread one is shared on, and its
+// merged axes and features, in tag order, as the maps' own order isn't fixed.
+// Sorts [axes] and [features].
+uint64_t variantKey(
+    uint64_t thread,
+    hb_variation_t* axes,
+    size_t axisCount,
+    std::pair<hb_tag_t, uint32_t>* features,
+    size_t featureCount)
+{
+  std::sort(
+      axes,
+      axes + axisCount,
+      [](const hb_variation_t& a, const hb_variation_t& b) {
+        return a.tag < b.tag;
+      });
+  std::sort(features, features + featureCount);
+  uint64_t hash = 0x9e3779b97f4a7c15ull;
+  auto mix = [&hash](uint64_t word) {
+    hash ^= word;
+    hash *= 0xff51afd7ed558ccdull;
+    hash ^= hash >> 32;
+  };
+  mix(thread);
+  mix(axisCount);
+  for (size_t i = 0; i < axisCount; i++)
+  {
+    // Adding zero turns -0 into 0, which the maps' == already treats as
+    // equal, so the two share a key.
+    float axisValue = axes[i].value + 0.0f;
+    uint32_t value;
+    memcpy(&value, &axisValue, sizeof(value));
+    mix((uint64_t)axes[i].tag << 32 | value);
+  }
+  mix(featureCount);
+  for (size_t i = 0; i < featureCount; i++)
+  {
+    mix((uint64_t)features[i].first << 32 | features[i].second);
+  }
+  return hash;
+}
+
 // Takes ownership of blob, which is null when harfbuzz already released its
 // data.
 hb_font_t* hbFontFromBlob(hb_blob_t* blob, unsigned faceIndex = 0)
@@ -655,7 +782,21 @@ HBFont::HBFont(
     std::unordered_map<hb_tag_t, float> axisValues,
     std::unordered_map<hb_tag_t, uint32_t> featureValues,
     std::vector<hb_feature_t> features)
-    : Font(make_lmx(font))
+    : HBFont(
+          font,
+          make_lmx(font),
+          std::move(axisValues),
+          std::move(featureValues),
+          std::move(features))
+{}
+
+HBFont::HBFont(
+    hb_font_t* font,
+    const LineMetrics& lineMetrics,
+    std::unordered_map<hb_tag_t, float> axisValues,
+    std::unordered_map<hb_tag_t, uint32_t> featureValues,
+    std::vector<hb_feature_t> features)
+    : Font(lineMetrics)
     , m_font(font)
     , m_features(features)
     , m_featureValues(featureValues)
@@ -762,6 +903,29 @@ HBFont::HBFont(
 
 HBFont::~HBFont()
 {
+  if (m_variantOf != nullptr)
+  {
+#ifdef TESTING
+    if (sm_variantDying != nullptr)
+    {
+      sm_variantDying();
+    }
+#endif
+    // Until this is out of the map, sharedWithOptions may still compare this
+    // font's options, which outlive this block; it can't take a reference
+    // to it (see RefCnt::tryRef).
+    std::lock_guard<std::mutex> lock(m_variantOf->m_variantsMutex);
+    auto& variants = m_variantOf->m_variants;
+    auto range = variants.equal_range(m_variantKey);
+    for (auto itr = range.first; itr != range.second; itr++)
+    {
+      if (itr->second == this)
+      {
+        variants.erase(itr);
+        break;
+      }
+    }
+  }
   hb_draw_funcs_destroy(m_drawFuncs);
   hb_paint_funcs_destroy(m_paintFuncs);
   hb_font_destroy(m_font);
@@ -939,6 +1103,21 @@ rive::rcp<rive::Font> HBFont::withOptions(
     rive::Span<const Coord> coords,
     rive::Span<const Feature> features) const
 {
+  return makeVariant(coords, features, false);
+}
+
+rive::rcp<rive::Font> HBFont::sharedWithOptions(
+    rive::Span<const Coord> coords,
+    rive::Span<const Feature> features) const
+{
+  return makeVariant(coords, features, true);
+}
+
+rive::rcp<rive::Font> HBFont::makeVariant(
+    rive::Span<const Coord> coords,
+    rive::Span<const Feature> features,
+    bool shared) const
+{
   // Merges previous options with current ones.
   std::unordered_map<hb_tag_t, float> axisValues = m_axisValues;
   for (size_t i = 0; i < coords.size(); ++i)
@@ -953,14 +1132,52 @@ rive::rcp<rive::Font> HBFont::withOptions(
     vars[i++] = {itr->first, itr->second};
   }
 
-  auto font = hb_font_create_sub_font(m_font);
-  hb_font_set_variations(font, vars.data(), (unsigned int)vars.size());
-  std::vector<hb_feature_t> hbFeatures;
   std::unordered_map<hb_tag_t, uint32_t> featureValues = m_featureValues;
   for (auto feature : features)
   {
     featureValues[feature.tag] = feature.value;
   }
+
+  uint64_t thread = 0;
+  uint64_t key = 0;
+  if (shared)
+  {
+    thread = threadToken();
+    AutoSTArray<16, std::pair<hb_tag_t, uint32_t>> featurePairs(
+        featureValues.size());
+    i = 0;
+    for (auto itr = featureValues.begin(); itr != featureValues.end(); itr++)
+    {
+      featurePairs[i++] = {itr->first, itr->second};
+    }
+    key = variantKey(
+        thread,
+        vars.data(),
+        vars.size(),
+        featurePairs.data(),
+        featurePairs.size());
+    std::lock_guard<std::mutex> lock(m_variantsMutex);
+    auto range = m_variants.equal_range(key);
+    for (auto itr = range.first; itr != range.second; itr++)
+    {
+      HBFont* variant = itr->second;
+#ifdef TESTING
+      sm_variantsCompared++;
+#endif
+      // A variant whose count already reached zero waits on this lock to
+      // leave the map, so its options can still be compared; tryRef then
+      // refuses it.
+      if (variant->m_madeOn == thread && variant->m_axisValues == axisValues &&
+          variant->m_featureValues == featureValues && variant->tryRef())
+      {
+        return rive::rcp<rive::Font>(variant);
+      }
+    }
+  }
+
+  auto font = hb_font_create_sub_font(m_font);
+  hb_font_set_variations(font, vars.data(), (unsigned int)vars.size());
+  std::vector<hb_feature_t> hbFeatures;
   for (auto itr = featureValues.begin(); itr != featureValues.end(); itr++)
   {
     hbFeatures.push_back(
@@ -970,25 +1187,119 @@ rive::rcp<rive::Font> HBFont::withOptions(
          HB_FEATURE_GLOBAL_END});
   }
 
-  return rive::rcp<rive::Font>(
-      new HBFont(font, axisValues, featureValues, hbFeatures));
+  auto variant = new HBFont(font, axisValues, featureValues, hbFeatures);
+#ifdef TESTING
+  sm_variantsMade++;
+#endif
+  if (shared)
+  {
+    variant->m_variantOf = rive::ref_rcp(this);
+    variant->m_madeOn = thread;
+    variant->m_variantKey = key;
+    std::lock_guard<std::mutex> lock(m_variantsMutex);
+    m_variants.emplace(key, variant);
+  }
+  return rive::rcp<rive::Font>(variant);
+}
+
+rive::rcp<rive::Font> HBFont::forThisThread() const
+{
+  const uint64_t thread = threadToken();
+  // Left at zero when this thread is the first to ask.
+  uint64_t first = 0;
+  m_firstThread.compare_exchange_strong(
+      first,
+      thread,
+      std::memory_order_relaxed);
+  if (first == 0 || first == thread)
+  {
+    return rive::ref_rcp<rive::Font>(const_cast<HBFont*>(this));
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(m_variantsMutex);
+    auto range = m_variants.equal_range(thread);
+    for (auto itr = range.first; itr != range.second; itr++)
+    {
+      // A copy whose count already reached zero waits on this lock to leave
+      // the map, as a variant does; tryRef then refuses it.
+      HBFont* copy = itr->second;
+      if (copy->m_isCopy && copy->m_madeOn == thread && copy->tryRef())
+      {
+        return rive::rcp<rive::Font>(copy);
+      }
+    }
+  }
+
+  // A sub font starts at this font's scale and coordinates, which a
+  // subclass may set without listing them in m_axisValues (CoreTextHBFont),
+  // so unlike a variant, a copy sets none of its own. It gets the font
+  // functions HBFont's constructor gives the fonts it measures.
+  hb_font_t* font = hb_font_create_sub_font(m_font);
+  hb_ot_font_set_funcs(font);
+  auto copy = new HBFont(
+      font,
+      lineMetrics(),
+      m_axisValues,
+      m_featureValues,
+      m_features);
+  copy->m_variantOf = rive::ref_rcp(this);
+  copy->m_madeOn = thread;
+  copy->m_variantKey = thread;
+  copy->m_firstThread.store(thread, std::memory_order_relaxed);
+  copy->m_isCopy = true;
+  std::lock_guard<std::mutex> lock(m_variantsMutex);
+  m_variants.emplace(thread, copy);
+  return rive::rcp<rive::Font>(copy);
 }
 
 rive::RawPath HBFont::getPath(rive::GlyphID glyph) const
+{
+  return glyphPath(glyph);
+}
+
+const rive::RawPath& HBFont::glyphPath(rive::GlyphID glyph) const
 {
   auto cached = m_glyphPathCache.find(glyph);
   if (cached != m_glyphPathCache.end())
   {
     return cached->second;
   }
-  rive::RawPath rpath;
-  hb_font_draw_glyph(m_font, glyph, m_drawFuncs, &rpath);
-  constexpr size_t kMaxCachedGlyphPaths = 512;
+  rive::RawPath rpath = drawGlyphPath(glyph);
+#ifdef TESTING
+  sm_glyphPathsDrawn++;
+#endif
   if (m_glyphPathCache.size() >= kMaxCachedGlyphPaths)
   {
     m_glyphPathCache.clear();
   }
-  m_glyphPathCache.emplace(glyph, rpath);
+  // The entry stays put until the cache starts over, which only a later
+  // insert does.
+  return m_glyphPathCache.emplace(glyph, std::move(rpath)).first->second;
+}
+
+const rive::RawPath* HBFont::cachedGlyphPath(rive::GlyphID glyph) const
+{
+  auto cached = m_glyphPathCache.find(glyph);
+  return cached == m_glyphPathCache.end() ? nullptr : &cached->second;
+}
+
+size_t HBFont::glyphPathCacheRoom() const
+{
+  return m_glyphPathCache.size() >= kMaxCachedGlyphPaths
+             ? 0
+             : kMaxCachedGlyphPaths - m_glyphPathCache.size();
+}
+
+rive::RawPath HBFont::drawGlyphPath(rive::GlyphID glyph) const
+{
+  if (m_isCopy)
+  {
+    // Drawing keeps nothing, so the font copied draws on any thread.
+    return m_variantOf->drawGlyphPath(glyph);
+  }
+  rive::RawPath rpath;
+  hb_font_draw_glyph(m_font, glyph, m_drawFuncs, &rpath);
   return rpath;
 }
 
@@ -1158,19 +1469,61 @@ size_t HBFont::getColorLayers(
 
 ///////////////////////////////////////////////////////////
 
+// One HarfBuzz buffer per thread, cleared for each run instead of made and
+// freed for it: cleared, it keeps the storage it grew, which every run
+// would otherwise allocate again.
+namespace
+{
+class ShapingBuffer
+{
+public:
+  ~ShapingBuffer() { hb_buffer_destroy(m_buffer); }
+
+  // Empty, as hb_buffer_create makes it.
+  hb_buffer_t* take()
+  {
+    hb_buffer_clear_contents(m_buffer);
+    return m_buffer;
+  }
+
+  // Lets go of what a run of [unicharCount] grew, when it's more than a
+  // usual run needs, so one long text doesn't hold it for the thread's life.
+  void release(uint32_t unicharCount)
+  {
+    if (unicharCount > kKeptUnichars)
+    {
+      hb_buffer_destroy(m_buffer);
+      m_buffer = hb_buffer_create();
+    }
+  }
+
+private:
+  static constexpr uint32_t kKeptUnichars = 4096;
+  hb_buffer_t* m_buffer = hb_buffer_create();
+};
+} // namespace
+
 static rive::GlyphRun shape_run(
     const rive::Unichar text[],
     const rive::TextRun& tr,
     unsigned textOffset)
 {
-  hb_buffer_t* buf = hb_buffer_create();
+  static thread_local ShapingBuffer shapingBuffer;
+  hb_buffer_t* buf = shapingBuffer.take();
   hb_buffer_add_utf32(buf, text, tr.unicharCount, 0, tr.unicharCount);
 
   hb_buffer_set_direction(
       buf,
       tr.level & 1 ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
   hb_buffer_set_script(buf, (hb_script_t)tr.script);
-  hb_buffer_set_language(buf, hb_language_get_default());
+  // The run's language, else the system's, else the process locale. It's
+  // what makes a font's locl forms apply.
+  std::string language = rive::TextLanguages::shapingLanguage(tr.language);
+  hb_buffer_set_language(
+      buf,
+      language.empty()
+          ? hb_language_get_default()
+          : hb_language_from_string(language.data(), (int)language.size()));
 
   auto hbfont = (HBFont*)tr.font.get();
 
@@ -1194,6 +1547,7 @@ static rive::GlyphRun shape_run(
   gr.letterSpacing = tr.letterSpacing;
   gr.styleId = tr.styleId;
   gr.level = tr.level;
+  gr.language = tr.language;
 
   const float scale = tr.size / kStdScale;
   for (unsigned int i = 0; i < glyph_count; i++)
@@ -1208,7 +1562,7 @@ static rive::GlyphRun shape_run(
         -glyph_pos[index].y_offset * scale);
   }
   gr.xpos[glyph_count] = 0; // so the next run can line up snug
-  hb_buffer_destroy(buf);
+  shapingBuffer.release(tr.unicharCount);
   return gr;
 }
 
@@ -1218,21 +1572,61 @@ static rive::GlyphRun extract_subset(
     size_t end)
 {
   auto count = end - start;
-  rive::GlyphRun subset(
-      rive::SimpleArray<rive::GlyphID>(&orig.glyphs[start], count),
-      rive::SimpleArray<uint32_t>(&orig.textIndices[start], count),
-      rive::SimpleArray<float>(&orig.advances[start], count),
-      rive::SimpleArray<float>(&orig.xpos[start], count + 1),
-      rive::SimpleArray<rive::Vec2D>(&orig.offsets[start], count));
+  rive::GlyphRun subset(count);
+  std::copy_n(orig.glyphs.data() + start, count, subset.glyphs.data());
+  std::copy_n(
+      orig.textIndices.data() + start,
+      count,
+      subset.textIndices.data());
+  std::copy_n(orig.advances.data() + start, count, subset.advances.data());
+  std::copy_n(orig.xpos.data() + start, count + 1, subset.xpos.data());
+  std::copy_n(orig.offsets.data() + start, count, subset.offsets.data());
   subset.font = std::move(orig.font);
   subset.size = orig.size;
   subset.lineHeight = orig.lineHeight;
   subset.letterSpacing = orig.letterSpacing;
   subset.level = orig.level;
+  subset.language = orig.language;
   subset.xpos.back() = 0; // since we're now the end of a run
   subset.styleId = orig.styleId;
 
   return subset;
+}
+
+static bool hasFallback()
+{
+  return (rive::Font::gFallbackRequestProc != nullptr ||
+          rive::Font::gFallbackProc != nullptr) &&
+         rive::Font::gFallbackProcEnabled;
+}
+
+// Asks the host for a font with [missing] in it, through the request proc
+// when there is one.
+static rive::rcp<rive::Font> requestFallback(
+    rive::Unichar missing,
+    uint32_t fallbackIndex,
+    const rive::Font* font,
+    const rive::TextRun& run)
+{
+  if (rive::Font::gFallbackRequestProc != nullptr)
+  {
+    std::vector<std::string> languages = rive::TextLanguages::fallbackLanguages(
+        run.language);
+    rive::Font::FallbackRequest request = {
+        missing,
+        fallbackIndex,
+        font,
+        run.script,
+        languages,
+        !rive::TextLanguages::tag(run.language).empty(),
+    };
+    return rive::Font::gFallbackRequestProc(request);
+  }
+  if (rive::Font::gFallbackProc != nullptr)
+  {
+    return rive::Font::gFallbackProc(missing, fallbackIndex, font);
+  }
+  return nullptr;
 }
 
 static void perform_fallback(
@@ -1244,6 +1638,7 @@ static void perform_fallback(
     const uint32_t fallbackIndex)
 {
   assert(orig.glyphs.size() > 0);
+  const size_t firstRun = gruns.size();
   const size_t count = orig.glyphs.size();
   size_t startI = 0;
   while (startI < count)
@@ -1271,6 +1666,7 @@ static void perform_fallback(
           origTextRun.script,
           orig.styleId,
           orig.level,
+          orig.language,
       };
 
       static_cast<HBFont*>(fallbackFont.get())
@@ -1291,6 +1687,22 @@ static void perform_fallback(
       gruns.add(extract_subset(orig, startI, endI));
     }
     startI = endI;
+  }
+
+  // The proc hands every thread this font, so the runs it shaped here draw
+  // with this thread's own (see HBFont::forThisThread). Fonts it fell back
+  // to in turn swapped theirs in their own calls.
+  rive::rcp<rive::Font> drawnHere;
+  for (auto run = gruns.begin() + firstRun; run != gruns.end(); run++)
+  {
+    if (run->font == fallbackFont)
+    {
+      if (drawnHere == nullptr)
+      {
+        drawnHere = static_cast<HBFont*>(fallbackFont.get())->forThisThread();
+      }
+      run->font = drawnHere;
+    }
   }
 }
 
@@ -1318,7 +1730,7 @@ void HBFont::shapeFallbackRun(
     // font-fallback
     size_t index = iter - gr.glyphs.begin();
     rive::Unichar missing = text[gr.textIndices[index]];
-    auto fallback = HBFont::gFallbackProc(missing, fallbackIndex, this);
+    auto fallback = requestFallback(missing, fallbackIndex, this, textRun);
     if (fallback && fallback.get() != this)
     {
       perform_fallback(fallback, gruns, text, gr, textRun, fallbackIndex + 1);
@@ -1403,6 +1815,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
           (uint32_t)lastScript,
           tr.styleId,
           (uint8_t)lastLevel,
+          tr.language,
       };
 
       runStartTextIndex = textIndex;
@@ -1448,6 +1861,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
               (uint32_t)script,
               back.styleId,
               (uint8_t)lastLevel,
+              back.language,
           };
           runStartTextIndex = textIndex;
           bidiRuns.push_back(backRun);
@@ -1486,7 +1900,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
       // force such glyphs to 0 here — but only when a color emoji
       // fallback font is actually available for that codepoint, to avoid
       // regressing the rendering when no emoji font is loaded.
-      if (gFallbackProc && gFallbackProcEnabled && !hasColorGlyphs())
+      if (hasFallback() && !hasColorGlyphs())
       {
         for (size_t gi = 0; gi < gr.glyphs.size(); ++gi)
         {
@@ -1495,7 +1909,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
             auto textPos = gr.textIndices[gi];
             if (textPos + 1 < text.size() && text[textPos + 1] == 0xFE0F)
             {
-              auto emojiFont = gFallbackProc(text[textPos], 0, this);
+              auto emojiFont = requestFallback(text[textPos], 0, this, tr);
               if (emojiFont && emojiFont->hasColorGlyphs())
               {
                 gr.glyphs[gi] = 0;
@@ -1507,7 +1921,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
 
       auto end = gr.glyphs.end();
       auto iter = std::find(gr.glyphs.begin(), end, 0);
-      if (!gFallbackProc || iter == end || !gFallbackProcEnabled)
+      if (iter == end || !hasFallback())
       {
         if (gr.glyphs.size() > 0)
         {
@@ -1521,7 +1935,7 @@ rive::SimpleArray<rive::Paragraph> HBFont::onShapeText(
         size_t index = iter - gr.glyphs.begin();
         rive::Unichar missing = text[gr.textIndices[index]];
         // todo: consider sending more chars if that helps choose a font
-        auto fallback = gFallbackProc(missing, 0, this);
+        auto fallback = requestFallback(missing, 0, this, tr);
         if (fallback)
         {
           perform_fallback(fallback, gruns, text.data(), gr, tr, 1);

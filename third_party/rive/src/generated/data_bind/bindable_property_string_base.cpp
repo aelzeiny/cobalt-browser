@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/bindable_property_string_base.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
+#include "rive/generated/data_bind/bindable_property_string_base.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
 
 using namespace rive;
 

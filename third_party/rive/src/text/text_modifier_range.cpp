@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_range.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/animation/cubic_interpolator_component.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_modifier_range.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/animation/cubic_interpolator_component.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

@@ -1,0 +1,16 @@
+Name: Yoga (Rive fork)
+Short Name: yoga
+URL: https://github.com/rive-app/yoga
+Version: rive_yoga_b40b7659aa14
+Revision: cbece6cbc19a70f0c0d62e340a9a5e4a443eea57
+License: MIT
+License File: LICENSE
+Security Critical: yes
+Shipped: yes
+
+Description:
+Rive's fork of Facebook's Yoga layout engine (adds CSS grid), at the ref
+pinned by rive-runtime's dependencies/yoga.ref. Only used by //third_party/rive.
+
+Local Modifications:
+- BUILD.gn is Cobalt's own. CMakeLists.txt is not vendored.

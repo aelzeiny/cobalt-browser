@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/keyframe_bool_base.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_bool.hpp"
+#include "rive/generated/animation/keyframe_bool_base.hpp"
+#include "rive/animation/keyframe_bool.hpp"
 
 using namespace rive;
 

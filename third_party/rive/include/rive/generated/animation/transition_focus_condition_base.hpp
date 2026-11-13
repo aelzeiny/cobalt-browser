@@ -1,6 +1,6 @@
 #ifndef _RIVE_TRANSITION_FOCUS_CONDITION_BASE_HPP_
 #define _RIVE_TRANSITION_FOCUS_CONDITION_BASE_HPP_
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
 namespace rive
 {
 class TransitionFocusConditionBase : public TransitionViewModelCondition

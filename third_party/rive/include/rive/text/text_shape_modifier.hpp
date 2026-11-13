@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_SHAPE_MODIFIER_HPP_
 #define _RIVE_TEXT_SHAPE_MODIFIER_HPP_
-#include "third_party/rive/include/rive/generated/text/text_shape_modifier_base.hpp"
+#include "rive/generated/text/text_shape_modifier_base.hpp"
 #include <unordered_map>
 
 namespace rive

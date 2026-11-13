@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/focus_action_traversal_base.hpp"
-#include "third_party/rive/include/rive/animation/focus_action_traversal.hpp"
+#include "rive/generated/animation/focus_action_traversal_base.hpp"
+#include "rive/animation/focus_action_traversal.hpp"
 
 using namespace rive;
 

@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_CONVERTER_STRING_REMOVE_ZEROS_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_STRING_REMOVE_ZEROS_BASE_HPP_
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
 namespace rive
 {
 class DataConverterStringRemoveZerosBase : public DataConverter

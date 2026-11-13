@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_input_selected_text.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
+#include "rive/text/text_input_selected_text.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/text/text_input.hpp"
 
 using namespace rive;
 

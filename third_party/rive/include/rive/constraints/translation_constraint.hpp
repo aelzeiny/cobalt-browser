@@ -1,6 +1,6 @@
 #ifndef _RIVE_TRANSLATION_CONSTRAINT_HPP_
 #define _RIVE_TRANSLATION_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/translation_constraint_base.hpp"
+#include "rive/generated/constraints/translation_constraint_base.hpp"
 #include <stdio.h>
 namespace rive
 {

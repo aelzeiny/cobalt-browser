@@ -1,10 +1,10 @@
 #ifndef _RIVE_BINDABLE_PROPERTY_ASSET_HPP_
 #define _RIVE_BINDABLE_PROPERTY_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/bindable_property_asset_base.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/generated/data_bind/bindable_property_asset_base.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/assets/blob_asset.hpp"
+#include "rive/text_engine.hpp"
 #include <stdio.h>
 namespace rive
 {

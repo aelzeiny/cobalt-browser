@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/clip_result.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_outset.hpp"
+#include "rive/drawable.hpp"
+#include "rive/artboard.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/clip_result.hpp"
+#include "rive/shapes/paint/paint_outset.hpp"
 
 using namespace rive;
 

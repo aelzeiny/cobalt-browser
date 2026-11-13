@@ -1,7 +1,7 @@
 #include <vector>
-#include "third_party/rive/include/rive/assets/file_asset_contents.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/importers/file_asset_importer.hpp"
+#include "rive/assets/file_asset_contents.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/importers/file_asset_importer.hpp"
 
 using namespace rive;
 

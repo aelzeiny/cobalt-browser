@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/factory.hpp"
 
 using namespace rive;
 

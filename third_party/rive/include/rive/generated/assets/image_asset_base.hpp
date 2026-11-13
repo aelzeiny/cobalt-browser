@@ -1,7 +1,7 @@
 #ifndef _RIVE_IMAGE_ASSET_BASE_HPP_
 #define _RIVE_IMAGE_ASSET_BASE_HPP_
-#include "third_party/rive/include/rive/assets/drawable_asset.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/assets/drawable_asset.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

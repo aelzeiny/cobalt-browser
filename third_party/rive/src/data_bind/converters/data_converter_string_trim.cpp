@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_trim.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_string_trim.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
 
 using namespace rive;
 

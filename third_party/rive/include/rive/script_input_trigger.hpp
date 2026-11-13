@@ -1,8 +1,8 @@
 #ifndef _RIVE_SCRIPT_INPUT_TRIGGER_HPP_
 #define _RIVE_SCRIPT_INPUT_TRIGGER_HPP_
-#include "third_party/rive/include/rive/generated/script_input_trigger_base.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
+#include "rive/generated/script_input_trigger_base.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/scripted/scripted_object.hpp"
 #include <stdio.h>
 namespace rive
 {

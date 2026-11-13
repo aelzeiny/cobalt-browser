@@ -1,7 +1,7 @@
 #ifndef _RIVE_ADVANCE_FLAGS_HPP_
 #define _RIVE_ADVANCE_FLAGS_HPP_
 
-#include "third_party/rive/include/rive/enums.hpp"
+#include "rive/enums.hpp"
 
 namespace rive
 {

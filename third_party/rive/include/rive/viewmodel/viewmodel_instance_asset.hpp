@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_ASSET_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_asset_base.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_asset_base.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/refcnt.hpp"
 #include <stdio.h>
 namespace rive
 {

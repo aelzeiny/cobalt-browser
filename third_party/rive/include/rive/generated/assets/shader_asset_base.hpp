@@ -1,6 +1,6 @@
 #ifndef _RIVE_SHADER_ASSET_BASE_HPP_
 #define _RIVE_SHADER_ASSET_BASE_HPP_
-#include "third_party/rive/include/rive/assets/text_asset.hpp"
+#include "rive/assets/text_asset.hpp"
 namespace rive
 {
 class ShaderAssetBase : public TextAsset

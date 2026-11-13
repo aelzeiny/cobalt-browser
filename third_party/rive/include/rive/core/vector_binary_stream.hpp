@@ -1,8 +1,8 @@
 #ifndef _RIVE_CORE_VECTOR_BINARY_STREAM_HPP_
 #define _RIVE_CORE_VECTOR_BINARY_STREAM_HPP_
 
-#include "third_party/rive/include/rive/core/binary_stream.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core/binary_stream.hpp"
+#include "rive/span.hpp"
 #include <vector>
 
 namespace rive

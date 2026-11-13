@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/transition_property_viewmodel_comparator_base.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_viewmodel_comparator.hpp"
+#include "rive/generated/animation/transition_property_viewmodel_comparator_base.hpp"
+#include "rive/animation/transition_property_viewmodel_comparator.hpp"
 
 using namespace rive;
 

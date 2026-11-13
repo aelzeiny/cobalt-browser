@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_CONVERTER_OPERATION_HPP_
 #define _RIVE_DATA_CONVERTER_OPERATION_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_operation_base.hpp"
-#include "third_party/rive/include/rive/animation/arithmetic_operation.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/generated/data_bind/converters/data_converter_operation_base.hpp"
+#include "rive/animation/arithmetic_operation.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/layout/artboard_component_list_override.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/container_component.hpp"
+#include "rive/layout/artboard_component_list_override.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

@@ -4,7 +4,7 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/prelinked_aot.hpp"
+#include "rive/wasm/prelinked_aot.hpp"
 
 #if !defined(__EMSCRIPTEN__) && WASM_ENABLE_PRELINKED_AOT != 0
 // AOT_MAGIC_NUMBER / AOT_CURRENT_VERSION for container validation.
@@ -33,11 +33,13 @@ void registerPrelinkedAotModule(const PrelinkedAotModule& module)
 
 const PrelinkedAotModule* findPrelinkedAotModule(
     uint64_t moduleKey,
-    size_t wasmSize)
+    size_t wasmSize,
+    bool hardwareBounds)
 {
   for (const PrelinkedAotModule& module : prelinkedRegistry())
   {
-    if (module.moduleKey == moduleKey && module.wasmSize == wasmSize)
+    if (module.moduleKey == moduleKey && module.wasmSize == wasmSize &&
+        module.hardwareBounds == hardwareBounds)
     {
       return &module;
     }

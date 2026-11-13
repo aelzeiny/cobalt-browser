@@ -1,94 +1,95 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_clusters.hpp"
-#include "third_party/rive/include/rive/data_bind/host_data_context_consumer.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_clusters.hpp"
+#include "rive/deferred_artboard_body.hpp"
+#include "rive/data_bind/host_data_context_consumer.hpp"
+#include "rive/file.hpp"
 #ifdef WITH_RIVE_SCRIPTING_WASM
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
 #endif
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_data.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_manager.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_node.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/custom_property_color.hpp"
-#include "third_party/rive/include/rive/custom_property_number.hpp"
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/dependency_sorter.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/draw_rules.hpp"
-#include "third_party/rive/include/rive/draw_target.hpp"
-#include "third_party/rive/include/rive/audio_event.hpp"
-#include "third_party/rive/include/rive/draw_target_placement.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
-#include "third_party/rive/include/rive/animation/keyframe.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_image.hpp"
-#include "third_party/rive/include/rive/watermark.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/foreground_layout_drawable.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard_leaf.hpp"
-#include "third_party/rive/include/rive/nested_artboard_layout.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/joystick.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind_flags.hpp"
-#include "third_party/rive/include/rive/animation/nested_bool.hpp"
-#include "third_party/rive/include/rive/animation/nested_number.hpp"
-#include "third_party/rive/include/rive/animation/nested_trigger.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/view_model_type.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/text/text_variation_helper.hpp"
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/event.hpp"
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
-#include "third_party/rive/include/rive/profiler/profiler_macros.h"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/backboard.hpp"
+#include "rive/component.hpp"
+#include "rive/container_component.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/semantic/semantic_data.hpp"
+#include "rive/semantic/semantic_manager.hpp"
+#include "rive/semantic/semantic_node.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/custom_property_color.hpp"
+#include "rive/custom_property_number.hpp"
+#include "rive/custom_property_trigger.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/dependency_sorter.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/draw_rules.hpp"
+#include "rive/draw_target.hpp"
+#include "rive/audio_event.hpp"
+#include "rive/draw_target_placement.hpp"
+#include "rive/drawable.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/keyframe.hpp"
+#include "rive/factory.hpp"
+#include "rive/renderer.hpp"
+#include "rive/artboard_host.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/paint_image.hpp"
+#include "rive/watermark.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/node.hpp"
+#include "rive/foreground_layout_drawable.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/nested_artboard_leaf.hpp"
+#include "rive/nested_artboard_layout.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/joystick.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind_flags.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_number.hpp"
+#include "rive/animation/nested_trigger.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/view_model_type.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/text/text_variation_helper.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/event.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/layout/layout_data.hpp"
+#include "rive/profiler/profiler_macros.h"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
+#include "rive/scripted/scripted_data_converter.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
 #ifdef WITH_RIVE_SCRIPTING
 #ifdef WITH_RIVE_SCRIPTING_LUAU
-#include "third_party/rive/include/rive/lua/rive_lua_libs.hpp"
+#include "rive/lua/rive_lua_libs.hpp"
 #endif
 #endif
-#include "third_party/rive/include/rive/async/work_pool.hpp"
-#include "third_party/rive/include/rive/bitmap_cache.hpp"
-#include "third_party/rive/include/rive/layer_mask.hpp"
+#include "rive/async/work_pool.hpp"
+#include "rive/bitmap_cache.hpp"
+#include "rive/layer_mask.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/include/rive/offscreen_raster.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_context.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_canvas_host.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
+#include "rive/offscreen_raster.hpp"
+#include "rive/renderer/render_context.hpp"
+#include "rive/renderer/render_canvas.hpp"
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -118,6 +119,7 @@ uint64_t Artboard::sm_frameId = 0;
 uint64_t Artboard::sm_layoutPassCount = 0;
 uint64_t Artboard::sm_dirtNotifications = 0;
 uint64_t Artboard::sm_collapsedRunSkips = 0;
+uint64_t Artboard::sm_focusTreeBuilds = 0;
 #endif
 
 Artboard::Artboard()
@@ -135,6 +137,13 @@ Artboard::Artboard(Factory* factory) : m_Factory(factory) { m_Clip = true; }
 
 Artboard::~Artboard()
 {
+  // A body the import deferred and nothing decoded: none of it was imported,
+  // so only its bytes go. What stood in for a body that failed goes too.
+  if (ArtboardSourceState* state = m_sourceState.get())
+  {
+    delete state->deferral.body.exchange(nullptr);
+    delete state->deferral.standIn;
+  }
   // The boundary node can outlive this artboard: a virtualized list row
   // destroyed from the pool never leaves the semantic tree. Flattening reads
   // this pointer to see whether the host is collapsed, so it must not dangle.
@@ -302,7 +311,7 @@ Artboard::~Artboard()
       delete object;
     }
   }
-  m_dirtyLayout.clear();
+  leaveDirtyLayouts();
 }
 
 static bool canContinue(StatusCode code)
@@ -439,6 +448,14 @@ StatusCode Artboard::initialize()
       if (!canContinue(code = object->onAddedDirty(this)))
       {
         return code;
+      }
+    }
+    for (auto animation : ownAnimations())
+    {
+      if (animation->hasKeyFrameBinds())
+      {
+        m_sourceState.ensureAllocated()->hasKeyFrameBinds = true;
+        break;
       }
     }
     if (ownAnimations().empty() && ownStateMachines().empty())
@@ -1588,11 +1605,23 @@ static bool converterRunsScript(DataConverter* converter)
       }
     }
   }
+  for (auto* dataBind : converter->dataBinds())
+  {
+    if (converterRunsScript(dataBind->converter()))
+    {
+      return true;
+    }
+  }
   return false;
 }
 
 bool Artboard::usesScripts() const
 {
+  const Artboard* source = decoded();
+  if (source != this)
+  {
+    return source->usesScripts();
+  }
   for (auto* object : m_Objects)
   {
     if (object != nullptr && ScriptedObject::from(object) != nullptr)
@@ -1617,6 +1646,14 @@ bool Artboard::usesScripts() const
   for (auto* dataBind : dataBinds())
   {
     if (converterRunsScript(dataBind->converter()))
+    {
+      return true;
+    }
+  }
+  for (auto* animation : animationSource()->ownAnimations())
+  {
+    // Without decoding a deferred body.
+    if (animation->anyKeyFrameBindConverter(converterRunsScript))
     {
       return true;
     }
@@ -1807,6 +1844,38 @@ bool Artboard::sharesLayoutWithHost() const
   return m_host != nullptr && m_host->isLayoutProvider();
 }
 
+void Artboard::reserveLikeSource(Core* clone, const Core* source)
+{
+  if (!source->is<Component>() || !clone->is<Component>())
+  {
+    return;
+  }
+  clone->as<Component>()->reserveDependents(
+      source->as<Component>()->dependents().size());
+  if (source->is<ContainerComponent>() && clone->is<ContainerComponent>())
+  {
+    clone->as<ContainerComponent>()->reserveChildren(
+        source->as<ContainerComponent>()->children().size());
+  }
+}
+
+void Artboard::reserveListsLike(const Artboard& source)
+{
+  reserveDataBinds(source.dataBinds().size());
+  // Initialize fills these an entry at a time. The source's already hold its
+  // layout proxies, which the instance's get too.
+  m_Drawables.reserve(source.m_Drawables.size());
+  m_advancingComponents.reserve(source.m_advancingComponents.size());
+  m_hostDataContextConsumers.reserve(source.m_hostDataContextConsumers.size());
+  m_ArtboardHosts.reserve(source.m_ArtboardHosts.size());
+  m_NestedArtboards.reserve(source.m_NestedArtboards.size());
+  m_ComponentLists.reserve(source.m_ComponentLists.size());
+  m_clippingShapes.reserve(source.m_clippingShapes.size());
+  m_layerMasks.reserve(source.m_layerMasks.size());
+  m_DrawTargets.reserve(source.m_DrawTargets.size());
+  m_Joysticks.reserve(source.m_Joysticks.size());
+}
+
 void Artboard::cloneObjectDataBinds(
     const Core* object,
     Core* clone,
@@ -1881,10 +1950,10 @@ void Artboard::wakeQuietRow()
 AdvancingComponent::QuietState Artboard::rowQuietState()
 {
   using QuietState = AdvancingComponent::QuietState;
-  // Work this check can't see into: hosted artboards and lists, joysticks
-  // and scripts.
-  if (!m_ArtboardHosts.empty() || !m_Joysticks.empty() ||
-      !m_ScriptedObjects.empty())
+  // Work this check can't see into: joysticks and scripts. Hosted
+  // artboards and lists answer for themselves below, as advancing
+  // components.
+  if (!m_Joysticks.empty() || !m_ScriptedObjects.empty())
   {
     return QuietState::never;
   }
@@ -1909,12 +1978,70 @@ AdvancingComponent::QuietState Artboard::rowQuietState()
         break;
     }
   }
-  if (state == QuietState::quiet && mayAdvanceDataBinds())
+  if (state == QuietState::quiet)
   {
-    // Converters that advance can't say whether they would.
-    return QuietState::never;
+    // Converters that advance say whether they would.
+    return dataBindsQuietState();
   }
   return state;
+}
+
+void Artboard::markHostedQuiet()
+{
+  for (auto nestedArtboard : nestedArtboards())
+  {
+    if (auto instance = nestedArtboard->artboardInstance())
+    {
+      // A nested artboard hosts its one instance at row 0.
+      instance->quietHostRow(0);
+      instance->markHostedQuiet();
+    }
+  }
+}
+
+bool Artboard::markQuietAwaitingAsync()
+{
+  // Settled, the scene's advance would do nothing, scripts included; what's
+  // left is to hear every change that could undo that. A bind this polls,
+  // or a change still waiting in a queue, would not wake it.
+  if (m_host != nullptr || hasDirt(ComponentDirt::Components) ||
+      !m_dirtyLayout.empty() || m_hostTransformMarkedDirty ||
+      m_instanceValueBindsPending || hasDataBindWork() ||
+      !hostedSkippableWhileCollapsed())
+  {
+    return false;
+  }
+  // Rows and collapsed nested artboards mark their trees the same way, so
+  // the wakes already route here (see wakeQuietRow), and a root, with no
+  // host to tell, just drops the mark.
+  m_quietHostRow = 0;
+  markHostedQuiet();
+  return true;
+}
+
+bool Artboard::hostedSkippableWhileCollapsed() const
+{
+  // The hosts that aren't nested artboards or lists are artboard paints.
+  if (m_ArtboardHosts.size() !=
+      m_NestedArtboards.size() + m_ComponentLists.size())
+  {
+    return false;
+  }
+  for (auto list : artboardComponentLists())
+  {
+    if (!list->allRowsQuiet())
+    {
+      return false;
+    }
+  }
+  for (auto nestedArtboard : nestedArtboards())
+  {
+    if (!nestedArtboard->skippableWhileCollapsed())
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 void Artboard::dataBindsProcessed()
@@ -1939,6 +2066,7 @@ template <typename T> const std::vector<T>& emptySourceList()
 
 const std::vector<LinearAnimation*>& Artboard::ownAnimations() const
 {
+  RIVE_ASSERT_ARTBOARD_BODY();
   const ArtboardSourceState* state = m_sourceState.get();
   return state != nullptr ? state->animations
                           : emptySourceList<LinearAnimation*>();
@@ -1946,9 +2074,147 @@ const std::vector<LinearAnimation*>& Artboard::ownAnimations() const
 
 const std::vector<StateMachine*>& Artboard::ownStateMachines() const
 {
+  RIVE_ASSERT_ARTBOARD_BODY();
   const ArtboardSourceState* state = m_sourceState.get();
   return state != nullptr ? state->stateMachines
                           : emptySourceList<StateMachine*>();
+}
+
+bool Artboard::hasDeferredBody() const
+{
+  const ArtboardSourceState* state = m_sourceState.get();
+  return state != nullptr &&
+         state->deferral.body.load(std::memory_order_acquire) != nullptr;
+}
+
+void Artboard::ensureDecoded() const
+{
+  if (hasDeferredBody())
+  {
+    // The decode checks again under its lock: another thread may be
+    // decoding it right now.
+    m_sourceState.get()->deferral.file->decodeArtboardBody(
+        const_cast<Artboard*>(this));
+  }
+}
+
+const Artboard* Artboard::decoded() const
+{
+  ensureDecoded();
+  // Once decoded nothing changes it (a failed decode set it before
+  // publishing the body as null), so it reads without the lock.
+  const ArtboardSourceState* state = m_sourceState.get();
+  return state != nullptr && state->deferral.standIn != nullptr
+             ? state->deferral.standIn
+             : this;
+}
+
+bool Artboard::handsOut(const Artboard* artboard) const
+{
+  if (artboard == this)
+  {
+    return true;
+  }
+  // The stand-in is set before the body is published as null.
+  const ArtboardSourceState* state = m_sourceState.get();
+  return artboard != nullptr && state != nullptr && !hasDeferredBody() &&
+         state->deferral.standIn == artboard;
+}
+
+Artboard* Artboard::makeEmptyStandIn() const
+{
+  auto standIn = new Artboard();
+  standIn->copy(*this);
+  standIn->m_Factory = m_Factory;
+  standIn->m_originalWidth = m_originalWidth;
+  standIn->m_originalHeight = m_originalHeight;
+#ifdef WITH_RIVE_TOOLS
+  standIn->m_artboardId = m_artboardId;
+  standIn->m_instanceCount = m_instanceCount;
+#endif
+  // Artboards are always their first object (Component::import).
+  standIn->addObject(standIn);
+  standIn->initialize();
+  return standIn;
+}
+
+bool Artboard::failedToDecode() const
+{
+  const ArtboardSourceState* state = m_sourceState.get();
+  return state != nullptr && state->deferral.failed;
+}
+
+bool Artboard::mayHaveTextStylePaint() const
+{
+  return !hasDeferredBody() || m_sourceState.get()->deferral.hasTextStylePaint;
+}
+
+bool Artboard::mayHaveStateMachineListener() const
+{
+  return !hasDeferredBody() ||
+         m_sourceState.get()->deferral.hasStateMachineListener;
+}
+
+void Artboard::deferBody(
+    File* file,
+    DeferredArtboardBody* body,
+    bool hasTextStylePaint,
+    bool hasStateMachineListener)
+{
+  ArtboardDeferral& deferral = m_sourceState.ensureAllocated()->deferral;
+  assert(deferral.body.load(std::memory_order_relaxed) == nullptr);
+  deferral.file = file;
+  deferral.hasTextStylePaint = hasTextStylePaint;
+  deferral.hasStateMachineListener = hasStateMachineListener;
+  deferral.body.store(body, std::memory_order_release);
+}
+
+void Artboard::discardBody()
+{
+  // The decode failed while reading, before anything was initialized, so
+  // only what the importers handed the artboard needs to go. Objects are
+  // owned by the artboard, keyed objects and layers by their animations and
+  // state machines. View model instances (and their values) are ref counted,
+  // so they stay for the destructor, which releases them with its rejected
+  // objects the way it releases its own.
+  ArtboardSourceState* state = m_sourceState.ensureAllocated();
+  for (size_t i = 1; i < m_Objects.size(); i++)
+  {
+    Core* object = m_Objects[i];
+    if (object == nullptr)
+    {
+      continue;
+    }
+    if (object->is<ViewModelInstance>() || object->is<ViewModelInstanceValue>())
+    {
+      state->invalidObjects.push_back(object);
+      continue;
+    }
+    delete object;
+  }
+  m_Objects.resize(1);
+  discardDataBinds();
+  for (auto animation : state->animations)
+  {
+    delete animation;
+  }
+  state->animations.clear();
+  for (auto stateMachine : state->stateMachines)
+  {
+    delete stateMachine;
+  }
+  state->stateMachines.clear();
+}
+
+const Artboard*& Artboard::decodingArtboard()
+{
+  static thread_local const Artboard* artboard = nullptr;
+  return artboard;
+}
+
+void Artboard::assertBodyAvailable() const
+{
+  assert(!hasDeferredBody() || decodingArtboard() == this);
 }
 
 const std::vector<Core*>& Artboard::ownInvalidObjects() const
@@ -1975,49 +2241,22 @@ void Artboard::clearStateMachines()
 }
 #endif
 
-void Artboard::buildKeyFrameSourceBindsIndex() const
-{
-  ArtboardSourceState* state = m_sourceState.ensureAllocated();
-  state->keyFrameBindsBuilt = true;
-  for (auto dataBind : dataBinds())
-  {
-    auto target = dataBind->target();
-    if (target == nullptr || !target->is<KeyFrame>())
-    {
-      continue;
-    }
-    // A keyframe holds a single value, so keep the first bind per target
-    // (emplace does not overwrite an existing key).
-    state->keyFrameBinds.emplace(target->as<KeyFrame>(), dataBind);
-  }
-}
-
 bool Artboard::hasKeyFrameSourceBinds() const
 {
-  const ArtboardSourceState* state = m_sourceState.get();
-  if (state == nullptr || !state->keyFrameBindsBuilt)
-  {
-    buildKeyFrameSourceBindsIndex();
-    state = m_sourceState.get();
-  }
-  return !state->keyFrameBinds.empty();
-}
-
-DataBind* Artboard::keyFrameSourceBind(const KeyFrame* keyframe) const
-{
-  const ArtboardSourceState* state = m_sourceState.get();
-  if (state == nullptr || !state->keyFrameBindsBuilt)
-  {
-    buildKeyFrameSourceBindsIndex();
-    state = m_sourceState.get();
-  }
-  auto it = state->keyFrameBinds.find(keyframe);
-  return it != state->keyFrameBinds.end() ? it->second : nullptr;
+  const ArtboardSourceState* state = animationSource()->m_sourceState.get();
+  return state != nullptr && state->hasKeyFrameBinds;
 }
 
 void Artboard::host(ArtboardHost* artboardHost)
 {
   addedToHost();
+  if (m_listedInHostDirtyLayout && artboardHost != m_host)
+  {
+    if (Artboard* parent = parentArtboard())
+    {
+      parent->cleanLayout(this);
+    }
+  }
   m_host = artboardHost;
 #ifdef EXTERNAL_RIVE_AUDIO_ENGINE
   // audioEngine(engine) only reaches artboards hosted at the time, so list
@@ -2040,7 +2279,10 @@ void Artboard::host(ArtboardHost* artboardHost)
   if (parent != nullptr)
   {
     parent->markLayoutDirty(this);
-    parent->syncLayoutChildren();
+    if (!m_host->syncsLayoutChildren())
+    {
+      parent->syncLayoutChildren();
+    }
   }
 #endif
 }
@@ -2260,6 +2502,7 @@ bool Artboard::updateComponents()
   const int maxSteps = 100;
   int step = 0;
   auto count = m_DependencyOrder.size();
+  bool didUpdate = false;
   while (hasDirt(ComponentDirt::Components) && step < maxSteps)
   {
     m_Dirt = m_Dirt & ~ComponentDirt::Components;
@@ -2303,6 +2546,7 @@ bool Artboard::updateComponents()
       }
       component->m_Dirt = ComponentDirt::None;
       component->update(d);
+      didUpdate = true;
 
       // If the update changed the dirt depth by adding dirt
       // to something before us (in the DAG), early out and
@@ -2314,13 +2558,53 @@ bool Artboard::updateComponents()
     }
     step++;
   }
+  if (didUpdate)
+  {
+    // A draw can consume the change notification before pending updates
+    // apply. Request another draw if the updates did not already do so.
+    if (!m_didChange)
+    {
+      changed();
+    }
+    // Applied values can make an earlier raster stale, even when a self
+    // transform has already requested a composite-only redraw.
+    ++m_contentRevision;
+    // A cache hit can clear an ancestor's draw flag without visiting this
+    // artboard. Invalidate every enclosing raster and re-arm any cleared
+    // flags, including those beyond an ancestor that is already dirty.
+    for (Artboard* ancestor = parentArtboard(); ancestor != nullptr;
+         ancestor = ancestor->parentArtboard())
+    {
+      if (ancestor->m_didChange)
+      {
+        ++ancestor->m_contentRevision;
+      }
+      else
+      {
+        ancestor->changed();
+      }
+    }
+  }
   return true;
 }
 
 LayoutData* Artboard::takeLayoutData()
 {
 #ifdef WITH_RIVE_LAYOUT
-  m_updatesOwnLayout = false;
+  if (m_updatesOwnLayout)
+  {
+    m_updatesOwnLayout = false;
+    // Style changes made while we laid ourselves out, such as the size
+    // overrides of the nested artboard hosting us, wait in our own dirty
+    // list. A host only syncs that list for artboards whose layout it owns,
+    // and a collapsed artboard never updates itself, so one collected only
+    // now (a Solo option activated after load) would keep them unsynced and
+    // lay out at zero size. Sync them as the host takes the node.
+    if (!m_dirtyLayout.empty())
+    {
+      syncStyleChanges();
+    }
+  }
   return m_layoutData;
 #else
   return nullptr;
@@ -2339,9 +2623,13 @@ void Artboard::cleanLayout(LayoutComponent* layoutComponent)
     return;
   }
 
-  if (!m_dirtyLayout.empty())
+  if (listedAsDirty(layoutComponent))
   {
-    auto itr = m_dirtyLayout.find(layoutComponent);
+    listedAsDirty(layoutComponent, false);
+    auto itr = std::find(
+        m_dirtyLayout.begin(),
+        m_dirtyLayout.end(),
+        layoutComponent);
     if (itr != m_dirtyLayout.end())
     {
       m_dirtyLayout.erase(itr);
@@ -2357,6 +2645,58 @@ void Artboard::cleanLayout(LayoutComponent* layoutComponent)
       parent->cleanLayout(layoutComponent);
     }
   }
+}
+
+// An artboard is its own artboard(). Reading that tells a hosted artboard
+// from a layout without is<Artboard>(), a virtual call, which every mark
+// would make.
+static bool isHostedArtboard(const Artboard* host, LayoutComponent* layout)
+{
+  return layout != host && layout->artboard() == layout;
+}
+
+// An artboard can be listed by its host and by itself at once, so one listed
+// by its host says so on itself rather than in its layout flags.
+bool Artboard::listedAsDirty(LayoutComponent* layout)
+{
+  if (isHostedArtboard(this, layout))
+  {
+    return static_cast<Artboard*>(layout)->m_listedInHostDirtyLayout;
+  }
+  return layout->dirtyLayoutListed();
+}
+
+void Artboard::listedAsDirty(LayoutComponent* layout, bool value)
+{
+  if (isHostedArtboard(this, layout))
+  {
+    static_cast<Artboard*>(layout)->m_listedInHostDirtyLayout = value;
+  }
+  else
+  {
+    layout->dirtyLayoutListed(value);
+  }
+}
+
+// Called while the artboard is still whole: ~LayoutComponent skips an artboard,
+// whose list is gone by then. The layouts it owned left as they were deleted.
+void Artboard::leaveDirtyLayouts()
+{
+  if (m_listedInHostDirtyLayout)
+  {
+    if (Artboard* parent = parentArtboard())
+    {
+      parent->cleanLayout(this);
+    }
+  }
+  for (auto* layout : m_dirtyLayout)
+  {
+    if (layout != nullptr)
+    {
+      listedAsDirty(layout, false);
+    }
+  }
+  m_dirtyLayout.clear();
 }
 
 void Artboard::markLayoutDirty(LayoutComponent* layoutComponent)
@@ -2377,7 +2717,11 @@ void Artboard::markLayoutDirty(LayoutComponent* layoutComponent)
     m_layoutDirtyCallback(callbackUserData);
   }
 #endif
-  m_dirtyLayout.insert(layoutComponent);
+  if (!listedAsDirty(layoutComponent))
+  {
+    listedAsDirty(layoutComponent, true);
+    m_dirtyLayout.push_back(layoutComponent);
+  }
   if (isInstance())
   {
     if (sharesLayoutWithHost())
@@ -2433,6 +2777,7 @@ bool Artboard::syncStyleChanges()
       {
         continue;
       }
+      listedAsDirty(layout, false);
       switch (layout->coreType())
       {
         case ArtboardBase::typeKey:
@@ -3288,6 +3633,18 @@ bool Artboard::drawMasked(
     DrawingGuard(LayerMask& m) : mask(m) { mask.m_isDrawing = true; }
     ~DrawingGuard() { mask.m_isDrawing = false; }
   } drawingGuard(mask);
+  // Restored rather than cleared: a mask nested in this one's range draws
+  // inside this one's canvas.
+  struct MaskedRangeGuard
+  {
+    Artboard& artboard;
+    bool was;
+    MaskedRangeGuard(Artboard& a) : artboard(a), was(a.m_drawsMaskedRange)
+    {
+      artboard.m_drawsMaskedRange = true;
+    }
+    ~MaskedRangeGuard() { artboard.m_drawsMaskedRange = was; }
+  } maskedRangeGuard(*this);
 
   // canvasContentHost, not deferredCanvasHost: this only needs somewhere to
   // rasterize into. No host means nobody can give us an offscreen frame (a
@@ -3395,11 +3752,16 @@ bool Artboard::drawMasked(
           &sourceBox,
           &coverageDraws);
     }
+    // Inline is only the same picture as the composite when the layer
+    // composites as normal. With any other blend each drawable would blend
+    // on its own rather than as one flattened layer, so removing nothing
+    // still has to rasterize.
+    const bool inlineMatchesLayer = mask.compositeBlendMode() ==
+                                    BlendMode::srcOver;
     if (!coverageDraws)
     {
       // Coverage is zero everywhere -- the mask source is hidden, or sits
-      // in an inactive solo. Which way that falls depends on the mode,
-      // and both answers avoid the GPU entirely.
+      // in an inactive solo. Which way that falls depends on the mode.
       switch (mask.maskMode())
       {
         case MaskMode::alpha:
@@ -3407,7 +3769,11 @@ bool Artboard::drawMasked(
           return true; // content fully masked out
         case MaskMode::invertedAlpha:
         case MaskMode::invertedLuminance:
-          return false; // content fully visible; draw it inline
+          if (inlineMatchesLayer)
+          {
+            return false; // content fully visible; draw it inline
+          }
+          break;
       }
     }
 
@@ -3470,7 +3836,7 @@ bool Artboard::drawMasked(
           }
           tight = overlap;
         }
-        else if (!overlaps)
+        else if (!overlaps && inlineMatchesLayer)
         {
           // Inverted, so absent coverage means a factor of one: the
           // layer is fully visible. Decline the bracket and let it
@@ -3587,11 +3953,15 @@ bool Artboard::drawMasked(
         // Over the source bracket, not sourceDrawables() directly, so a
         // clipping shape nested inside the source still brackets its
         // own drawables. Starting past the opening marker keeps its
-        // own +1 suppression from hiding the very range we want.
-        drawDrawableRange(
-            r,
-            mask.sourceStart()->prevDrawable(),
-            mask.sourceEnd());
+        // own +1 suppression from hiding the very range we want. No bracket
+        // means the source draws nothing, so the canvas stays empty.
+        if (mask.sourceStart() != nullptr)
+        {
+          drawDrawableRange(
+              r,
+              mask.sourceStart()->prevDrawable(),
+              mask.sourceEnd());
+        }
       }
       else
       {
@@ -3675,7 +4045,7 @@ bool Artboard::drawMasked(
   placement.renderer->drawImage(
       contentImage.get(),
       ImageSampler::LinearClamp(),
-      BlendMode::srcOver,
+      mask.compositeBlendMode(),
       placement.opacity);
   offscreen::endComposite(placement);
   return true;
@@ -4026,6 +4396,8 @@ bool Artboard::hasAudio() const
 
 bool Artboard::isTranslucent(const LinearAnimation* anim) const
 {
+  // Reads the keyed objects directly, so decode a deferred body first.
+  anim->ensureDecoded();
   // For now we're conservative/lazy -- if we see that any of our paints are
   // animated we assume that might make it non-opaque, so we early out
   for (const auto& obj : anim->m_KeyedObjects)
@@ -4219,7 +4591,7 @@ FocusManager* Artboard::ensureFocusManager()
   return m_activeFocusManager;
 }
 
-void Artboard::adoptFocusManager(FocusManager* manager)
+void Artboard::adoptFocusManager(FocusManager* manager, bool buildTree)
 {
   // A null manager means "stop borrowing", which falls back to our own if we
   // have one — the same shape as clearing the old external-manager override.
@@ -4238,8 +4610,9 @@ void Artboard::adoptFocusManager(FocusManager* manager)
   }
 
   m_activeFocusManager = manager;
+  m_focusTreeDeferred = manager != nullptr && !buildTree;
 
-  if (manager != nullptr)
+  if (manager != nullptr && buildTree)
   {
     buildFocusTree(manager, nullptr);
   }
@@ -4253,6 +4626,10 @@ void Artboard::buildFocusTree(
   {
     return;
   }
+#ifdef TESTING
+  sm_focusTreeBuilds++;
+#endif
+  m_focusTreeDeferred = false;
 
   // Store reference to the active focus manager
   setActiveFocusManager(focusManager);
@@ -5110,8 +5487,8 @@ void Artboard::changed()
 
 ////////// ArtboardInstance
 
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/state_machine_instance.hpp"
 
 ArtboardInstance::ArtboardInstance() {}
 
@@ -5324,7 +5701,7 @@ void Artboard::editorPrepareForDestruction()
   m_DrawTargets.clear();
   m_Joysticks.clear();
   m_advancingComponents.clear();
-  m_dirtyLayout.clear();
+  leaveDirtyLayouts();
   m_host = nullptr;
   m_DependencyOrder.clear();
   m_editorResolver = nullptr;

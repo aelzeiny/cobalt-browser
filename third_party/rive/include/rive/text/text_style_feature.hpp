@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_STYLE_FEATURE_HPP_
 #define _RIVE_TEXT_STYLE_FEATURE_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_feature_base.hpp"
+#include "rive/generated/text/text_style_feature_base.hpp"
 #include <stdio.h>
 namespace rive
 {

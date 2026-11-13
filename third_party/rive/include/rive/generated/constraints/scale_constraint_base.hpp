@@ -1,6 +1,6 @@
 #ifndef _RIVE_SCALE_CONSTRAINT_BASE_HPP_
 #define _RIVE_SCALE_CONSTRAINT_BASE_HPP_
-#include "third_party/rive/include/rive/constraints/transform_component_constraint_y.hpp"
+#include "rive/constraints/transform_component_constraint_y.hpp"
 namespace rive
 {
 class ScaleConstraintBase : public TransformComponentConstraintY

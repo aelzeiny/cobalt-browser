@@ -1,8 +1,8 @@
 #ifndef _RIVE_PROPERTY_SYMBOl_DEPENDENT_HPP_
 #define _RIVE_PROPERTY_SYMBOl_DEPENDENT_HPP_
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_value_dependent.hpp"
+#include "rive/core.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_value_dependent.hpp"
 #include <stdio.h>
 namespace rive
 {

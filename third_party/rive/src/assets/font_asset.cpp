@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
 
 using namespace rive;
 

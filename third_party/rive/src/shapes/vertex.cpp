@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
+#include "rive/shapes/vertex.hpp"
 
 using namespace rive;
 

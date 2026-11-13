@@ -50,6 +50,7 @@ export function laneConsole(memory, log, timers = new Map()) {
         }
         log(`${label}: ${(monotonicNow() - started).toFixed(3)}ms`);
     };
+    env['console.caller'] = () => {};
     env['console.time'] = (ptr) => timers.set(text(ptr), monotonicNow());
     env['console.timeLog'] = report(false);
     env['console.timeEnd'] = report(true);
@@ -59,7 +60,8 @@ export function laneConsole(memory, log, timers = new Map()) {
 const noFuelCheck = () => {};
 
 // An instance of lane.module whose imports reach the lane's own natives, log,
-// timers and fuel check. Returns { exports, memory, failure } or { error }.
+// timers, clock and fuel check. Returns { exports, memory, failure } or
+// { error }.
 export function instantiateLane(lane) {
     let memory = null;
     let thrown = null;
@@ -67,6 +69,7 @@ export function instantiateLane(lane) {
     const imports = {
         'env': laneConsole(() => memory, lane.log, lane.timers),
         'rive_shared_v1': lane.shared(() => memory),
+        'rive_rt_v1': { 'now': lane.now ?? monotonicNow },
         'rive_lane_v1': {
             'error': (ptr, byteLength) => {
                 thrown = utf16Text(memory.buffer, ptr, byteLength);

@@ -1,11 +1,11 @@
 #ifndef _RIVE_TEXT_STYLE_GLOBAL_HPP_
 #define _RIVE_TEXT_STYLE_GLOBAL_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_global_base.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/artboard_referencer.hpp"
-#include "third_party/rive/include/rive/data_bind/host_data_context_consumer.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/text/text_style_share_cache.hpp"
+#include "rive/generated/text/text_style_global_base.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/artboard_referencer.hpp"
+#include "rive/data_bind/host_data_context_consumer.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/text/text_style_share_cache.hpp"
 #include <memory>
 
 namespace rive
@@ -78,6 +78,7 @@ public:
   // handle, as one: they share its instance.
   bool listensToRuns() const override;
   StateMachineInstance* runStateMachine() const override;
+  StateMachineInstance* styleStateMachine() const override;
   void listItem(const rcp<ViewModelInstance>& value) override;
 
   // The first TextStylePaint of a style artboard; null when the artboard is

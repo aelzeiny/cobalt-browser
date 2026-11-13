@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/paint/dash.hpp"
-#include "third_party/rive/include/rive/shapes/paint/dash_path.hpp"
+#include "rive/shapes/paint/dash.hpp"
+#include "rive/shapes/paint/dash_path.hpp"
 
 using namespace rive;
 

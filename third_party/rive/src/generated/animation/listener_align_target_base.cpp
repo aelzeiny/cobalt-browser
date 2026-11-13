@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/listener_align_target_base.hpp"
-#include "third_party/rive/include/rive/animation/listener_align_target.hpp"
+#include "rive/generated/animation/listener_align_target_base.hpp"
+#include "rive/animation/listener_align_target.hpp"
 
 using namespace rive;
 

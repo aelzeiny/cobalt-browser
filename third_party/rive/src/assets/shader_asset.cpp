@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/assets/shader_asset.hpp"
-#include "third_party/rive/include/rive/signed_content_header.hpp"
+#include "rive/assets/shader_asset.hpp"
+#include "rive/signed_content_header.hpp"
 // The script module's copy only reads bytes its host already admitted.
 #if defined(WITH_RIVE_SCRIPTING) && !defined(RIVE_WASM_MODULE)
 #define RIVE_SHADER_SIGNATURE_GATE
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/importers/text_asset_importer.hpp"
+#include "rive/file.hpp"
+#include "rive/importers/text_asset_importer.hpp"
 #endif
 #include <cstdio>
 
@@ -87,6 +87,8 @@ bool ShaderAsset::index()
   m_pairs.clear();
   m_entryBindingsOffset = 0;
   m_entryBindingsSize = 0;
+  m_bindingNamesOffset = 0;
+  m_bindingNamesSize = 0;
 
   const uint8_t* p = m_bytes.data();
   const uint8_t* end = p + m_bytes.size();
@@ -163,6 +165,11 @@ bool ShaderAsset::index()
       // Tag 2: entry point bindings, which ore decodes.
       m_entryBindingsOffset = (size_t)(p - m_bytes.data());
       m_entryBindingsSize = length;
+    }
+    else if (tag == 3 && length >= 1)
+    {
+      m_bindingNamesOffset = (size_t)(p - m_bytes.data());
+      m_bindingNamesSize = length;
     }
     // Unknown tags: skip.
     p += length;

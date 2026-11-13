@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_follow_path_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
+#include "rive/core_context.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_follow_path_modifier.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/transform_component.hpp"
 
 using namespace rive;
 

@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_MODIFIER_GROUP_HPP_
 #define _RIVE_TEXT_MODIFIER_GROUP_HPP_
-#include "third_party/rive/include/rive/generated/text/text_modifier_group_base.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_flags.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/generated/text/text_modifier_group_base.hpp"
+#include "rive/text/text_modifier_flags.hpp"
+#include "rive/text_engine.hpp"
 
 #include <vector>
 

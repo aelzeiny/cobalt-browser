@@ -1,9 +1,9 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/wasm_signal_wait.hpp"
-#include "third_party/rive/include/rive/async/timeouts.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_layout_gen.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_shared.hpp"
+#include "rive/wasm/wasm_signal_wait.hpp"
+#include "rive/async/timeouts.hpp"
+#include "rive/wasm/wasm_lane_layout_gen.hpp"
+#include "rive/wasm/wasm_shared.hpp"
 
 using namespace rive;
 

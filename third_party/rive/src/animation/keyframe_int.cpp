@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/animation/keyframe_int.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
+#include "rive/animation/keyframe_int.hpp"
+#include "rive/generated/core_registry.hpp"
 
 using namespace rive;
 

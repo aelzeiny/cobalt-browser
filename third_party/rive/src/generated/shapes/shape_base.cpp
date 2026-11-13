@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/shape_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
+#include "rive/generated/shapes/shape_base.hpp"
+#include "rive/shapes/shape.hpp"
 
 using namespace rive;
 

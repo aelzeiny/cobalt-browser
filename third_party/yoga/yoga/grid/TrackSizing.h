@@ -1,0 +1,2254 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#pragma once
+
+#include "yoga/grid/GridLayout.h"
+#include "yoga/YGGridTrack.h"
+#include <algorithm>
+
+namespace facebook::yoga {
+
+struct TrackSizing {
+  enum class AffectedSize { BaseSize, GrowthLimit };
+
+  struct ContentDistribution {
+    float startOffset = 0.0f;
+    float betweenTracksOffset = 0.0f;
+    float effectiveGap = 0.0f;
+  };
+
+  struct ItemConstraint {
+    float width;
+    float height;
+    YGMeasureMode widthSizingMode;
+    YGMeasureMode heightSizingMode;
+    float containingBlockWidth;
+    float containingBlockHeight;
+  };
+
+  // rive: a value rather than a std::function, whose captures spilled to
+  // the heap.
+  struct CrossDimensionEstimator {
+    const ScratchVector<GridTrack>* fixedTracks = nullptr;
+    float containerSize = 0.0f;
+    bool fromBaseSizes = false;
+    ScratchVector<float> baseSizes;
+    YGDimension dimension = YGDimensionWidth;
+    float gap = 0.0f;
+
+    explicit operator bool() const {
+      return fixedTracks != nullptr || fromBaseSizes;
+    }
+
+    float operator()(const GridItem& item) const {
+      if (fixedTracks != nullptr) {
+        const auto& tracks = *fixedTracks;
+        float height = 0.0f;
+        for (size_t i = item.rowStart; i < item.rowEnd && i < tracks.size();
+             i++) {
+          if (isFixedSizingFunction(
+                  tracks[i].maxSizingFunction, containerSize)) {
+            height +=
+                tracks[i].maxSizingFunction.resolve(containerSize).unwrap();
+            if (i < item.rowEnd - 1) {
+              height += gap;
+            }
+          } else {
+            return YGUndefined;
+          }
+        }
+        return height;
+      }
+      if (!fromBaseSizes) {
+        return YGUndefined;
+      }
+      const size_t start =
+          dimension == YGDimensionWidth ? item.columnStart : item.rowStart;
+      const size_t end =
+          dimension == YGDimensionWidth ? item.columnEnd : item.rowEnd;
+      float width = 0.0f;
+      for (size_t i = start; i < end && i < baseSizes.size(); i++) {
+        width += baseSizes[i];
+        if (i < end - 1) {
+          width += gap;
+        }
+      }
+      return width;
+    }
+  };
+
+  struct ItemSizeContribution {
+    const GridItem* item;
+    ScratchVector<GridTrack*> affectedTracks;
+    float sizeContribution;
+
+    ItemSizeContribution(
+        const GridItem* item,
+        const ScratchVector<GridTrack*>& affectedTracks,
+        float sizeContribution)
+        : item(item),
+          affectedTracks(affectedTracks),
+          sizeContribution(sizeContribution) {}
+  };
+
+  YGNode* node;
+  ScratchVector<GridTrack>&
+      columnTracks; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+  ScratchVector<GridTrack>&
+      rowTracks; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+  float containerInnerWidth;
+  float containerInnerHeight;
+  ScratchVector<GridItem>&
+      gridItems; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+  YGMeasureMode widthSizingMode;
+  YGMeasureMode heightSizingMode;
+  YGDirection direction;
+  float ownerWidth;
+  float ownerHeight;
+  LayoutData&
+      layoutMarkerData; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+  uint32_t depth;
+  uint32_t generationCount;
+  YGConfigRef config;   // rive: threaded for YGLayoutNodeInternal
+  void* layoutContext;  // rive: threaded for YGLayoutNodeInternal
+  CrossDimensionEstimator crossDimensionEstimator;
+  // rive: grid line of the first track, to index nodeless contributions.
+  int32_t firstColumnLine = 0;
+  int32_t firstRowLine = 0;
+
+  // below flags are used for optimization purposes
+  bool hasPercentageColumnTracks = false;
+  bool hasPercentageRowTracks = false;
+  bool hasOnlyFixedTracks = false;
+  bool hasIntrinsicTracks = false;
+  bool hasFlexibleTracks = false;
+
+  TrackSizing(
+      YGNode* node,
+      ScratchVector<GridTrack>& columnTracks,
+      ScratchVector<GridTrack>& rowTracks,
+      float containerInnerWidth,
+      float containerInnerHeight,
+      ScratchVector<GridItem>& gridItems,
+      YGMeasureMode widthSizingMode,
+      YGMeasureMode heightSizingMode,
+      YGDirection direction,
+      float ownerWidth,
+      float ownerHeight,
+      LayoutData& layoutMarkerData,
+      uint32_t depth,
+      uint32_t generationCount,
+      YGConfigRef config,
+      void* layoutContext)
+      : node(node),
+        columnTracks(columnTracks),
+        rowTracks(rowTracks),
+        containerInnerWidth(containerInnerWidth),
+        containerInnerHeight(containerInnerHeight),
+        gridItems(gridItems),
+        widthSizingMode(widthSizingMode),
+        heightSizingMode(heightSizingMode),
+        direction(direction),
+        ownerWidth(ownerWidth),
+        ownerHeight(ownerHeight),
+        layoutMarkerData(layoutMarkerData),
+        depth(depth),
+        generationCount(generationCount),
+        config(config),
+        layoutContext(layoutContext) {}
+
+  // 11.1. Grid Sizing Algorithm
+  // https://www.w3.org/TR/css-grid-1/#algo-grid-sizing
+  void runGridSizingAlgorithm() {
+    computeItemTrackCrossingFlags();
+
+    // 1. First, the track sizing algorithm is used to resolve the sizes of the
+    // grid columns.
+    auto rowHeightFromFixedTracks = makeRowHeightEstimatorUsingFixedTracks(
+        calculateEffectiveRowGapForEstimation());
+    runTrackSizing(YGDimensionWidth, rowHeightFromFixedTracks);
+
+    // 2. Next, the track sizing algorithm resolves the sizes of the grid rows.
+    auto columnWidthFromBaseSizes = makeCrossDimensionEstimatorUsingBaseSize(
+        YGDimensionWidth, calculateEffectiveGapFromBaseSizes(YGDimensionWidth));
+    runTrackSizing(YGDimensionHeight, columnWidthFromBaseSizes);
+
+    // 3. Then, if the min-content contribution of any grid item has changed
+    // Only intrinsic tracks can affect the cross track size in above steps, so
+    // this step is only needed if there are intrinsic tracks
+    if (hasIntrinsicTracks) {
+      auto rowHeightFromBaseSizes = makeCrossDimensionEstimatorUsingBaseSize(
+          YGDimensionHeight,
+          calculateEffectiveGapFromBaseSizes(YGDimensionHeight));
+      if (contributionsChanged(
+              YGDimensionWidth,
+              rowHeightFromFixedTracks,
+              rowHeightFromBaseSizes)) {
+        runTrackSizing(YGDimensionWidth, rowHeightFromBaseSizes);
+        // 4. Next, if the min-content contribution of any grid item has changed
+        auto newColumnWidthFromBaseSizes =
+            makeCrossDimensionEstimatorUsingBaseSize(
+                YGDimensionWidth,
+                calculateEffectiveGapFromBaseSizes(YGDimensionWidth));
+        if (contributionsChanged(
+                YGDimensionHeight,
+                columnWidthFromBaseSizes,
+                newColumnWidthFromBaseSizes)) {
+          runTrackSizing(YGDimensionHeight, newColumnWidthFromBaseSizes);
+        }
+      }
+    }
+  }
+
+  // 11.3. Track Sizing Algorithm
+  // https://www.w3.org/TR/css-grid-1/#algo-track-sizing
+  void runTrackSizing(
+      YGDimension dimension,
+      const CrossDimensionEstimator& estimator) {
+    // Store the estimator for use in calculateItemConstraints
+    crossDimensionEstimator = estimator;
+
+    // Step 1: Initialize Track Sizes
+    initializeTrackSizes(dimension);
+    // Step 2: Resolve Intrinsic Track Sizes
+    resolveIntrinsicTrackSizes(dimension);
+    // Step 3: Maximize Track Sizes
+    maximizeTrackSizes(dimension);
+    // Step 4: Expand Flexible Tracks
+    expandFlexibleTracks(dimension);
+    // Step 5: Stretch Auto Tracks
+    stretchAutoTracks(dimension);
+  }
+
+  // 11.4 Initialize Track Sizes
+  // https://www.w3.org/TR/css-grid-1/#algo-init
+  // Also sets some flags (hasPercentageTracks, hasOnlyFixedTracks) for
+  // optimization purposes
+  void initializeTrackSizes(YGDimension dimension) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    bool& hasPercentageTracks = dimension == YGDimensionWidth
+        ? hasPercentageColumnTracks
+        : hasPercentageRowTracks;
+    hasOnlyFixedTracks = true;
+    hasIntrinsicTracks = false;
+    hasFlexibleTracks = false;
+
+    for (size_t i = 0; i < tracks.size(); i++) {
+      auto& track = tracks[i];
+
+      // detect percentage tracks for optimization purposes
+      if (isPercentageSizingFunction(track.minSizingFunction) ||
+          isPercentageSizingFunction(track.maxSizingFunction)) {
+        hasPercentageTracks = true;
+      }
+
+      if (isFixedSizingFunction(track.minSizingFunction, containerSize)) {
+        auto resolved = track.minSizingFunction.resolve(containerSize);
+        track.baseSize = resolved.unwrap();
+      } else if (isIntrinsicSizingFunction(
+                     track.minSizingFunction, containerSize)) {
+        track.baseSize = 0;
+        hasOnlyFixedTracks = false;
+        hasIntrinsicTracks = true;
+      } else {
+        // THIS SHOULD NEVER HAPPEN
+        track.baseSize = 0;
+      }
+
+      if (isFixedSizingFunction(track.maxSizingFunction, containerSize)) {
+        auto resolved = track.maxSizingFunction.resolve(containerSize);
+        track.growthLimit = resolved.unwrap();
+      } else if (isIntrinsicSizingFunction(
+                     track.maxSizingFunction, containerSize)) {
+        track.growthLimit = INFINITY;
+        hasOnlyFixedTracks = false;
+        hasIntrinsicTracks = true;
+      } else if (isFlexibleSizingFunction(track.maxSizingFunction)) {
+        track.growthLimit = INFINITY;
+        hasOnlyFixedTracks = false;
+        hasFlexibleTracks = true;
+      } else {
+        // THIS SHOULD NEVER HAPPEN
+        track.growthLimit = INFINITY;
+      }
+
+      // In all cases, if the growth limit is less than the base size, increase
+      // the growth limit to match the base size.
+      if (track.growthLimit < track.baseSize) {
+        track.growthLimit = track.baseSize;
+      }
+
+      // minmax(20px, 40px) type of tracks are not fixed tracks
+      if (track.baseSize < track.growthLimit) {
+        hasOnlyFixedTracks = false;
+      }
+    }
+  }
+
+  // 11.5 Resolve Intrinsic Track Sizes
+  // https://www.w3.org/TR/css-grid-1/#algo-content
+  void resolveIntrinsicTrackSizes(YGDimension dimension) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+
+    // rive: baseline shimming removed — Rive never uses baseline alignment.
+
+    // Fast path - if tracks are fixed-sized, skip below steps
+    if (hasOnlyFixedTracks) {
+      return;
+    }
+
+    // Step 2. and Step 3 Increase sizes to accommodate spanning items
+    accomodateSpanningItemsCrossingContentSizedTracks(dimension);
+    // Step 4. Increase sizes to accommodate spanning items crossing flexible
+    // tracks
+    accomodateSpanningItemsCrossingFlexibleTracks(dimension);
+    // Step 5. If any track still has an infinite growth limit (because, for
+    // example, it had no items placed in it or it is a flexible track), set its
+    // growth limit to its base size.
+    for (auto& track : tracks) {
+      if (track.growthLimit == INFINITY) {
+        track.growthLimit = track.baseSize;
+      }
+    }
+  }
+
+  // https://www.w3.org/TR/css-grid-1/#algo-single-span-items
+  // https://www.w3.org/TR/css-grid-1/#algo-spanning-items
+  void accomodateSpanningItemsCrossingContentSizedTracks(YGDimension dimension) {
+    if (!hasIntrinsicTracks) {
+      return;
+    }
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto sizingMode =
+        dimension == YGDimensionWidth ? widthSizingMode : heightSizingMode;
+
+    auto startIndexKey = dimension == YGDimensionWidth ? &GridItem::columnStart
+                                                       : &GridItem::rowStart;
+    auto endIndexKey = dimension == YGDimensionWidth ? &GridItem::columnEnd
+                                                     : &GridItem::rowEnd;
+
+    // 2. Size tracks to fit non-spanning items (span = 1 items)
+    // https://www.w3.org/TR/css-grid-1/#algo-single-span-items
+    ScratchVector<size_t> spanningItemIndices;
+    spanningItemIndices.reserve(gridItems.size());
+    for (size_t index = 0; index < gridItems.size(); index++) {
+      const auto& item = gridItems[index];
+      if (item.crossesFlexibleTrack(dimension)) {
+        continue;
+      }
+      auto startIndex = item.*startIndexKey;
+      auto endIndex = item.*endIndexKey;
+      size_t span = endIndex - startIndex;
+      if (span == 1) {
+        auto& track = tracks[startIndex];
+        auto itemConstraints = calculateItemConstraints(item, dimension);
+        // For auto minimums:
+        if (isAutoSizingFunction(track.minSizingFunction, containerSize)) {
+          float contribution = sizingMode == YGMeasureModeUndefined
+              ? limitedMinContentContribution(item, dimension, itemConstraints)
+              : minimumContribution(item, dimension, itemConstraints);
+          track.baseSize = std::max(track.baseSize, contribution);
+        }
+
+        // For max-content maximums:
+        if (isAutoSizingFunction(track.maxSizingFunction, containerSize)) {
+          float contribution =
+              maxContentContribution(item, dimension, itemConstraints);
+          if (track.growthLimit == INFINITY) {
+            track.growthLimit = contribution;
+          } else {
+            track.growthLimit = std::max(track.growthLimit, contribution);
+          }
+        }
+        // In all cases, if a track's growth limit is now less than its base
+        // size, increase the growth limit to match the base size.
+        if (track.growthLimit < track.baseSize) {
+          track.growthLimit = track.baseSize;
+        }
+      } else {
+        spanningItemIndices.push_back(index);
+      }
+    }
+
+    // rive: nodeless single-cell items size their tracks as the items above.
+    for (size_t i = 0; i < tracks.size(); i++) {
+      auto& track = tracks[i];
+      float contribution = virtualContribution(dimension, i);
+      if (contribution <= 0.0f ||
+          isFlexibleSizingFunction(track.maxSizingFunction)) {
+        continue;
+      }
+      if (isAutoSizingFunction(track.minSizingFunction, containerSize)) {
+        track.baseSize = std::max(track.baseSize, contribution);
+      }
+      if (isAutoSizingFunction(track.maxSizingFunction, containerSize)) {
+        track.growthLimit = track.growthLimit == INFINITY
+            ? contribution
+            : std::max(track.growthLimit, contribution);
+      }
+      if (track.growthLimit < track.baseSize) {
+        track.growthLimit = track.baseSize;
+      }
+    }
+
+    // 3. Increase sizes to accommodate spanning items crossing content-sized
+    // tracks: https://www.w3.org/TR/css-grid-1/#algo-spanning-items
+    if (spanningItemIndices.empty()) {
+      return;
+    }
+
+    std::sort(
+        spanningItemIndices.begin(),
+        spanningItemIndices.end(),
+        [&](size_t i, size_t j) {
+          const auto& a = gridItems[i];
+          const auto& b = gridItems[j];
+          return (a.*endIndexKey - a.*startIndexKey) <
+              (b.*endIndexKey - b.*startIndexKey);
+        });
+
+    size_t previousSpan = 1;
+    ScratchVector<ItemSizeContribution> itemsForIntrinsicMin;
+    ScratchVector<ItemSizeContribution> itemsForIntrinsicMax;
+    ScratchVector<ItemSizeContribution> itemsForMaxContentMax;
+
+    auto distributeSpaceToTracksForItemsWithTheSameSpan = [&]() {
+      // Step 1: For intrinsic minimums
+      if (!itemsForIntrinsicMin.empty()) {
+        distributeExtraSpaceAcrossSpannedTracks(
+            dimension, itemsForIntrinsicMin, AffectedSize::BaseSize);
+        itemsForIntrinsicMin.clear();
+      }
+
+      // Step 2 and Step 3 are skipped since we're not supporting min-content
+      // and max-content yet
+
+      // Step 4: If at this point any track's growth limit is now less than its
+      // base size, increase its growth limit to match its base size
+      for (auto& track : tracks) {
+        if (track.growthLimit < track.baseSize) {
+          track.growthLimit = track.baseSize;
+        }
+
+        // https://www.w3.org/TR/css-grid-1/#infinitely-growable
+        // reset infinitely growable flag for each track
+        // This flag gets set in Step 5 and used in Step 6, so we need to reset
+        // it before running Step 5.
+        track.infinitelyGrowable = false;
+      }
+
+      // Step 5: For intrinsic maximums
+      if (!itemsForIntrinsicMax.empty()) {
+        distributeExtraSpaceAcrossSpannedTracks(
+            dimension, itemsForIntrinsicMax, AffectedSize::GrowthLimit);
+        itemsForIntrinsicMax.clear();
+      }
+
+      // Step 6: For max-content maximums
+      if (!itemsForMaxContentMax.empty()) {
+        distributeExtraSpaceAcrossSpannedTracks(
+            dimension, itemsForMaxContentMax, AffectedSize::GrowthLimit);
+        itemsForMaxContentMax.clear();
+      }
+    };
+
+    for (auto& index : spanningItemIndices) {
+      const auto& item = gridItems[index];
+
+      if (item.crossesFlexibleTrack(dimension)) {
+        continue;
+      }
+
+      auto startIndex = item.*startIndexKey;
+      auto endIndex = item.*endIndexKey;
+      size_t span = endIndex - startIndex;
+
+      if (span > previousSpan) {
+        distributeSpaceToTracksForItemsWithTheSameSpan();
+        previousSpan = span;
+      }
+
+      ScratchVector<GridTrack*> intrinsicMinimumSizingFunctionTracks;
+      ScratchVector<GridTrack*> intrinsicMaximumSizingFunctionTracks;
+      ScratchVector<GridTrack*> maxContentMaximumSizingFunctionTracks;
+
+      for (size_t i = startIndex; i < endIndex; i++) {
+        if (isIntrinsicSizingFunction(
+                tracks[i].minSizingFunction, containerSize)) {
+          intrinsicMinimumSizingFunctionTracks.push_back(&tracks[i]);
+        }
+
+        if (isIntrinsicSizingFunction(
+                tracks[i].maxSizingFunction, containerSize)) {
+          intrinsicMaximumSizingFunctionTracks.push_back(&tracks[i]);
+        }
+
+        // auto as max sizing function is treated as max-content sizing function
+        if (isAutoSizingFunction(tracks[i].maxSizingFunction, containerSize)) {
+          maxContentMaximumSizingFunctionTracks.push_back(&tracks[i]);
+        }
+      }
+
+      auto itemConstraints = calculateItemConstraints(item, dimension);
+      if (!intrinsicMinimumSizingFunctionTracks.empty()) {
+        auto minContribution = sizingMode == YGMeasureModeUndefined
+            ? limitedMinContentContribution(item, dimension, itemConstraints)
+            : minimumContribution(item, dimension, itemConstraints);
+        itemsForIntrinsicMin.emplace_back(
+            &item,
+            std::move(intrinsicMinimumSizingFunctionTracks),
+            minContribution);
+      }
+
+      if (!intrinsicMaximumSizingFunctionTracks.empty()) {
+        auto minContentContrib =
+            minContentContribution(item, dimension, itemConstraints);
+        itemsForIntrinsicMax.emplace_back(
+            &item,
+            std::move(intrinsicMaximumSizingFunctionTracks),
+            minContentContrib);
+      }
+
+      if (!maxContentMaximumSizingFunctionTracks.empty()) {
+        auto maxContentContrib =
+            maxContentContribution(item, dimension, itemConstraints);
+        itemsForMaxContentMax.emplace_back(
+            &item,
+            std::move(maxContentMaximumSizingFunctionTracks),
+            maxContentContrib);
+      }
+    }
+
+    // Process last span
+    distributeSpaceToTracksForItemsWithTheSameSpan();
+  };
+
+  // https://www.w3.org/TR/css-grid-1/#algo-spanning-flex-items
+  void accomodateSpanningItemsCrossingFlexibleTracks(YGDimension dimension) {
+    if (!hasFlexibleTracks) {
+      return;
+    }
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto sizingMode =
+        dimension == YGDimensionWidth ? widthSizingMode : heightSizingMode;
+    auto startIndexkey = dimension == YGDimensionWidth ? &GridItem::columnStart
+                                                       : &GridItem::rowStart;
+    auto endIndexKey = dimension == YGDimensionWidth ? &GridItem::columnEnd
+                                                     : &GridItem::rowEnd;
+
+    ScratchVector<ItemSizeContribution> itemsSpanningFlexible;
+
+    for (const auto& item : gridItems) {
+      if (!item.crossesFlexibleTrack(dimension)) {
+        continue;
+      }
+
+      auto start = item.*startIndexkey;
+      auto end = item.*endIndexKey;
+      ScratchVector<GridTrack*> flexibleTracks;
+
+      for (size_t i = start; i < end && i < tracks.size(); i++) {
+        auto& track = tracks[i];
+        // rive: 11.5.4 repeats the previous step, which only ever grows tracks
+        // whose *min* sizing function is intrinsic. Distributing into every
+        // flexible track regardless made an authored minimum — minmax(0, 1fr)
+        // — do nothing at all.
+        if (isFlexibleSizingFunction(track.maxSizingFunction) &&
+            isIntrinsicSizingFunction(track.minSizingFunction, containerSize)) {
+          flexibleTracks.push_back(&track);
+        }
+      }
+
+      if (!flexibleTracks.empty()) {
+        auto itemConstraints = calculateItemConstraints(item, dimension);
+        auto minContribution = sizingMode == YGMeasureModeUndefined
+            ? limitedMinContentContribution(item, dimension, itemConstraints)
+            : minimumContribution(item, dimension, itemConstraints);
+
+        itemsSpanningFlexible.emplace_back(
+            &item, std::move(flexibleTracks), minContribution);
+      }
+    }
+
+    if (!itemsSpanningFlexible.empty()) {
+      distributeSpaceToFlexibleTracksForItems(dimension, itemsSpanningFlexible);
+    }
+
+    // rive: a nodeless single-cell item grows its flexible track to fit, as
+    // distributing over its one track would.
+    for (size_t i = 0; i < tracks.size(); i++) {
+      auto& track = tracks[i];
+      if (isFlexibleSizingFunction(track.maxSizingFunction) &&
+          isIntrinsicSizingFunction(track.minSizingFunction, containerSize)) {
+        track.baseSize =
+            std::max(track.baseSize, virtualContribution(dimension, i));
+      }
+    }
+  };
+
+  // https://www.w3.org/TR/css-grid-1/#extra-space
+  void distributeExtraSpaceAcrossSpannedTracks(
+      YGDimension dimension,
+      ScratchVector<ItemSizeContribution>& gridItemSizeContributions,
+      AffectedSize affectedSizeType) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto startIndexKey = dimension == YGDimensionWidth ? &GridItem::columnStart
+                                                       : &GridItem::rowStart;
+    auto endIndexKey = dimension == YGDimensionWidth ? &GridItem::columnEnd
+                                                     : &GridItem::rowEnd;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+
+    // 1. Maintain separately for each affected track a planned increase,
+    // initially set to 0. (This prevents the size increases from becoming
+    // order-dependent.) `plannedTracks` is the unique set of affected tracks,
+    // used to apply the planned increase in step 3.
+    ScratchVector<GridTrack*> plannedTracks;
+    for (const auto& itemSizeContribution : gridItemSizeContributions) {
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        if (std::find(plannedTracks.begin(), plannedTracks.end(), track) ==
+            plannedTracks.end()) {
+          plannedTracks.push_back(track);
+          track->plannedIncrease = 0.0f;
+        }
+      }
+    }
+
+    // 2. For each accommodated item, considering only tracks the item spans:
+    for (const auto& itemSizeContribution : gridItemSizeContributions) {
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        track->itemIncurredIncrease = 0.0f;
+        track->frozen = false;
+      }
+
+      // 2.1 Find the space to distribute
+      auto start = itemSizeContribution.item->*startIndexKey;
+      auto end = itemSizeContribution.item->*endIndexKey;
+      float totalSpannedTracksSize = 0.0f;
+      for (size_t i = start; i < end && i < tracks.size(); i++) {
+        auto& track = tracks[i];
+        if (affectedSizeType == AffectedSize::BaseSize) {
+          totalSpannedTracksSize += track.baseSize;
+        } else {
+          // For infinite growth limits, substitute the track's base size
+          totalSpannedTracksSize += track.growthLimit == INFINITY
+              ? track.baseSize
+              : track.growthLimit;
+        }
+        if (i < end - 1) {
+          // gaps are treated as tracks of fixed size. Item can span over gaps.
+          totalSpannedTracksSize += gap;
+        }
+      }
+
+      float spaceToDistribute = std::max(
+          0.0f, itemSizeContribution.sizeContribution - totalSpannedTracksSize);
+      size_t frozenCount = 0;
+
+      // 2.2. Distribute space up to limits
+      while (frozenCount < itemSizeContribution.affectedTracks.size() &&
+             spaceToDistribute > 0.0f &&
+             !inexactEquals(spaceToDistribute, 0.0f)) {
+        auto unfrozenTrackCount =
+            itemSizeContribution.affectedTracks.size() - frozenCount;
+        auto distributionPerTrack =
+            spaceToDistribute / static_cast<float>(unfrozenTrackCount);
+
+        for (auto& track : itemSizeContribution.affectedTracks) {
+          if (track->frozen) {
+            continue;
+          }
+
+          float limit;
+          float affectedSize;
+
+          if (affectedSizeType == AffectedSize::BaseSize) {
+            affectedSize = track->baseSize;
+            limit = track->growthLimit;
+          } else {
+            affectedSize = track->growthLimit;
+            limit = INFINITY;
+            if (track->growthLimit != INFINITY && !track->infinitelyGrowable) {
+              limit = track->growthLimit;
+            }
+
+            // If the affected size was a growth limit and the track is not
+            // marked infinitely growable, then each item-incurred increase will
+            // be zero.
+            if (!track->infinitelyGrowable) {
+              track->frozen = true;
+              frozenCount++;
+              continue;
+            }
+          }
+
+          if (affectedSize + distributionPerTrack +
+                  track->itemIncurredIncrease >
+              limit) {
+            track->frozen = true;
+            frozenCount++;
+            auto increase =
+                limit - affectedSize - track->itemIncurredIncrease;
+            track->itemIncurredIncrease += increase;
+            spaceToDistribute -= increase;
+          } else {
+            track->itemIncurredIncrease += distributionPerTrack;
+            spaceToDistribute -= distributionPerTrack;
+          }
+        }
+      }
+
+      // 2.3. Distribute space to non-affected tracks:
+      // Currently, browsers do not implement this step.
+      // https://github.com/w3c/csswg-drafts/issues/3648
+
+      // 2.4. Distribute space beyond limits
+      if (spaceToDistribute > 0.0f &&
+          !inexactEquals(spaceToDistribute, 0.0f)) {
+        ScratchVector<GridTrack*> tracksToGrowBeyondLimits;
+        for (auto& track : itemSizeContribution.affectedTracks) {
+          if (isIntrinsicSizingFunction(
+                  track->maxSizingFunction, containerSize)) {
+            tracksToGrowBeyondLimits.push_back(track);
+          }
+        }
+
+        // if there are no such tracks, then all affected tracks.
+        if (affectedSizeType == AffectedSize::BaseSize &&
+            tracksToGrowBeyondLimits.empty()) {
+          tracksToGrowBeyondLimits = itemSizeContribution.affectedTracks;
+        }
+
+        while (spaceToDistribute > 0.0f &&
+               !inexactEquals(spaceToDistribute, 0.0f) &&
+               !tracksToGrowBeyondLimits.empty()) {
+          auto unfrozenTrackCount = tracksToGrowBeyondLimits.size();
+          auto distributionPerTrack =
+              spaceToDistribute / static_cast<float>(unfrozenTrackCount);
+          for (auto& track : tracksToGrowBeyondLimits) {
+            track->itemIncurredIncrease += distributionPerTrack;
+            spaceToDistribute -= distributionPerTrack;
+          }
+        }
+      }
+
+      // 2.5. For each affected track, if the track's item-incurred increase is
+      // larger than the track's planned increase set the track's planned
+      // increase to that value.
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        if (track->itemIncurredIncrease > track->plannedIncrease) {
+          track->plannedIncrease = track->itemIncurredIncrease;
+        }
+      }
+    }
+
+    // 3. Update the tracks affected sizes
+    for (auto* track : plannedTracks) {
+      const float increase = track->plannedIncrease;
+      if (affectedSizeType == AffectedSize::BaseSize) {
+        track->baseSize += increase;
+      } else {
+        if (track->growthLimit == INFINITY) {
+          track->growthLimit = track->baseSize + increase;
+          track->infinitelyGrowable = true;
+        } else {
+          track->growthLimit += increase;
+        }
+      }
+    }
+  }
+
+  // https://www.w3.org/TR/css-grid-1/#extra-space
+  // Similar to distribute extra space for content sized tracks, but distributes
+  // space considering flex factors.
+  void distributeSpaceToFlexibleTracksForItems(
+      YGDimension dimension,
+      const ScratchVector<ItemSizeContribution>& gridItemSizeContributions) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+    auto startIndexKey = dimension == YGDimensionWidth ? &GridItem::columnStart
+                                                       : &GridItem::rowStart;
+    auto endIndexKey = dimension == YGDimensionWidth ? &GridItem::columnEnd
+                                                     : &GridItem::rowEnd;
+
+    // Step 1: Maintain planned increase for each affected track
+    ScratchVector<GridTrack*> plannedTracks;
+    for (const auto& itemSizeContribution : gridItemSizeContributions) {
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        if (std::find(plannedTracks.begin(), plannedTracks.end(), track) ==
+            plannedTracks.end()) {
+          plannedTracks.push_back(track);
+          track->plannedIncrease = 0.0f;
+        }
+      }
+    }
+
+    // Step 2: For each item
+    for (const auto& itemSizeContribution : gridItemSizeContributions) {
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        track->itemIncurredIncrease = 0.0f;
+      }
+
+      // 2.1 Find space to distribute
+      auto start = itemSizeContribution.item->*startIndexKey;
+      auto end = itemSizeContribution.item->*endIndexKey;
+      float totalSpannedTracksSize = 0.0f;
+      for (size_t i = start; i < end && i < tracks.size(); i++) {
+        totalSpannedTracksSize += tracks[i].baseSize;
+        if (i < end - 1) {
+          // gaps are treated as tracks of fixed size. Item can span over gaps.
+          totalSpannedTracksSize += gap;
+        }
+      }
+
+      float spaceToDistribute = std::max(
+          0.0f, itemSizeContribution.sizeContribution - totalSpannedTracksSize);
+
+      float sumOfFlexFactors = 0.0f;
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        sumOfFlexFactors += track->maxSizingFunction.value().unwrap();
+      }
+
+      if (sumOfFlexFactors > 0.0f) {
+        // Distribute space by flex ratios (normalized)
+        for (auto& track : itemSizeContribution.affectedTracks) {
+          auto flexFactor = track->maxSizingFunction.value().unwrap();
+          auto increase = spaceToDistribute * flexFactor / sumOfFlexFactors;
+          track->itemIncurredIncrease += increase;
+        }
+      } else {
+        // All flex factors are zero, distribute equally
+        auto equalShare = spaceToDistribute /
+            static_cast<float>(itemSizeContribution.affectedTracks.size());
+        for (auto& track : itemSizeContribution.affectedTracks) {
+          track->itemIncurredIncrease += equalShare;
+        }
+      }
+
+      for (auto& track : itemSizeContribution.affectedTracks) {
+        if (track->itemIncurredIncrease > track->plannedIncrease) {
+          track->plannedIncrease = track->itemIncurredIncrease;
+        }
+      }
+    }
+
+    // Step 3: Update the tracks' affected sizes by adding in the planned
+    // increase
+    for (auto* track : plannedTracks) {
+      track->baseSize += track->plannedIncrease;
+    }
+  };
+
+  // 11.6. Maximize Tracks
+  // https://www.w3.org/TR/css-grid-1/#algo-grow-tracks
+  void maximizeTrackSizes(YGDimension dimension) {
+    // Fast path - if tracks are fixed-sized, skip below steps
+    if (hasOnlyFixedTracks) {
+      return;
+    }
+
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+
+    // Save original base sizes before maximization
+    ScratchVector<float> originalBaseSizes;
+    originalBaseSizes.reserve(tracks.size());
+    for (auto& track : tracks) {
+      originalBaseSizes.push_back(track.baseSize);
+    }
+
+    // First attempt with the original container inner size
+    distributeFreeSpaceToTracks(dimension, containerSize);
+
+    // Check if this would cause the grid to be larger than the grid container's
+    // inner size as limited by its max-width/height
+    auto totalGridSize = getTotalBaseSize(dimension);
+
+    // Get the max constraint for this dimension
+    const float paddingAndBorder = dimension == YGDimensionWidth
+        ? paddingAndBorderForAxis(
+              node, YGFlexDirectionRow, direction, ownerWidth)
+        : paddingAndBorderForAxis(
+              node, YGFlexDirectionColumn, direction, ownerWidth);
+
+    auto maxContainerBorderBoxSize = node->style().resolvedMaxDimension(
+        direction,
+        dimension,
+        dimension == YGDimensionWidth ? ownerWidth : ownerHeight,
+        ownerWidth);
+
+    auto maxContainerInnerSize = maxContainerBorderBoxSize.isDefined()
+        ? maxContainerBorderBoxSize.unwrap() - paddingAndBorder
+        : YGUndefined;
+
+    if (isDefined(maxContainerInnerSize)) {
+      if (totalGridSize > maxContainerInnerSize) {
+        // Redo this step, treating the available grid space as equal to the
+        // grid container's inner size when it's sized to its max-width/height
+        // Reset base sizes to their values before this maximize step
+        for (size_t i = 0; i < tracks.size(); i++) {
+          tracks[i].baseSize = originalBaseSizes[i];
+        }
+
+        distributeFreeSpaceToTracks(dimension, maxContainerInnerSize);
+      }
+    }
+  }
+
+  // Distribute space in maximizeTrackSizes step
+  // https://www.w3.org/TR/css-grid-1/#algo-grow-tracks
+  void distributeFreeSpaceToTracks(
+      YGDimension dimension,
+      float targetAvailableSize) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto sizingMode =
+        dimension == YGDimensionWidth ? widthSizingMode : heightSizingMode;
+    float freeSpace = 0.0f;
+    if (isDefined(targetAvailableSize)) {
+      auto totalBaseSize = getTotalBaseSize(dimension);
+      freeSpace = std::max(0.0f, targetAvailableSize - totalBaseSize);
+    }
+
+    // For the purpose of this step: if sizing the grid container under a
+    // max-content constraint, the free space is infinite; if sizing under a
+    // min-content constraint, the free space is zero.
+    if (sizingMode == YGMeasureModeUndefined) {
+      freeSpace = INFINITY;
+    }
+
+    // If the free space is positive, distribute it equally to the base sizes of
+    // all tracks, freezing tracks as they reach their growth limits (and
+    // continuing to grow the unfrozen tracks as needed).
+    if (freeSpace > 0.0f && !inexactEquals(freeSpace, 0.0f)) {
+      // growth limit will not be Infinite in maximizeTrackSizes step since we
+      // had set Infinite growth limit to base size in
+      // resolveIntrinsicTrackSizes's last step -
+      // https://www.w3.org/TR/css-grid-1/#algo-finite-growth
+      if (freeSpace == INFINITY) {
+        for (auto& track : tracks) {
+          track.baseSize = track.growthLimit;
+        }
+      } else {
+        for (auto& track : tracks) {
+          track.frozen = false;
+        }
+        size_t frozenCount = 0;
+        auto extraSpace = freeSpace;
+
+        while (frozenCount < tracks.size() && extraSpace > 0.0f &&
+               !inexactEquals(extraSpace, 0.0f)) {
+          auto unfrozenTrackCount = tracks.size() - frozenCount;
+          auto distributionPerTrack =
+              extraSpace / static_cast<float>(unfrozenTrackCount);
+
+          for (auto& track : tracks) {
+            if (track.frozen) {
+              continue;
+            }
+
+            // Check if adding this distribution would exceed the growth limit
+            if (track.baseSize + distributionPerTrack > track.growthLimit) {
+              auto increase =
+                  std::max(0.0f, track.growthLimit - track.baseSize);
+              track.baseSize += increase;
+              extraSpace -= increase;
+              track.frozen = true;
+              frozenCount++;
+            } else {
+              track.baseSize += distributionPerTrack;
+              extraSpace -= distributionPerTrack;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 11.7. Expand Flexible Tracks
+  // https://www.w3.org/TR/css-grid-1/#algo-flex-tracks
+  void expandFlexibleTracks(YGDimension dimension) {
+    if (!hasFlexibleTracks) {
+      return;
+    }
+
+    auto& gridTracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+
+    float freeSpace = calculateFreeSpace(dimension);
+
+    float flexFraction = 0.0f;
+    // If the free space is zero or if sizing the grid container under a
+    // min-content constraint:
+    if (inexactEquals(freeSpace, 0.0f)) {
+      flexFraction = 0.0f;
+    }
+    // Otherwise, if the free space is a definite length:
+    // The used flex fraction is the result of finding the size of an fr using
+    // all of the grid tracks and a space to fill of the available grid space.
+    else if (isDefined(freeSpace)) {
+      flexFraction = findFrSize(
+          dimension,
+          0,
+          gridTracks.size(),
+          containerSize,
+          ScratchVector<GridTrack*>());
+    }
+    // Otherwise, if the free space is an indefinite length:
+    // The used flex fraction is the maximum of:
+    // For each flexible track, if the flexible track's flex factor is greater
+    // than one, the result of dividing the track's base size by its flex
+    // factor; otherwise, the track's base size. For each grid item that crosses
+    // a flexible track, the result of finding the size of an fr using all the
+    // grid tracks that the item crosses and a space to fill of the item’s
+    // max-content contribution.
+    else {
+      for (auto& track : gridTracks) {
+        if (isFlexibleSizingFunction(track.maxSizingFunction) &&
+            track.maxSizingFunction.value().isDefined()) {
+          float flexFactor = track.maxSizingFunction.value().unwrap();
+          if (flexFactor > 1.0f) {
+            flexFraction = std::max(flexFraction, track.baseSize / flexFactor);
+          } else {
+            flexFraction = std::max(flexFraction, track.baseSize);
+          }
+        }
+      }
+
+      auto startIndexKey = dimension == YGDimensionWidth
+          ? &GridItem::columnStart
+          : &GridItem::rowStart;
+      auto endIndexKey = dimension == YGDimensionWidth ? &GridItem::columnEnd
+                                                       : &GridItem::rowEnd;
+
+      for (auto& item : gridItems) {
+        if (!item.crossesFlexibleTrack(dimension)) {
+          continue;
+        }
+        auto itemConstraints = calculateItemConstraints(item, dimension);
+        auto itemMaxContentContribution =
+            maxContentContribution(item, dimension, itemConstraints);
+        flexFraction = std::max(
+            flexFraction,
+            findFrSize(
+                dimension,
+                item.*startIndexKey,
+                item.*endIndexKey,
+                itemMaxContentContribution,
+                ScratchVector<GridTrack*>()));
+      }
+
+      // rive: nodeless single-cell items in flexible tracks.
+      for (size_t i = 0; i < gridTracks.size(); i++) {
+        float contribution = virtualContribution(dimension, i);
+        if (contribution > 0.0f &&
+            isFlexibleSizingFunction(gridTracks[i].maxSizingFunction)) {
+          flexFraction = std::max(
+              flexFraction,
+              findFrSize(
+                  dimension,
+                  i,
+                  i + 1,
+                  contribution,
+                  ScratchVector<GridTrack*>()));
+        }
+      }
+    }
+
+    // If using this flex fraction would cause the grid to be smaller than the
+    // grid container's min-width/height (or larger than the grid container's
+    // max-width/height), then redo this step, treating the free space as
+    // definite and the available grid space as equal to the grid container's
+    // inner size when it's sized to its min-width/height (max-width/height).
+
+    // Calculate what the grid size would be with this flex fraction
+    float newTotalSize = 0.0f;
+    for (size_t i = 0; i < gridTracks.size(); i++) {
+      auto& track = gridTracks[i];
+      if (isFlexibleSizingFunction(track.maxSizingFunction) &&
+          track.maxSizingFunction.value().isDefined()) {
+        float flexFactor = track.maxSizingFunction.value().unwrap();
+        newTotalSize += std::max(track.baseSize, flexFraction * flexFactor);
+      } else {
+        newTotalSize += track.baseSize;
+      }
+      if (i < gridTracks.size() - 1) {
+        newTotalSize += gap;
+      }
+    }
+
+    // Check min constraint for this dimension
+    const float paddingAndBorder = dimension == YGDimensionWidth
+        ? paddingAndBorderForAxis(
+              node, YGFlexDirectionRow, direction, ownerWidth)
+        : paddingAndBorderForAxis(
+              node, YGFlexDirectionColumn, direction, ownerWidth);
+    auto minContainerOuter = node->style().resolvedMinDimension(
+        direction,
+        dimension,
+        dimension == YGDimensionWidth ? ownerWidth : ownerHeight,
+        ownerWidth);
+    auto minContainerSize = minContainerOuter.isDefined()
+        ? minContainerOuter.unwrap() - paddingAndBorder
+        : YGUndefined;
+
+    if (isDefined(minContainerSize)) {
+      if (newTotalSize < minContainerSize) {
+        // Redo with min constraint
+        flexFraction = findFrSize(
+            dimension,
+            0,
+            gridTracks.size(),
+            minContainerSize,
+            ScratchVector<GridTrack*>());
+      }
+    }
+
+    // Get the max constraint for this dimension
+    auto maxContainerOuter = node->style().resolvedMaxDimension(
+        direction,
+        dimension,
+        dimension == YGDimensionWidth ? ownerWidth : ownerHeight,
+        ownerWidth);
+
+    auto maxContainerSize = maxContainerOuter.isDefined()
+        ? maxContainerOuter.unwrap() - paddingAndBorder
+        : YGUndefined;
+
+    if (isDefined(maxContainerSize)) {
+      if (newTotalSize > maxContainerSize) {
+        // Redo with max constraint
+        flexFraction = findFrSize(
+            dimension,
+            0,
+            gridTracks.size(),
+            maxContainerSize,
+            ScratchVector<GridTrack*>());
+      }
+    }
+
+    // For each flexible track, if the product of the used flex fraction and the
+    // track's flex factor is greater than the track's base size, set its base
+    // size to that product.
+    for (auto& track : gridTracks) {
+      if (isFlexibleSizingFunction(track.maxSizingFunction) &&
+          track.maxSizingFunction.value().isDefined()) {
+        float flexFactor = track.maxSizingFunction.value().unwrap();
+        float newSize = flexFraction * flexFactor;
+        if (newSize > track.baseSize) {
+          track.baseSize = newSize;
+        }
+      }
+    }
+  };
+
+  // 11.7.1. Find the Size of an fr
+  // https://www.w3.org/TR/css-grid-1/#algo-find-fr-size
+  float findFrSize(
+      YGDimension dimension,
+      size_t startIndex,
+      size_t endIndex,
+      float spaceToFill,
+      const ScratchVector<GridTrack*>& nonFlexibleTracks) {
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+    auto leftoverSpace = spaceToFill;
+    auto flexFactorSum = 0.0f;
+    ScratchVector<GridTrack*> flexibleTracks;
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+
+    for (size_t i = startIndex; i < endIndex; i++) {
+      auto& track = tracks[i];
+      // Let leftover space be the space to fill minus the base sizes of the
+      // non-flexible grid tracks.
+      if (i < endIndex - 1) {
+        // gap is treated as a non-flexible track
+        leftoverSpace -= gap;
+      }
+
+      if (!isFlexibleSizingFunction(track.maxSizingFunction) ||
+          std::find(
+              nonFlexibleTracks.begin(), nonFlexibleTracks.end(), &track) !=
+              nonFlexibleTracks.end()) {
+        leftoverSpace -= track.baseSize;
+      }
+      // Let flex factor sum be the sum of the flex factors of the flexible
+      // tracks.
+      else if (
+          track.maxSizingFunction.isStretch() &&
+          track.maxSizingFunction.value().isDefined()) {
+        flexFactorSum += track.maxSizingFunction.value().unwrap();
+        flexibleTracks.push_back(&track);
+      }
+    }
+
+    // If this value is less than 1, set it to 1 instead.
+    if (flexFactorSum < 1.0f) {
+      flexFactorSum = 1.0f;
+    }
+
+    // Let the hypothetical fr size be the leftover space divided by the flex
+    // factor sum.
+    auto hypotheticalFrSize = leftoverSpace / flexFactorSum;
+    // If the product of the hypothetical fr size and a flexible track's flex
+    // factor is less than the track's base size, restart this algorithm
+    // treating all such tracks as inflexible.
+    ScratchVector<GridTrack*> inflexibleTracks;
+    for (auto& track : flexibleTracks) {
+      if (track->maxSizingFunction.isStretch() &&
+          track->maxSizingFunction.value().isDefined()) {
+        float flexFactor = track->maxSizingFunction.value().unwrap();
+        if (hypotheticalFrSize * flexFactor < track->baseSize) {
+          inflexibleTracks.push_back(track);
+        }
+      }
+    }
+
+    // restart this algorithm treating all such tracks as inflexible.
+    if (!inflexibleTracks.empty()) {
+      inflexibleTracks.insert(
+          inflexibleTracks.end(),
+          nonFlexibleTracks.begin(),
+          nonFlexibleTracks.end());
+      return findFrSize(
+          dimension, startIndex, endIndex, spaceToFill, inflexibleTracks);
+    }
+
+    return hypotheticalFrSize;
+  }
+
+  // 11.8. Stretch auto Tracks
+  // https://www.w3.org/TR/css-grid-1/#algo-stretch
+  void stretchAutoTracks(YGDimension dimension) {
+    // Fast path - if tracks are fixed-sized, skip below steps
+    if (hasOnlyFixedTracks) {
+      return;
+    }
+
+    auto& gridTracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+
+    // When the content-distribution property of the grid container is normal or
+    // stretch in this axis, this step expands tracks that have an auto max
+    // track sizing function by dividing any remaining positive, definite free
+    // space equally amongst them. If the free space is indefinite, but the grid
+    // container has a definite min-width/height, use that size to calculate the
+    // free space for this step instead.
+    auto shouldStretch = false;
+    if (dimension == YGDimensionWidth) {
+      shouldStretch = node->style().justifyContent() == YGJustifyStretch;
+    } else {
+      shouldStretch = node->style().alignContent() == YGAlignStretch;
+    }
+
+    if (shouldStretch) {
+      // Count only auto tracks for distribution
+      ScratchVector<GridTrack*> autoTracks;
+      for (auto& track : gridTracks) {
+        if (isAutoSizingFunction(track.maxSizingFunction, containerSize)) {
+          autoTracks.push_back(&track);
+        }
+      }
+
+      if (autoTracks.empty()) {
+        return;
+      }
+
+      float freeSpace = calculateFreeSpace(dimension);
+
+      // If the free space is indefinite, but the grid container has a definite
+      // min-width/height, use that size to calculate the free space for this
+      // step instead.
+      if (!isDefined(freeSpace)) {
+        const float paddingAndBorder = dimension == YGDimensionWidth
+            ? paddingAndBorderForAxis(
+                  node, YGFlexDirectionRow, direction, ownerWidth)
+            : paddingAndBorderForAxis(
+                  node, YGFlexDirectionColumn, direction, ownerWidth);
+
+        auto minContainerBorderBoxSize = node->style().resolvedMinDimension(
+            direction,
+            dimension,
+            dimension == YGDimensionWidth ? ownerWidth : ownerHeight,
+            ownerWidth);
+        auto minContainerInnerSize = minContainerBorderBoxSize.isDefined()
+            ? minContainerBorderBoxSize.unwrap() - paddingAndBorder
+            : YGUndefined;
+
+        if (isDefined(minContainerInnerSize)) {
+          auto totalBaseSize = getTotalBaseSize(dimension);
+          freeSpace = std::max(0.0f, minContainerInnerSize - totalBaseSize);
+        }
+      }
+
+      if (isDefined(freeSpace) && freeSpace > 0.0f &&
+          !inexactEquals(freeSpace, 0.0f)) {
+        // Divide free space equally among auto tracks only
+        auto freeSpacePerAutoTrack =
+            freeSpace / static_cast<float>(autoTracks.size());
+        for (auto& track : autoTracks) {
+          track->baseSize += freeSpacePerAutoTrack;
+        }
+      }
+    }
+  };
+
+  // https://www.w3.org/TR/css-grid-1/#free-space
+  float virtualContribution(YGDimension dimension, size_t track) const {
+    return node->gridVirtualContribution(
+        dimension,
+        static_cast<int32_t>(track) +
+            (dimension == YGDimensionWidth ? firstColumnLine : firstRowLine));
+  }
+
+  float calculateFreeSpace(YGDimension dimension) {
+    float freeSpace = YGUndefined;
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    if (isDefined(containerSize)) {
+      auto totalBaseSize = getTotalBaseSize(dimension);
+      freeSpace = std::max(0.0f, containerSize - totalBaseSize);
+    }
+
+    return freeSpace;
+  }
+
+  // rive: whether [dimension] follows the other one through an explicit
+  // aspect ratio axis.
+  static bool derivesFromAspectRatioAnchor(
+      const GridItem& item,
+      YGDimension dimension) {
+    const auto& style = item.node->getStyle();
+    if (!style.aspectRatio().isDefined() ||
+        style.aspectRatio().unwrap() <= 0.0f) {
+      return false;
+    }
+    switch (style.aspectRatioAxis()) {
+      case YGAspectRatioAxisWidth:
+        return dimension == YGDimensionHeight;
+      case YGAspectRatioAxisHeight:
+        return dimension == YGDimensionWidth;
+      default:
+        return false;
+    }
+  }
+
+  float measureItem(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& constraints) {
+    YGLayoutNodeInternal(
+        item.node,
+        constraints.width,
+        constraints.height,
+        node->getLayout().direction(),
+        constraints.widthSizingMode,
+        constraints.heightSizingMode,
+        constraints.containingBlockWidth,
+        constraints.containingBlockHeight,
+        false,
+        LayoutPassReason::kMeasureChild,
+            config,
+        layoutMarkerData,
+            layoutContext,
+        depth + 1,
+        generationCount);
+
+    float measured = item.node->getLayout().measuredDimensions[dimension];
+    // rive: a track asking for the dimension that follows an explicit aspect
+    // ratio axis gets the size derived from the anchor it just measured,
+    // bounded as the final layout will bound it -- not the authored size,
+    // which the layout ignores.
+    if (derivesFromAspectRatioAnchor(item, dimension)) {
+      const bool isWidth = dimension == YGDimensionWidth;
+      const YGStyle& lockedStyle = item.node->getStyle();
+      const float ratio = lockedStyle.aspectRatio().unwrap();
+      const float anchor = item.node->getLayout().measuredDimensions
+                               [isWidth ? YGDimensionHeight : YGDimensionWidth];
+      measured = boundAxis(
+          item.node,
+          isWidth ? YGFlexDirectionRow : YGFlexDirectionColumn,
+          node->getLayout().direction(),
+          isWidth ? anchor * ratio : anchor / ratio,
+          isWidth ? constraints.containingBlockWidth
+                  : constraints.containingBlockHeight,
+          constraints.containingBlockWidth);
+    }
+    return measured;
+  }
+
+  // rive: min-content, by laying the item out in zero space on [dimension] and
+  // seeing how wide it still insists on being. Yoga has no min-content
+  // constraint, so this is the nearest equivalent: everything that can shrink
+  // or wrap does, and what is left is the item's irreducible size.
+  //
+  // Details this depends on:
+  //  - performLayout must be true. The !performLayout fast path
+  //    (YGNodeFixedSizeSetMeasuredDimensions) short-circuits any AtMost(<= 0)
+  //    measurement straight to zero, which would floor every track at nothing.
+  //    It has to be a layout all the way down, too: a measure pass hands it to
+  //    every non-stretch descendant, and skips flex resolution (and with it
+  //    min/max clamping) wherever the cross axis is exact.
+  //  - the probe's layouts are cached apart from cachedLayout, among the
+  //    measurements (YGCachedMeasurement::layout). Sharing cachedLayout with
+  //    the final layout, each evicted the other on every node of the subtree,
+  //    and nothing inside a stack or grid item was ever reused, on any frame.
+  //    A clean subtree now answers the next probe without being visited.
+  //  - what the probe's layout writes into the subtree is put back afterwards
+  //    (YGProbeSavesMark), and a node it lays out is laid out again after it,
+  //    so a final layout that answers from cache finds the results it cached,
+  //    not the probe's.
+  //  - an item with a definite length in this axis is measured normally. Its
+  //    min-content contribution is that definite size, not its content's, and
+  //    the caller's constraints already say Exactly for it.
+  float measureItemMinContent(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& constraints) {
+    const bool isWidth = dimension == YGDimensionWidth;
+    const auto containingBlockSize = isWidth
+        ? constraints.containingBlockWidth
+        : constraints.containingBlockHeight;
+    // rive: a dimension that follows an explicit aspect ratio axis has no
+    // min-content of its own; it is whatever the anchor's measure derives.
+    if (item.node->hasDefiniteLength(dimension, containingBlockSize) ||
+        derivesFromAspectRatioAnchor(item, dimension)) {
+      return measureItem(item, dimension, constraints);
+    }
+
+    // A measure func that clamps to the space it is offered would answer
+    // this AtMost(0) with zero and floor the track at nothing. Raise the flag
+    // so it can recognise the probe and report its content instead.
+    const size_t saves = YGProbeSavesMark();
+    config->beginMinContentProbe();
+    YGLayoutNodeInternal(
+        item.node,
+        isWidth ? 0.0f : constraints.width,
+        isWidth ? constraints.height : 0.0f,
+        node->getLayout().direction(),
+        isWidth ? YGMeasureModeAtMost : constraints.widthSizingMode,
+        isWidth ? constraints.heightSizingMode : YGMeasureModeAtMost,
+        constraints.containingBlockWidth,
+        constraints.containingBlockHeight,
+        true,
+        LayoutPassReason::kMeasureChild,
+        config,
+        layoutMarkerData,
+        layoutContext,
+        depth + 1,
+        generationCount);
+    config->endMinContentProbe();
+
+    const float contribution =
+        item.node->getLayout().measuredDimensions[dimension];
+    // What the probe laid out goes back as it was: see YGProbeSavesMark.
+    YGProbeSavesRestore(saves);
+    // The item's next layout is still done afresh rather than from cache, as
+    // it always was. Its children answer from their own entries, so this
+    // costs the item's own pass, not its subtree's.
+    item.node->getLayout().cachedLayout = YGCachedMeasurement();
+    return contribution;
+  }
+
+  // There are 4 size contribution types used for intrinsic track sizing
+  // 1. minContentContribution - item's min-content size + margins
+  // 2. maxContentContribution - item's max-content size + margins
+  // 3. minimumContribution - smallest outer size
+  // 4. limitedMinContentContribution - min-content clamped by fixed track
+  // limits
+
+  float minContentContribution(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints) {
+    auto marginForAxis = item.node->style().computeMarginForAxis(
+        dimension == YGDimensionWidth ? YGFlexDirectionRow
+                                      : YGFlexDirectionColumn,
+        itemConstraints.containingBlockWidth);
+
+    float contribution =
+        measureItemMinContent(item, dimension, itemConstraints) + marginForAxis;
+
+    return contribution;
+  }
+
+  float maxContentContribution(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints) {
+    auto marginForAxis = item.node->style().computeMarginForAxis(
+        dimension == YGDimensionWidth ? YGFlexDirectionRow
+                                      : YGFlexDirectionColumn,
+        itemConstraints.containingBlockWidth);
+
+    float contribution =
+        measureItem(item, dimension, itemConstraints) + marginForAxis;
+
+    return contribution;
+  }
+
+  // Minimum contribution: the smallest outer size the item can have
+  // https://www.w3.org/TR/css-grid-1/#minimum-contribution
+  float minimumContribution(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    float containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                        : containerInnerHeight;
+    auto containingBlockSize = dimension == YGDimensionWidth
+        ? itemConstraints.containingBlockWidth
+        : itemConstraints.containingBlockHeight;
+
+    auto marginForAxis = item.node->style().computeMarginForAxis(
+        dimension == YGDimensionWidth ? YGFlexDirectionRow
+                                      : YGFlexDirectionColumn,
+        itemConstraints.containingBlockWidth);
+
+    auto preferredSize = item.node->style().dimension(dimension);
+    auto minSize = item.node->style().minDimension(dimension);
+
+    float contribution = 0.0f;
+
+    // If preferred size is definite (not auto/percent), use min-content
+    // contribution
+    if (!preferredSize.isAuto() && !preferredSize.isPercent()) {
+      return minContentContribution(item, dimension, itemConstraints);
+    }
+
+    // If explicit min-size is set, use it
+    if (minSize.isDefined() && !minSize.isAuto()) {
+      auto resolvedMinSize = minSize.resolve(containingBlockSize);
+      contribution = resolvedMinSize.unwrap() + marginForAxis;
+    }
+    // Otherwise compute automatic minimum size
+    else {
+      contribution =
+          automaticMinimumSize(
+              item, dimension, itemConstraints, tracks, containerSize) +
+          marginForAxis;
+    }
+
+    return contribution;
+  }
+
+  // https://www.w3.org/TR/css-grid-1/#min-size-auto
+  float automaticMinimumSize(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints,
+      const ScratchVector<GridTrack>& tracks,
+      float containerSize) {
+    auto overflow = item.node->style().overflow();
+    size_t startIndex =
+        dimension == YGDimensionWidth ? item.columnStart : item.rowStart;
+    size_t endIndex =
+        dimension == YGDimensionWidth ? item.columnEnd : item.rowEnd;
+
+    // Check its computed overflow is not a scrollable overflow value
+    bool isScrollContainer =
+        overflow == YGOverflowScroll || overflow == YGOverflowHidden;
+    if (isScrollContainer) {
+      return 0.0f;
+    }
+
+    // Check if it spans at least one track in that axis whose min track sizing
+    // function is auto
+    bool spansAutoMinTrack = false;
+    for (size_t i = startIndex; i < endIndex; i++) {
+      // TODO: check if this should also consider percentage auto behaving
+      // tracks
+      if (tracks[i].minSizingFunction.isAuto()) {
+        spansAutoMinTrack = true;
+        break;
+      }
+    }
+    if (!spansAutoMinTrack) {
+      return 0.0f;
+    }
+
+    // Check if it spans more than one track in that axis, none of those tracks
+    // are flexible
+    bool spansMultipleTracks = (endIndex - startIndex) > 1;
+    if (spansMultipleTracks && item.crossesFlexibleTrack(dimension)) {
+      return 0.0f;
+    }
+
+    return contentBasedMinimum(
+        item, dimension, itemConstraints, tracks, containerSize);
+  }
+
+  // https://www.w3.org/TR/css-grid-1/#content-based-minimum-size
+  float contentBasedMinimum(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints,
+      const ScratchVector<GridTrack>& tracks,
+      float containerSize) {
+    // rive: min-content, not max-content. This is the floor under a 1fr track,
+    // so measuring the item unsqueezed grew the track past the container
+    // whenever the content could have reflowed.
+    float result = measureItemMinContent(item, dimension, itemConstraints);
+    // Clamp by fixed track limit if all spanned tracks have fixed max sizing
+    // function
+    auto fixedLimit =
+        computeFixedTracksLimit(item, dimension, tracks, containerSize);
+    if (isDefined(fixedLimit)) {
+      result = std::min(result, fixedLimit);
+    }
+
+    // Clamp by max-size if definite
+    auto containingBlockSize = dimension == YGDimensionWidth
+        ? itemConstraints.containingBlockWidth
+        : itemConstraints.containingBlockHeight;
+    auto maxSize = item.node->style().maxDimension(dimension);
+    if (maxSize.isDefined()) {
+      auto resolvedMaxSize = maxSize.resolve(containingBlockSize);
+      if (resolvedMaxSize.isDefined()) {
+        result = std::min(result, resolvedMaxSize.unwrap());
+      }
+    }
+
+    return result;
+  }
+
+  // https://www.w3.org/TR/css-grid-1/#limited-contribution
+  float limitedMinContentContribution(
+      const GridItem& item,
+      YGDimension dimension,
+      const ItemConstraint& itemConstraints) {
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    float containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                        : containerInnerHeight;
+
+    auto fixedLimit =
+        computeFixedTracksLimit(item, dimension, tracks, containerSize);
+    auto minContent = minContentContribution(item, dimension, itemConstraints);
+    auto minimum = minimumContribution(item, dimension, itemConstraints);
+
+    if (isDefined(fixedLimit)) {
+      return std::max(std::min(minContent, fixedLimit), minimum);
+    }
+
+    return std::max(minContent, minimum);
+  }
+
+  float computeFixedTracksLimit(
+      const GridItem& item,
+      YGDimension dimension,
+      const ScratchVector<GridTrack>& tracks,
+      float containerSize) {
+    size_t startIndex =
+        dimension == YGDimensionWidth ? item.columnStart : item.rowStart;
+    size_t endIndex =
+        dimension == YGDimensionWidth ? item.columnEnd : item.rowEnd;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+
+    float limit = 0.0f;
+    for (size_t i = startIndex; i < endIndex; i++) {
+      if (!isFixedSizingFunction(tracks[i].maxSizingFunction, containerSize)) {
+        return YGUndefined;
+      }
+      auto resolved = tracks[i].maxSizingFunction.resolve(containerSize);
+      if (resolved.isDefined()) {
+        limit += resolved.unwrap();
+      }
+      if (i < endIndex - 1) {
+        limit += gap;
+      }
+    }
+    return limit;
+  }
+
+  static bool isFixedSizingFunction(
+      const StyleSizeLength& sizingFunction,
+      float referenceLength) {
+    return sizingFunction.isDefined() &&
+        sizingFunction.resolve(referenceLength).isDefined();
+  }
+
+  static bool isIntrinsicSizingFunction(
+      const StyleSizeLength& sizingFunction,
+      float referenceLength) {
+    return isAutoSizingFunction(sizingFunction, referenceLength);
+  }
+
+  static bool isAutoSizingFunction(
+      const StyleSizeLength& sizingFunction,
+      float referenceLength) {
+    return sizingFunction.isAuto() ||
+        (sizingFunction.isPercent() && !isDefined(referenceLength));
+  }
+
+  static bool isFlexibleSizingFunction(const StyleSizeLength& sizingFunction) {
+    return sizingFunction.isStretch();
+  }
+
+  static bool isPercentageSizingFunction(
+      const StyleSizeLength& sizingFunction) {
+    return sizingFunction.isPercent();
+  }
+
+  float getTotalBaseSize(YGDimension dimension) {
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    const auto& tracks =
+        dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+
+    float totalBaseSize = 0.0f;
+    for (size_t i = 0; i < tracks.size(); i++) {
+      totalBaseSize += tracks[i].baseSize;
+      if (i < tracks.size() - 1) {
+        totalBaseSize += gap;
+      }
+    }
+    return totalBaseSize;
+  }
+
+  bool hasPercentageTracks(YGDimension dimension) const {
+    return dimension == YGDimensionWidth ? hasPercentageColumnTracks
+                                         : hasPercentageRowTracks;
+  }
+
+  ContentDistribution calculateContentDistribution(
+      YGDimension dimension,
+      float freeSpace) {
+    auto numTracks = static_cast<float>(
+        dimension == YGDimensionWidth ? columnTracks.size() : rowTracks.size());
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto baseGap =
+        node->style().computeGapForDimension(dimension, containerSize);
+
+    ContentDistribution result;
+    result.effectiveGap = baseGap;
+
+    if (inexactEquals(freeSpace, 0.0f)) {
+      return result;
+    }
+
+    if (dimension == YGDimensionWidth) {
+      const YGJustify justifyContent = freeSpace > 0.0f
+          ? node->style().justifyContent()
+          : fallbackAlignment(node->style().justifyContent());
+
+      switch (justifyContent) {
+        case YGJustifyCenter:
+          result.startOffset = freeSpace / 2.0f;
+          break;
+
+        case YGJustifyEnd:
+          result.startOffset = freeSpace;
+          break;
+
+        case YGJustifySpaceBetween:
+          if (numTracks > 1) {
+            result.betweenTracksOffset = freeSpace / (numTracks - 1);
+          }
+          break;
+
+        case YGJustifySpaceAround:
+          if (numTracks > 0) {
+            result.betweenTracksOffset = freeSpace / numTracks;
+            result.startOffset = result.betweenTracksOffset / 2.0f;
+          }
+          break;
+
+        case YGJustifySpaceEvenly:
+          result.betweenTracksOffset = freeSpace / (numTracks + 1);
+          result.startOffset = result.betweenTracksOffset;
+          break;
+
+        case YGJustifyStart:
+        case YGJustifyFlexStart:
+        case YGJustifyFlexEnd:
+        case YGJustifyStretch:
+        case YGJustifyAuto:
+        default:
+          break;
+      }
+    } else {
+      const auto alignContent = freeSpace > 0.0f
+          ? node->style().alignContent()
+          : fallbackAlignment(node->style().alignContent());
+      switch (alignContent) {
+        case YGAlignCenter:
+          // content center works with negative free space too
+          // refer grid_align_content_center_negative_space_gap fixture
+          result.startOffset = freeSpace / 2.0f;
+          break;
+        case YGAlignEnd:
+          result.startOffset = freeSpace;
+          break;
+        case YGAlignSpaceBetween:
+          if (numTracks > 1) {
+            // negative free space is not distributed with space between,
+            // checkout grid_align_content_space_between_negative_space_gap
+            // fixture
+            result.betweenTracksOffset =
+                std::max(0.0f, freeSpace / (numTracks - 1));
+          }
+          break;
+
+        case YGAlignSpaceAround:
+          if (numTracks > 0) {
+            result.betweenTracksOffset = freeSpace / numTracks;
+            result.startOffset = result.betweenTracksOffset / 2.0f;
+          }
+          break;
+
+        case YGAlignSpaceEvenly:
+          result.betweenTracksOffset = freeSpace / (numTracks + 1);
+          result.startOffset = result.betweenTracksOffset;
+          break;
+
+        case YGAlignAuto:
+        case YGAlignFlexStart:
+        case YGAlignFlexEnd:
+        case YGAlignStretch:
+        case YGAlignBaseline:
+        case YGAlignStart:
+        default:
+          break;
+      }
+    }
+
+    result.effectiveGap = baseGap + result.betweenTracksOffset;
+    return result;
+  }
+
+  ItemConstraint calculateItemConstraints(
+      const GridItem& item,
+      YGDimension dimension) {
+    float containingBlockWidth = YGUndefined;
+    float containingBlockHeight = YGUndefined;
+    if (dimension == YGDimensionWidth) {
+      containingBlockHeight = crossDimensionEstimator(item);
+    } else {
+      containingBlockWidth = crossDimensionEstimator(item);
+    }
+
+    return calculateItemConstraints(
+        item, containingBlockWidth, containingBlockHeight);
+  }
+
+  ItemConstraint calculateItemConstraints(
+      const GridItem& item,
+      float containingBlockWidth,
+      float containingBlockHeight) {
+    auto availableWidth = YGUndefined;
+    auto availableHeight = YGUndefined;
+    auto itemWidthSizingMode = YGMeasureModeUndefined;
+    auto itemHeightSizingMode = YGMeasureModeUndefined;
+    auto hasDefiniteWidth =
+        item.node->hasDefiniteLength(YGDimensionWidth, containingBlockWidth);
+    auto hasDefiniteHeight =
+        item.node->hasDefiniteLength(YGDimensionHeight, containingBlockHeight);
+
+    if (isDefined(containingBlockWidth)) {
+      itemWidthSizingMode = YGMeasureModeAtMost;
+      availableWidth = containingBlockWidth;
+    }
+
+    if (isDefined(containingBlockHeight)) {
+      itemHeightSizingMode = YGMeasureModeAtMost;
+      availableHeight = containingBlockHeight;
+    }
+
+    const auto marginInline = item.node->style().computeMarginForAxis(
+        YGFlexDirectionRow, containingBlockWidth);
+    if (hasDefiniteWidth) {
+      itemWidthSizingMode = YGMeasureModeExactly;
+      auto resolvedWidth = item.node
+                               ->getResolvedDimension(
+                                   direction,
+                                   YGDimensionWidth,
+                                   containingBlockWidth,
+                                   containingBlockWidth)
+                               .unwrap();
+      resolvedWidth = boundAxis(
+          item.node,
+          YGFlexDirectionRow,
+          direction,
+          resolvedWidth,
+          containingBlockWidth,
+          containingBlockWidth);
+      availableWidth = resolvedWidth + marginInline;
+    }
+
+    const auto marginBlock = item.node->style().computeMarginForAxis(
+        YGFlexDirectionColumn, containingBlockWidth);
+    if (hasDefiniteHeight) {
+      itemHeightSizingMode = YGMeasureModeExactly;
+      auto resolvedHeight = item.node
+                                ->getResolvedDimension(
+                                    direction,
+                                    YGDimensionHeight,
+                                    containingBlockHeight,
+                                    containingBlockWidth)
+                                .unwrap();
+      resolvedHeight = boundAxis(
+          item.node,
+          YGFlexDirectionColumn,
+          direction,
+          resolvedHeight,
+          containingBlockHeight,
+          containingBlockWidth);
+      availableHeight = resolvedHeight + marginBlock;
+    }
+
+    auto justifySelf = resolveChildJustification(node, item.node);
+    auto alignSelf = resolveChildAlignment(node, item.node);
+
+    bool hasMarginInlineAuto = item.node->style().inlineStartMarginIsAuto(
+                                   YGFlexDirectionRow, direction) ||
+        item.node->style().inlineEndMarginIsAuto(YGFlexDirectionRow, direction);
+    bool hasMarginBlockAuto = item.node->style().inlineStartMarginIsAuto(
+                                  YGFlexDirectionColumn, direction) ||
+        item.node->style().inlineEndMarginIsAuto(
+            YGFlexDirectionColumn, direction);
+
+    // For stretch-aligned items with a definite containing block size and no
+    // auto margins, treat the item as having a definite size in that axis (it
+    // will stretch to fill).
+    const auto& itemStyle = item.node->style();
+
+    if (isDefined(containingBlockWidth) && !hasDefiniteWidth &&
+        justifySelf == YGJustifyStretch && !hasMarginInlineAuto) {
+      itemWidthSizingMode = YGMeasureModeExactly;
+      availableWidth = containingBlockWidth;
+    }
+
+    if (isDefined(containingBlockHeight) &&
+        !item.node->hasDefiniteLength(
+            YGDimensionHeight, containingBlockHeight) &&
+        alignSelf == YGAlignStretch && !hasMarginBlockAuto) {
+      itemHeightSizingMode = YGMeasureModeExactly;
+      availableHeight = containingBlockHeight;
+    }
+
+    if (itemStyle.aspectRatio().isDefined() &&
+        !inexactEquals(itemStyle.aspectRatio().unwrap(), 0.0f)) {
+      const float aspectRatio = itemStyle.aspectRatio().unwrap();
+      const auto aspectRatioAxis = itemStyle.aspectRatioAxis();
+      // rive: an explicit axis is the anchor whenever it is definite or
+      // stretched; a hugging anchor is measured first (GridLayout) and the
+      // other size follows it then.
+      if (aspectRatioAxis == YGAspectRatioAxisWidth) {
+        if (itemWidthSizingMode == YGMeasureModeExactly) {
+          // rive: the anchor is bounded by its own min/max before the other
+          // side follows it, as the final layout will bound it.
+          const float anchorWidth = boundAxis(
+              item.node,
+              YGFlexDirectionRow,
+              direction,
+              availableWidth - marginInline,
+              containingBlockWidth,
+              containingBlockWidth);
+          availableWidth = anchorWidth + marginInline;
+          auto resolvedHeight = anchorWidth / aspectRatio;
+          resolvedHeight = boundAxis(
+              item.node,
+              YGFlexDirectionColumn,
+              direction,
+              resolvedHeight,
+              containingBlockHeight,
+              containingBlockWidth);
+          availableHeight = resolvedHeight + marginBlock;
+          itemHeightSizingMode = YGMeasureModeExactly;
+        } else {
+          // rive: a hugging anchor measures with the computed axis free: the
+          // size authored or stretched there is the one the ratio overrides,
+          // and at that size wrapping content would move the anchor. The
+          // item is laid out again from the measured anchor (GridLayout).
+          availableHeight = YGUndefined;
+          itemHeightSizingMode = YGMeasureModeUndefined;
+        }
+      } else if (aspectRatioAxis == YGAspectRatioAxisHeight) {
+        if (itemHeightSizingMode == YGMeasureModeExactly) {
+          const float anchorHeight = boundAxis(
+              item.node,
+              YGFlexDirectionColumn,
+              direction,
+              availableHeight - marginBlock,
+              containingBlockHeight,
+              containingBlockWidth);
+          availableHeight = anchorHeight + marginBlock;
+          auto resolvedWidth = anchorHeight * aspectRatio;
+          resolvedWidth = boundAxis(
+              item.node,
+              YGFlexDirectionRow,
+              direction,
+              resolvedWidth,
+              containingBlockWidth,
+              containingBlockWidth);
+          availableWidth = resolvedWidth + marginInline;
+          itemWidthSizingMode = YGMeasureModeExactly;
+        } else {
+          availableWidth = YGUndefined;
+          itemWidthSizingMode = YGMeasureModeUndefined;
+        }
+      } else if (
+          itemWidthSizingMode == YGMeasureModeExactly &&
+          itemHeightSizingMode == YGMeasureModeExactly) {
+        if (!hasDefiniteWidth && !hasDefiniteHeight) {
+          auto resolvedWidth = (availableHeight - marginBlock) * aspectRatio;
+          resolvedWidth = boundAxis(
+              item.node,
+              YGFlexDirectionRow,
+              direction,
+              resolvedWidth,
+              containingBlockWidth,
+              containingBlockWidth);
+          availableWidth = resolvedWidth + marginInline;
+        }
+      } else if (
+          itemWidthSizingMode == YGMeasureModeExactly &&
+          itemHeightSizingMode != YGMeasureModeExactly) {
+        auto resolvedHeight = (availableWidth - marginInline) / aspectRatio;
+        resolvedHeight = boundAxis(
+            item.node,
+            YGFlexDirectionColumn,
+            direction,
+            resolvedHeight,
+            containingBlockHeight,
+            containingBlockWidth);
+        availableHeight = resolvedHeight + marginBlock;
+        itemHeightSizingMode = YGMeasureModeExactly;
+      } else if (
+          itemHeightSizingMode == YGMeasureModeExactly &&
+          itemWidthSizingMode != YGMeasureModeExactly) {
+        auto resolvedWidth = (availableHeight - marginBlock) * aspectRatio;
+        resolvedWidth = boundAxis(
+            item.node,
+            YGFlexDirectionRow,
+            direction,
+            resolvedWidth,
+            containingBlockWidth,
+            containingBlockWidth);
+        availableWidth = resolvedWidth + marginInline;
+        itemWidthSizingMode = YGMeasureModeExactly;
+      }
+    }
+
+    constrainMaxSizeForMode(
+        item.node,
+        direction,
+        YGFlexDirectionRow,
+        containingBlockWidth,
+        containingBlockWidth,
+        &itemWidthSizingMode,
+        &availableWidth);
+    constrainMaxSizeForMode(
+        item.node,
+        direction,
+        YGFlexDirectionColumn,
+        containingBlockHeight,
+        containingBlockWidth,
+        &itemHeightSizingMode,
+        &availableHeight);
+
+    return ItemConstraint{
+        .width = availableWidth,
+        .height = availableHeight,
+        .widthSizingMode = itemWidthSizingMode,
+        .heightSizingMode = itemHeightSizingMode,
+        .containingBlockWidth = containingBlockWidth,
+        .containingBlockHeight = containingBlockHeight};
+  }
+
+  float calculateEffectiveRowGapForEstimation() {
+    auto rowGap = node->style().computeGapForDimension(
+        YGDimensionHeight, containerInnerHeight);
+
+    if (!isDefined(containerInnerHeight)) {
+      return rowGap;
+    }
+
+    float totalTrackSize = 0.0f;
+    for (auto& track : rowTracks) {
+      if (isFixedSizingFunction(
+              track.maxSizingFunction, containerInnerHeight)) {
+        totalTrackSize +=
+            track.maxSizingFunction.resolve(containerInnerHeight).unwrap();
+      } else {
+        return rowGap;
+      }
+    }
+
+    float totalGapSize = rowTracks.size() > 1
+        ? rowGap * static_cast<float>(rowTracks.size() - 1)
+        : 0.0f;
+    float freeSpace = containerInnerHeight - totalTrackSize - totalGapSize;
+
+    auto distribution =
+        calculateContentDistribution(YGDimensionHeight, freeSpace);
+
+    return distribution.effectiveGap;
+  }
+
+  float calculateEffectiveGapFromBaseSizes(YGDimension dimension) {
+    auto containerSize = dimension == YGDimensionWidth ? containerInnerWidth
+                                                       : containerInnerHeight;
+    auto gap = node->style().computeGapForDimension(dimension, containerSize);
+    const auto& tracks =
+        dimension == YGDimensionWidth ? columnTracks : rowTracks;
+
+    if (!isDefined(containerSize)) {
+      return gap;
+    }
+
+    float totalTrackSize = 0.0f;
+    for (auto& track : tracks) {
+      totalTrackSize += track.baseSize;
+    }
+
+    float totalGapSize =
+        tracks.size() > 1 ? gap * static_cast<float>(tracks.size() - 1) : 0.0f;
+    float freeSpace = containerSize - totalTrackSize - totalGapSize;
+
+    auto distribution = calculateContentDistribution(dimension, freeSpace);
+
+    return distribution.effectiveGap;
+  }
+
+  bool contributionsChanged(
+      YGDimension dimension,
+      const CrossDimensionEstimator& estimatorBefore,
+      const CrossDimensionEstimator& estimatorAfter) {
+    for (const auto& item : gridItems) {
+      if (!item.crossesIntrinsicTrack(dimension)) {
+        continue;
+      }
+
+      float crossDimBefore =
+          estimatorBefore ? estimatorBefore(item) : YGUndefined;
+      float crossDimAfter = estimatorAfter ? estimatorAfter(item) : YGUndefined;
+
+      // If cross dimension hasn't changed, contribution depending on it won't
+      // change
+      if (inexactEquals(crossDimBefore, crossDimAfter)) {
+        continue;
+      }
+
+      float containingBlockWidth =
+          dimension == YGDimensionWidth ? YGUndefined : crossDimBefore;
+      float containingBlockHeight =
+          dimension == YGDimensionWidth ? crossDimBefore : YGUndefined;
+      auto constraintsBefore = calculateItemConstraints(
+          item, containingBlockWidth, containingBlockHeight);
+      float contributionBefore =
+          minContentContribution(item, dimension, constraintsBefore);
+
+      containingBlockWidth =
+          dimension == YGDimensionWidth ? YGUndefined : crossDimAfter;
+      containingBlockHeight =
+          dimension == YGDimensionWidth ? crossDimAfter : YGUndefined;
+      auto constraintsAfter = calculateItemConstraints(
+          item, containingBlockWidth, containingBlockHeight);
+      float contributionAfter =
+          minContentContribution(item, dimension, constraintsAfter);
+
+      if (!inexactEquals(contributionBefore, contributionAfter)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool itemSizeDependsOnIntrinsicTracks(const GridItem& item) const {
+    auto heightStyle = item.node->style().dimension(YGDimensionHeight);
+    if (heightStyle.isPercent()) {
+      for (size_t i = item.rowStart; i < item.rowEnd && i < rowTracks.size();
+           i++) {
+        if (isIntrinsicSizingFunction(
+                rowTracks[i].minSizingFunction, containerInnerHeight) ||
+            isIntrinsicSizingFunction(
+                rowTracks[i].maxSizingFunction, containerInnerHeight)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void computeItemTrackCrossingFlags() {
+    for (auto& item : gridItems) {
+      item.crossesFlexibleColumn = false;
+      item.crossesIntrinsicColumn = false;
+      item.crossesFlexibleRow = false;
+      item.crossesIntrinsicRow = false;
+
+      for (size_t i = item.columnStart; i < item.columnEnd; i++) {
+        if (isFlexibleSizingFunction(columnTracks[i].maxSizingFunction)) {
+          item.crossesFlexibleColumn = true;
+        } else if (isIntrinsicSizingFunction(
+                       columnTracks[i].maxSizingFunction,
+                       containerInnerWidth)) {
+          item.crossesIntrinsicColumn = true;
+        }
+        if (isIntrinsicSizingFunction(
+                columnTracks[i].minSizingFunction, containerInnerWidth)) {
+          item.crossesIntrinsicColumn = true;
+        }
+      }
+
+      for (size_t i = item.rowStart; i < item.rowEnd; i++) {
+        if (isFlexibleSizingFunction(rowTracks[i].maxSizingFunction)) {
+          item.crossesFlexibleRow = true;
+        } else if (isIntrinsicSizingFunction(
+                       rowTracks[i].maxSizingFunction, containerInnerHeight)) {
+          item.crossesIntrinsicRow = true;
+        }
+        if (isIntrinsicSizingFunction(
+                rowTracks[i].minSizingFunction, containerInnerHeight)) {
+          item.crossesIntrinsicRow = true;
+        }
+      }
+    }
+  }
+
+  CrossDimensionEstimator makeRowHeightEstimatorUsingFixedTracks(float gap) {
+    CrossDimensionEstimator estimator;
+    estimator.fixedTracks = &rowTracks;
+    estimator.containerSize = containerInnerHeight;
+    estimator.gap = gap;
+    return estimator;
+  }
+
+  CrossDimensionEstimator makeCrossDimensionEstimatorUsingBaseSize(
+      YGDimension dimension,
+      float gap) {
+    CrossDimensionEstimator estimator;
+    auto& tracks = dimension == YGDimensionWidth ? columnTracks : rowTracks;
+    estimator.baseSizes.reserve(tracks.size());
+    for (const auto& track : tracks) {
+      estimator.baseSizes.push_back(track.baseSize);
+    }
+    estimator.fromBaseSizes = true;
+    estimator.dimension = dimension;
+    estimator.gap = gap;
+    return estimator;
+  }
+};
+
+} // namespace facebook::yoga

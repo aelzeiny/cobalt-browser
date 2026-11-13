@@ -1,30 +1,30 @@
 #ifdef WITH_RIVE_SCRIPTING
 #ifdef WITH_RIVE_SCRIPTING_LUAU
 // Only for the ScriptingVM to ScriptBackend conversion in backend().
-#include "third_party/rive/include/rive/lua/scripting_vm.hpp"
+#include "rive/lua/scripting_vm.hpp"
 #endif
-#include "third_party/rive/include/rive/importers/text_asset_importer.hpp"
+#include "rive/importers/text_asset_importer.hpp"
 #endif
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/signed_content_header.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/scripted_object_importer.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/signed_content_header.hpp"
+#include "rive/component.hpp"
+#include "rive/file.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/scripted_object_importer.hpp"
 #ifdef WITH_RIVE_SCRIPTING_WASM
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
 #endif
-#include "third_party/rive/include/rive/script_input_artboard.hpp"
-#include "third_party/rive/include/rive/script_input_boolean.hpp"
-#include "third_party/rive/include/rive/script_input_color.hpp"
-#include "third_party/rive/include/rive/script_input_number.hpp"
-#include "third_party/rive/include/rive/script_input_string.hpp"
-#include "third_party/rive/include/rive/script_input_trigger.hpp"
-#include "third_party/rive/include/rive/script_input_viewmodel_property.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/script_input_artboard.hpp"
+#include "rive/script_input_boolean.hpp"
+#include "rive/script_input_color.hpp"
+#include "rive/script_input_number.hpp"
+#include "rive/script_input_string.hpp"
+#include "rive/script_input_trigger.hpp"
+#include "rive/script_input_viewmodel_property.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_layout.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/data_bind/data_bind.hpp"
 
 using namespace rive;
 

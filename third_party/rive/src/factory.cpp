@@ -2,12 +2,12 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/text/raw_text.hpp"
+#include "rive/factory.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/text/raw_text.hpp"
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/font_hb.hpp"
+#include "rive/text/font_hb.hpp"
 #endif
 
 using namespace rive;

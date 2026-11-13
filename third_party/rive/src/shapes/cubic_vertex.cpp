@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/cubic_vertex.hpp"
-#include "third_party/rive/include/rive/bones/cubic_weight.hpp"
+#include "rive/shapes/cubic_vertex.hpp"
+#include "rive/bones/cubic_weight.hpp"
 using namespace rive;
 
 const Vec2D& CubicVertex::renderIn()

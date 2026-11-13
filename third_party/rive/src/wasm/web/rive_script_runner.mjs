@@ -30,13 +30,13 @@ import {
     kProcessorEventLog,
     kProcessorInitMs,
     kProcessorNode,
-    kReuseMaxPages,
     kWorkerWakeExport,
     laneImportError,
     laneImportRefusal,
 } from './rive_lane_imports.mjs';
 import { kHoldBlocks, kHoldStarting, kHoldWords } from './rive_shared_layout.mjs';
 import { createSharedLaneImports, releaseSharedLane } from './rive_shared_lane.mjs';
+import { createParallel } from './rive_parallel.mjs';
 import {
     enterLane,
     errorText,
@@ -303,6 +303,136 @@ function liftStart(bytes) {
     return out;
 }
 
+// A parallel module declares a shared memory up to wasm32's limit, which a
+// browser would set aside whole and which needs cross origin isolation. Its
+// memory moves to an import instead, so the runner picks the memory to give
+// it: shared up to what the device can set aside, else unshared, where its
+// parts run one at a time. Every other module comes back untouched.
+const kMemoryImport = ['rive_parallel_v1', 'memory'];
+const kSharedTryPages = 32768;
+
+export function importMemory(bytes) {
+    const all = sectionsOf(bytes);
+    const memory = all.find((section) => section.id === 5);
+    const imports = all.find((section) => section.id === 2);
+    if (memory === undefined || imports === undefined) {
+        return { bytes, memory: null };
+    }
+    let [count, at] = readLeb(bytes, memory.body);
+    const flags = bytes[at++];
+    if (count !== 1 || (flags & 2) === 0) {
+        return { bytes, memory: null };
+    }
+    const [initial, afterInitial] = readLeb(bytes, at);
+    const declared = flags & 1 ? readLeb(bytes, afterInitial)[0] : 65536;
+    const shared =
+        typeof SharedArrayBuffer === 'function' &&
+        globalThis.crossOriginIsolated !== false;
+    let maximum = declared;
+    let created = null;
+    if (shared) {
+        // Halving down to what the module needs, as a 32-bit browser or one
+        // short of address space refuses a large reservation.
+        maximum = Math.min(declared, kSharedTryPages);
+        for (;;) {
+            try {
+                // Quoted, as closure renames a key its externs lack.
+                created = new WebAssembly.Memory({
+                    'initial': initial,
+                    'maximum': maximum,
+                    'shared': shared,
+                });
+                break;
+            } catch (error) {
+                if (!(error instanceof RangeError) || maximum <= initial) {
+                    throw error;
+                }
+                maximum = Math.max(initial, maximum >>> 1);
+            }
+        }
+    } else {
+        created = new WebAssembly.Memory({ initial, maximum });
+    }
+    const name = (text) => [...leb(text.length), ...Array.from(text, (c) => c.charCodeAt(0))];
+    const entry = [
+        ...name(kMemoryImport[0]),
+        ...name(kMemoryImport[1]),
+        2,
+        shared ? 3 : 1,
+        ...leb(initial),
+        ...leb(maximum),
+    ];
+    const [importCount, first] = readLeb(bytes, imports.body);
+    const parts = [bytes.subarray(0, 8)];
+    for (const section of all) {
+        if (section === memory) {
+            continue;
+        }
+        let body = bytes.subarray(section.body, section.end);
+        if (section === imports) {
+            body = Uint8Array.from([
+                ...leb(importCount + 1),
+                ...bytes.subarray(first, section.end),
+                ...entry,
+            ]);
+        }
+        parts.push(Uint8Array.from([section.id, ...leb(body.length)]), body);
+    }
+    const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+        out.set(part, offset);
+        offset += part.length;
+    }
+    return { bytes: out, memory: created };
+}
+
+// A member of a parallel module shares the memory the page's instance already
+// filled, so its data segments are made passive, which instantiating leaves
+// alone. Its start is already lifted out.
+export function passiveData(bytes) {
+    const all = sectionsOf(bytes);
+    const data = all.find((section) => section.id === 11);
+    if (data === undefined) {
+        return bytes;
+    }
+    let [count, at] = readLeb(bytes, data.body);
+    const body = [Uint8Array.from(leb(count))];
+    for (let i = 0; i < count; i++) {
+        let flags;
+        [flags, at] = readLeb(bytes, at);
+        if (flags === 2) {
+            at = readLeb(bytes, at)[1];
+        }
+        // The offset is one constant instruction and end.
+        if (flags !== 1) {
+            for (let op = bytes[at++]; op !== 0x0b; op = bytes[at++]) {
+                at = readLeb(bytes, at)[1];
+            }
+        }
+        const [length, first] = readLeb(bytes, at);
+        body.push(Uint8Array.from([1, ...leb(length)]), bytes.subarray(first, first + length));
+        at = first + length;
+    }
+    const parts = [bytes.subarray(0, 8)];
+    for (const section of all) {
+        const sectionBody =
+            section === data ? concatBytes(body) : bytes.subarray(section.body, section.end);
+        parts.push(Uint8Array.from([section.id, ...leb(sectionBody.length)]), sectionBody);
+    }
+    return concatBytes(parts);
+}
+
+function concatBytes(parts) {
+    const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let at = 0;
+    for (const part of parts) {
+        out.set(part, at);
+        at += part.length;
+    }
+    return out;
+}
+
 // Args by index: spreading a subarray of the heap cost more than the call.
 function callExport(fn, args, at, argc) {
     switch (argc) {
@@ -337,6 +467,9 @@ export function installRiveScripting(Module) {
     // Primitives over the librive heap and exports, handed over by librive
     // itself on first use because only code inside it can see them.
     let host = null;
+    // A pool thread's own clock starts late, so lanes read the page's, as
+    // native lanes share one steady clock.
+    let laneNow = monotonicNow;
     const vms = new Map();
     // Bridge traffic, tallied only while a page measures it.
     const counters = {
@@ -396,6 +529,30 @@ export function installRiveScripting(Module) {
         return null;
     }
 
+    // The module's bytes once its memory is the runner's to give.
+    function withMemory(entry) {
+        const { bytes, memory } = importMemory(entry.bytes);
+        entry.parallelMemory = memory;
+        return bytes;
+    }
+
+    const sharedMemory = (entry) =>
+        typeof SharedArrayBuffer === 'function' &&
+        entry.parallelMemory?.buffer instanceof SharedArrayBuffer;
+
+    // The bytes a team thread instantiates a member from, or null where a
+    // call never gets more than one part.
+    function memberBytes(entry, lifted) {
+        return sharedMemory(entry) && teamWorkerOf !== null ? passiveData(lifted) : null;
+    }
+
+    // Members on the team once the page's own instance has started.
+    function adoptMembers(entry, bytes) {
+        if (bytes !== null && entry.instance !== null) {
+            entry.parallel = parallel.setUp(entry, bytes, entry.parallelSize());
+        }
+    }
+
     function importsFor(entry, module) {
         const imports = createRiveModuleImports(
             librive(entry.ctx),
@@ -410,6 +567,35 @@ export function installRiveScripting(Module) {
                 return entry.memory;
             }
         );
+        if (entry.parallelMemory !== null) {
+            const space = (imports[kMemoryImport[0]] ??= {});
+            space[kMemoryImport[1]] = entry.parallelMemory;
+            // Calls share the memory with a team of threads only where it is
+            // shared; elsewhere a call gets one part. Where librive allows
+            // more, the page picks how many.
+            const size = space['size'];
+            const shared = sharedMemory(entry);
+            space['size'] = () =>
+                shared && size() > 1 ? parallel.parts(runner['parallelParts']) : 1;
+            const rt = imports['rive_rt_v1'];
+            const budget = rt['budget_exceeded'];
+            // A budget the page's own part already reported is not reported
+            // again for a member that ran out at the same time.
+            rt['budget_exceeded'] = (ms) => {
+                entry.budgeted = true;
+                return budget(ms);
+            };
+            const report = {
+                thrown: (at, length) => rt['error'](at, length),
+                budget: (ms) => (entry.budgeted ? undefined : budget(ms)),
+            };
+            space['run'] = (control) => {
+                entry.budgeted = false;
+                return parallel.run(entry, entry.parallel, control >>> 0, report);
+            };
+            space['waiting'] = parallel.waiting;
+            entry.parallelSize = space['size'];
+        }
         // The browser refuses a module with an import nothing provides.
         for (const wanted of WebAssembly.Module.imports(module)) {
             if (wanted['kind'] === 'function') {
@@ -493,7 +679,9 @@ export function installRiveScripting(Module) {
 
     async function prepareEntry(entry) {
         try {
-            const module = await WebAssembly.compile(liftStart(entry.bytes));
+            const lifted = liftStart(withMemory(entry));
+            const module = await WebAssembly.compile(lifted);
+            const members = memberBytes(entry, lifted);
             if (entry.ctx.vm === 0) {
                 return;
             }
@@ -509,6 +697,10 @@ export function installRiveScripting(Module) {
                 return;
             }
             adopt(entry, instance);
+            adoptMembers(entry, members);
+            if (entry.parallel !== null) {
+                await parallel.ready(entry.parallel);
+            }
         } catch (error) {
             entry.error = errorText(error);
         }
@@ -523,6 +715,15 @@ export function installRiveScripting(Module) {
     const kLaneModuleCache = 8;
     // The page's idle pthread workers, on a pthread build.
     let threads = () => [];
+    // A team thread's worker by thread, on a pthread build.
+    let teamWorkerOf = null;
+    const parallel = createParallel({
+        can: () => teamWorkerOf !== null,
+        start() {
+            const thread = host.exports['_rive_web_parallel_team_thread']();
+            return thread === 0 ? null : (teamWorkerOf(thread) ?? null);
+        },
+    });
 
     function sameBytes(a, b) {
         if (a.length !== b.length) {
@@ -560,6 +761,9 @@ export function installRiveScripting(Module) {
     }
 
     const takeLane = (data) => {
+        if (parallel.message(data)) {
+            return;
+        }
         const lane = data?.['riveLane'];
         if (lane !== undefined) {
             shareLane(lane['bytes'], lane['module']);
@@ -670,16 +874,26 @@ export function installRiveScripting(Module) {
             idle.timers.clear();
             return idle;
         }
-        const job = { lane: 0, cancelled: null, timers: new Map(), reset: false };
+        const job = {
+            lane: 0,
+            cancelled: null,
+            reuseMaxPages: 0,
+            timers: new Map(),
+            reset: false,
+        };
         return Object.assign(
             job,
             instantiateLane({
                 module: compiled.module,
                 natives: 'rive_job_v1',
-                own: () => ({ 'cancelled': () => job.cancelled() }),
+                own: () => ({
+                    'cancelled': () => job.cancelled(),
+                    'reuse_pages': () => job.reuseMaxPages,
+                }),
                 shared: sharedImports(),
                 log: (line) => host.laneLog(job.lane, line),
                 timers: job.timers,
+                now: laneNow,
                 fuel: () => laneFuel(job.lane),
             })
         );
@@ -687,7 +901,7 @@ export function installRiveScripting(Module) {
 
     // A stop reaches a running job through its cancelled() and its fuel
     // checks. The output views the job's memory.
-    function runJob(lane, id, bytes, entry, input, cancelled) {
+    function runJob(lane, id, bytes, entry, input, cancelled, reuseMaxPages) {
         const compiled = laneModule(id, bytes, 'job');
         if (compiled.error !== null) {
             return { ok: false, error: compiled.error };
@@ -698,6 +912,7 @@ export function installRiveScripting(Module) {
         }
         job.lane = lane;
         job.cancelled = cancelled;
+        job.reuseMaxPages = reuseMaxPages;
         const entered = enterLane(
             job,
             { prefix: kLaneEntryPrefixes['job'], entry, input },
@@ -715,7 +930,7 @@ export function installRiveScripting(Module) {
             // instance; the next resets it once this output is copied out.
             if (
                 job.exports[kLaneResetExport] !== undefined &&
-                buffer.byteLength <= kReuseMaxPages * 65536 &&
+                buffer.byteLength <= reuseMaxPages * 65536 &&
                 !cancelled()
             ) {
                 job.reset = true;
@@ -754,6 +969,7 @@ export function installRiveScripting(Module) {
             onThrow: (text) => host.laneFail(lane, text),
             shared: sharedImports(),
             log: (line) => host.laneLog(lane, line),
+            now: laneNow,
             fuel: () => laneFuel(lane),
             prefix: kLaneEntryPrefixes['worker'],
             entry,
@@ -849,6 +1065,24 @@ export function installRiveScripting(Module) {
     const nrdp = () => globalThis['nrdp'];
     const onNrdp = () => nrdp()?.['audio']?.['output'] !== undefined;
 
+    // The worklet a host serves, else the one a threaded build carries, which
+    // needs nothing served beside the runtime. NRDP only runs its own bundle.
+    let carriedWorklet = null;
+    function workletUrl() {
+        const given = runner['audioWorkletUrl'];
+        if (typeof given === 'string') {
+            return given;
+        }
+        const source = Module['riveAudioWorkletSource'];
+        if (onNrdp() || typeof source !== 'string') {
+            return null;
+        }
+        carriedWorklet ??= URL.createObjectURL(
+            new Blob([source], { type: 'text/javascript' })
+        );
+        return carriedWorklet;
+    }
+
     // Null when processors can run in real time, else why not.
     function audioRefusal() {
         if (!onNrdp() && globalThis.crossOriginIsolated !== true) {
@@ -861,7 +1095,7 @@ export function installRiveScripting(Module) {
         ) {
             return 'real time audio needs librive built with threads';
         }
-        if (typeof runner['audioWorkletUrl'] !== 'string') {
+        if (workletUrl() === null) {
             return 'real time audio needs riveScripting.audioWorkletUrl';
         }
         if (typeof AudioContext === 'undefined') {
@@ -1017,6 +1251,12 @@ export function installRiveScripting(Module) {
     // Browsers start audio only after a gesture, so a context only the runner
     // holds resumes on the page's first one, and warns once while it waits.
     function ownContext() {
+        // iOS mutes the default ambient session at the silent switch, which
+        // video plays through.
+        const session = globalThis.navigator?.['audioSession'];
+        if (session?.['type'] === 'auto') {
+            session['type'] = 'playback';
+        }
         const context = new AudioContext();
         const gestures = ['pointerdown', 'pointerup', 'keydown', 'touchend'];
         const resume = () => context.resume();
@@ -1078,7 +1318,7 @@ export function installRiveScripting(Module) {
             }
         });
         context.audioWorklet
-            .addModule(runner['audioWorkletUrl'])
+            .addModule(workletUrl())
             .then(() => {
                 node = new AudioWorkletNode(
                     context,
@@ -1285,11 +1525,18 @@ export function installRiveScripting(Module) {
 
     const runner = {
         attach(primitives) {
-            host ??= primitives;
+            if (host !== null) {
+                return;
+            }
+            host = primitives;
+            // Zero where the engine has no timeOrigin.
+            const offset = performance.timeOrigin - host.pageOrigin || 0;
+            laneNow = () => performance.now() + offset;
         },
 
-        attachThreads(workers) {
+        attachThreads(workers, workerOf) {
             threads = workers;
+            teamWorkerOf = workerOf;
         },
 
         register(vm, bytes) {
@@ -1299,6 +1546,9 @@ export function installRiveScripting(Module) {
                 bytes: copy,
                 instance: null,
                 memory: null,
+                parallelMemory: null,
+                parallelSize: null,
+                parallel: null,
                 preparing: null,
                 error: missingSimd(copy),
                 names: new Map(),
@@ -1311,7 +1561,15 @@ export function installRiveScripting(Module) {
                 // A module still instantiating may call imports afterwards.
                 entry.ctx.vm = 0;
                 vms.delete(vm);
+                if (entry.parallel !== null) {
+                    parallel.release(entry.parallel);
+                }
             }
+        },
+
+        // The team a parallel call runs on, for tests to report.
+        parallelState() {
+            return parallel.state();
         },
 
         prepare() {
@@ -1336,13 +1594,17 @@ export function installRiveScripting(Module) {
                     return 'script module is still being prepared';
                 }
                 try {
-                    const module = new WebAssembly.Module(liftStart(entry.bytes));
+                    const lifted = liftStart(withMemory(entry));
+                    const module = new WebAssembly.Module(lifted);
                     announceExports(entry, module);
                     prepareLanes(module, true);
                     adopt(
                         entry,
                         new WebAssembly.Instance(module, importsFor(entry, module))
                     );
+                    // Members start in the background; calls before they
+                    // do get fewer parts.
+                    adoptMembers(entry, memberBytes(entry, lifted));
                 } catch (error) {
                     entry.error = errorText(error);
                 }

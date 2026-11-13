@@ -1,8 +1,8 @@
 #ifndef _RIVE_FILE_ASSET_CONTENTS_HPP_
 #define _RIVE_FILE_ASSET_CONTENTS_HPP_
-#include "third_party/rive/include/rive/generated/assets/file_asset_contents_base.hpp"
+#include "rive/generated/assets/file_asset_contents_base.hpp"
 #include <cstdint>
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/simple_array.hpp"
 
 namespace rive
 {

@@ -1,17 +1,17 @@
 #ifndef _RIVE_LAYOUT_COMPONENT_HPP_
 #define _RIVE_LAYOUT_COMPONENT_HPP_
-#include "third_party/rive/include/rive/advance_flags.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/generated/layout_component_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_measure_mode.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
+#include "rive/advance_flags.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/drawable.hpp"
+#include "rive/generated/layout_component_base.hpp"
+#include "rive/layout/layout_measure_mode.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/layout/layout_style_applier.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/layout/layout_enums.hpp"
 #include <memory>
 
 namespace rive
@@ -35,6 +35,11 @@ bool isTransparentLayoutContainer(Component* component);
 // layout is how a file asks for free-form items placed by x/y or a follow-path
 // constraint. It joins only when explicitly flagged.
 bool joinsLayoutThroughContainer(Component* component);
+
+// Whether `component` can put a layout provider in front of a layout: it is a
+// provider, or a transparent container holding one. Every option of a Solo
+// counts, active or not, so the answer doesn't change when a Solo switches.
+bool reachesLayoutProvider(Component* component);
 
 // Boolean state of a LayoutComponent, packed into one word instead of a dozen
 // separate bytes. Gains the bitwise operators + rive::enums helpers for free by
@@ -70,6 +75,9 @@ enum class LayoutComponentFlags : uint16_t
   // it from the style chases a pointer each time. Refreshed wherever the
   // style or its display changes (see refreshStyleDisplayHidden).
   StyleDisplayHidden = 1 << 14,
+  // Listed in its artboard's dirty layouts (see Artboard::markLayoutDirty), so
+  // marking it again doesn't list it twice.
+  DirtyLayoutListed = 1 << 15,
 };
 
 class Layout
@@ -352,6 +360,23 @@ public:
   StatusCode import(ImportStack& importStack) override;
   Core* clone() const override;
 
+  // Only the artboard listing this layout as dirty sets it.
+  bool dirtyLayoutListed() const
+  {
+    return hasLayoutFlag(LayoutComponentFlags::DirtyLayoutListed);
+  }
+  void dirtyLayoutListed(bool value)
+  {
+    setLayoutFlag(LayoutComponentFlags::DirtyLayoutListed, value);
+  }
+
+  // Whether this layout's clip is on the renderer right now: its proxy has
+  // clipped and its draw hasn't restored yet.
+  bool clipsDrawing() const
+  {
+    return hasLayoutFlag(LayoutComponentFlags::ClipSaved);
+  }
+
   LayoutComponentStyle* style() { return m_style; }
   void style(LayoutComponentStyle* style)
   {
@@ -395,7 +420,13 @@ public:
   // resolves, guaranteeing a proxy before the artboard's first sort.
   void markClipMayBeDynamic()
   {
-    setLayoutFlag(LayoutComponentFlags::ForceDrawableProxy, true);
+    // Marked again by a deferred animation body as it decodes, while other
+    // threads may be cloning this source and reading its flags: only write
+    // when there's something to change.
+    if (!hasLayoutFlag(LayoutComponentFlags::ForceDrawableProxy))
+    {
+      setLayoutFlag(LayoutComponentFlags::ForceDrawableProxy, true);
+    }
   }
   // Called from a scroll/scrollbar constraint's buildDependencies() (which
   // runs before the artboard's one-time proxy injection, on every instance)
@@ -582,6 +613,13 @@ public:
   void* layoutNode(int index) override;
   void syncStyle();
   void syncLayoutChildren();
+#ifdef TESTING
+  // Syncs that found the children changed and rebuilt Yoga's list.
+  static uint32_t sm_layoutChildRebuilds;
+  // Counts the syncs of one layout, when set.
+  static LayoutComponent* sm_countSyncsOf;
+  static uint32_t sm_countedSyncs;
+#endif
   void clearLayoutChildren();
   virtual void propagateSize();
   void updateLayoutBounds(bool animate = true) override;

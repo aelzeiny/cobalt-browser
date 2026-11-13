@@ -1,7 +1,7 @@
 #ifndef _RIVE_CUBIC_INTERPOLATOR_BASE_HPP_
 #define _RIVE_CUBIC_INTERPOLATOR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class CubicInterpolatorBase : public KeyFrameInterpolator

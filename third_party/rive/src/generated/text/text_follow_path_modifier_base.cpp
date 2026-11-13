@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/text/text_follow_path_modifier_base.hpp"
-#include "third_party/rive/include/rive/text/text_follow_path_modifier.hpp"
+#include "rive/generated/text/text_follow_path_modifier_base.hpp"
+#include "rive/text/text_follow_path_modifier.hpp"
 
 using namespace rive;
 

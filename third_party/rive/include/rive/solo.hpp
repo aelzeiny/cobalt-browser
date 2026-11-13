@@ -1,6 +1,6 @@
 #ifndef _RIVE_SOLO_HPP_
 #define _RIVE_SOLO_HPP_
-#include "third_party/rive/include/rive/generated/solo_base.hpp"
+#include "rive/generated/solo_base.hpp"
 namespace rive
 {
 class Solo : public SoloBase
@@ -21,6 +21,9 @@ public:
   // of its own; the layout above descends into the active child.
 #ifdef WITH_RIVE_LAYOUT
   void recollectOwningLayout();
+  // Whether switching can change what the layout above collects: some option
+  // is a layout provider or leads to one (see reachesLayoutProvider).
+  bool optionsReachLayout();
 #endif
 
 private:

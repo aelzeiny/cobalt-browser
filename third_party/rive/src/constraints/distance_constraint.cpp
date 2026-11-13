@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/constraints/distance_constraint.hpp"
-#include "third_party/rive/include/rive/bones/bone.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/constraints/distance_constraint.hpp"
+#include "rive/bones/bone.hpp"
+#include "rive/artboard.hpp"
 #include <algorithm>
 
 using namespace rive;

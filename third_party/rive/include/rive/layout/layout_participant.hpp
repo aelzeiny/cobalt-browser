@@ -1,10 +1,10 @@
 #ifndef _RIVE_LAYOUT_PARTICIPANT_HPP_
 #define _RIVE_LAYOUT_PARTICIPANT_HPP_
-#include "third_party/rive/include/rive/generated/layout/layout_participant_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
+#include "rive/generated/layout/layout_participant_base.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/layout/layout_data.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/advancing_component.hpp"
 
 namespace rive
 {

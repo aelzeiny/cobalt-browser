@@ -2,8 +2,8 @@
 #define _RIVE_ANIMATION_STATE_INSTANCE_HPP_
 
 #include <string>
-#include "third_party/rive/include/rive/animation/state_instance.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/state_instance.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
 
 namespace rive
 {
@@ -27,6 +27,8 @@ public:
 
   bool keepGoing() const override;
   void clearSpilledTime() override;
+  void layerAccumulator(BlendAccumulator* accumulator) override;
+  bool restart() override;
 
   const LinearAnimationInstance* animationInstance() const
   {

@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_VARIATION_HELPER_HPP_
 #define _RIVE_TEXT_VARIATION_HELPER_HPP_
 
-#include "third_party/rive/include/rive/component.hpp"
+#include "rive/component.hpp"
 namespace rive
 {
 class TextStyle;

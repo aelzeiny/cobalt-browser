@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum.hpp"
+#include "rive/viewmodel/viewmodel_property_enum.hpp"
 
 using namespace rive;
 

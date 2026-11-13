@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_INPUT_LISTENER_GROUP_HPP_
 #define _RIVE_TEXT_INPUT_LISTENER_GROUP_HPP_
 
-#include "third_party/rive/include/rive/listener_group.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/listener_group.hpp"
+#include "rive/math/vec2d.hpp"
 
 namespace rive
 {

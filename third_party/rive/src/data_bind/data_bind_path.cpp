@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/data_bind/data_bind_path.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
+#include "rive/data_bind/data_bind_path.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/importers/backboard_importer.hpp"
 
 using namespace rive;
 

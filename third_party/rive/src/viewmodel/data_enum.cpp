@@ -2,11 +2,11 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
+#include "rive/viewmodel/viewmodel_property.hpp"
+#include "rive/backboard.hpp"
+#include "rive/importers/backboard_importer.hpp"
 
 using namespace rive;
 

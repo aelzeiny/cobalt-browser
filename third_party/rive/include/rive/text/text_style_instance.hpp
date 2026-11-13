@@ -1,9 +1,9 @@
 #ifndef _RIVE_TEXT_STYLE_INSTANCE_HPP_
 #define _RIVE_TEXT_STYLE_INSTANCE_HPP_
-#include "third_party/rive/include/rive/advance_flags.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
+#include "rive/advance_flags.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/text/text_style.hpp"
 #include <memory>
 #include <string>
 #include <vector>

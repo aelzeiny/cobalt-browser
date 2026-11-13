@@ -5,20 +5,20 @@
 // compile in untouched and talk to this context; factories realize against
 // imports namespace slice by namespace slice, the rest report through
 // lastError like any backend construction failure.
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_types.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_buffer.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_texture.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_sampler.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_shader_module.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_bind_group_layout.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_bind_group.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_pipeline.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_render_pass.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_target.hpp"
-#include "third_party/rive/include/rive/wasm/module_render.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_context.hpp"
-#include "third_party/rive/include/rive/wasm/rive_bindings_v1.h"
+#include "rive/renderer/ore/ore_types.hpp"
+#include "rive/renderer/ore/ore_buffer.hpp"
+#include "rive/renderer/ore/ore_texture.hpp"
+#include "rive/renderer/ore/ore_sampler.hpp"
+#include "rive/renderer/ore/ore_shader_module.hpp"
+#include "rive/renderer/ore/ore_bind_group_layout.hpp"
+#include "rive/renderer/ore/ore_bind_group.hpp"
+#include "rive/renderer/ore/ore_pipeline.hpp"
+#include "rive/renderer/ore/ore_render_pass.hpp"
+#include "rive/renderer/render_canvas.hpp"
+#include "rive/renderer/render_target.hpp"
+#include "rive/wasm/module_render.hpp"
+#include "rive/renderer/ore/ore_context.hpp"
+#include "rive/wasm/rive_bindings_v1.h"
 
 #include <algorithm>
 #include <cstring>

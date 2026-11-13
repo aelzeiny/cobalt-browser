@@ -5,11 +5,11 @@
 #ifndef _RIVE_RAW_PATH_HPP_
 #define _RIVE_RAW_PATH_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/path_types.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/span.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/path_types.hpp"
+#include "rive/math/vec2d.hpp"
 
 #include <array>
 #include <cmath>
@@ -286,12 +286,20 @@ public:
     m_Verbs.reserve(numVerbs);
     m_Points.reserve(numPts);
   }
+#ifdef TESTING
+  size_t verbCapacity() const { return m_Verbs.capacity(); }
+  size_t pointCapacity() const { return m_Points.capacity(); }
+#endif
   // Approximates the area of the path by linearizing it with a coarse
   // tolerance of 8px in artboard space.
   constexpr static float kCoarseAreaTolerance = 8;
   // Far from the artboard origin the products cancel into rounding noise,
   // pass an origin near the path to keep them small.
   float computeCoarseArea(Vec2D origin = {0, 0}) const;
+  // The coarse area this path would have transformed by [transform], without
+  // transforming it. A small outline drawn large (a glyph in em units) needs
+  // this: measured untransformed, its curves flatten to their chords.
+  float computeCoarseArea(const Mat2D& transform) const;
 
 private:
   std::vector<Vec2D> m_Points;

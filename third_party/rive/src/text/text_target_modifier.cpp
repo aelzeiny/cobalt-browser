@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text/text_target_modifier.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
+#include "rive/core_context.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text/text_target_modifier.hpp"
+#include "rive/transform_component.hpp"
 
 using namespace rive;
 

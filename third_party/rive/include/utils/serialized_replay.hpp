@@ -5,9 +5,9 @@
 #ifndef _RIVE_SERIALIZED_REPLAY_HPP_
 #define _RIVE_SERIALIZED_REPLAY_HPP_
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/factory.hpp"
+#include "rive/renderer.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 #include <functional>
 

@@ -1,10 +1,10 @@
 #ifndef _RIVE_DATA_CONVERTER_STRING_TEMPLATE_HPP_
 #define _RIVE_DATA_CONVERTER_STRING_TEMPLATE_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_string_template_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_format.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/generated/data_bind/converters/data_converter_string_template_base.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument.hpp"
+#include "rive/data_bind/converters/string_template/string_template_format.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
 #include <stdio.h>
 #include <vector>
 namespace rive

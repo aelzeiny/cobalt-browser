@@ -1,10 +1,10 @@
 #ifndef _RIVE_SCRIPTED_PATH_EFFECT_HPP_
 #define _RIVE_SCRIPTED_PATH_EFFECT_HPP_
-#include "third_party/rive/include/rive/generated/scripted/scripted_path_effect_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
+#include "rive/generated/scripted/scripted_path_effect_base.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -57,6 +57,10 @@ public:
   StatusCode import(ImportStack& importStack) override;
   Core* clone() const override;
   void markNeedsUpdate() override;
+  // Neither an idle advance nor the cached path sees what a continuation
+  // stored. Updating again invalidates the effect and re-arms advance (see
+  // update), and its dirt wakes a resting artboard.
+  void asyncWorkDelivered() override { markNeedsUpdate(); }
   Component* component() override { return this; }
   EffectsContainer* parentPaint() override;
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/angular_gradient_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/angular_gradient.hpp"
+#include "rive/generated/shapes/paint/angular_gradient_base.hpp"
+#include "rive/shapes/paint/angular_gradient.hpp"
 
 using namespace rive;
 

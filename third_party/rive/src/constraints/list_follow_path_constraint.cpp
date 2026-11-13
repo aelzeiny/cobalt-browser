@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/constraints/constrainable_list.hpp"
-#include "third_party/rive/include/rive/constraints/list_follow_path_constraint.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
+#include "rive/artboard.hpp"
+#include "rive/constraints/constrainable_list.hpp"
+#include "rive/constraints/list_follow_path_constraint.hpp"
+#include "rive/math/transform_components.hpp"
 
 using namespace rive;
 

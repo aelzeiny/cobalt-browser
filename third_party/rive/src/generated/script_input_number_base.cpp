@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/script_input_number_base.hpp"
-#include "third_party/rive/include/rive/script_input_number.hpp"
+#include "rive/generated/script_input_number_base.hpp"
+#include "rive/script_input_number.hpp"
 
 using namespace rive;
 

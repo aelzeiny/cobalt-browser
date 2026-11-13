@@ -5,7 +5,7 @@
 #ifndef _RIVE_LINE_BREAK_HPP_
 #define _RIVE_LINE_BREAK_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 
 namespace rive

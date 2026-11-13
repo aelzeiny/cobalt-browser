@@ -1,11 +1,11 @@
 #ifndef _RIVE_IMAGE_HPP_
 #define _RIVE_IMAGE_HPP_
 
-#include "third_party/rive/include/rive/hit_info.hpp"
-#include "third_party/rive/include/rive/generated/shapes/image_base.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_host.hpp"
+#include "rive/hit_info.hpp"
+#include "rive/generated/shapes/image_base.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
+#include "rive/shapes/mesh_host.hpp"
 
 namespace rive
 {
@@ -50,6 +50,10 @@ private:
   // file version at import; defaults to the modern behavior for
   // runtime-created images.
   bool m_layoutScaleSeparate = true;
+  // Whether pointer listeners can hit this image (7.5+). Older files never
+  // hit tested images, so a listener on a group holding one would grow its
+  // hit area. Set from the file version at import, like the above.
+  bool m_isPointerTarget = true;
   void updateImageScale();
 
 public:
@@ -82,6 +86,11 @@ public:
   void draw(Renderer* renderer) override;
   bool willDraw() override;
   Core* hitTest(HitInfo*, const Mat2D&) override;
+  bool hitTestPoint(
+      const Vec2D& position,
+      bool skipOnUnclipped,
+      bool isPrimaryHit) override;
+  bool isPointerTarget() const { return m_isPointerTarget; }
   StatusCode import(ImportStack& importStack) override;
   void setAsset(rcp<FileAsset>) override;
   uint32_t assetId() override;

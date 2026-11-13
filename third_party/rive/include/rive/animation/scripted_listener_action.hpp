@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCRIPTED_LISTENER_ACTION_HPP_
 #define _RIVE_SCRIPTED_LISTENER_ACTION_HPP_
-#include "third_party/rive/include/rive/generated/animation/scripted_listener_action_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
+#include "rive/generated/animation/scripted_listener_action_base.hpp"
+#include "rive/scripted/scripted_object.hpp"
 #include <stdio.h>
 namespace rive
 {

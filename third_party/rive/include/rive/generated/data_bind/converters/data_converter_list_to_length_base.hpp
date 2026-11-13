@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_CONVERTER_LIST_TO_LENGTH_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_LIST_TO_LENGTH_BASE_HPP_
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
 namespace rive
 {
 class DataConverterListToLengthBase : public DataConverter

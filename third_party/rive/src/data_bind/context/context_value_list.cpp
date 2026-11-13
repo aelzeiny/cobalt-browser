@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_list.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_list_item_consumer.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/data_bind/context/context_value_list.hpp"
+#include "rive/data_bind/data_bind_list_item_consumer.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
 
 using namespace rive;
 
@@ -27,6 +27,11 @@ void DataBindContextValueList::apply(
     auto consumer = DataBindListItemConsumer::from(target);
     if (consumer != nullptr)
     {
+      // A converter's list can depend on the row it's made in (an operand
+      // bound to the row's own values), so its source alone doesn't say
+      // what it holds.
+      consumer->boundListSource(
+          dataBind->converter() == nullptr ? dataBind->source() : nullptr);
       consumer->updateList(value);
     }
   }

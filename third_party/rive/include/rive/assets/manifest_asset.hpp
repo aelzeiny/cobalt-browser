@@ -1,7 +1,7 @@
 #ifndef _RIVE_MANIFEST_ASSET_HPP_
 #define _RIVE_MANIFEST_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/manifest_asset_base.hpp"
-#include "third_party/rive/include/rive/data_resolver.hpp"
+#include "rive/generated/assets/manifest_asset_base.hpp"
+#include "rive/data_resolver.hpp"
 #include <stdio.h>
 #include <unordered_map>
 #include <string>

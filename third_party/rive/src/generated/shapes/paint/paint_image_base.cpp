@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/paint_image_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_image.hpp"
+#include "rive/generated/shapes/paint/paint_image_base.hpp"
+#include "rive/shapes/paint/paint_image.hpp"
 
 using namespace rive;
 

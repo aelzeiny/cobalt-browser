@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_asset_font.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_asset_font.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/data_bind/context/context_value_asset_font.hpp"
+#include "rive/data_bind/data_values/data_value_asset_font.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/file.hpp"
 
 using namespace rive;
 

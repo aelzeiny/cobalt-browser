@@ -1,7 +1,7 @@
 #ifndef _RIVE_LAYER_STATE_BASE_HPP_
 #define _RIVE_LAYER_STATE_BASE_HPP_
-#include "third_party/rive/include/rive/animation/state_machine_layer_component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/animation/state_machine_layer_component.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

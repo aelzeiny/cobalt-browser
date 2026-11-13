@@ -1,8 +1,8 @@
 
-#include "third_party/rive/include/rive/foreground_layout_drawable.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
+#include "rive/foreground_layout_drawable.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/stroke.hpp"
 
 using namespace rive;
 

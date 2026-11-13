@@ -1,8 +1,8 @@
 #ifndef _RIVE_SHAPE_PAINT_PATH_HPP_
 #define _RIVE_SHAPE_PAINT_PATH_HPP_
 
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/renderer.hpp"
 
 namespace rive
 {
@@ -32,6 +32,13 @@ public:
   {
     m_isLocal = isLocal;
     rewind();
+  }
+  // Empties the path, keeping its storage like rewind, and lets its render
+  // path go: it then draws exactly as a path made afresh would.
+  void rewindAsNew()
+  {
+    rewind();
+    m_renderPath = nullptr;
   }
   void addPath(const RawPath& rawPath, const Mat2D* transform = nullptr);
   void addPathBackwards(

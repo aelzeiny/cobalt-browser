@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_ENUM_CUSTOM_HPP_
 #define _RIVE_DATA_ENUM_CUSTOM_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/data_enum_custom_base.hpp"
+#include "rive/generated/viewmodel/data_enum_custom_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/nested_artboard_layout.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/world_transform_component.hpp"
+#include "rive/nested_artboard_layout.hpp"
+#include "rive/artboard.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/layout/layout_data.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/world_transform_component.hpp"
 
 using namespace rive;
 
@@ -250,6 +250,28 @@ void NestedArtboardLayout::referencedArtboard(Artboard* artboard)
 #endif
 #else
   NestedArtboard::referencedArtboard(artboard);
+#endif
+}
+
+void NestedArtboardLayout::remount()
+{
+#ifdef WITH_RIVE_LAYOUT
+  // As updateArtboard: the owning layout lets go of the outgoing instance's
+  // node and collects the new one's.
+  auto* layout = owningLayout(parent());
+  if (layout != nullptr)
+  {
+    layout->clearLayoutChildren();
+  }
+#endif
+  NestedArtboard::remount();
+  updateWidthOverride();
+  updateHeightOverride();
+#ifdef WITH_RIVE_LAYOUT
+  if (layout != nullptr)
+  {
+    layout->syncLayoutChildren();
+  }
 #endif
 }
 

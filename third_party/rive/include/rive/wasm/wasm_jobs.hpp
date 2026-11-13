@@ -3,10 +3,10 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/async/job_pool.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/async/job_pool.hpp"
+#include "rive/wasm/wasm_lane.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
 
 #include <vector>
 
@@ -29,6 +29,7 @@ public:
   void stop() override;
   /// Valid once finished.
   const std::vector<uint8_t>& output() const { return m_output; }
+  uint32_t reuseMaxPages() const { return m_module->reuseMaxPages; }
 
   /// The job running on this thread, for the natives its module imports.
   static WasmJob* current();
@@ -70,6 +71,14 @@ public:
       JobSchedule schedule = JobSchedule::fifo,
       uint64_t seed = 0);
   static JobPool& pool();
+  /// The pool's threads, or those it would start with, without making it.
+  /// chosen says whether the host chose the count rather than the default.
+  static uint32_t poolThreads(bool* chosen = nullptr);
+#if defined(WITH_RIVE_TOOLS) || defined(TESTING)
+  /// Drops the pool and the host's choice, so the next use makes the
+  /// default pool.
+  static void resetPool();
+#endif
   /// With no pool threads a job runs only when joined or here, at each poll:
   /// at least one, more within the cooperative slice, each to its end.
   static void runQueuedInline();

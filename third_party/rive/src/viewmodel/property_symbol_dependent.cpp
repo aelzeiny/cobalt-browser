@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/viewmodel/property_symbol_dependent.hpp"
+#include "rive/viewmodel/property_symbol_dependent.hpp"
 
 using namespace rive;
 

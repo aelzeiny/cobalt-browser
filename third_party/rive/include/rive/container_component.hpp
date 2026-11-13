@@ -1,7 +1,7 @@
 #ifndef _RIVE_CONTAINER_COMPONENT_HPP_
 #define _RIVE_CONTAINER_COMPONENT_HPP_
-#include "third_party/rive/include/rive/generated/container_component_base.hpp"
-#include "third_party/rive/include/rive/typed_children.hpp"
+#include "rive/generated/container_component_base.hpp"
+#include "rive/typed_children.hpp"
 #include <vector>
 #include <functional>
 
@@ -31,6 +31,7 @@ public:
 
   const std::vector<Component*>& children() const { return m_children; }
   virtual void addChild(Component* component);
+  void reserveChildren(std::size_t count) { m_children.reserve(count); }
 #ifdef WITH_RIVE_EDITOR
   /// Remove `component` from this container's children list, if
   /// present. Called by `EditorFile::removeObject` during cull

@@ -2,8 +2,8 @@
  * Copyright 2025 Rive
  */
 
-#include "third_party/rive/include/rive/command_queue.hpp"
-#include "third_party/rive/include/rive/command_server.hpp"
+#include "rive/command_queue.hpp"
+#include "rive/command_server.hpp"
 
 #include <future>
 
@@ -1439,6 +1439,12 @@ void CommandQueue::requestDefaultViewModelInfo(
   m_commandStream << fileHandle;
   m_commandStream << artboardHandle;
   m_commandStream << requestId;
+}
+
+bool CommandQueue::hasMessages()
+{
+  std::unique_lock<std::mutex> lock(m_messageMutex);
+  return !m_messageStream.empty();
 }
 
 void CommandQueue::processMessages()

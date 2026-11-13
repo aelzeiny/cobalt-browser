@@ -3,11 +3,11 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/async/threading.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_policy.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_shared_layout_gen.hpp"
+#include "rive/async/threading.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
+#include "rive/wasm/wasm_lane_policy.hpp"
+#include "rive/wasm/wasm_shared_layout_gen.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -403,6 +403,8 @@ public:
   }
   /// Another hold on what owner's VM made; false once it is gone.
   static bool retain(uint32_t id, uint64_t owner);
+  /// The holds on what owner's VM made, 0 once it is gone.
+  static uint32_t holds(uint32_t id, uint64_t owner);
   /// Gives back one hold on what owner's VM made; the last frees the slot
   /// and a ring's signals, once no lookup still holds it.
   static void release(uint32_t id, uint64_t owner);
@@ -433,6 +435,11 @@ uint32_t sharedHeldRegion();
 /// The held region when id names it, else null.
 SharedRegion* sharedHeld(uint32_t id);
 void setSharedHeldRegion(uint32_t id, rcp<SharedRegion> region);
+/// The region id names for owner, kept alive until this thread forgets its
+/// recent regions; null when the id names no region of that owner.
+SharedRegion* sharedRecentRegion(uint32_t id, uint64_t owner);
+/// Drops what sharedRecentRegion keeps, at the end of each call or lane step.
+void forgetRecentRegions();
 /// After a call trapped: unlock and poison a region the trap left held.
 void releaseTrappedRegion();
 /// Sets this thread's held region aside, so a call into another VM can

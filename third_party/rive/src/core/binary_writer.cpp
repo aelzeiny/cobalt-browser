@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/core/binary_writer.hpp"
-#include "third_party/rive/include/rive/core/binary_stream.hpp"
-#include "third_party/rive/include/rive/core/reader.h"
+#include "rive/core/binary_writer.hpp"
+#include "rive/core/binary_stream.hpp"
+#include "rive/core/reader.h"
 #include <stdio.h>
 
 using namespace rive;

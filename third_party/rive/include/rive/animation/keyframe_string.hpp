@@ -1,6 +1,6 @@
 #ifndef _RIVE_KEY_FRAME_STRING_HPP_
 #define _RIVE_KEY_FRAME_STRING_HPP_
-#include "third_party/rive/include/rive/generated/animation/keyframe_string_base.hpp"
+#include "rive/generated/animation/keyframe_string_base.hpp"
 
 namespace rive
 {

@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/node.hpp"
+#include "rive/shapes/parametric_path.hpp"
+#include "rive/shapes/shape.hpp"
 
 using namespace rive;
 

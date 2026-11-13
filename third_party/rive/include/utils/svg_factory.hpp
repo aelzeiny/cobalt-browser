@@ -5,10 +5,10 @@
 #ifndef _RIVE_SVG_FACTORY_HPP_
 #define _RIVE_SVG_FACTORY_HPP_
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
+#include "rive/factory.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/renderer.hpp"
+#include "rive/shapes/paint/color.hpp"
 #include <sstream>
 #include <string>
 #include <vector>

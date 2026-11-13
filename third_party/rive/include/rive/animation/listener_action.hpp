@@ -1,8 +1,8 @@
 #ifndef _RIVE_LISTENER_ACTION_HPP_
 #define _RIVE_LISTENER_ACTION_HPP_
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_action.hpp"
-#include "third_party/rive/include/rive/generated/animation/listener_action_base.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_fire_action.hpp"
+#include "rive/generated/animation/listener_action_base.hpp"
 
 namespace rive
 {

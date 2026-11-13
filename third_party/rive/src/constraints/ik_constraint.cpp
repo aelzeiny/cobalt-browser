@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/constraints/ik_constraint.hpp"
-#include "third_party/rive/include/rive/bones/bone.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/constraints/ik_constraint.hpp"
+#include "rive/bones/bone.hpp"
+#include "rive/math/math_types.hpp"
 #include <algorithm>
 
 using namespace rive;

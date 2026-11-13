@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/target_effect_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/target_effect.hpp"
+#include "rive/generated/shapes/paint/target_effect_base.hpp"
+#include "rive/shapes/paint/target_effect.hpp"
 
 using namespace rive;
 

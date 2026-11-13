@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/listener_number_change_base.hpp"
-#include "third_party/rive/include/rive/animation/listener_number_change.hpp"
+#include "rive/generated/animation/listener_number_change_base.hpp"
+#include "rive/animation/listener_number_change.hpp"
 
 using namespace rive;
 

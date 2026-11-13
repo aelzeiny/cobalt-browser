@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
 
 using namespace rive;
 

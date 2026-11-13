@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_MODIFIER_BASE_HPP_
 #define _RIVE_TEXT_MODIFIER_BASE_HPP_
-#include "third_party/rive/include/rive/component.hpp"
+#include "rive/component.hpp"
 namespace rive
 {
 class TextModifierBase : public Component

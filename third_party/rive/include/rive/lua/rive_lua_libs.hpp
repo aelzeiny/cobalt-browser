@@ -2,57 +2,58 @@
 #ifndef _RIVE_LUA_LIBS_HPP_
 #define _RIVE_LUA_LIBS_HPP_
 #include "lua.h"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text_engine.hpp"
 #include "lualib.h"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/lua/lua_state.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/math/mat4.hpp"
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_image.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_boolean.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_color.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_color.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_trigger.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_color.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_list.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/lua/scripting_vm.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/lua/lua_state.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/factory.hpp"
+#include "rive/renderer.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/math/mat4.hpp"
+#include "rive/math/contour_measure.hpp"
+#include "rive/math/path_measure.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_image.hpp"
+#include "rive/viewmodel/viewmodel_instance_boolean.hpp"
+#include "rive/viewmodel/viewmodel_instance_color.hpp"
+#include "rive/viewmodel/viewmodel_instance_enum.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance_color.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
+#include "rive/viewmodel/viewmodel_instance_trigger.hpp"
+#include "rive/viewmodel/viewmodel_instance_list.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/data_bind/data_values/data_value_boolean.hpp"
+#include "rive/data_bind/data_values/data_value_color.hpp"
+#include "rive/data_bind/data_values/data_value_list.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/lua/scripting_vm.hpp"
+#include "rive/refcnt.hpp"
 #ifdef WITH_RIVE_AUDIO
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_source.hpp"
+#include "rive/audio/audio_sound.hpp"
 #endif
 #ifdef WITH_RIVE_TOOLS
-#include "third_party/rive/include/rive/core/binary_writer.hpp"
-#include "third_party/rive/include/rive/core/vector_binary_stream.hpp"
+#include "rive/core/binary_writer.hpp"
+#include "rive/core/vector_binary_stream.hpp"
 #endif
 #ifdef WITH_RIVE_SCRIPTNET
-#include "third_party/rive/include/rive/scriptnet/http.hpp"
+#include "rive/scriptnet/http.hpp"
 #endif
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <unordered_map>
@@ -71,6 +72,7 @@ class Artboard;
 class ArtboardInstance;
 class NestedArtboard;
 class Factory;
+class ScriptBackend;
 class File;
 class ModuleDetails;
 class ScriptedObject;
@@ -358,6 +360,7 @@ enum class LuaAtoms : int16_t
 
   // Image decode
   decodeImage,
+  loadImage,
 
   // Mat4
   transpose,
@@ -505,6 +508,10 @@ enum class LuaAtoms : int16_t
   delta,
   precise,
   pointerScroll,
+
+  // Keyboard and text input forwarded to a script's artboard
+  keyboardEvent,
+  textEvent,
 };
 
 struct ScriptedMat2D
@@ -987,10 +994,9 @@ public:
   lua_State* m_L = nullptr;
   int m_imageRef = LUA_NOREF;
   gpu::RenderContext* renderCtx = nullptr; // needed for resize()
-  // Size a resize() asked for while no device existed. Web attaches one per
-  // render texture after layout has already run, and a generator resizes
+  // Size asked for while no session or device could mint it. A generator sizes
   // once, so the request is held here and honoured on the first access after
-  // a device appears. Zero once satisfied.
+  // one can. Zero once satisfied.
   uint32_t pendingWidth = 0;
   uint32_t pendingHeight = 0;
 };
@@ -1849,6 +1855,8 @@ static void lua_register_rive_type(
   lua_pop(L, 1);
 }
 
+// Points into the Lua stack, which can move on any allocating Lua call: copy
+// the value first. Same for lua_tovec2d.
 inline const Vec2D* lua_checkvec2d(lua_State* L, int stack)
 {
   return (const Vec2D*)luaL_checkvector(L, stack);
@@ -1955,6 +1963,39 @@ public:
   // the error on top.
   virtual void onModuleError(lua_State* moduleThread) {}
 
+  // A module top level runs on its own thread and is not under pCall, so
+  // an interrupt is the only thing that can end a loop in it. Module
+  // execution takes the host's own script timeout raised to at least
+  // this, so a host that sets none, or sets 0 for "unlimited", still gets
+  // a bound on a plain non-terminating loop, and one that asks for longer
+  // keeps it.
+  //
+  // 1000ms is what the rest of this codebase means by "one unit of script
+  // work should be done": DartExposedScriptingContext's default and the
+  // default of the editor's executionTimeoutMs setting. 200ms is a frame
+  // budget and 2000ms is the line at which a thread is treated as wedged;
+  // neither fits a module top level, which builds tables and closures once
+  // per compile. The 46-module box2d corpus executes all its top levels in
+  // tens of microseconds in a debug build; 1000ms leaves room for one that
+  // precomputes.
+  //
+  // Too low and a module that does real work at its top level stops
+  // registering, so a file that worked silently loses the methods that
+  // module provided. Too high and a caller whose module is a plain
+  // non-terminating loop holds the thread that long, once per module.
+  //
+  // interruptCPP, which CPPRuntimeScriptingContext installs, does not stop a
+  // module that swallows the raise with pcall or that spins inside a C
+  // function such as a table.sort comparator or a string pattern match. The
+  // interrupt in rive_luau_binding.cpp has neither gap.
+  static constexpr int moduleExecutionTimeoutMs = 1000;
+
+  // Arms a bound around a module top level and restores what it replaced.
+  // A host that runs script code must override both; the default leaves a
+  // module top level unbounded.
+  virtual void startModuleExecution(lua_State* moduleThread) {}
+  virtual void endModuleExecution(lua_State* moduleThread) {}
+
   // Add a module to be registered later via performRegistration()
   void addModule(ModuleDetails* moduleDetails);
   // Perform registration of all added modules, handling dependencies and
@@ -2003,6 +2044,8 @@ public:
     // match, 2 the caller's own library, 1 host or lib: match.
     int match(const std::string& registeredName, const std::string& shortName)
         const;
+    // The reference as the script wrote it, less any lib: scope.
+    const std::string& name() const { return m_bare.empty() ? m_path : m_bare; }
 
   private:
     bool matchesLibrary(const std::string& registeredName) const;
@@ -2053,6 +2096,9 @@ public:
   {
     return m_factory != nullptr ? m_factory->deferredCanvasHost() : nullptr;
   }
+#ifdef WITH_RIVE_TOOLS
+  bool warnedSampledOpenCanvas = false;
+#endif
 
   // WorkPool for async operations (image decode, etc.).
   // Lazily created on first access. Shared across all contexts via a
@@ -2079,6 +2125,16 @@ public:
   // has yet to be delivered, including WASM browser-native decodes started
   // on mainThread. Other contexts' work doesn't count.
   bool hasPendingAsyncWork(lua_State* mainThread) const;
+
+  // The backend the scripted objects running on this context register with:
+  // the ScriptingVM that owns it, or null for a bare lua_State.
+  void scriptBackend(ScriptBackend* backend) { m_scriptBackend = backend; }
+  // A promise async work this context started settled (a fetch answered, a
+  // decode finished): tells the backend's objects, whose continuation may
+  // have changed state they read (see ScriptBackend::asyncWorkDelivered).
+  void asyncWorkDelivered();
+  // asyncWorkDelivered() for L's context, if it has one.
+  static void asyncWorkDelivered(lua_State* L);
 
   // WebGL/WASM only: whether an ore frame is currently open for this VM.
   // riveLuaPCall uses this to auto-open a mini-frame when Lua callbacks
@@ -2148,6 +2204,8 @@ public:
   // device / RenderContext. Default false: normal runtimes allocate.
   void setGpuCanvasDeferOnly(bool value) { m_gpuCanvasDeferOnly = value; }
   bool gpuCanvasDeferOnly() const { return m_gpuCanvasDeferOnly; }
+  // Shaders this VM already told its author about.
+  std::unordered_set<std::string>& noticedShaders() { return m_noticedShaders; }
 
   // WebGL/WASM only: GL context handle saved at riveGPUBeginFrame so
   // riveGPUEndFrame can restore the caller's context afterwards.
@@ -2171,9 +2229,11 @@ private:
 
 private:
   Factory* m_renderContext = nullptr;
+  ScriptBackend* m_scriptBackend = nullptr;
   uint64_t m_ownerId = 0;
   bool m_oreFrameOpen = false;
   bool m_gpuCanvasDeferOnly = false;
+  std::unordered_set<std::string> m_noticedShaders;
   std::vector<OpenCanvasFrame> m_openCanvasFrames;
   uint64_t m_nextOpenCanvasFrameToken = 1;
   intptr_t m_prevGLContext = 0;
@@ -2237,12 +2297,16 @@ public:
 #ifdef RIVE_CANVAS
 // Allocates a script canvas backing, deferring when a session is recording
 // or the device was late bound, since either way the replay worker owns the
-// texture.
+// texture. Null when there is neither a session nor a device.
 rcp<gpu::RenderCanvas> allocScriptRenderCanvas(
     gpu::RenderContext* rc,
     ScriptingContext* ctx,
     uint32_t width,
     uint32_t height);
+void canvas_satisfyPending(lua_State* L, ScriptedCanvas* self);
+#ifdef RIVE_ORE
+void gpucanvas_satisfyPending(lua_State* L, ScriptedGPUCanvas* self);
+#endif
 #endif
 
 class ScopedScriptedObjectContext
@@ -2557,8 +2621,10 @@ private:
   rcp<T> m_key;
 };
 
-#ifdef WITH_RIVE_SCRIPTNET
-// ── Decoded Rive files (context:decodeFile) ────────────────────────────────
+// ── Bindable artboards and decoded Rive files ──────────────────────────────
+//
+// The artboard property, BindableArtboard and context:bindableArtboard need
+// no networking; only context:decodeFile does (WITH_RIVE_SCRIPTNET).
 
 class BindableArtboard;
 class ViewModelInstanceArtboard;
@@ -2579,8 +2645,9 @@ public:
 };
 
 /// An artboard of a decoded file, with an instance of the view model its
-/// binds read from that same file. Assigning it to a view model artboard
-/// property binds both.
+/// binds read from that same file, or one of the host file's own artboards
+/// from context:bindableArtboard, with none. Assigning it to a view model
+/// artboard property binds both.
 class ScriptedBindableArtboard
 {
 public:
@@ -2617,7 +2684,6 @@ public:
   /// Assigns the BindableArtboard (or nil) at valueIdx.
   void setValue(lua_State* L, int valueIdx);
 };
-#endif
 
 class ScriptedContext
 {
@@ -2835,6 +2901,8 @@ public:
   virtual ~CPPRuntimeScriptingContext() = default;
 
   std::chrono::time_point<std::chrono::steady_clock> executionTime;
+  // The last timed execution ran past timeoutMs, so its error is ours.
+  bool budgetExceeded = false;
 
   int timeoutMs() const { return m_timeoutMs; }
   void setTimeoutMs(int ms) { m_timeoutMs = ms; }
@@ -2914,7 +2982,12 @@ public:
 #ifdef WITH_RIVE_TOOLS
     if (error)
     {
-      printBeginLine(state);
+      // Type 1 marks an error line, as the editor's own context writes it.
+      // The message names its site; the frame here is the error builtin.
+      BinaryWriter writer(&m_consoleBuffer);
+      writer.write((uint8_t)1);
+      writer.write("");
+      writer.writeVarUint((uint32_t)0);
       print(Span<const char>(error, strlen(error)));
       printEndLine();
     }
@@ -2923,6 +2996,7 @@ public:
 
   void startTimedExecution(lua_State* state)
   {
+    budgetExceeded = false;
     if (m_timeoutMs == 0)
     {
       return;
@@ -2948,6 +3022,23 @@ public:
     cb->interrupt = --m_timedDepth == 0 ? m_outerInterrupt : interruptCPP;
   }
 
+  void startModuleExecution(lua_State* state) override
+  {
+    m_timeoutBeforeModule = m_timeoutMs;
+    // Raises a bound, never lowers one: a host that asked for longer than
+    // the module floor keeps what it asked for.
+    m_timeoutMs = std::max(m_timeoutMs, moduleExecutionTimeoutMs);
+    startTimedExecution(state);
+  }
+
+  void endModuleExecution(lua_State* state) override
+  {
+    // Ends before restoring: endTimedExecution returns early when
+    // m_timeoutMs is 0, which would leave the interrupt and depth armed.
+    endTimedExecution(state);
+    m_timeoutMs = m_timeoutBeforeModule;
+  }
+
 #ifdef WITH_RIVE_TOOLS
   // Console buffer access for editor
   Span<uint8_t> consoleMemory() { return m_consoleBuffer.memory(); }
@@ -2963,6 +3054,8 @@ public:
 
 private:
   int m_timeoutMs = 200;
+  // A module top level cannot reach executeModule, so this never nests.
+  int m_timeoutBeforeModule = 0;
   int m_timedDepth = 0;
   void (*m_outerInterrupt)(lua_State* L, int gc) = nullptr;
 #ifdef WITH_RIVE_TOOLS
@@ -3037,6 +3130,7 @@ static void interruptCPP(lua_State* L, int gc)
           timeoutMs,
           timeoutMs == 1 ? "" : "s");
     }
+    context->budgetExceeded = true;
     luaL_error(L, "%s", errorMsg);
   }
 }
@@ -3053,8 +3147,10 @@ class File;
 // vertex and fragment modules for GLSL targets with split entry points).
 // Checks ScriptingContext::m_shaderRstbs first (editor path, compiled
 // during requestVM), then |fileAsset| if non-null (runtime .riv path).
-// Returns false on failure.
+// Returns false on failure, having told the author through context's console
+// when the device refused the shader.
 bool lua_gpu_load_shader_by_name(
+    lua_State* L,
     rive::ScriptedShader* out,
     rive::ScriptingContext* context,
     const rive::ScriptingContext::ScopedAssetReference& reference,

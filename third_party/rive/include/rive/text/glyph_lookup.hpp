@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_GLYPH_LOOKUP_HPP_
 #define _RIVE_TEXT_GLYPH_LOOKUP_HPP_
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text_engine.hpp"
 #include <stdint.h>
 #include <vector>
 

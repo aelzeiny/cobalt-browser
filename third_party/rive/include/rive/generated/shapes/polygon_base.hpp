@@ -1,8 +1,8 @@
 #ifndef _RIVE_POLYGON_BASE_HPP_
 #define _RIVE_POLYGON_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/shapes/parametric_path.hpp"
 namespace rive
 {
 class PolygonBase : public ParametricPath

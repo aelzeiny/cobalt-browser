@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/state_machine_input.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_machine_base.hpp"
+#include "rive/animation/state_machine_input.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/generated/animation/state_machine_base.hpp"
 
 using namespace rive;
 

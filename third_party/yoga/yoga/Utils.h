@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_UTILS_H_
-#define THIRD_PARTY_YOGA_YOGA_UTILS_H_
-
 #include "YGNode.h"
 #include "Yoga-internal.h"
 #include "CompactValue.h"
@@ -37,8 +34,39 @@
 //   and it may or may not be part of the current line(as it may be absolutely
 //   positioned or including it may have caused to overshoot availableInnerDim)
 //
-// - relativeChildren: Maintain a vector of the child nodes that can shrink
+// - relativeChildren: the in-flow children of the line, which can shrink
 //   and/or grow.
+
+// rive: read in place from the owner's children rather than copied into a
+// vector for every line of every layout.
+struct YGLineChildren {
+  struct Iterator {
+    const YGNodeRef* at;
+    const YGNodeRef* end;
+    void skipOutOfFlow() {
+      while (at != end &&
+             ((*at)->getStyle().display() == YGDisplayNone ||
+              (*at)->getStyle().positionType() == YGPositionTypeAbsolute)) {
+        at++;
+      }
+    }
+    YGNodeRef operator*() const { return *at; }
+    Iterator& operator++() {
+      at++;
+      skipOutOfFlow();
+      return *this;
+    }
+    bool operator!=(const Iterator& other) const { return at != other.at; }
+  };
+  const YGNodeRef* first = nullptr;
+  const YGNodeRef* last = nullptr;
+  Iterator begin() const {
+    Iterator it{first, last};
+    it.skipOutOfFlow();
+    return it;
+  }
+  Iterator end() const { return {last, last}; }
+};
 
 struct YGCollectFlexItemsRowValues {
   uint32_t itemsOnLine;
@@ -46,7 +74,7 @@ struct YGCollectFlexItemsRowValues {
   float totalFlexGrowFactors;
   float totalFlexShrinkScaledFactors;
   uint32_t endOfLineIndex;
-  std::vector<YGNodeRef> relativeChildren;
+  YGLineChildren relativeChildren;
   float remainingFreeSpace;
   // The size of the mainDim for the row after considering size, padding, margin
   // and border of flex items. This is used to calculate maxLineDim after going
@@ -147,5 +175,3 @@ inline YGFloatOptional YGResolveValueMargin(
     const float ownerSize) {
   return value.isAuto() ? YGFloatOptional{0} : YGResolveValue(value, ownerSize);
 }
-
-#endif  // THIRD_PARTY_YOGA_YOGA_UTILS_H_

@@ -5,9 +5,9 @@
 #ifndef _RIVE_SERIALIZING_FACTORY_HPP_
 #define _RIVE_SERIALIZING_FACTORY_HPP_
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/core/vector_binary_writer.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/factory.hpp"
+#include "rive/core/vector_binary_writer.hpp"
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -58,6 +58,9 @@ public:
   void endCanvasContent(gpu::RenderCanvas* canvas) override;
   rcp<gpu::RenderCanvas> makeContentCanvas(uint32_t width, uint32_t height)
       override;
+  rcp<gpu::RenderCanvas> makeUnboundContentCanvas(
+      uint32_t width,
+      uint32_t height) override;
   rcp<RenderImage> contentCanvasImage(gpu::RenderCanvas* canvas) override;
 
   // Stream id for a drawable image. Canvas-backed images are registered

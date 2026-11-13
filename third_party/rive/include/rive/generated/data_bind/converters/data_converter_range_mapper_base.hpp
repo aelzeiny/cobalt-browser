@@ -1,10 +1,10 @@
 #ifndef _RIVE_DATA_CONVERTER_RANGE_MAPPER_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_RANGE_MAPPER_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
 namespace rive
 {
 class DataConverterRangeMapperBase : public DataConverter

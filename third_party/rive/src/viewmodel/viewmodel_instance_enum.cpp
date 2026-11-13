@@ -2,9 +2,9 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
+#include "rive/viewmodel/viewmodel_instance_enum.hpp"
+#include "rive/viewmodel/viewmodel_property_enum.hpp"
+#include "rive/component_dirt.hpp"
 
 using namespace rive;
 

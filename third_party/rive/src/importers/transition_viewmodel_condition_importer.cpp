@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/importers/transition_viewmodel_condition_importer.hpp"
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_comparator.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/importers/transition_viewmodel_condition_importer.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/animation/transition_comparator.hpp"
+#include "rive/data_bind/data_bind.hpp"
 
 using namespace rive;
 

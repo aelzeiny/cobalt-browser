@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/intrinsically_sizeable.hpp"
-#include "third_party/rive/include/rive/joystick.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
+#include "rive/intrinsically_sizeable.hpp"
+#include "rive/joystick.hpp"
+#include "rive/transform_component.hpp"
 
 using namespace rive;
 

@@ -2,8 +2,8 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_string.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
+#include "rive/component_dirt.hpp"
 
 using namespace rive;
 

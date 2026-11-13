@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/component.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
 
 using namespace rive;
 
@@ -28,11 +28,9 @@ void ShapePaintPath::addPathClockwise(
     const RawPath& rawPath,
     const Mat2D* transform)
 {
-  float coarseArea = rawPath.computeCoarseArea();
-  if (transform != nullptr)
-  {
-    coarseArea *= transform->determinant();
-  }
+  float coarseArea = transform == nullptr
+                         ? rawPath.computeCoarseArea()
+                         : rawPath.computeCoarseArea(*transform);
   if (coarseArea < 0)
   {
     addPathBackwards(rawPath, transform);
@@ -48,7 +46,11 @@ void ShapePaintPath::addPathBackwards(
     const Mat2D* transform)
 {
   auto iter = m_rawPath.addPathBackwards(rawPath, transform);
-  m_rawPath.pruneEmptySegments(iter);
+  // RawPath prunes what it adds itself when it transforms it.
+  if (transform == nullptr)
+  {
+    m_rawPath.pruneEmptySegments(iter);
+  }
   m_isRenderPathDirty = true;
 }
 

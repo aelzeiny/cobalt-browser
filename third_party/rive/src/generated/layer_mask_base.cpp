@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layer_mask_base.hpp"
-#include "third_party/rive/include/rive/layer_mask.hpp"
+#include "rive/generated/layer_mask_base.hpp"
+#include "rive/layer_mask.hpp"
 
 using namespace rive;
 

@@ -1,9 +1,9 @@
 #ifndef _RIVE_TARGET_EFFECT_HPP_
 #define _RIVE_TARGET_EFFECT_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/target_effect_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
+#include "rive/generated/shapes/paint/target_effect_base.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 namespace rive

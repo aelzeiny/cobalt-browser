@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/layout/n_sliced_node.hpp"
-#include "third_party/rive/include/rive/shapes/deformer.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
+#include "rive/layout/n_sliced_node.hpp"
+#include "rive/shapes/deformer.hpp"
+#include "rive/shapes/shape.hpp"
 
 using namespace rive;
 

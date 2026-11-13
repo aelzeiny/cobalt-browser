@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/artboard.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_layout.hpp"
 
 using namespace rive;
 

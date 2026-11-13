@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/world_transform_component.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
+#include "rive/node.hpp"
+#include "rive/world_transform_component.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_host.hpp"
 
 using namespace rive;
 

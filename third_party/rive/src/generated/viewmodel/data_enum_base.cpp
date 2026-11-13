@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/data_enum_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
+#include "rive/generated/viewmodel/data_enum_base.hpp"
+#include "rive/viewmodel/data_enum.hpp"
 
 using namespace rive;
 

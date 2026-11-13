@@ -1,6 +1,6 @@
 #ifndef _RIVE_AXIS_XBASE_HPP_
 #define _RIVE_AXIS_XBASE_HPP_
-#include "third_party/rive/include/rive/layout/axis.hpp"
+#include "rive/layout/axis.hpp"
 namespace rive
 {
 class AxisXBase : public Axis

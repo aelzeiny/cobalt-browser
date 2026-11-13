@@ -198,12 +198,15 @@ void rtBudgetExceededImpl(WasmScriptingVM* vm, uint32_t ms);
 void rtErrorImpl(WasmScriptingVM* vm, const char* message, uint32_t length);
 double rtNowImpl(WasmScriptingVM* vm);
 double rtDateNowImpl(WasmScriptingVM* vm);
+uint32_t rtFeaturesImpl(WasmScriptingVM* vm);
 void rtDebugEnterImpl(WasmScriptingVM* vm, uint32_t func, uint32_t line);
 uint32_t rtDebugLineImpl(WasmScriptingVM* vm, uint32_t line);
 void rtDebugLeaveImpl(WasmScriptingVM* vm);
 uint32_t rtUtcOffsetImpl(WasmScriptingVM* vm, double epochSeconds);
 uint32_t rtIsDstImpl(WasmScriptingVM* vm, double epochSeconds);
 uint32_t rtZoneNameImpl(WasmScriptingVM* vm, double epochSeconds, char* buffer, uint32_t capacity);
+uint32_t rtArgImpl(WasmScriptingVM* vm, const char* name, uint32_t nameLength, char* buffer, uint32_t capacity);
+void rtReleasePagesImpl(WasmScriptingVM* vm, uint32_t start, uint32_t length);
 uint32_t dataViewModelImpl(WasmScriptingVM* vm, uint32_t object);
 uint32_t dataRootViewModelImpl(WasmScriptingVM* vm, uint32_t object);
 uint32_t dataGlobalViewModelImpl(WasmScriptingVM* vm, uint32_t object, const char* name, uint32_t nameLength);
@@ -288,6 +291,8 @@ void artboardBoundsImpl(WasmScriptingVM* vm, uint32_t artboard, float* out, uint
 uint32_t artboardPointerEventImpl(WasmScriptingVM* vm, uint32_t artboard, uint32_t kind, uint32_t pointerId, float x, float y);
 uint32_t artboardScrollEventImpl(WasmScriptingVM* vm, uint32_t artboard, uint32_t pointerId, float x, float y, float dx, float dy, uint32_t phase, uint32_t precise, float timeStamp);
 uint32_t artboardGamepadEventImpl(WasmScriptingVM* vm, uint32_t artboard, const uint8_t* payload, uint32_t byteCount);
+uint32_t artboardKeyboardEventImpl(WasmScriptingVM* vm, uint32_t artboard, uint32_t key, uint32_t modifiers, uint32_t isPressed, uint32_t isRepeat);
+uint32_t artboardTextEventImpl(WasmScriptingVM* vm, uint32_t artboard, const char* text, uint32_t length);
 uint32_t artboardAnimationImpl(WasmScriptingVM* vm, uint32_t artboard, const char* name, uint32_t length);
 void artboardAnimationReleaseImpl(WasmScriptingVM* vm, uint32_t animation);
 float artboardAnimationDurationImpl(WasmScriptingVM* vm, uint32_t animation);
@@ -320,6 +325,16 @@ void audioSourceReleaseImpl(WasmScriptingVM* vm, uint32_t source);
 float audioSourceDurationImpl(WasmScriptingVM* vm, uint32_t source);
 uint32_t audioSourceSampleRateImpl(WasmScriptingVM* vm, uint32_t source);
 uint32_t audioSourceChannelsImpl(WasmScriptingVM* vm, uint32_t source);
+uint32_t audioSourceToBlobImpl(WasmScriptingVM* vm, uint32_t source, uint32_t sampleRate, uint32_t channels);
+uint32_t audioStreamImpl(WasmScriptingVM* vm, uint32_t source, uint32_t sampleRate, uint32_t channels, uint32_t chunkFrames, uint32_t bufferFrames);
+uint32_t audioStreamRingImpl(WasmScriptingVM* vm, uint32_t stream);
+uint32_t audioStreamSeeksImpl(WasmScriptingVM* vm, uint32_t stream);
+uint32_t audioStreamChannelsImpl(WasmScriptingVM* vm, uint32_t stream);
+uint32_t audioStreamSampleRateImpl(WasmScriptingVM* vm, uint32_t stream);
+uint32_t audioStreamSeekFrameImpl(WasmScriptingVM* vm, uint32_t stream, double frame);
+void audioStreamSetLoopImpl(WasmScriptingVM* vm, uint32_t stream, uint32_t loop);
+uint32_t audioStreamEndedImpl(WasmScriptingVM* vm, uint32_t stream);
+void audioStreamReleaseImpl(WasmScriptingVM* vm, uint32_t stream);
 uint32_t audioPlayImpl(WasmScriptingVM* vm, uint32_t source);
 uint32_t audioPlayAtTimeImpl(WasmScriptingVM* vm, uint32_t source, float seconds);
 uint32_t audioPlayInTimeImpl(WasmScriptingVM* vm, uint32_t source, float seconds);
@@ -328,6 +343,8 @@ uint32_t audioPlayInFrameImpl(WasmScriptingVM* vm, uint32_t source, double frame
 float audioTimeImpl(WasmScriptingVM* vm);
 double audioTimeFrameImpl(WasmScriptingVM* vm);
 uint32_t audioSampleRateImpl(WasmScriptingVM* vm);
+uint32_t audioProcessorSampleRateImpl(WasmScriptingVM* vm);
+uint32_t audioProcessorChannelsImpl(WasmScriptingVM* vm);
 void audioSoundReleaseImpl(WasmScriptingVM* vm, uint32_t sound);
 void audioSoundPlayImpl(WasmScriptingVM* vm, uint32_t sound);
 void audioSoundPauseImpl(WasmScriptingVM* vm, uint32_t sound);
@@ -442,6 +459,7 @@ uint32_t imageHeightImpl(WasmScriptingVM* vm, uint32_t image);
 void imageReleaseImpl(WasmScriptingVM* vm, uint32_t image);
 uint32_t imageDecodeImpl(WasmScriptingVM* vm, const uint8_t* bytes, uint32_t byteCount, uint32_t token);
 void imageDecodeCancelImpl(WasmScriptingVM* vm, uint32_t token);
+uint32_t imageLoadImpl(WasmScriptingVM* vm, const uint8_t* bytes, uint32_t byteCount);
 uint32_t fontFromAssetImpl(WasmScriptingVM* vm, uint32_t object, const char* name, uint32_t length);
 #ifdef WITH_RIVE_TEXT
 uint32_t fontDecodeImpl(WasmScriptingVM* vm, const uint8_t* bytes, uint32_t byteCount);
@@ -531,6 +549,7 @@ uint32_t fileBindableImpl(WasmScriptingVM* vm, uint32_t file, const char* name, 
 void fileBindableReleaseImpl(WasmScriptingVM* vm, uint32_t bindable);
 uint32_t fileBindableNameImpl(WasmScriptingVM* vm, uint32_t bindable, char* buffer, uint32_t capacity);
 uint32_t fileBindableDataImpl(WasmScriptingVM* vm, uint32_t bindable);
+uint32_t fileHostBindableImpl(WasmScriptingVM* vm, uint32_t object, const char* name, uint32_t nameLength, uint32_t useDefault);
 uint32_t fileBindableEqualImpl(WasmScriptingVM* vm, uint32_t a, uint32_t b);
 uint32_t lanesStartImpl(WasmScriptingVM* vm, uint32_t kind, uint32_t entry, const uint8_t* input, uint32_t inputByteCount, const uint32_t* holds, uint32_t holdCount);
 uint32_t lanesStateImpl(WasmScriptingVM* vm, uint32_t lane);
@@ -545,6 +564,11 @@ double lanesWaitWithinImpl(WasmScriptingVM* vm, uint32_t signal, double after, d
 uint32_t jobsThreadsImpl(WasmScriptingVM* vm);
 uint32_t jobsJoinImpl(WasmScriptingVM* vm, uint32_t job, double timeoutSeconds);
 uint32_t jobsJoinAnyImpl(WasmScriptingVM* vm, const uint32_t* jobs, uint32_t count, double timeoutSeconds);
+uint32_t parallelSizeImpl(WasmScriptingVM* vm);
+#ifdef RIVE_WASM_PARALLEL
+uint32_t parallelRunImpl(WasmScriptingVM* vm, uint32_t control);
+#endif
+void parallelWaitingImpl(WasmScriptingVM* vm, uint32_t control);
 uint32_t sharedRegionCreateImpl(WasmScriptingVM* vm, uint32_t size);
 uint32_t sharedRegionSizeImpl(WasmScriptingVM* vm, uint32_t region);
 uint32_t sharedRegionLockImpl(WasmScriptingVM* vm, uint32_t region, double timeoutSeconds);
@@ -577,6 +601,9 @@ uint32_t sharedRetainImpl(WasmScriptingVM* vm, uint32_t object);
 void sharedReleaseImpl(WasmScriptingVM* vm, uint32_t object);
 
 #ifndef __EMSCRIPTEN__
+// What rt.features answers.
+constexpr uint32_t kHostFeatures = 0x1u;
+
 void rtLog(wasm_exec_env_t env, int32_t level, const char* message, uint32_t length)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
@@ -593,7 +620,7 @@ void rtBudgetExceeded(wasm_exec_env_t env, uint32_t ms)
     WasmScriptingVM* vm = bootVmFromEnv(env);
     if (vm == nullptr)
     {
-        wasm_runtime_set_exception(wasm_runtime_get_module_inst(env), "execution exceeded timeout");
+        vmlessTrap(env, "execution exceeded timeout");
         return;
     }
     rtBudgetExceededImpl(vm, ms);
@@ -603,7 +630,7 @@ void rtError(wasm_exec_env_t env, const char* message, uint32_t length)
     WasmScriptingVM* vm = bootVmFromEnv(env);
     if (vm == nullptr)
     {
-        wasm_runtime_set_exception(wasm_runtime_get_module_inst(env), "script threw");
+        vmlessTrap(env, "script threw", message, length);
         return;
     }
     WasmStringArg messageUtf8(vm, message, length);
@@ -611,13 +638,18 @@ void rtError(wasm_exec_env_t env, const char* message, uint32_t length)
 }
 double rtNow(wasm_exec_env_t env)
 {
-    WasmScriptingVM* vm = vmFromEnv(env);
+    WasmScriptingVM* vm = bootVmFromEnv(env);
     return rtNowImpl(vm);
 }
 double rtDateNow(wasm_exec_env_t env)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
     return rtDateNowImpl(vm);
+}
+uint32_t rtFeatures(wasm_exec_env_t env)
+{
+    WasmScriptingVM* vm = bootVmFromEnv(env);
+    return rtFeaturesImpl(vm);
 }
 void rtDebugEnter(wasm_exec_env_t env, uint32_t func, uint32_t line)
 {
@@ -648,6 +680,17 @@ uint32_t rtZoneName(wasm_exec_env_t env, double epochSeconds, char* buffer, uint
 {
     WasmScriptingVM* vm = vmFromEnv(env);
     return rtZoneNameImpl(vm, epochSeconds, buffer, capacity);
+}
+uint32_t rtArg(wasm_exec_env_t env, const char* name, uint32_t nameLength, char* buffer, uint32_t capacity)
+{
+    WasmScriptingVM* vm = bootVmFromEnv(env);
+    WasmStringArg nameUtf8(vm, name, nameLength);
+    return rtArgImpl(vm, nameUtf8.data(), nameUtf8.size(), buffer, capacity);
+}
+void rtReleasePages(wasm_exec_env_t env, uint32_t start, uint32_t length)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    rtReleasePagesImpl(vm, start, length);
 }
 uint32_t dataViewModel(wasm_exec_env_t env, uint32_t object)
 {
@@ -1098,6 +1141,17 @@ uint32_t artboardGamepadEvent(wasm_exec_env_t env, uint32_t artboard, const uint
     WasmScriptingVM* vm = vmFromEnv(env);
     return artboardGamepadEventImpl(vm, artboard, payload, byteCount);
 }
+uint32_t artboardKeyboardEvent(wasm_exec_env_t env, uint32_t artboard, uint32_t key, uint32_t modifiers, uint32_t isPressed, uint32_t isRepeat)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return artboardKeyboardEventImpl(vm, artboard, key, modifiers, isPressed, isRepeat);
+}
+uint32_t artboardTextEvent(wasm_exec_env_t env, uint32_t artboard, const char* text, uint32_t length)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    WasmStringArg textUtf8(vm, text, length);
+    return artboardTextEventImpl(vm, artboard, textUtf8.data(), textUtf8.size());
+}
 uint32_t artboardAnimation(wasm_exec_env_t env, uint32_t artboard, const char* name, uint32_t length)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
@@ -1286,6 +1340,56 @@ uint32_t audioSourceChannels(wasm_exec_env_t env, uint32_t source)
     WasmScriptingVM* vm = vmFromEnv(env);
     return audioSourceChannelsImpl(vm, source);
 }
+uint32_t audioSourceToBlob(wasm_exec_env_t env, uint32_t source, uint32_t sampleRate, uint32_t channels)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioSourceToBlobImpl(vm, source, sampleRate, channels);
+}
+uint32_t audioStream(wasm_exec_env_t env, uint32_t source, uint32_t sampleRate, uint32_t channels, uint32_t chunkFrames, uint32_t bufferFrames)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamImpl(vm, source, sampleRate, channels, chunkFrames, bufferFrames);
+}
+uint32_t audioStreamRing(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamRingImpl(vm, stream);
+}
+uint32_t audioStreamSeeks(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamSeeksImpl(vm, stream);
+}
+uint32_t audioStreamChannels(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamChannelsImpl(vm, stream);
+}
+uint32_t audioStreamSampleRate(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamSampleRateImpl(vm, stream);
+}
+uint32_t audioStreamSeekFrame(wasm_exec_env_t env, uint32_t stream, double frame)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamSeekFrameImpl(vm, stream, frame);
+}
+void audioStreamSetLoop(wasm_exec_env_t env, uint32_t stream, uint32_t loop)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    audioStreamSetLoopImpl(vm, stream, loop);
+}
+uint32_t audioStreamEnded(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioStreamEndedImpl(vm, stream);
+}
+void audioStreamRelease(wasm_exec_env_t env, uint32_t stream)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    audioStreamReleaseImpl(vm, stream);
+}
 uint32_t audioPlay(wasm_exec_env_t env, uint32_t source)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
@@ -1325,6 +1429,16 @@ uint32_t audioSampleRate(wasm_exec_env_t env)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
     return audioSampleRateImpl(vm);
+}
+uint32_t audioProcessorSampleRate(wasm_exec_env_t env)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioProcessorSampleRateImpl(vm);
+}
+uint32_t audioProcessorChannels(wasm_exec_env_t env)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return audioProcessorChannelsImpl(vm);
 }
 void audioSoundRelease(wasm_exec_env_t env, uint32_t sound)
 {
@@ -1955,6 +2069,11 @@ void imageDecodeCancel(wasm_exec_env_t env, uint32_t token)
     WasmScriptingVM* vm = vmFromEnv(env);
     imageDecodeCancelImpl(vm, token);
 }
+uint32_t imageLoad(wasm_exec_env_t env, const uint8_t* bytes, uint32_t byteCount)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    return imageLoadImpl(vm, bytes, byteCount);
+}
 uint32_t fontFromAsset(wasm_exec_env_t env, uint32_t object, const char* name, uint32_t length)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
@@ -2320,6 +2439,12 @@ uint32_t fileBindableData(wasm_exec_env_t env, uint32_t bindable)
     WasmScriptingVM* vm = vmFromEnv(env);
     return fileBindableDataImpl(vm, bindable);
 }
+uint32_t fileHostBindable(wasm_exec_env_t env, uint32_t object, const char* name, uint32_t nameLength, uint32_t useDefault)
+{
+    WasmScriptingVM* vm = vmFromEnv(env);
+    WasmStringArg nameUtf8(vm, name, nameLength);
+    return fileHostBindableImpl(vm, object, nameUtf8.data(), nameUtf8.size(), useDefault);
+}
 uint32_t fileBindableEqual(wasm_exec_env_t env, uint32_t a, uint32_t b)
 {
     WasmScriptingVM* vm = vmFromEnv(env);
@@ -2397,6 +2522,23 @@ uint32_t jobsJoinAny(wasm_exec_env_t env, const uint32_t* jobs, uint32_t count, 
         return {};
     }
     return jobsJoinAnyImpl(vm, jobs, count, timeoutSeconds);
+}
+uint32_t parallelSize(wasm_exec_env_t env)
+{
+    WasmScriptingVM* vm = bootVmFromEnv(env);
+    return parallelSizeImpl(vm);
+}
+#ifdef RIVE_WASM_PARALLEL
+uint32_t parallelRun(wasm_exec_env_t env, uint32_t control)
+{
+    WasmScriptingVM* vm = bootVmFromEnv(env);
+    return parallelRunImpl(vm, control);
+}
+#endif
+void parallelWaiting(wasm_exec_env_t env, uint32_t control)
+{
+    WasmScriptingVM* vm = bootVmFromEnv(env);
+    parallelWaitingImpl(vm, control);
 }
 uint32_t sharedRegionCreate(wasm_exec_env_t env, uint32_t size)
 {
@@ -2564,12 +2706,15 @@ NativeSymbol kRtNatives[] = {
     {"error", (void*)rtError, "(*~)", nullptr},
     {"now", (void*)rtNow, "()F", nullptr},
     {"date_now", (void*)rtDateNow, "()F", nullptr},
+    {"features", (void*)rtFeatures, "()i", nullptr},
     {"debug_enter", (void*)rtDebugEnter, "(ii)", nullptr},
     {"debug_line", (void*)rtDebugLine, "(i)i", nullptr},
     {"debug_leave", (void*)rtDebugLeave, "()", nullptr},
     {"utc_offset", (void*)rtUtcOffset, "(F)i", nullptr},
     {"is_dst", (void*)rtIsDst, "(F)i", nullptr},
     {"zone_name", (void*)rtZoneName, "(F*~)i", nullptr},
+    {"arg", (void*)rtArg, "(*~*~)i", nullptr},
+    {"release_pages", (void*)rtReleasePages, "(ii)", nullptr},
 };
 
 NativeSymbol kDataNatives[] = {
@@ -2660,6 +2805,8 @@ NativeSymbol kArtboardNatives[] = {
     {"pointer_event", (void*)artboardPointerEvent, "(iiiff)i", nullptr},
     {"scroll_event", (void*)artboardScrollEvent, "(iiffffiif)i", nullptr},
     {"gamepad_event", (void*)artboardGamepadEvent, "(i*~)i", nullptr},
+    {"keyboard_event", (void*)artboardKeyboardEvent, "(iiiii)i", nullptr},
+    {"text_event", (void*)artboardTextEvent, "(i*~)i", nullptr},
     {"animation", (void*)artboardAnimation, "(i*~)i", nullptr},
     {"animation_release", (void*)artboardAnimationRelease, "(i)", nullptr},
     {"animation_duration", (void*)artboardAnimationDuration, "(i)f", nullptr},
@@ -2695,6 +2842,16 @@ NativeSymbol kAudioNatives[] = {
     {"source_duration", (void*)audioSourceDuration, "(i)f", nullptr},
     {"source_sample_rate", (void*)audioSourceSampleRate, "(i)i", nullptr},
     {"source_channels", (void*)audioSourceChannels, "(i)i", nullptr},
+    {"source_to_blob", (void*)audioSourceToBlob, "(iii)i", nullptr},
+    {"stream", (void*)audioStream, "(iiiii)i", nullptr},
+    {"stream_ring", (void*)audioStreamRing, "(i)i", nullptr},
+    {"stream_seeks", (void*)audioStreamSeeks, "(i)i", nullptr},
+    {"stream_channels", (void*)audioStreamChannels, "(i)i", nullptr},
+    {"stream_sample_rate", (void*)audioStreamSampleRate, "(i)i", nullptr},
+    {"stream_seek_frame", (void*)audioStreamSeekFrame, "(iF)i", nullptr},
+    {"stream_set_loop", (void*)audioStreamSetLoop, "(ii)", nullptr},
+    {"stream_ended", (void*)audioStreamEnded, "(i)i", nullptr},
+    {"stream_release", (void*)audioStreamRelease, "(i)", nullptr},
     {"play", (void*)audioPlay, "(i)i", nullptr},
     {"play_at_time", (void*)audioPlayAtTime, "(if)i", nullptr},
     {"play_in_time", (void*)audioPlayInTime, "(if)i", nullptr},
@@ -2703,6 +2860,8 @@ NativeSymbol kAudioNatives[] = {
     {"time", (void*)audioTime, "()f", nullptr},
     {"time_frame", (void*)audioTimeFrame, "()F", nullptr},
     {"sample_rate", (void*)audioSampleRate, "()i", nullptr},
+    {"processor_sample_rate", (void*)audioProcessorSampleRate, "()i", nullptr},
+    {"processor_channels", (void*)audioProcessorChannels, "()i", nullptr},
     {"sound_release", (void*)audioSoundRelease, "(i)", nullptr},
     {"sound_play", (void*)audioSoundPlay, "(i)", nullptr},
     {"sound_pause", (void*)audioSoundPause, "(i)", nullptr},
@@ -2847,6 +3006,7 @@ NativeSymbol kImageNatives[] = {
     {"release", (void*)imageRelease, "(i)", nullptr},
     {"decode", (void*)imageDecode, "(*~i)i", nullptr},
     {"decode_cancel", (void*)imageDecodeCancel, "(i)", nullptr},
+    {"load", (void*)imageLoad, "(*~)i", nullptr},
 };
 
 NativeSymbol kFontNatives[] = {
@@ -2960,6 +3120,7 @@ NativeSymbol kFileNatives[] = {
     {"bindable_release", (void*)fileBindableRelease, "(i)", nullptr},
     {"bindable_name", (void*)fileBindableName, "(i*~)i", nullptr},
     {"bindable_data", (void*)fileBindableData, "(i)i", nullptr},
+    {"host_bindable", (void*)fileHostBindable, "(i*~i)i", nullptr},
     {"bindable_equal", (void*)fileBindableEqual, "(ii)i", nullptr},
 };
 
@@ -2980,6 +3141,14 @@ NativeSymbol kJobsNatives[] = {
     {"threads", (void*)jobsThreads, "()i", nullptr},
     {"join", (void*)jobsJoin, "(iF)i", nullptr},
     {"join_any", (void*)jobsJoinAny, "(*~F)i", nullptr},
+};
+
+NativeSymbol kParallelNatives[] = {
+    {"size", (void*)parallelSize, "()i", nullptr},
+#ifdef RIVE_WASM_PARALLEL
+    {"run", (void*)parallelRun, "(i)i", nullptr},
+#endif
+    {"waiting", (void*)parallelWaiting, "(i)", nullptr},
 };
 
 NativeSymbol kSharedNatives[] = {
@@ -3113,6 +3282,10 @@ inline bool registerRiveBindingNatives()
                "rive_jobs_v1",
                kJobsNatives,
                sizeof(kJobsNatives) / sizeof(NativeSymbol)) &&
+           wasm_runtime_register_natives(
+               "rive_parallel_v1",
+               kParallelNatives,
+               sizeof(kParallelNatives) / sizeof(NativeSymbol)) &&
            wasm_runtime_register_natives(
                "rive_shared_v1",
                kSharedNatives,

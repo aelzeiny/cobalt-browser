@@ -1,7 +1,7 @@
 #ifndef _RIVE_DRAGGABLE_CONSTRAINT_BASE_HPP_
 #define _RIVE_DRAGGABLE_CONSTRAINT_BASE_HPP_
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/constraints/constraint.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 namespace rive
 {
 class DraggableConstraintBase : public Constraint

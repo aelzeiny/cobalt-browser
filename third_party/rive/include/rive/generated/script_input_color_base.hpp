@@ -1,6 +1,6 @@
 #ifndef _RIVE_SCRIPT_INPUT_COLOR_BASE_HPP_
 #define _RIVE_SCRIPT_INPUT_COLOR_BASE_HPP_
-#include "third_party/rive/include/rive/custom_property_color.hpp"
+#include "rive/custom_property_color.hpp"
 namespace rive
 {
 class ScriptInputColorBase : public CustomPropertyColor

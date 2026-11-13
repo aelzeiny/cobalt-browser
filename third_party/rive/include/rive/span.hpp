@@ -5,7 +5,7 @@
 #ifndef _RIVE_SPAN_HPP_
 #define _RIVE_SPAN_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 
 #include <initializer_list>
 #include <type_traits>

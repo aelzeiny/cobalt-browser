@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/focus_data_base.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
+#include "rive/generated/focus_data_base.hpp"
+#include "rive/focus_data.hpp"
 
 using namespace rive;
 

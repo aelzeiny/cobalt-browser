@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/watermark.hpp"
+#include "rive/watermark.hpp"
 
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/layout.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/artboard.hpp"
+#include "rive/file.hpp"
+#include "rive/layout.hpp"
+#include "rive/renderer.hpp"
+#include "rive/factory.hpp"
 
 #include <chrono>
 

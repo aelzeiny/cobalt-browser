@@ -5,9 +5,9 @@
 #ifndef _RIVE_SERIALIZE_OPS_HPP_
 #define _RIVE_SERIALIZE_OPS_HPP_
 
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/core/binary_writer.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/core/binary_writer.hpp"
+#include "rive/math/raw_path.hpp"
 #include <vector>
 
 namespace rive

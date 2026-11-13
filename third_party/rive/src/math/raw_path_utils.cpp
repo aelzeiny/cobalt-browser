@@ -2,8 +2,8 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/math/raw_path_utils.hpp"
-#include "third_party/rive/include/rive/math/bezier_utils.hpp"
+#include "rive/math/raw_path_utils.hpp"
+#include "rive/math/bezier_utils.hpp"
 #include <algorithm>
 
 // Exact at t=0, t=1 and when a == b, so coincident points survive a chop.

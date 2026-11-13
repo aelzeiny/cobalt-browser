@@ -1,8 +1,8 @@
 #ifndef _RIVE_CORE_VECTOR_BINARY_WRITER_HPP_
 #define _RIVE_CORE_VECTOR_BINARY_WRITER_HPP_
 
-#include "third_party/rive/include/rive/core/binary_stream.hpp"
-#include "third_party/rive/include/rive/core/binary_writer.hpp"
+#include "rive/core/binary_stream.hpp"
+#include "rive/core/binary_writer.hpp"
 #include <cstring>
 #include <vector>
 

@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_TARGET_MODIFIER_HPP_
 #define _RIVE_TEXT_TARGET_MODIFIER_HPP_
-#include "third_party/rive/include/rive/generated/text/text_target_modifier_base.hpp"
+#include "rive/generated/text/text_target_modifier_base.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 namespace rive

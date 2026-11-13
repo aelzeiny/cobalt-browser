@@ -1,8 +1,8 @@
 #ifndef _RIVE_CORE_CONTEXT_HPP_
 #define _RIVE_CORE_CONTEXT_HPP_
 
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/core/id.hpp"
+#include "rive/rive_types.hpp"
 
 namespace rive
 {

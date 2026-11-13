@@ -5,7 +5,7 @@
 #ifndef _RIVE_LINE_BREAK_DICTIONARY_HPP_
 #define _RIVE_LINE_BREAK_DICTIONARY_HPP_
 
-#include "third_party/rive/include/rive/text/line_break.hpp"
+#include "rive/text/line_break.hpp"
 #include <cstdint>
 #ifdef WITH_RIVE_TEXT_DICT_COMPRESSED
 #include <vector>

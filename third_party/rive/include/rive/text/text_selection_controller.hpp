@@ -2,10 +2,10 @@
 #define _RIVE_TEXT_SELECTION_CONTROLLER_HPP_
 
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/text/cursor.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/selection_style.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/text/cursor.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/selection_style.hpp"
 #include <memory>
 #include <string>
 

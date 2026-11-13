@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/nested_animation.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/nested_animation.hpp"
+#include "rive/container_component.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

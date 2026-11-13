@@ -1,5 +1,5 @@
 
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_artboard_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_artboard_runtime.hpp"
 
 // Default namespace for Rive Cpp code
 using namespace rive;
@@ -28,11 +28,11 @@ std::string ViewModelInstanceArtboardRuntime::artboardName() const
   auto bindableArtboard = m_viewModelInstanceValue
                               ->as<ViewModelInstanceArtboard>()
                               ->asset();
-  if (bindableArtboard == nullptr || bindableArtboard->artboard() == nullptr)
+  if (bindableArtboard == nullptr)
   {
     return "";
   }
-  return bindableArtboard->artboard()->name();
+  return bindableArtboard->source()->name();
 }
 
 #ifdef TESTING

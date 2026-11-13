@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/core.hpp"
+#include "rive/core.hpp"
 #ifndef WITH_RIVE_EDITOR
 using namespace rive;
 // Parent typeKey of each typeKey, 0 at the root.

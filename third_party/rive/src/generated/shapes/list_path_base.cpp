@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/list_path_base.hpp"
-#include "third_party/rive/include/rive/shapes/list_path.hpp"
+#include "rive/generated/shapes/list_path_base.hpp"
+#include "rive/shapes/list_path.hpp"
 
 using namespace rive;
 

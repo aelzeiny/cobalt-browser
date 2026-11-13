@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/parent_traversal.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/parent_traversal.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_host.hpp"
+#include "rive/component.hpp"
+#include "rive/container_component.hpp"
 
 using namespace rive;
 

@@ -1,11 +1,11 @@
 #ifndef _RIVE_FULLY_SHAPED_TEXT_HPP_
 #define _RIVE_FULLY_SHAPED_TEXT_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/text/utf.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/text_layout_view.hpp"
+#include "rive/span.hpp"
+#include "rive/text/utf.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/text_layout_view.hpp"
 
 namespace rive
 {

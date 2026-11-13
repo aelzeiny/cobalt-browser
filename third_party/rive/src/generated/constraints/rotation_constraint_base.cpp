@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/constraints/rotation_constraint_base.hpp"
-#include "third_party/rive/include/rive/constraints/rotation_constraint.hpp"
+#include "rive/generated/constraints/rotation_constraint_base.hpp"
+#include "rive/constraints/rotation_constraint.hpp"
 
 using namespace rive;
 

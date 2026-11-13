@@ -1,7 +1,7 @@
 #ifndef _RIVE_BLEND_STATE1_DVIEW_MODEL_HPP_
 #define _RIVE_BLEND_STATE1_DVIEW_MODEL_HPP_
-#include "third_party/rive/include/rive/generated/animation/blend_state_1d_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
+#include "rive/generated/animation/blend_state_1d_viewmodel_base.hpp"
+#include "rive/data_bind/bindable_property.hpp"
 #include <stdio.h>
 namespace rive
 {

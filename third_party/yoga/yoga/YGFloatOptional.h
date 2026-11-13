@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_YGFLOATOPTIONAL_H_
-#define THIRD_PARTY_YOGA_YOGA_YGFLOATOPTIONAL_H_
-
 #include <cmath>
 #include <limits>
 #include "Yoga-internal.h"
@@ -26,6 +23,7 @@ public:
   constexpr float unwrap() const { return value_; }
 
   bool isUndefined() const { return std::isnan(value_); }
+  bool isDefined() const { return !std::isnan(value_); } // rive: grid backport
 };
 
 // operators take YGFloatOptional by value, as it is a 32bit value
@@ -71,5 +69,3 @@ inline bool operator>=(YGFloatOptional lhs, YGFloatOptional rhs) {
 inline bool operator<=(YGFloatOptional lhs, YGFloatOptional rhs) {
   return lhs < rhs || lhs == rhs;
 }
-
-#endif  // THIRD_PARTY_YOGA_YOGA_YGFLOATOPTIONAL_H_

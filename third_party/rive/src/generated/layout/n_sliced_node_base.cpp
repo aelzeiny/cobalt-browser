@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/n_sliced_node_base.hpp"
-#include "third_party/rive/include/rive/layout/n_sliced_node.hpp"
+#include "rive/generated/layout/n_sliced_node_base.hpp"
+#include "rive/layout/n_sliced_node.hpp"
 
 using namespace rive;
 

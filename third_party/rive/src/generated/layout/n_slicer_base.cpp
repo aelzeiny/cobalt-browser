@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/n_slicer_base.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer.hpp"
+#include "rive/generated/layout/n_slicer_base.hpp"
+#include "rive/layout/n_slicer.hpp"
 
 using namespace rive;
 

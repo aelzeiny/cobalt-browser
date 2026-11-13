@@ -1,6 +1,6 @@
 #ifndef _RIVE_KEY_FRAME_INTERPOLATOR_BASE_HPP_
 #define _RIVE_KEY_FRAME_INTERPOLATOR_BASE_HPP_
-#include "third_party/rive/include/rive/core.hpp"
+#include "rive/core.hpp"
 namespace rive
 {
 class KeyFrameInterpolatorBase : public Core

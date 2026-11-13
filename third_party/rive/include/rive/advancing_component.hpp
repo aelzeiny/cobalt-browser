@@ -1,7 +1,7 @@
 #ifndef _RIVE_ADVANCING_COMPONENT_HPP_
 #define _RIVE_ADVANCING_COMPONENT_HPP_
 
-#include "third_party/rive/include/rive/advance_flags.hpp"
+#include "rive/advance_flags.hpp"
 
 namespace rive
 {

@@ -5,7 +5,7 @@
 #ifndef _RIVE_DECODE_KTX2_HPP_
 #define _RIVE_DECODE_KTX2_HPP_
 
-#include "third_party/rive/include/rive/gpu_texture_format.hpp"
+#include "rive/gpu_texture_format.hpp"
 
 #include <cstddef>
 #include <cstdint>

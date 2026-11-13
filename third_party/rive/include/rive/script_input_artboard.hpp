@@ -1,10 +1,10 @@
 #ifndef _RIVE_SCRIPT_INPUT_ARTBOARD_HPP_
 #define _RIVE_SCRIPT_INPUT_ARTBOARD_HPP_
-#include "third_party/rive/include/rive/artboard_referencer.hpp"
-#include "third_party/rive/include/rive/generated/script_input_artboard_base.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/artboard_referencer.hpp"
+#include "rive/generated/script_input_artboard_base.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
 #include <stdio.h>
 namespace rive
 {

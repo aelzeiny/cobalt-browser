@@ -1,11 +1,11 @@
 #ifndef _RIVE_MESH_HPP_
 #define _RIVE_MESH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/mesh_base.hpp"
-#include "third_party/rive/include/rive/bones/skinnable.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_drawable.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/generated/shapes/mesh_base.hpp"
+#include "rive/bones/skinnable.hpp"
+#include "rive/shapes/mesh_drawable.hpp"
+#include "rive/span.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/renderer.hpp"
 
 namespace rive
 {
@@ -21,6 +21,12 @@ protected:
   rcp<IndexBuffer> m_IndexBuffer;
   std::vector<MeshVertex*> m_Vertices;
   void buildUVAndIndexBuffers(const Mat2D& uvTransform);
+  // Whether m_IndexBuffer holds whole triangles of m_Vertices.
+  bool hasTriangles() const;
+  // What draw() renders the vertices under.
+  Mat2D drawTransform() const;
+  std::vector<Vec2D> renderPositions() const;
+  std::vector<Vec2D> uvs() const;
 
 public:
   StatusCode onAddedDirty(CoreContext* context) override;
@@ -38,6 +44,9 @@ public:
       BlendMode blendMode,
       float opacity,
       float additiveness) override;
+  bool hitTest(Vec2D position) override;
+  bool uvAt(Vec2D position, Vec2D* uv, bool* inside, Mat2D* toUV) override;
+  bool positionAtUV(Vec2D uv, Vec2D* position) override;
 
   void markSkinDirty() override;
   Core* clone() const override;

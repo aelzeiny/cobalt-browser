@@ -93,7 +93,7 @@
 #define RIVE_PROF_ENDFRAME()
 
 #elif defined(RIVE_MICROPROFILE) // Microprofile integration
-#include "third_party/rive/include/rive/profiler/microprofile_emscripten.h"
+#include "rive/profiler/microprofile_emscripten.h"
 #include "microprofile.h"
 #include "microprofiledraw.h"
 #include "microprofileui.h"

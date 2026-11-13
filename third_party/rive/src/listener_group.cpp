@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_bar_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/listener_group.hpp"
-#include "third_party/rive/include/rive/profiler/rive_profile.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/constraints/scrolling/scroll_bar_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/listener_group.hpp"
+#include "rive/profiler/rive_profile.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_layout.hpp"
+#include "rive/scripted/scripted_transition.hpp"
 
 using namespace rive;
 
@@ -42,6 +42,13 @@ _PointerData* ListenerGroup::pointerData(int id)
 void ListenerGroup::hover(int id)
 {
   auto pointer = pointerData(id);
+  // A disabled group's hover stays what its listeners last saw, as reset
+  // leaves it, so the move that turns it back on can report what changed
+  // meanwhile, enters included.
+  if (pointer->phase == GestureClickPhase::disabled)
+  {
+    return;
+  }
   pointer->isHovered = true;
 }
 
@@ -64,6 +71,19 @@ _PointerData* ListenerGroup::findPointerData(int id)
 {
   auto itr = m_pointers.find(id);
   return itr == m_pointers.end() ? nullptr : itr->second;
+}
+
+bool ListenerGroup::hasPressedPointerOtherThan(int pointerId)
+{
+  for (auto& entry : m_pointers)
+  {
+    if (entry.first != pointerId &&
+        entry.second->phase == GestureClickPhase::down)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Ends any gesture this pointer has in flight, for when the contents the group
@@ -132,6 +152,11 @@ void ListenerGroup::releaseEvent(int pointerId)
   {
     // Reset pointer data before caching it
     auto pointerData = m_pointers[pointerId];
+    if (pointerData->phase == GestureClickPhase::disabled &&
+        m_disabledPointers > 0)
+    {
+      m_disabledPointers--;
+    }
     pointerData->isHovered = false;
     pointerData->isPrevHovered = false;
     pointerData->hasDragged = false;
@@ -156,12 +181,20 @@ void ListenerGroup::releaseAllPointers()
 void ListenerGroup::enable(int pointerId)
 {
   auto pointer = pointerData(pointerId);
+  if (pointer->phase == GestureClickPhase::disabled && m_disabledPointers > 0)
+  {
+    m_disabledPointers--;
+  }
   pointer->phase = GestureClickPhase::out;
 }
 
 void ListenerGroup::disable(int pointerId)
 {
   auto pointer = pointerData(pointerId);
+  if (pointer->phase != GestureClickPhase::disabled)
+  {
+    m_disabledPointers++;
+  }
   pointer->phase = GestureClickPhase::disabled;
   consume();
 }

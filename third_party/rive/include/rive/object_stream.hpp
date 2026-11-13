@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 
 #include <algorithm>
 #include <cassert>

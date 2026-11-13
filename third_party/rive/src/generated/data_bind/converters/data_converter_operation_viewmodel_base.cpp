@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_operation_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation_viewmodel.hpp"
+#include "rive/generated/data_bind/converters/data_converter_operation_viewmodel_base.hpp"
+#include "rive/data_bind/converters/data_converter_operation_viewmodel.hpp"
 
 using namespace rive;
 

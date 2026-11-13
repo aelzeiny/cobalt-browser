@@ -1,8 +1,8 @@
 #ifndef _RIVE_SHAPE_PAINT_MUTATOR_HPP_
 #define _RIVE_SHAPE_PAINT_MUTATOR_HPP_
 
-#include "third_party/rive/include/rive/status_code.hpp"
-#include "third_party/rive/include/rive/enums.hpp"
+#include "rive/status_code.hpp"
+#include "rive/enums.hpp"
 
 namespace rive
 {

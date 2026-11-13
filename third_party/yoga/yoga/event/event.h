@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_EVENT_EVENT_H_
-#define THIRD_PARTY_YOGA_YOGA_EVENT_EVENT_H_
-
 #include <functional>
 #include <vector>
 #include <array>
@@ -38,6 +35,7 @@ enum struct LayoutPassReason : int {
   kMeasureChild = 5,
   kAbsMeasureChild = 6,
   kFlexMeasure = 7,
+  kGridLayout = 8, // rive: grid backport (facebook/yoga #1894)
   COUNT
 };
 
@@ -50,6 +48,12 @@ struct LayoutData {
   int measureCallbacks;
   std::array<int, static_cast<uint8_t>(LayoutPassReason::COUNT)>
       measureCallbackReasonsCount;
+  // rive: measurements so far that sized a node to the space it was offered
+  // rather than its content (YGCachedMeasurement::limitDependent).
+  int limitDependentMeasures;
+  // rive: containers with children so far that measured as nothing in an
+  // axis (YGCachedMeasurement::emptyContainer).
+  int emptyContainerMeasures;
 };
 
 const char* LayoutPassReasonToString(const LayoutPassReason value);
@@ -145,5 +149,3 @@ struct Event::TypedData<Event::NodeLayout> {
 
 } // namespace yoga
 } // namespace facebook
-
-#endif  // THIRD_PARTY_YOGA_YOGA_EVENT_EVENT_H_

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/cubic_mirrored_vertex.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/shapes/cubic_mirrored_vertex.hpp"
+#include "rive/math/vec2d.hpp"
 #include <cmath>
 
 using namespace rive;

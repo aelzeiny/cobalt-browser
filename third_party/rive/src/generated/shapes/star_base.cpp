@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/star_base.hpp"
-#include "third_party/rive/include/rive/shapes/star.hpp"
+#include "rive/generated/shapes/star_base.hpp"
+#include "rive/shapes/star.hpp"
 
 using namespace rive;
 

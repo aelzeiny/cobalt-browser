@@ -1,13 +1,13 @@
 #ifndef _RIVE_PAINT_IMAGE_HPP_
 #define _RIVE_PAINT_IMAGE_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/paint_image_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
-#include "third_party/rive/include/rive/artboard_referencer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/generated/shapes/paint/paint_image_base.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/artboard_host.hpp"
+#include "rive/artboard_referencer.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/mat2d.hpp"
 #include <memory>
 
 namespace rive
@@ -63,7 +63,9 @@ public:
   // So the importer's cycle cut covers paint sources as well as nested
   // artboards.
   Artboard* nestingArtboard() override { return artboard(); }
-  Artboard* sourceArtboard() const { return m_referencedArtboard; }
+  /// The artboard this paint fills with, decoded if the import deferred its
+  /// body (Artboard::decoded; it may not have been instanced yet).
+  Artboard* sourceArtboard() const;
 
   // AdvancingComponent: plays the artboard source. An image source never
   // advances, so it never keeps a list row from going quiet.
@@ -114,8 +116,9 @@ public:
   /// Modulate [paint] with this image, auto-fit to [bounds] (the shape's
   /// local bounds) and adjusted by the image transform (scale/offset/rotation
   /// about the bounds center). Returns false (leaving [paint] untouched) when
-  /// no image is resolved -- the caller owns clearing any stale image, as it
-  /// also has to handle this component being removed entirely.
+  /// no image is resolved -- the caller skips the draw, and owns clearing any
+  /// stale image, as it also has to handle this component being removed
+  /// entirely.
   ///
   /// [renderer] is what the path is about to be drawn with: an artboard
   /// source sizes its raster from its transform. [target] receives the

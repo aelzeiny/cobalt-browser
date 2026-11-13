@@ -1,16 +1,22 @@
-#include "third_party/rive/include/rive/shapes/paint/paint_image.hpp"
-#include "third_party/rive/include/rive/shapes/paint/artboard_paint_source.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/shapes/paint/paint_image.hpp"
+#include "rive/shapes/paint/artboard_paint_source.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/artboard.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/factory.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/renderer.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
+
+Artboard* PaintImage::sourceArtboard() const
+{
+  return m_referencedArtboard != nullptr ? m_referencedArtboard->decoded()
+                                         : nullptr;
+}
 
 PaintImage::PaintImage() = default;
 PaintImage::~PaintImage() = default;

@@ -1,7 +1,7 @@
 #ifndef _RIVE_LIST_FOLLOW_PATH_CONSTRAINT_BASE_HPP_
 #define _RIVE_LIST_FOLLOW_PATH_CONSTRAINT_BASE_HPP_
-#include "third_party/rive/include/rive/constraints/follow_path_constraint.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/constraints/follow_path_constraint.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class ListFollowPathConstraintBase : public FollowPathConstraint

@@ -1,8 +1,8 @@
 #ifndef _RIVE_NESTED_SIMPLE_ANIMATION_BASE_HPP_
 #define _RIVE_NESTED_SIMPLE_ANIMATION_BASE_HPP_
-#include "third_party/rive/include/rive/animation/nested_linear_animation.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/nested_linear_animation.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class NestedSimpleAnimationBase : public NestedLinearAnimation

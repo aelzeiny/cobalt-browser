@@ -12,6 +12,15 @@
 
 #define RIVE_BINDINGS_ABI_VERSION 1
 
+// The import surface below, digested. A wasm module built against
+// one contract and run against another links its imports to
+// nothing, so a build that carries this can be told apart from one
+// that predates a change to it.
+#define RIVE_BINDINGS_V1_CONTRACT "4d6b9edb63e5d0fc"
+
+// The bits rive_rt_features answers.
+#define RIVE_HOST_FEATURE_PARALLEL_CALLS (1u << 0)
+
 #define RIVE_BINDING_IMPORT(module, name)                            \
     __attribute__((import_module(module), import_name(name)))
 
@@ -217,6 +226,8 @@ RIVE_BINDING_IMPORT("rive_rt_v1", "now")
 double rive_rt_now(void);
 RIVE_BINDING_IMPORT("rive_rt_v1", "date_now")
 double rive_rt_date_now(void);
+RIVE_BINDING_IMPORT("rive_rt_v1", "features")
+uint32_t rive_rt_features(void);
 RIVE_BINDING_IMPORT("rive_rt_v1", "debug_enter")
 void rive_rt_debug_enter(uint32_t func, uint32_t line);
 RIVE_BINDING_IMPORT("rive_rt_v1", "debug_line")
@@ -229,6 +240,10 @@ RIVE_BINDING_IMPORT("rive_rt_v1", "is_dst")
 uint32_t rive_rt_is_dst(double epochSeconds);
 RIVE_BINDING_IMPORT("rive_rt_v1", "zone_name")
 uint32_t rive_rt_zone_name(double epochSeconds, char* buffer, uint32_t capacity);
+RIVE_BINDING_IMPORT("rive_rt_v1", "arg")
+uint32_t rive_rt_arg(const char* name, uint32_t nameLength, char* buffer, uint32_t capacity);
+RIVE_BINDING_IMPORT("rive_rt_v1", "release_pages")
+void rive_rt_release_pages(uint32_t start, uint32_t length);
 
 // rive_data_v1
 RIVE_BINDING_IMPORT("rive_data_v1", "view_model")
@@ -401,6 +416,10 @@ RIVE_BINDING_IMPORT("rive_artboard_v1", "scroll_event")
 uint32_t rive_artboard_scroll_event(uint32_t artboard, uint32_t pointerId, float x, float y, float dx, float dy, uint32_t phase, uint32_t precise, float timeStamp);
 RIVE_BINDING_IMPORT("rive_artboard_v1", "gamepad_event")
 uint32_t rive_artboard_gamepad_event(uint32_t artboard, const uint8_t* payload, uint32_t byteCount);
+RIVE_BINDING_IMPORT("rive_artboard_v1", "keyboard_event")
+uint32_t rive_artboard_keyboard_event(uint32_t artboard, uint32_t key, uint32_t modifiers, uint32_t isPressed, uint32_t isRepeat);
+RIVE_BINDING_IMPORT("rive_artboard_v1", "text_event")
+uint32_t rive_artboard_text_event(uint32_t artboard, const char* text, uint32_t length);
 RIVE_BINDING_IMPORT("rive_artboard_v1", "animation")
 uint32_t rive_artboard_animation(uint32_t artboard, const char* name, uint32_t length);
 RIVE_BINDING_IMPORT("rive_artboard_v1", "animation_release")
@@ -463,6 +482,26 @@ RIVE_BINDING_IMPORT("rive_audio_v1", "source_sample_rate")
 uint32_t rive_audio_source_sample_rate(uint32_t source);
 RIVE_BINDING_IMPORT("rive_audio_v1", "source_channels")
 uint32_t rive_audio_source_channels(uint32_t source);
+RIVE_BINDING_IMPORT("rive_audio_v1", "source_to_blob")
+uint32_t rive_audio_source_to_blob(uint32_t source, uint32_t sampleRate, uint32_t channels);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream")
+uint32_t rive_audio_stream(uint32_t source, uint32_t sampleRate, uint32_t channels, uint32_t chunkFrames, uint32_t bufferFrames);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_ring")
+uint32_t rive_audio_stream_ring(uint32_t stream);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_seeks")
+uint32_t rive_audio_stream_seeks(uint32_t stream);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_channels")
+uint32_t rive_audio_stream_channels(uint32_t stream);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_sample_rate")
+uint32_t rive_audio_stream_sample_rate(uint32_t stream);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_seek_frame")
+uint32_t rive_audio_stream_seek_frame(uint32_t stream, double frame);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_set_loop")
+void rive_audio_stream_set_loop(uint32_t stream, uint32_t loop);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_ended")
+uint32_t rive_audio_stream_ended(uint32_t stream);
+RIVE_BINDING_IMPORT("rive_audio_v1", "stream_release")
+void rive_audio_stream_release(uint32_t stream);
 RIVE_BINDING_IMPORT("rive_audio_v1", "play")
 uint32_t rive_audio_play(uint32_t source);
 RIVE_BINDING_IMPORT("rive_audio_v1", "play_at_time")
@@ -479,6 +518,10 @@ RIVE_BINDING_IMPORT("rive_audio_v1", "time_frame")
 double rive_audio_time_frame(void);
 RIVE_BINDING_IMPORT("rive_audio_v1", "sample_rate")
 uint32_t rive_audio_sample_rate(void);
+RIVE_BINDING_IMPORT("rive_audio_v1", "processor_sample_rate")
+uint32_t rive_audio_processor_sample_rate(void);
+RIVE_BINDING_IMPORT("rive_audio_v1", "processor_channels")
+uint32_t rive_audio_processor_channels(void);
 RIVE_BINDING_IMPORT("rive_audio_v1", "sound_release")
 void rive_audio_sound_release(uint32_t sound);
 RIVE_BINDING_IMPORT("rive_audio_v1", "sound_play")
@@ -723,6 +766,8 @@ RIVE_BINDING_IMPORT("rive_image_v1", "decode")
 uint32_t rive_image_decode(const uint8_t* bytes, uint32_t byteCount, uint32_t token);
 RIVE_BINDING_IMPORT("rive_image_v1", "decode_cancel")
 void rive_image_decode_cancel(uint32_t token);
+RIVE_BINDING_IMPORT("rive_image_v1", "load")
+uint32_t rive_image_load(const uint8_t* bytes, uint32_t byteCount);
 
 // rive_font_v1
 RIVE_BINDING_IMPORT("rive_font_v1", "from_asset")
@@ -849,6 +894,8 @@ RIVE_BINDING_IMPORT("rive_file_v1", "bindable_name")
 uint32_t rive_file_bindable_name(uint32_t bindable, char* buffer, uint32_t capacity);
 RIVE_BINDING_IMPORT("rive_file_v1", "bindable_data")
 uint32_t rive_file_bindable_data(uint32_t bindable);
+RIVE_BINDING_IMPORT("rive_file_v1", "host_bindable")
+uint32_t rive_file_host_bindable(uint32_t object, const char* name, uint32_t nameLength, uint32_t useDefault);
 RIVE_BINDING_IMPORT("rive_file_v1", "bindable_equal")
 uint32_t rive_file_bindable_equal(uint32_t a, uint32_t b);
 
@@ -881,6 +928,14 @@ RIVE_BINDING_IMPORT("rive_jobs_v1", "join")
 uint32_t rive_jobs_join(uint32_t job, double timeoutSeconds);
 RIVE_BINDING_IMPORT("rive_jobs_v1", "join_any")
 uint32_t rive_jobs_join_any(const uint32_t* jobs, uint32_t count, double timeoutSeconds);
+
+// rive_parallel_v1
+RIVE_BINDING_IMPORT("rive_parallel_v1", "size")
+uint32_t rive_parallel_size(void);
+RIVE_BINDING_IMPORT("rive_parallel_v1", "run")
+uint32_t rive_parallel_run(uint32_t control);
+RIVE_BINDING_IMPORT("rive_parallel_v1", "waiting")
+void rive_parallel_waiting(uint32_t control);
 
 // rive_shared_v1
 RIVE_BINDING_IMPORT("rive_shared_v1", "region_create")

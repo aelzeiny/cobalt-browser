@@ -1,8 +1,8 @@
 #ifndef _RIVE_STROKE_HPP_
 #define _RIVE_STROKE_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/stroke_base.hpp"
-#include "third_party/rive/include/rive/shapes/path_flags.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_position.hpp"
+#include "rive/generated/shapes/paint/stroke_base.hpp"
+#include "rive/shapes/path_flags.hpp"
+#include "rive/shapes/paint/stroke_position.hpp"
 namespace rive
 {
 class StrokeEffect;

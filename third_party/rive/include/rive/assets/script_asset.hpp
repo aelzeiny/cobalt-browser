@@ -1,8 +1,8 @@
 #ifndef _RIVE_SCRIPT_ASSET_HPP_
 #define _RIVE_SCRIPT_ASSET_HPP_
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/generated/assets/script_asset_base.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/file.hpp"
+#include "rive/generated/assets/script_asset_base.hpp"
+#include "rive/simple_array.hpp"
 #include <stdio.h>
 #include <cstdint>
 #include <functional>

@@ -1,7 +1,7 @@
 #ifndef _RIVE_SHAPE_BASE_HPP_
 #define _RIVE_SHAPE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/drawable.hpp"
 namespace rive
 {
 class ShapeBase : public Drawable

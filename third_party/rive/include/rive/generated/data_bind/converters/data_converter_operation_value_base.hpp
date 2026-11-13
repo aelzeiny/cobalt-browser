@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_CONVERTER_OPERATION_VALUE_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_OPERATION_VALUE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/data_bind/converters/data_converter_operation.hpp"
 namespace rive
 {
 class DataConverterOperationValueBase : public DataConverterOperation

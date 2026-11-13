@@ -1,17 +1,9 @@
 // Adapted from libjpeg-turbo's example:
 // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/example.c
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
 
-// Start of google patch.
-// libjpg expects FILE to be already defined.
-// Rive normally does some preprocessing to include this as part of their
-// jconfig.h file. Since we don't run their scripts in dependencies/, we instead
-// patch in this include.
-#include <stdio.h>
-// End of google patch.
-
-#include "third_party/libjpeg_turbo/jpeglib.h"
-#include "third_party/libjpeg_turbo/jerror.h"
+#include "jpeglib.h"
+#include "jerror.h"
 
 #include <setjmp.h>
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/animation/cubic_interpolator_solver.hpp"
+#include "rive/animation/cubic_interpolator_solver.hpp"
 #include <cmath>
 
 using namespace rive;

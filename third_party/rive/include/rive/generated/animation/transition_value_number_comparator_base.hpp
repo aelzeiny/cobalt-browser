@@ -1,7 +1,7 @@
 #ifndef _RIVE_TRANSITION_VALUE_NUMBER_COMPARATOR_BASE_HPP_
 #define _RIVE_TRANSITION_VALUE_NUMBER_COMPARATOR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/transition_value_comparator.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/transition_value_comparator.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class TransitionValueNumberComparatorBase : public TransitionValueComparator

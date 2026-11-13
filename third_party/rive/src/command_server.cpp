@@ -2,23 +2,25 @@
  * Copyright 2025 Rive
  */
 
-#include "third_party/rive/include/rive/command_server.hpp"
+#include "rive/command_server.hpp"
 
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/assets/manifest_asset.hpp"
-#include "third_party/rive/include/rive/assets/script_module_asset.hpp"
-#include "third_party/rive/include/rive/assets/text_asset.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_manager.hpp"
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_runtime.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/assets/blob_asset.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/assets/manifest_asset.hpp"
+#include "rive/assets/script_module_asset.hpp"
+#include "rive/assets/text_asset.hpp"
+#include "rive/file.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/semantic/semantic_manager.hpp"
+#include "rive/viewmodel/runtime/viewmodel_runtime.hpp"
 #ifdef WITH_RIVE_SCRIPTING_LUAU
-#include "third_party/rive/include/rive/lua/rive_lua_libs.hpp"
+#include "rive/lua/rive_lua_libs.hpp"
 #endif
+
+#include <algorithm>
 
 namespace rive
 {
@@ -1043,8 +1045,13 @@ bool CommandServer::processCommands()
           auto fileAssets = fileAssetLoader->fileAssets();
           m_globalAssetRegistry->addFileAssets(handle, fileAssets);
           m_globalAssetRegistry->applyResourcesToFileAssets(fileAssets);
-          m_fileDependencies[handle] = {};
           m_files[handle] = file;
+#ifdef WITH_RIVE_SCRIPTING_WASM
+          if (!file->wasmVMs().empty())
+          {
+            m_scriptFiles.push_back(file);
+          }
+#endif
 
           std::unique_lock<std::mutex> messageLock(
               m_commandQueue->m_messageMutex);
@@ -1077,18 +1084,9 @@ bool CommandServer::processCommands()
           m_globalAssetRegistry->removeFileAssets(
               handle,
               fileItr->second->assets());
+          // Existing bindable artboards retain the file independently of its
+          // handle.
           m_files.erase(fileItr);
-        }
-        auto itr = m_fileDependencies.find(handle);
-        if (itr != m_fileDependencies.end())
-        {
-          auto& artboardVector = itr->second;
-          for (auto artboardHandle : artboardVector)
-          {
-            cleanupArtboard(artboardHandle, requestId);
-          }
-
-          m_fileDependencies.erase(itr);
         }
         std::unique_lock<std::mutex> messageLock(
             m_commandQueue->m_messageMutex);
@@ -1605,8 +1603,6 @@ bool CommandServer::processCommands()
         commandStream >> requestId;
         lock.unlock();
         cleanupArtboard(handle, requestId);
-        // We don't remove from the file dependencies here because
-        // calling erase on a non existent key is fine.
         break;
       }
 
@@ -3443,21 +3439,8 @@ bool CommandServer::processCommands()
               }
               if (property.type == DataType::viewModel)
               {
-                // Get the type of the view model property
-                auto viewModelTmp = modelInstance->propertyViewModel(
-                    property.name);
-                if (viewModelTmp)
-                {
-                  m_commandQueue->m_messageNames
-                      << viewModelTmp->instance()->viewModel()->name();
-                }
-                else
-                {
-                  // If we can't determine the name we still
-                  // need to send something because the
-                  // command queue is expecting a name.
-                  m_commandQueue->m_messageNames << "Unkown";
-                }
+                // From the property, so an unassigned one still has a type.
+                m_commandQueue->m_messageNames << property.viewModelName;
               }
             }
           }
@@ -4690,12 +4673,48 @@ bool CommandServer::processCommands()
     drawPair.second(drawPair.first, this);
   }
 
+#ifdef WITH_RIVE_SCRIPTING_WASM
+  collectScriptHeaps(!m_uniqueDraws.empty());
+#endif
   m_uniqueDraws.clear();
 
   checkPropertySubscriptions();
 
   return !m_wasDisconnectReceived;
 }
+#ifdef WITH_RIVE_SCRIPTING_WASM
+// Script heaps grow without bound unless collected once a frame, after
+// everything drew; a host that advances without drawing still needs them.
+void CommandServer::collectScriptHeaps(bool drew)
+{
+  constexpr uint32_t kBatchesWithoutDraw = 16;
+  if (!drew && ++m_batchesSinceCollection < kBatchesWithoutDraw)
+  {
+    return;
+  }
+  m_batchesSinceCollection = 0;
+  // Only this list still holds a file whose handle and artboards are gone.
+  m_scriptFiles.erase(
+      std::remove_if(
+          m_scriptFiles.begin(),
+          m_scriptFiles.end(),
+          [](const rcp<File>& file) { return file->unique(); }),
+      m_scriptFiles.end());
+  for (const rcp<File>& file : m_scriptFiles)
+  {
+    const char* report = file->frameBoundary();
+#ifndef NDEBUG
+    if (report != nullptr)
+    {
+      fprintf(stderr, "%s\n", report);
+    }
+#else
+    (void)report;
+#endif
+  }
+}
+#endif
+
 CommandServer::SynchronizedStateMachine::~SynchronizedStateMachine()
 {
   std::unique_lock<std::mutex> lock(m_mutex);

@@ -2,7 +2,7 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/decoders/include/rive/decoders/texture_decoder.hpp"
+#include "rive/decoders/texture_decoder.hpp"
 
 #include <cstdio>
 

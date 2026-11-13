@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_CONVERTER_GROUP_HPP_
 #define _RIVE_DATA_CONVERTER_GROUP_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_group_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_type.hpp"
+#include "rive/generated/data_bind/converters/data_converter_group_base.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_type.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -40,6 +40,7 @@ public:
   void update() override;
   bool advance(float elapsedSeconds) override;
   bool mayAdvance() const override;
+  AdvancingComponent::QuietState advanceQuietState() const override;
   void reset() override;
 
 private:

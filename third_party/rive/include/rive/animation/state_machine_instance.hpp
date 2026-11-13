@@ -5,24 +5,25 @@
 #include <stddef.h>
 #include <vector>
 #include <unordered_map>
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/animation/gamepad_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/keyboard_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_callback_type.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
-#include "third_party/rive/include/rive/nested_animation.hpp"
-#include "third_party/rive/include/rive/scene.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_manager.hpp"
-#include "third_party/rive/include/rive/sidecar.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/animation/gamepad_listener_group.hpp"
+#include "rive/animation/keyboard_listener_group.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/state_instance.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/core/field_types/core_callback_type.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/listener_type.hpp"
+#include "rive/nested_animation.hpp"
+#include "rive/scene.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/semantic/semantic_manager.hpp"
+#include "rive/sidecar.hpp"
 
 namespace rive
 {
@@ -53,6 +54,9 @@ class BindableProperty;
 class ViewModelInstanceValue;
 class StateInstance;
 class HitDrawable;
+class HitNestedArtboard;
+class HitComponentList;
+class HostDispatchScope;
 class DraggableProxy;
 class ListenerViewModel;
 class ScriptedListenerAction;
@@ -65,6 +69,7 @@ struct SMIReporting;
 struct SMIBindables;
 struct SMIInputExtras;
 struct SMIScripting;
+class BlendAccumulator;
 typedef void (*DataBindChanged)();
 
 #ifdef WITH_RIVE_TOOLS
@@ -80,6 +85,9 @@ class StateMachineInstance : public Scene,
   friend class SMIInput;
   friend class KeyedProperty;
   friend class HitComponent;
+  friend class HitNestedArtboard;
+  friend class HitComponentList;
+  friend class HostDispatchScope;
   friend class StateMachineLayerInstance;
 
 private:
@@ -113,12 +121,48 @@ private:
   // main view model and for every global view model in the file, creating
   // (completing) any that are missing before the context is applied.
   void completeViewModelInstances();
+  /// With captureHits, the hit drawables the target resolves to are
+  /// collected there instead of taking listenerGroup as a normal listener.
   void addToHitLookup(
       Component* target,
       bool isLayoutComponent,
       std::unordered_map<Component*, HitDrawable*>& hitLookup,
       ListenerGroup* listenerGroup,
-      bool isOpaque);
+      bool isOpaque,
+      std::vector<HitDrawable*>* captureHits = nullptr);
+  /// This machine's own capture listeners, see capturePointer.
+  HitResult captureLocalPointer(
+      Vec2D position,
+      ListenerType hitType,
+      int pointerId,
+      float timeStamp,
+      PointerButton button,
+      bool collapsed);
+  /// A capture listener on scope took a press: turns off, for pointerId,
+  /// everything under scope until that pointer's release.
+  void claimPointer(Component* scope, int pointerId, PointerButton button);
+  /// Lets go of pointerId's claims here (only those taken with button,
+  /// unless anyButton), turning back on what they turned off. True if
+  /// there were any.
+  bool releasePointerClaims(
+      int pointerId,
+      PointerButton button,
+      bool anyButton);
+  /// Turns off again what pointerId's claims still hold, after something
+  /// turned on more than a released claim had (enablePointerEvents, or a
+  /// claim on the same scope for another button). Everything, while the
+  /// pointer is off from outside (isPointerDisabled).
+  void applyPointerClaims(int pointerId);
+  /// Lets go of whatever turned pointerId off, here and in every machine
+  /// this one hosts: claims for every button, and from outside (a drag).
+  void releaseHostedPointer(int pointerId);
+  /// Calls visit with each machine this one hosts, once each: the ones it
+  /// passes pointer events on to (see HitComponent::hostedMachines), and
+  /// its Texts' styles'.
+  template <typename F> void forEachHostedMachine(F&& visit);
+  /// Applies what this machine and the machines it hosts have pending,
+  /// deepest first. True if there was anything.
+  bool applyHostedReports();
 
 public:
   StateMachineInstance(const StateMachine* machine, ArtboardInstance* instance);
@@ -201,6 +245,21 @@ public:
       int pointerId = 0,
       PointerButton button = PointerButton::primary) override;
   HitResult pointerExit(Vec2D position, int pointerId = 0) override;
+  /// A down, up or move at `position` that can't land on anything here, as
+  /// when a host draws this artboard through a mesh and the pointer is past
+  /// its edge. Hover unwinds and presses miss, but a drag in progress keeps
+  /// following `position`. A dragStart or dragEnd, from a host's drag, still
+  /// turns this machine's pointers off or back on, and misses the same way.
+  HitResult pointerMiss(
+      Vec2D position,
+      ListenerType hitType,
+      float timeStamp = 0,
+      int pointerId = 0,
+      PointerButton button = PointerButton::primary);
+  /// Whether a pointerMiss is being processed, including the drag passes it
+  /// sets off. Hosted machines then miss too rather than see the pointer
+  /// exit, which would end their drags.
+  bool inPointerMiss() const { return m_inPointerMiss; }
   HitResult dragStart(
       Vec2D position,
       float timeStamp = 0,
@@ -236,6 +295,49 @@ public:
   /// its own use wherever nothing in the scene wants it.
   bool listensToButtonAt(Vec2D position, PointerButton button);
 
+  /// The capture phase of a pointer event: this machine's capture listeners
+  /// and then those of every machine nested in it, outermost first, all
+  /// ahead of the normal phase. A capture listener that includes a press
+  /// type, stops propagation and is hovered on a down claims that pointer's
+  /// gesture: until its release, normal handling under the listener's target
+  /// -- its hit components and whole nested machines -- is off for that
+  /// pointer. Without stopPropagation it only observes the press, though a
+  /// drag type still takes the gesture once it starts dragging, as any drag
+  /// listener here does.
+  /// A capture target under an opaque hit drawn above it, from outside its
+  /// own target, doesn't fire.
+  ///
+  /// The pointer methods run this themselves, once, at the root of the
+  /// dispatch; a host only calls it when it runs the top level's normal
+  /// phase itself (see captureRunByHost). Returns hit when a capture
+  /// listener was under the pointer.
+  HitResult capturePointer(
+      Vec2D position,
+      ListenerType hitType,
+      int pointerId = 0,
+      float timeStamp = 0,
+      PointerButton button = PointerButton::primary);
+  /// Whether this machine, or one nested in it, has a capture-phase
+  /// pointer listener.
+  bool hasCaptureListeners();
+  /// Whether an opaque hit under position hides what lies below it from
+  /// capture listeners, looking through nested artboards.
+  bool pointerOccludedAt(Vec2D position);
+  /// For a host that runs this machine's capture phase from its own top
+  /// level, as the editor does from Dart: the pointer methods then never
+  /// start one here.
+  void captureRunByHost(bool value) { m_captureRunByHost = value; }
+  /// Live instances, process-wide, with a capture-phase pointer listener of
+  /// their own. While it is 0 no machine runs a capture phase, so a host
+  /// running its own can skip reaching into nested machines.
+  static uint32_t liveCaptureMachines();
+  /// Tells every machine that the trees holding capture listeners may have
+  /// changed, so the next dispatch from a root asks its tree again. Building
+  /// or destroying a machine with one already does this; a host that puts
+  /// an existing machine back into a tree (a list reusing a pooled row) has
+  /// to.
+  static void captureTopologyChanged();
+
   bool tryChangeState();
   /// Makes this (a text style's state machine, instanced for one Text)
   /// serve the runs of [text] drawn with [style]: its pointer listeners
@@ -254,6 +356,10 @@ public:
 
 private:
   bool hitTestInternal(Vec2D position, bool bounded) const;
+  /// hasCaptureListeners for the root of a dispatch, cached until
+  /// captureTopologyChanged: the uncached walk visits every machine in the
+  /// tree, on every pointer event.
+  bool treeHasCaptureListeners();
 
 public:
   float durationSeconds() const override { return -1; }
@@ -325,10 +431,9 @@ public:
       const ViewModelInstanceValue* trigger) const;
   /// Whether a change at `changeSequence` (ViewModelInstanceValue's change
   /// sequence) is still pending for `layer`'s transitions: the frame window
-  /// of viewModelValueChanged, without its per-layer use. How a trigger
-  /// compared as a number in a condition (a component's trigger, or a view
-  /// model trigger against one) reads as fired. Without a layer, the window
-  /// of the instance's earliest layer.
+  /// of viewModelValueChanged, without its per-layer use. How a component's
+  /// trigger compared as a number in a condition reads as fired. Without a
+  /// layer, the window of the instance's earliest layer.
   bool changePending(
       uint64_t changeSequence,
       const StateMachineLayerInstance* layer = nullptr) const;
@@ -456,6 +561,8 @@ public:
     /// TextInput, or a FocusData target with registered key/text-input
     /// listeners. False when nothing is focused.
     bool expectsKeyboardInput = false;
+    /// True if the focused element or an ancestor takes typed text.
+    bool expectsTextInput = false;
   };
   FocusState focusState() const;
 
@@ -479,7 +586,28 @@ public:
       SemanticManager* manager,
       rcp<SemanticNode> parentNode = nullptr);
 
+  // Whether instances made from here on collect the properties several of
+  // their layers key and set each once a frame (see
+  // StateMachine::layerConflicts). On by default; off applies each layer's
+  // writes straight to the objects, as before.
+  static bool sm_layerAccumulatorEnabled;
+
 #ifdef TESTING
+  // Whether instances made from here on share one bindable among the binds
+  // that always hold the same value (see StateMachine::bindableTwins). On by
+  // default.
+  static bool sm_shareBindables;
+  // Whether a layer whose held pose a change unsettled searches before it
+  // re-applies the pose, and stays as it is when the search changes
+  // nothing. On by default.
+  static bool sm_searchBeforeReapply;
+  // Whether a layer going back to the state it just left reuses that
+  // state's instance (see StateInstance::restart). On by default.
+  static bool sm_reuseStateInstances;
+  // State instances reused that way, across every machine.
+  static uint64_t sm_reusedStateInstances;
+  // Whether this instance collects its layers' shared writes.
+  bool hasLayerAccumulator() const { return m_layerWrites.get() != nullptr; }
   size_t hitComponentsCount() { return m_hitComponents.size(); };
   HitComponent* hitComponent(size_t index)
   {
@@ -493,6 +621,9 @@ public:
   // Whether the layer would skip its next advance (see
   // StateMachineLayerInstance::isFrozen), given nothing changes before it.
   bool isLayerFrozen(size_t index) const;
+  // Whether the layer is mixing a transition in, or still applies the values
+  // one mixes from.
+  bool isLayerMixing(size_t index) const;
   // Whether this instance tracks view model changes at all, and whether it
   // keeps a change window per layer (see SMIBindables::layerChanges).
   bool tracksViewModelChanges() const { return bindables() != nullptr; }
@@ -506,9 +637,40 @@ public:
   // The subset of those resting on a pose whose values were already in place
   // (each one verified against the artboard).
   static uint64_t sm_frozenPoseAdvances;
+  // Machines visited by capturePointer, across every instance. Stays put
+  // while nothing in the process has a capture listener.
+  static uint64_t sm_capturePassVisits;
+  // Advances advanceAndApply(float) skipped, across every instance, because
+  // the machine had settled with only its scripts' async work outstanding
+  // and nothing woke it since (see Artboard::markQuietAwaitingAsync).
+  static uint64_t sm_asyncSkips;
+  // Whether each skipped advance runs anyway and stops loudly if it did
+  // work, as ArtboardComponentList::sm_verifyQuietRows does for quiet rows.
+  // On by default.
+  static bool sm_verifyAsyncSkips;
 #endif
   void enablePointerEvents(int pointerId = 0);
   void disablePointerEvents(int pointerId = 0);
+  /// Whether disablePointerEvents turned pointerId off from outside this
+  /// machine (a host's drag or capture claim, or the embedder), and
+  /// nothing has turned it back on.
+  bool isPointerDisabled(int pointerId) const;
+  /// The exit a host sends when something it draws above this machine's
+  /// contents covers the pointer, which hasn't left. Unlike pointerExit, it
+  /// leaves the pointer off if it was: the drag or claim that turned it off
+  /// still holds.
+  HitResult hoverExit(Vec2D position, int pointerId = 0);
+  /// The exit a host sends a machine it is about to stop showing (a list
+  /// row going). Unlike pointerExit, nothing that turned the pointer off
+  /// for this machine or a machine it hosts (a drag, a capture claim) keeps
+  /// a listener from seeing the pointer leave: there is no release to wait
+  /// for.
+  HitResult dropPointer(Vec2D position, int pointerId = 0);
+  /// Delivers what this machine and the machines it hosts reported since
+  /// their advances (events, view model listener reports), deepest first as
+  /// their advances would, for a machine its host is about to drop or reset
+  /// while it is still bound to the data those reports act on.
+  void applyPendingReports();
   void dispose();
 
 private:
@@ -535,6 +697,17 @@ private:
   // Pointer positions arrive in the space of the Text this state machine
   // serves (see serveTextStyle), not mapped into the artboard's content.
   bool m_hostSpacePointers : 1;
+  // Set while a host machine forwards a pointer event here: the host already
+  // ran the capture phase over this machine, so updateListeners doesn't.
+  bool m_hostDispatching : 1;
+  // See captureRunByHost.
+  bool m_captureRunByHost : 1;
+  // See inPointerMiss.
+  bool m_inPointerMiss : 1;
+  // The last advanceAndApply(float) settled with only its scripts' async
+  // work outstanding and marked the artboard quiet, so frames skip the
+  // advance until something wakes it (see skipWhileAwaitingAsync).
+  bool m_awaitingAsync : 1;
   // The artboard's changeSerial() when the last advance started. A layer
   // resting on a pose re-applies it only if the serial moved since then
   // (see StateMachineLayerInstance::isFrozen).
@@ -544,6 +717,9 @@ private:
   // Owns the in-flight scroll gesture. Latched for the whole gesture:
   // re-picking per event would hand a flick's tail to the outer view.
   HitComponent* m_scrollLatch = nullptr;
+  // Pointers disablePointerEvents turned off. A hover exit keeps them off;
+  // a real exit forgets them, as it does every other per-pointer state.
+  LazyVector<int> m_disabledPointerIds;
   StateMachineInstance* m_parentStateMachineInstance = nullptr;
   NestedArtboard* m_parentNestedArtboard = nullptr;
 
@@ -575,6 +751,14 @@ private:
   Sidecar<SMIBindables> m_bindables;
   Sidecar<SMIInputExtras> m_inputExtras;
   Sidecar<SMIScripting> m_scripting;
+  // What the layers apply to the properties several of them key, set when
+  // they have all applied. Only for a machine that has such properties (see
+  // StateMachine::layerConflicts).
+  Sidecar<BlendAccumulator> m_layerWrites;
+  // Sets everything the layers wrote to m_layerWrites. Before anything
+  // else could read or write those properties: an action, a reset or hold,
+  // a transition search reading objects, the instance's binds.
+  void flushLayerWrites();
 
   // Read accessors — null when the cluster's feature is unused, which every
   // caller must handle. The ensure...() variants allocate and are defined in
@@ -605,6 +789,22 @@ private:
   const Artboard* rootArtboard() const;
 
   void processSemanticEvents();
+
+public:
+  // Whether a transition condition of this machine runs a script. Its
+  // answer reads script state that changes without any dirt or report, so
+  // its layers search every frame (see StateMachine::readsPendingChanges'
+  // settle-safety) and nothing could wake a skipped one.
+  bool ownsScriptedConditions() const;
+
+private:
+  // advanceAndApply(float) settled with only its scripts' async work
+  // keeping it going: marks the artboard so any change wakes it.
+  void armAwaitingAsync();
+  // Whether advanceAndApply(float) can skip this frame's advance: armed, and
+  // nothing woke the artboard, queued work here or moved the view model
+  // change sequence since, while the async work is still out.
+  bool skipWhileAwaitingAsync(float seconds);
 
 #ifdef WITH_RIVE_TOOLS
 public:
@@ -649,6 +849,9 @@ public:
   }
   virtual void enablePointerEvents(int pointerId = 0) {}
   virtual void disablePointerEvents(int pointerId = 0) {}
+  /// Appends the state machines this component passes pointer events on
+  /// to: a nested artboard's, the rows a list shows, a Text's style runs'.
+  virtual void hostedMachines(std::vector<StateMachineInstance*>& out) {}
   /// Scroll dispatch. wantsScroll is the interest test; scrollGestureActive
   /// keeps the latch alive between events.
   virtual bool wantsScroll(Vec2D position, const ScrollEvent& event)
@@ -679,6 +882,26 @@ public:
       int pointerId)
   {
     return HitResult::none;
+  }
+  /// Whether a machine this hosts, or one nested in it, has a capture
+  /// listener: the capture phase only descends where one does.
+  virtual bool hasCaptureListeners() { return false; }
+  /// The capture phase, for hit components that host other machines.
+  virtual HitResult capturePointer(
+      Vec2D position,
+      ListenerType hitType,
+      int pointerId,
+      float timeStamp,
+      PointerButton button)
+  {
+    return HitResult::none;
+  }
+  /// Whether an opaque hit under position hides capture listeners drawn
+  /// below it. Unlike occludesPointer it looks into nested artboards, whose
+  /// opaque contents (a text input, say) cover what lies under them too.
+  virtual bool blocksCapture(Vec2D position)
+  {
+    return occludesPointer(position);
   }
 #ifdef TESTING
   int earlyOutCount = 0;

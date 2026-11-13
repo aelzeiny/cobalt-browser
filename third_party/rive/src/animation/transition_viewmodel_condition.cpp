@@ -1,28 +1,28 @@
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_component_comparator.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_color_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_enum_base.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_trigger_base.hpp"
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_artboard_base.hpp"
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_asset_base.hpp"
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_enum_base.hpp"
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_trigger_base.hpp"
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/importers/state_transition_importer.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/custom_property_trigger.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/animation/transition_property_component_comparator.hpp"
+#include "rive/artboard.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_color_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/generated/custom_property_enum_base.hpp"
+#include "rive/generated/custom_property_trigger_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_artboard_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_asset_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_enum_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_trigger_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
+#include "rive/importers/state_transition_importer.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
 
 #include <vector>
 
@@ -1100,7 +1100,16 @@ void TransitionViewModelCondition::useInLayer(
 {
   if (leftComparator() != nullptr)
   {
-    return leftComparator()->useInLayer(stateMachineInstance, layerInstance);
+    leftComparator()->useInLayer(stateMachineInstance, layerInstance);
+  }
+  // A trigger on the right moves a layer once per fire too: with
+  // `go != other`, a fire of `other` alone takes one step, not two.
+  auto right = rightComparator();
+  if (right != nullptr && right->is<TransitionPropertyViewModelComparator>())
+  {
+    right->as<TransitionPropertyViewModelComparator>()->useTriggerFireInLayer(
+        stateMachineInstance,
+        layerInstance);
   }
 }
 
@@ -1129,6 +1138,20 @@ bool TransitionViewModelCondition::readsComponentTrigger() const
 {
   return isComponentTrigger(leftComparator()) ||
          isComponentTrigger(rightComparator());
+}
+
+bool TransitionViewModelCondition::readsObjectProperty() const
+{
+  for (TransitionComparator* comparator : {leftComparator(), rightComparator()})
+  {
+    if (comparator != nullptr &&
+        (comparator->is<TransitionPropertyComponentComparator>() ||
+         comparator->is<TransitionPropertyArtboardComparator>()))
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool TransitionViewModelCondition::readsPendingChange() const
@@ -1336,9 +1359,10 @@ uint32_t ConditionComparandTriggerBindable::valueForLayer(
   auto dataBind = stateMachineInstance->bindableDataBindToTarget(
       bindableInstance);
   auto source = dataBind == nullptr ? nullptr : dataBind->source();
-  return source != nullptr && stateMachineInstance->changePending(
-                                  source->changeSequence(),
-                                  layer)
+  // Like the "fired" condition, one fire moves a layer once: a fire it
+  // already took a transition on reads 0.
+  return source != nullptr &&
+                 stateMachineInstance->viewModelValueChanged(source, layer)
              ? 1
              : 0;
 }

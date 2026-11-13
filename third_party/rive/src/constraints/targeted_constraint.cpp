@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/constraints/targeted_constraint.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/constraints/targeted_constraint.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

@@ -1,10 +1,10 @@
 #ifndef _RIVE_IMAGE_BASE_HPP_
 #define _RIVE_IMAGE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/drawable.hpp"
 namespace rive
 {
 class ImageBase : public Drawable

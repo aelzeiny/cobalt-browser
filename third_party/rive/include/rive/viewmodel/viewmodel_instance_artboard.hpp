@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_ARTBOARD_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_ARTBOARD_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_artboard_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_artboard_base.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/bindable_artboard.hpp"
 #include <stdio.h>
 namespace rive
 {

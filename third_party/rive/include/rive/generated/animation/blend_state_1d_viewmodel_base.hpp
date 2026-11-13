@@ -1,6 +1,6 @@
 #ifndef _RIVE_BLEND_STATE1_DVIEW_MODEL_BASE_HPP_
 #define _RIVE_BLEND_STATE1_DVIEW_MODEL_BASE_HPP_
-#include "third_party/rive/include/rive/animation/blend_state_1d.hpp"
+#include "rive/animation/blend_state_1d.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

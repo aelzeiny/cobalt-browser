@@ -2,8 +2,8 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/rive/include/rive/gpu_texture_format.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "rive/gpu_texture_format.hpp"
 
 // bc7decomp provides BC7 software decompression.
 // rgbcx provides BC1/BC2/BC3 software decompression.

@@ -5,8 +5,8 @@
 #ifndef _RIVE_FOCUS_MANAGER_HPP_
 #define _RIVE_FOCUS_MANAGER_HPP_
 
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/refcnt.hpp"
 #include <vector>
 
 namespace rive
@@ -234,7 +234,19 @@ public:
 
   // === Input Routing ===
 
+  /// Routes a key event to the primary focus. Nodes flagged
+  /// capturesKeyInput are offered it first, root first (see
+  /// captureKeyInput); unless one of them claims it, it then bubbles from
+  /// the primary focus up through its ancestors until one handles it.
   bool keyInput(Key key, KeyModifiers modifiers, bool isPressed, bool isRepeat);
+  /// The capture phase of keyInput on its own: offers the key to the nodes
+  /// on the focus path flagged capturesKeyInput, outermost first, stopping
+  /// at the first that claims it.
+  bool captureKeyInput(
+      Key key,
+      KeyModifiers modifiers,
+      bool isPressed,
+      bool isRepeat);
   bool textInput(const std::string& text);
 
   /// The selected text of the focused element (bubbling up like textInput
@@ -291,13 +303,16 @@ public:
   /// or a node's focusable backing / canFocus flag.
   void markFocusableContentDirty() { m_focusableContentDirty = true; }
 
+  /// Whether a focus request for rootArtboard's tree is waiting for an
+  /// advance to apply it (see processPendingFocusRequests).
+  bool hasPendingFocusRequests(const Artboard* rootArtboard) const;
+
 private:
   void enqueueFocusRequest(PendingFocusRequest request);
   void drainPendingFocusRequests(
       const Artboard* rootArtboard,
       bool keepUnapplied,
       bool allRoots);
-  bool hasPendingFocusRequests(const Artboard* rootArtboard) const;
   bool applyFocusTraversal(uint32_t traversalKind);
   /// @returns true when the request is done with — it took effect, or it
   /// never can (its target is gone). False means "try again later".

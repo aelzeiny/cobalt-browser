@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/core_context.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 
 using namespace rive;
 

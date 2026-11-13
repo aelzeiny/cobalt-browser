@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/selection_style_base.hpp"
-#include "third_party/rive/include/rive/selection_style.hpp"
+#include "rive/generated/selection_style_base.hpp"
+#include "rive/selection_style.hpp"
 
 using namespace rive;
 

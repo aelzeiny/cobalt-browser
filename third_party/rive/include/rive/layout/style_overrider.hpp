@@ -1,7 +1,7 @@
 #ifndef _RIVE_STYLE_OVERRIDER_HPP_
 #define _RIVE_STYLE_OVERRIDER_HPP_
 #include <stdio.h>
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/artboard.hpp"
 namespace rive
 {
 // class ArtboardInstance;

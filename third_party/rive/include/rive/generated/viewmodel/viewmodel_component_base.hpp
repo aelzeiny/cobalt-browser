@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_COMPONENT_BASE_HPP_
 #define _RIVE_VIEW_MODEL_COMPONENT_BASE_HPP_
 #include <string>
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
+#include "rive/core.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
 namespace rive
 {
 class ViewModelComponentBase : public Core

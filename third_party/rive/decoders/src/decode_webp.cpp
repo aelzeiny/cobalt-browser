@@ -1,6 +1,6 @@
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/libwebp/src/webp/decode.h"
-#include "third_party/libwebp/src/webp/demux.h"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "webp/decode.h"
+#include "webp/demux.h"
 #include <stdio.h>
 #include <vector>
 #include <memory>

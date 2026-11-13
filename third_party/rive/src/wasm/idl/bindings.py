@@ -254,14 +254,25 @@ def op(name, params=(), ret=None, stub=None, guard=None, boot=None,
             'lane_refusal': lane_refusal}
 
 
-def ns(module, short, ops, lanes=(), boots=False):
+def ns(module, short, ops, lanes=(), boots=False, as_class=True):
     # lanes: the lane kinds whose modules may import its ops. A lane module
     # runs without a VM, so most namespaces allow none.
     # boots: a module's top level may call its ops, which resolve the booting
     # vm as boot does, without trapping when there is none.
+    # as_class: natives.as wraps its ops in a class. Every class there takes a
+    # runtime id, so a new one changes the bytes of every module importing it.
     for each in ops if boots else ():
         each['boot'] = each['boot'] or True
-    return {'module': module, 'short': short, 'ops': ops, 'lanes': lanes}
+    return {'module': module, 'short': short, 'ops': ops, 'lanes': lanes,
+            'as_class': as_class}
+
+
+# The bits rive_rt_v1.features answers, which rive/runtime.as's enum Feature
+# names; only append, so a bit keeps its meaning.
+FEATURES = [
+    'parallelCalls',
+]
+HOST_FEATURES = (1 << len(FEATURES)) - 1
 
 
 NAMESPACES = [
@@ -276,8 +287,12 @@ NAMESPACES = [
         op('error', [string('message', 'length')], boot='script threw'),
         # Milliseconds. now is monotonic and times the execution budget and
         # os.clock; date_now is the wall clock since the epoch, for os.time.
-        op('now', ret='f64', web_js='performance.now()'),
+        op('now', ret='f64', boot=True, web_js='performance.now()',
+           lanes=('job', 'worker')),
         op('date_now', ret='f64', web_js='Date.now()'),
+        # The FEATURES bits this host has.
+        op('features', ret='u32', boot=True,
+           web_js='0x%x' % HOST_FEATURES),
         # Line probes a debug bake plants: function entry and exit keep a
         # shadow call stack, and each line asks whether to stop. line
         # returns nonzero when it did, so the module re-arms its budget.
@@ -292,6 +307,15 @@ NAMESPACES = [
         op('zone_name', [f64('epochSeconds'),
                          mutbuf('char', 'buffer', 'capacity')],
            ret='u32', stub='zero'),
+        # Context.arg: a value the host gave the run under name, with the
+        # retrying length contract, or 0xffffffff when it gave none.
+        op('arg', [string('name', 'nameLength'),
+                   mutbuf('char', 'buffer', 'capacity')],
+           ret='u32', stub='zero', boot=True),
+        # The frame collector's long idle free chunks: the host gives their
+        # pages back to the system, which a browser cannot.
+        op('release_pages', [u32('start'), u32('length')],
+           web_js='undefined'),
     ]),
     # Data binding tracer: numbers only; more property types, listeners, and
     # the valueChanged callback channel land with the properties namespace.
@@ -484,6 +508,19 @@ NAMESPACES = [
         op('gamepad_event', [handle('artboard'),
                              buf('uint8_t', 'payload', 'byteCount')],
            ret='u32'),
+        # artboard:keyboardEvent: key is rive::Key, modifiers KeyModifiers
+        # bits; returns 1 when the artboard's focused control took it.
+        op('keyboard_event', [
+            handle('artboard'),
+            u32('key'),
+            u32('modifiers'),
+            u32('isPressed'),
+            u32('isRepeat'),
+        ], ret='u32'),
+        # artboard:textEvent: UTF-8 text for the focused text input; returns
+        # 1 when it was taken.
+        op('text_event', [handle('artboard'), string('text', 'length')],
+           ret='u32'),
         op('animation', [handle('artboard'), string('name', 'length')],
            ret='u32'),
         op('animation_release', [handle('animation')]),
@@ -574,6 +611,30 @@ NAMESPACES = [
         op('source_duration', [handle('source')], ret='f32'),
         op('source_sample_rate', [handle('source')], ret='u32'),
         op('source_channels', [handle('source')], ret='u32'),
+        # Decodes on a job into a new shared blob of interleaved f32 frames,
+        # 0 keeping the source's rate or channels: a token host_lane_wake
+        # settles with the blob id, a Create code, or -1; 0 without audio.
+        op('source_to_blob', [handle('source'), u32('sampleRate'),
+                              u32('channels')], ret='u32'),
+        # A stream that keeps a new ring topped up with records of a 16 byte
+        # header and up to chunkFrames interleaved f32 frames, holding about
+        # bufferFrames. A token, settled with the stream's handle once its
+        # first records are queued; 0 without audio processors or when the
+        # source does not decode.
+        op('stream', [handle('source'), u32('sampleRate'), u32('channels'),
+                      u32('chunkFrames'), u32('bufferFrames')], ret='u32'),
+        # The stream's ring and seek signal, each with a hold of the caller's
+        # own.
+        op('stream_ring', [handle('stream')], ret='u32'),
+        op('stream_seeks', [handle('stream')], ret='u32'),
+        op('stream_channels', [handle('stream')], ret='u32'),
+        op('stream_sample_rate', [handle('stream')], ret='u32'),
+        # Drops the queued records and decodes on from frame; 1 on success.
+        op('stream_seek_frame', [handle('stream'), f64('frame')], ret='u32'),
+        op('stream_set_loop', [handle('stream'), u32('loop')]),
+        # 1 once the source ran out and every record was written.
+        op('stream_ended', [handle('stream')], ret='u32'),
+        op('stream_release', [handle('stream')]),
         # Each returns a new sound handle, 0 without an engine or source.
         op('play', [handle('source')], ret='u32'),
         op('play_at_time', [handle('source'), f32('seconds')], ret='u32'),
@@ -583,6 +644,10 @@ NAMESPACES = [
         op('time', ret='f32'),
         op('time_frame', ret='f64'),
         op('sample_rate', ret='u32'),
+        # The rate and channels a processor started now renders in, 0 when
+        # none would play.
+        op('processor_sample_rate', ret='u32'),
+        op('processor_channels', ret='u32'),
         op('sound_release', [handle('sound')]),
         op('sound_play', [handle('sound')]),
         op('sound_pause', [handle('sound')]),
@@ -982,6 +1047,12 @@ NAMESPACES = [
         op('decode', [buf('uint8_t', 'bytes', 'byteCount'), u32('token')],
            ret='u32', stub='hook'),
         op('decode_cancel', [u32('token')]),
+        # Decodes encoded image bytes into a new image through the host's
+        # factory, on the calling thread, for context:loadImage. Returns 0
+        # when the host has no factory or a native one cannot decode the
+        # bytes; the web and deferred factories return an image that decodes
+        # later, blank when the bytes are bad.
+        op('load', [buf('uint8_t', 'bytes', 'byteCount')], ret='u32'),
     ]),
     # The Luau Font builtin: metrics, variable instances and glyph outlines.
     ns('rive_font_v1', 'font', [
@@ -1150,7 +1221,9 @@ NAMESPACES = [
         op('fetch_cancel', [u32('token')]),
     ]),
     # context:decodeFile and what it returns: decoded files and their
-    # bindable artboards are host objects behind handles.
+    # bindable artboards are host objects behind handles. The bindable ops
+    # and host_bindable need no networking; decode answers unavailable
+    # without it.
     ns('rive_file_v1', 'file', [
         # 0 when no file results, with statusOut[0] set to the
         # FileDecodeWire status saying why.
@@ -1175,6 +1248,12 @@ NAMESPACES = [
         # The instance of the artboard's own view model as a rive_data_v1
         # vmi handle; 0 when the artboard has none.
         op('bindable_data', [handle('bindable')], ret='u32'),
+        # One of the script's own file's artboards (context.bindableArtboard),
+        # by name or the default artboard when useDefault is set, pinned to
+        # no file and with no view model of its own, so a host binds it as
+        # it binds an authored artboard id; 0 when absent.
+        op('host_bindable', [handle('object'), string('name', 'nameLength'),
+                             u32('useDefault')], ret='u32'),
         # Both handles carry the same bindable artboard.
         op('bindable_equal', [handle('a'), handle('b')], ret='u32'),
     ]),
@@ -1228,6 +1307,24 @@ NAMESPACES = [
         op('join_any', [buf('uint32_t', 'jobs', 'count'),
                         f64('timeoutSeconds')], ret='u32'),
     ], boots=True),
+    # Parallel calls: one function run on several threads at once over the
+    # main module's own memory, and joined before the call returns.
+    ns('rive_parallel_v1', 'parallel', [
+        # The most parts a run would get now: the threads it may use with
+        # the main lane, or 1 where it would get one.
+        op('size', ret='u32'),
+        # Runs the call whose control block lane_layout.py's Parallel group
+        # lays out at control. With atOnce set, the call gets one part per
+        # thread it runs on, and count says how many. A part that traps traps
+        # the caller once every part has stopped. Answers how many threads
+        # ran parts.
+        op('run', [u32('control')], ret='u32', guard='RIVE_WASM_PARALLEL'),
+        # Part 0 calls it now and then while it waits at a sync on a caller
+        # that cannot park, so the host can stop a call with a part that
+        # never started. The page's runner answers it; elsewhere the caller
+        # parks and it does nothing.
+        op('waiting', [u32('control')], web_js='undefined'),
+    ], boots=True, as_class=False),
     # Memory every lane shares, by process wide id. Creates answer an id or a
     # shared_layout.py Create code; reads answer size plus one, 0 when empty.
     ns('rive_shared_v1', 'shared', [
@@ -1321,7 +1418,7 @@ LANE_IMPORTS = [
     lane_import('rive_job_v1', ('job',)),
     lane_import('rive_worker_v1', ('worker',)),
 ] + [lane_import('env', LANES, 'console.' + level)
-     for level in ('log', 'debug', 'info', 'warn', 'error')] + [
+     for level in ('caller', 'log', 'debug', 'info', 'warn', 'error')] + [
     lane_import('env', ('job', 'worker'), 'console.' + timer)
     for timer in ('time', 'timeLog', 'timeEnd')]
 

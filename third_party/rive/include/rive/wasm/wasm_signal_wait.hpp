@@ -3,7 +3,7 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 
 #include <chrono>
 #include <cstdint>

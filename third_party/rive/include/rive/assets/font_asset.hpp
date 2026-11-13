@@ -1,8 +1,8 @@
 #ifndef _RIVE_FONT_ASSET_HPP_
 #define _RIVE_FONT_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/font_asset_base.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/assets/font_asset_base.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/refcnt.hpp"
 
 namespace rive
 {

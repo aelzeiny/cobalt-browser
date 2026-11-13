@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_MODIFIER_RANGE_HPP_
 #define _RIVE_TEXT_MODIFIER_RANGE_HPP_
-#include "third_party/rive/include/rive/generated/text/text_modifier_range_base.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/generated/text/text_modifier_range_base.hpp"
+#include "rive/text_engine.hpp"
 #include <vector>
 
 namespace rive

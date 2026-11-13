@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/animation/elastic_interpolator.hpp"
+#include "rive/animation/elastic_interpolator.hpp"
 
 using namespace rive;
 

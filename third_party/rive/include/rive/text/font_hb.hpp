@@ -1,11 +1,13 @@
 #ifndef _RIVE_FONT_HB_HPP_
 #define _RIVE_FONT_HB_HPP_
 
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/factory.hpp"
+#include "rive/text_engine.hpp"
 
+#include <atomic>
 #include <unordered_map>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 // Platforms where HBFont::DecodeFile can map a file. Declared here so callers
@@ -78,6 +80,9 @@ public:
   bool isItalic() const override;
 
   rive::RawPath getPath(rive::GlyphID) const override;
+  const rive::RawPath& glyphPath(rive::GlyphID) const override;
+  const rive::RawPath* cachedGlyphPath(rive::GlyphID) const override;
+  size_t glyphPathCacheRoom() const override;
   bool hasColorGlyphs() const override;
   bool isColorGlyph(rive::GlyphID) const override;
   size_t getColorLayers(
@@ -92,6 +97,19 @@ public:
   rive::rcp<Font> withOptions(
       rive::Span<const Coord> variableAxes,
       rive::Span<const Feature> features) const override;
+  rive::rcp<Font> sharedWithOptions(
+      rive::Span<const Coord> variableAxes,
+      rive::Span<const Feature> features) const override;
+
+  // The font for the runs this font shapes as a fallback on the calling
+  // thread. gFallbackProc hands every thread the same fonts, and a font's
+  // caches aren't locked (see Font::sharedWithOptions), so only the first
+  // thread to ask gets this font, and a host that shapes on one thread
+  // draws the fonts its proc returns. Any other thread gets a copy of its
+  // own, which its runs share while one holds it. A copy keeps this font's
+  // face, coordinates, features and metrics, and draws its outlines through
+  // this font, as a subclass may draw them its own way.
+  rive::rcp<rive::Font> forThisThread() const;
 
   bool hasGlyph(const rive::Unichar) const override;
   std::vector<rive::Unichar> codepoints() const override;
@@ -125,13 +143,38 @@ public:
       uint8_t width);
   static float GetStyle(hb_font_t*, uint32_t);
   hb_font_t* font() const { return m_font; }
+#ifdef TESTING
+  // Variants made, rather than shared, and glyph outlines drawn rather than
+  // found in a cache, across every font and thread.
+  static std::atomic<uint64_t> sm_variantsMade;
+  static std::atomic<uint64_t> sm_glyphPathsDrawn;
+  // Called by a variant's destructor once its count reached zero, before it
+  // leaves its font's map, so a test can look the variant up while it dies.
+  static void (*sm_variantDying)();
+  // Live variants sharedWithOptions compared a request's options against.
+  static std::atomic<uint64_t> sm_variantsCompared;
+#endif
 
-protected:
+private:
   HBFont(
       hb_font_t* font,
       std::unordered_map<uint32_t, float> axisValues,
       std::unordered_map<uint32_t, uint32_t> featureValues,
       std::vector<hb_feature_t> features);
+  // With [lineMetrics] rather than measuring [font], for a copy, which
+  // measures as the font it copies does.
+  HBFont(
+      hb_font_t* font,
+      const LineMetrics& lineMetrics,
+      std::unordered_map<uint32_t, float> axisValues,
+      std::unordered_map<uint32_t, uint32_t> featureValues,
+      std::vector<hb_feature_t> features);
+
+  // withOptions, or sharedWithOptions when [shared].
+  rive::rcp<Font> makeVariant(
+      rive::Span<const Coord> variableAxes,
+      rive::Span<const Feature> features,
+      bool shared) const;
 
 public:
   hb_font_t* m_font;
@@ -143,10 +186,14 @@ public:
       const rive::TextRun& originalTextRun,
       const uint32_t fallbackIndex);
 
+  // Draws [glyph]'s outline. glyphPath (and getPath) keep what this returns,
+  // so a font that draws its outlines elsewhere overrides this instead.
+  virtual rive::RawPath drawGlyphPath(rive::GlyphID glyph) const;
+
   // The features list to pass directly to Harfbuzz.
   std::vector<hb_feature_t> m_features;
 
-protected:
+private:
   hb_draw_funcs_t* m_drawFuncs;
   hb_paint_funcs_t* m_paintFuncs;
 
@@ -165,9 +212,39 @@ protected:
   mutable std::unordered_map<rive::GlyphID, std::vector<ColorGlyphLayer>>
       m_colorLayerCache;
   // Outlines already drawn, so a text that reshapes (or a list row made for
-  // a new item) copies its glyphs instead of walking the glyf table again.
+  // a new item) reuses its glyphs instead of walking the glyf table again.
   // Bounded; it starts over once full.
   mutable std::unordered_map<rive::GlyphID, rive::RawPath> m_glyphPathCache;
+  // Past this many outlines, glyphPath starts the cache over.
+  static constexpr size_t kMaxCachedGlyphPaths = 512;
+
+  // The fonts sharedWithOptions made from this one that are still alive, by
+  // variantKey. A request for options one of them already has, from the
+  // thread that made it, gets that font, and with it the outlines it already
+  // drew: every list row's text style asks for the same variable font, and
+  // each used to build its own and draw every glyph again. Keyed rather than
+  // listed because a variation modifier's falloff keeps a variant alive per
+  // coverage level, thousands on a long text. Not owned: a variant holds
+  // this font (m_variantOf) and takes itself out as it is destroyed. Fonts
+  // withOptions makes aren't listed, so one its caller hands to another
+  // thread is never handed out again. The copies forThisThread made are
+  // listed too, each keyed by its thread.
+  mutable std::mutex m_variantsMutex;
+  mutable std::unordered_multimap<uint64_t, HBFont*> m_variants;
+  // The font sharedWithOptions or forThisThread made this one from, if one
+  // did, and this one's key in that font's m_variants.
+  rive::rcp<const HBFont> m_variantOf;
+  uint64_t m_variantKey = 0;
+  // The thread sharedWithOptions or forThisThread made this one on, as a
+  // number no later thread gets (a std::thread::id can be reused once its
+  // thread ends). Its caches aren't locked, as a base font's aren't, so it
+  // is only shared on that thread. One base font can serve files that
+  // advance on different threads, whose styles each get a font of their own.
+  uint64_t m_madeOn = 0;
+  // The thread forThisThread first asked on, which keeps this font, or zero.
+  mutable std::atomic<uint64_t> m_firstThread{0};
+  // Whether forThisThread made this font, a copy of m_variantOf.
+  bool m_isCopy = false;
 };
 
 #endif

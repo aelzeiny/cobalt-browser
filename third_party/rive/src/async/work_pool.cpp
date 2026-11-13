@@ -2,13 +2,13 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/include/rive/async/work_pool.hpp"
+#include "rive/async/work_pool.hpp"
 #ifdef WITH_RIVE_SCRIPTNET
-#include "third_party/rive/include/rive/scriptnet/net.hpp"
+#include "rive/scriptnet/net.hpp"
 #endif
 #ifdef WITH_RIVE_SCRIPTING_WASM
-#include "third_party/rive/include/rive/wasm/wasm_jobs.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/wasm/wasm_jobs.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
 #endif
 #include <algorithm>
 #include <mutex>

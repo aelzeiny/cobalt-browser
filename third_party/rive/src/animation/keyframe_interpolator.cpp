@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/artboard.hpp"
+#include "rive/backboard.hpp"
+#include "rive/core.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/layout_component.hpp"
 
 using namespace rive;
 

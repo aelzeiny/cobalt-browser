@@ -1,8 +1,8 @@
 #ifndef _RIVE_DEPENDENCY_HELPER_HPP_
 #define _RIVE_DEPENDENCY_HELPER_HPP_
 
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/lazy_vector.hpp"
 
 namespace rive
 {
@@ -30,6 +30,7 @@ template <typename T, typename U, typename Derived> class DependencyHelper
 
 public:
   void addDependent(U* component) { m_Dependents.pushUnique(component); }
+  void reserveDependents(std::size_t count) { m_Dependents.reserve(count); }
   void removeDependent(U* component) { m_Dependents.eraseAll(component); }
 #ifdef WITH_RIVE_EDITOR
   // Editor-only: drop every entry. See Component::editorClearDependents

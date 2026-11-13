@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/keyframe_color.hpp"
-#include "third_party/rive/include/rive/animation/blend_accumulator.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
+#include "rive/animation/keyframe_color.hpp"
+#include "rive/animation/blend_accumulator.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
 
 using namespace rive;
 
@@ -41,10 +41,10 @@ void KeyFrameColor::apply(
     float mix,
     const LinearAnimationInstance* context)
 {
-  if (context != nullptr && context->blendAccumulator() != nullptr)
+  if (context != nullptr && context->blendAccumulator() != nullptr &&
+      context->blendAccumulator()
+          ->applyColor(object, propertyKey, mix, effectiveValue(context)))
   {
-    context->blendAccumulator()
-        ->applyColor(object, propertyKey, mix, effectiveValue(context));
     return;
   }
   applyColor(object, propertyKey, mix, effectiveValue(context));
@@ -70,13 +70,13 @@ void KeyFrameColor::applyInterpolation(
     f = keyframeInterpolator->transform(f);
   }
 
-  if (context != nullptr && context->blendAccumulator() != nullptr)
+  if (context != nullptr && context->blendAccumulator() != nullptr &&
+      context->blendAccumulator()->applyColor(
+          object,
+          propertyKey,
+          mix,
+          colorLerp(fromValue, toValue, f)))
   {
-    context->blendAccumulator()->applyColor(
-        object,
-        propertyKey,
-        mix,
-        colorLerp(fromValue, toValue, f));
     return;
   }
   applyColor(object, propertyKey, mix, colorLerp(fromValue, toValue, f));

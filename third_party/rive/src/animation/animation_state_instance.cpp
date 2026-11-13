@@ -1,6 +1,7 @@
-#include "third_party/rive/include/rive/animation/animation_state_instance.hpp"
-#include "third_party/rive/include/rive/animation/animation_state.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
+#include "rive/animation/animation_state_instance.hpp"
+#include "rive/animation/animation_state.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/blend_accumulator.hpp"
 
 using namespace rive;
 
@@ -45,4 +46,30 @@ bool AnimationStateInstance::keepGoing() const { return m_KeepGoing; }
 void AnimationStateInstance::clearSpilledTime()
 {
   m_AnimationInstance.clearSpilledTime();
+}
+
+bool AnimationStateInstance::restart()
+{
+  auto animationState = state()->as<AnimationState>();
+  // The state may have been given another animation since this instance was
+  // made (an editor reassigning it): a new instance plays that one.
+  auto animation = animationState->animation() ? animationState->animation()
+                                               : &emptyAnimation;
+  if (m_AnimationInstance.animation() != animation ||
+      !m_AnimationInstance.restart(animationState->speed()))
+  {
+    return false;
+  }
+  m_KeepGoing = true;
+  return true;
+}
+
+void AnimationStateInstance::layerAccumulator(BlendAccumulator* accumulator)
+{
+  // An animation that keys nothing the machine tracks never asks it.
+  m_AnimationInstance.blendAccumulator(
+      accumulator != nullptr &&
+              accumulator->tracksAny(m_AnimationInstance.animation())
+          ? accumulator
+          : nullptr);
 }

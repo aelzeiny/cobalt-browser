@@ -10,7 +10,7 @@
 #define RIVE_WASM_TIER_LADDER 1
 #endif
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <atomic>
 #include <cstdint>
 #include <string>
@@ -33,8 +33,8 @@ enum class TierSpecies : uint8_t
 {
   o0 = 0, // wamrc -O0: ~2x interp, sub-second for typical modules
   o3 = 1, // wamrc top opt level with sw bounds, runs on every build
-  // No inline bounds checks; needs the guard-page trap handler, so only
-  // RIVE_WASM_HW_BOUNDS builds produce or load these.
+  // Unchecked up to the guard past 4 GB; needs the guard-page trap handler,
+  // so only RIVE_WASM_HW_BOUNDS builds produce or load these.
   hw = 2,
 };
 
@@ -42,6 +42,13 @@ enum class TierSpecies : uint8_t
 // exactly what a boot will load: the top species, or -O0 when
 // RIVE_WASM_AOT_SYNC=o0.
 TierSpecies bootTierSpecies();
+
+// What a device target's players load. An arm64 Android player built for
+// hardware bounds gets that build beside the checked one, which runs a memory
+// that gets no reservation.
+std::vector<TierSpecies> aotTargetSpecies(
+    const std::string& target,
+    bool hardwareBounds);
 
 // 3 when cpuid leaf 1 ecx, leaf 7 ebx, leaf 0x80000001 ecx and xcr0 show
 // every x86-64-v3 feature with its AVX state saved, else 2.
@@ -67,6 +74,10 @@ struct TierCompile
 // The absolute path of the binary holding the ladder, whose stat keys
 // rejected markers, or empty where the platform cannot say.
 std::string loaderBinaryPath();
+
+// The wamrc flag for the guard our runtime reserves past 4 GB, which only a
+// wamrc whose artifacts our loader accepts takes.
+std::string wamrcHwGuardFlag();
 
 // Drives wamrc subprocesses that turn wasm modules into AOT artifacts.
 // File-in/file-out, no IPC: compile crashes and LLVM's RSS stay in the
@@ -181,9 +192,11 @@ private:
   bool m_compileOnBoot = false;
   // Stale key dirs were swept since the last configure.
   bool m_pruned = false;
-  // The wamrc accepts our --rive-interrupt flag; true on platforms that
-  // cannot probe.
+  // The wamrc accepts our --rive-interrupt and guard flags; true on
+  // platforms that cannot probe.
   bool m_wamrcUsable = true;
+  // Why it does not, as a log line names it.
+  std::string m_wamrcProblem;
   // The wamrc takes --tune-cpu; older builds compile untuned.
   bool m_wamrcTunes = false;
   // compileSync jobs with a cancel flag, which cancelCompiles kills.

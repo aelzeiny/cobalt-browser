@@ -1,7 +1,7 @@
 #ifndef _RIVE_BINDABLE_PROPERTY_INTEGER_BASE_HPP_
 #define _RIVE_BINDABLE_PROPERTY_INTEGER_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/data_bind/bindable_property.hpp"
 namespace rive
 {
 class BindablePropertyIntegerBase : public BindableProperty

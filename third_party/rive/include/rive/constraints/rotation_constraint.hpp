@@ -1,7 +1,7 @@
 #ifndef _RIVE_ROTATION_CONSTRAINT_HPP_
 #define _RIVE_ROTATION_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/rotation_constraint_base.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
+#include "rive/generated/constraints/rotation_constraint_base.hpp"
+#include "rive/math/transform_components.hpp"
 #include <stdio.h>
 namespace rive
 {

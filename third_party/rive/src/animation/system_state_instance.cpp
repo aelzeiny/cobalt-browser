@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/animation/system_state_instance.hpp"
+#include "rive/animation/system_state_instance.hpp"
 using namespace rive;
 
 SystemStateInstance::SystemStateInstance(

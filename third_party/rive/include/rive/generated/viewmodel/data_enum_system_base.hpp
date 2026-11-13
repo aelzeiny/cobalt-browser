@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_ENUM_SYSTEM_BASE_HPP_
 #define _RIVE_DATA_ENUM_SYSTEM_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/viewmodel/data_enum.hpp"
 namespace rive
 {
 class DataEnumSystemBase : public DataEnum

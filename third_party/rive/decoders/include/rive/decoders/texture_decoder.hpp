@@ -5,8 +5,8 @@
 #ifndef _RIVE_TEXTURE_DECODER_HPP_
 #define _RIVE_TEXTURE_DECODER_HPP_
 
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/rive/include/rive/gpu_texture_format.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "rive/gpu_texture_format.hpp"
 
 #include <cstddef>
 #include <cstdint>

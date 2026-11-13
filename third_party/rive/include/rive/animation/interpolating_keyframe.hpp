@@ -1,6 +1,6 @@
 #ifndef _RIVE_INTERPOLATING_KEY_FRAME_HPP_
 #define _RIVE_INTERPOLATING_KEY_FRAME_HPP_
-#include "third_party/rive/include/rive/generated/animation/interpolating_keyframe_base.hpp"
+#include "rive/generated/animation/interpolating_keyframe_base.hpp"
 
 namespace rive
 {

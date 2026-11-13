@@ -1,7 +1,7 @@
 #ifndef _RIVE_SEMANTIC_INFERENCE_REGISTRY_HPP_
 #define _RIVE_SEMANTIC_INFERENCE_REGISTRY_HPP_
 
-#include "third_party/rive/include/rive/semantic/semantic_provider.hpp"
+#include "rive/semantic/semantic_provider.hpp"
 
 namespace rive
 {

@@ -3,10 +3,10 @@
 
 #include <string>
 #include <stdint.h>
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
+#include "rive/viewmodel/viewmodel_instance_enum.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
 
 namespace rive
 {

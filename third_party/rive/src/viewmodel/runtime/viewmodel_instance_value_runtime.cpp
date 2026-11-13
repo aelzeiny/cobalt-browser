@@ -1,7 +1,7 @@
 
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
 
 // Default namespace for Rive Cpp code
 using namespace rive;

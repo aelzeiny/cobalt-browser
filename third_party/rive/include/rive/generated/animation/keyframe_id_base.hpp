@@ -1,8 +1,8 @@
 #ifndef _RIVE_KEY_FRAME_ID_BASE_HPP_
 #define _RIVE_KEY_FRAME_ID_BASE_HPP_
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class KeyFrameIdBase : public InterpolatingKeyFrame

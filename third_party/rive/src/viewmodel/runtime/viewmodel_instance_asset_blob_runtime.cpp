@@ -1,5 +1,5 @@
 
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_asset_blob_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_asset_blob_runtime.hpp"
 
 // Default namespace for Rive Cpp code
 using namespace rive;

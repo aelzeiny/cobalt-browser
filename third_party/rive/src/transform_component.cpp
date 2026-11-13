@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/world_transform_component.hpp"
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/world_transform_component.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/constraints/constraint.hpp"
 
 using namespace rive;
 

@@ -5,7 +5,7 @@
 #ifndef _RIVE_MATH_TYPES_DEFINED_
 #define _RIVE_MATH_TYPES_DEFINED_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 #include <cmath>
 #include <limits>
 #include <string.h>

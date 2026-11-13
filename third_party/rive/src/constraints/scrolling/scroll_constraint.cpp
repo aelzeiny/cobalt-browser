@@ -1,16 +1,16 @@
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint_proxy.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_virtualizer.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/virtual_layout.hpp"
-#include "third_party/rive/include/rive/constraints/transform_constraint.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout/layout_component_style.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/virtualizing_component.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/constraints/scrolling/scroll_constraint_proxy.hpp"
+#include "rive/constraints/scrolling/scroll_virtualizer.hpp"
+#include "rive/constraints/scrolling/virtual_layout.hpp"
+#include "rive/constraints/transform_constraint.hpp"
+#include "rive/core_context.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout/layout_component_style.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/virtualizing_component.hpp"
+#include "rive/math/mat2d.hpp"
 
 using namespace rive;
 
@@ -677,6 +677,10 @@ void ScrollConstraint::dragView(
     if (trackVelocity)
     {
       m_physics->accumulate(scaledDelta, timeStamp);
+    }
+    else
+    {
+      m_physics->markTime(timeStamp);
     }
     scrollOffsetX(offsetX() + scaledDelta.x);
     scrollOffsetY(offsetY() + scaledDelta.y);

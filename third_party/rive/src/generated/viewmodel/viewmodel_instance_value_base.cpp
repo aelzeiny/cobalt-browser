@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_value_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_value_base.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
 
 using namespace rive;
 

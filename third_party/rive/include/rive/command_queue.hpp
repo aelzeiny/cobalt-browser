@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "third_party/rive/include/rive/object_stream.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/pointer_button.hpp"
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_runtime.hpp"
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_snapshot.hpp"
+#include "rive/object_stream.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/pointer_button.hpp"
+#include "rive/viewmodel/runtime/viewmodel_runtime.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/semantic/semantic_snapshot.hpp"
 
 #include <condition_variable>
 #include <cstdint>
@@ -1255,6 +1255,10 @@ public:
 
   // Consume all messages received from the server.
   void processMessages();
+
+  // Whether the server has posted messages processMessages() has yet to
+  // consume.
+  bool hasMessages();
 
   void setGlobalFileListener(FileListener* listener)
   {

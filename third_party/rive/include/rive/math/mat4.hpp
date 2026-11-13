@@ -1,8 +1,8 @@
 #ifndef _RIVE_MAT4_HPP_
 #define _RIVE_MAT4_HPP_
 
-#include "third_party/rive/include/rive/math/simd.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/math/simd.hpp"
+#include "rive/math/vec2d.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>

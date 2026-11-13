@@ -1,8 +1,8 @@
 #ifndef _RIVE_GAMEPAD_INPUT_HPP_
 #define _RIVE_GAMEPAD_INPUT_HPP_
-#include "third_party/rive/include/rive/generated/inputs/gamepad_input_base.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_button_phase.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_input_kind.hpp"
+#include "rive/generated/inputs/gamepad_input_base.hpp"
+#include "rive/inputs/gamepad_button_phase.hpp"
+#include "rive/inputs/gamepad_input_kind.hpp"
 namespace rive
 {
 class GamepadInput : public GamepadInputBase

@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_BIND_CONTEXT_VALUE_ANY_HPP_
 #define _RIVE_DATA_BIND_CONTEXT_VALUE_ANY_HPP_
-#include "third_party/rive/include/rive/data_bind/context/context_value.hpp"
+#include "rive/data_bind/context/context_value.hpp"
 namespace rive
 {
 class DataBindContextValueAny : public DataBindContextValue

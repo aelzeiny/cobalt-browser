@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_VARIATION_MODIFIER_HPP_
 #define _RIVE_TEXT_VARIATION_MODIFIER_HPP_
-#include "third_party/rive/include/rive/generated/text/text_variation_modifier_base.hpp"
+#include "rive/generated/text/text_variation_modifier_base.hpp"
 
 namespace rive
 {

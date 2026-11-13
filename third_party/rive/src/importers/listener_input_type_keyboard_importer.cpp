@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/importers/listener_input_type_keyboard_importer.hpp"
+#include "rive/importers/listener_input_type_keyboard_importer.hpp"
 
 using namespace rive;
 

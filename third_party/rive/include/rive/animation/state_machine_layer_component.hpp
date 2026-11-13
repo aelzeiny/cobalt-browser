@@ -1,7 +1,7 @@
 #ifndef _RIVE_STATE_MACHINE_LAYER_COMPONENT_HPP_
 #define _RIVE_STATE_MACHINE_LAYER_COMPONENT_HPP_
-#include "third_party/rive/include/rive/animation/listener_action.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_machine_layer_component_base.hpp"
+#include "rive/animation/listener_action.hpp"
+#include "rive/generated/animation/state_machine_layer_component_base.hpp"
 #include <memory>
 #include <vector>
 

@@ -1,7 +1,7 @@
 #ifndef _RIVE_ELLIPSE_HPP_
 #define _RIVE_ELLIPSE_HPP_
-#include "third_party/rive/include/rive/generated/shapes/ellipse_base.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_detached_vertex.hpp"
+#include "rive/generated/shapes/ellipse_base.hpp"
+#include "rive/shapes/cubic_detached_vertex.hpp"
 
 namespace rive
 {

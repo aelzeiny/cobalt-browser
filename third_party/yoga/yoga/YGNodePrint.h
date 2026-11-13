@@ -9,9 +9,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_YGNODEPRINT_H_
-#define THIRD_PARTY_YOGA_YOGA_YGNODEPRINT_H_
-
 #include <string>
 
 #include <yoga/Yoga.h>
@@ -29,5 +26,3 @@ void YGNodeToString(
 } // namespace facebook
 
 #endif
-
-#endif  // THIRD_PARTY_YOGA_YOGA_YGNODEPRINT_H_

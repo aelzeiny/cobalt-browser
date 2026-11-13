@@ -1,10 +1,10 @@
-#include "third_party/rive/include/utils/serializing_factory.hpp"
-#include "third_party/rive/include/utils/serialize_ops.hpp"
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_context.hpp"
+#include "utils/serializing_factory.hpp"
+#include "utils/serialize_ops.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/artboard.hpp"
+#include "rive/renderer/render_canvas.hpp"
+#include "rive/renderer/render_context.hpp"
 #include <cstring>
 #include <stdlib.h>
 #ifndef RIVE_NO_FILESYSTEM
@@ -885,6 +885,13 @@ cmd::DeferredCanvasHost* SerializingFactory::canvasContentHost()
   return deferredCanvasHost();
 }
 
+rcp<gpu::RenderCanvas> SerializingFactory::makeUnboundContentCanvas(
+    uint32_t width,
+    uint32_t height)
+{
+  return makeContentCanvas(width, height);
+}
+
 rcp<gpu::RenderCanvas> SerializingFactory::makeContentCanvas(
     uint32_t width,
     uint32_t height)
@@ -978,9 +985,7 @@ void SerializingFactory::endCanvasContent(gpu::RenderCanvas* canvas)
 
 void SerializingFactory::addFrame()
 {
-#if defined(TESTING) || defined(WITH_RIVE_TOOLS)
   Artboard::incFrameId();
-#endif
   m_writer.writeVarUint((uint32_t)SerializeOp::frame);
 }
 

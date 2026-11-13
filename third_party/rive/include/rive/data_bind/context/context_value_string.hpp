@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_BIND_CONTEXT_VALUE_STRING_HPP_
 #define _RIVE_DATA_BIND_CONTEXT_VALUE_STRING_HPP_
-#include "third_party/rive/include/rive/data_bind/context/context_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/data_bind/context/context_value.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
 namespace rive
 {
 class DataBindContextValueString : public DataBindContextValue

@@ -3,7 +3,7 @@
 
 #ifdef RIVE_WASM_MODULE
 
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 
 #include <memory>
 #include <stdint.h>

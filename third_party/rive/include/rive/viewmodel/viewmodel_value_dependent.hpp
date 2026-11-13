@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEWMODEL_VALUE_DEPENDENT_HPP_
 #define _RIVE_VIEWMODEL_VALUE_DEPENDENT_HPP_
-#include "third_party/rive/include/rive/dirtyable.hpp"
+#include "rive/dirtyable.hpp"
 #include <stdio.h>
 namespace rive
 {

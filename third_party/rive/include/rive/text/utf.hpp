@@ -1,7 +1,7 @@
 #ifndef _RIVE_UTF_HPP_
 #define _RIVE_UTF_HPP_
 
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text_engine.hpp"
 
 namespace rive
 {

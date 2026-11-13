@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCRIPTED_INTERPOLATOR_HPP_
 #define _RIVE_SCRIPTED_INTERPOLATOR_HPP_
-#include "third_party/rive/include/rive/generated/scripted/scripted_interpolator_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
+#include "rive/generated/scripted/scripted_interpolator_base.hpp"
+#include "rive/scripted/scripted_object.hpp"
 #include <stdio.h>
 #include <memory>
 #include <vector>

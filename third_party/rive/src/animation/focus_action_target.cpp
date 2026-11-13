@@ -2,12 +2,12 @@
  * Copyright 2024 Rive
  */
 
-#include "third_party/rive/include/rive/animation/focus_action_target.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/node.hpp"
+#include "rive/animation/focus_action_target.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/artboard.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/node.hpp"
 
 using namespace rive;
 

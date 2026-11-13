@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/cubic_interpolator_component_base.hpp"
-#include "third_party/rive/include/rive/animation/cubic_interpolator_component.hpp"
+#include "rive/generated/animation/cubic_interpolator_component_base.hpp"
+#include "rive/animation/cubic_interpolator_component.hpp"
 
 using namespace rive;
 

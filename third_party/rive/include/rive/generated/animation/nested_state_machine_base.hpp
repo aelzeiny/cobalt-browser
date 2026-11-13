@@ -1,6 +1,6 @@
 #ifndef _RIVE_NESTED_STATE_MACHINE_BASE_HPP_
 #define _RIVE_NESTED_STATE_MACHINE_BASE_HPP_
-#include "third_party/rive/include/rive/nested_animation.hpp"
+#include "rive/nested_animation.hpp"
 namespace rive
 {
 class NestedStateMachineBase : public NestedAnimation

@@ -1,8 +1,8 @@
 
-#include "third_party/rive/include/rive/animation/blend_animation_direct.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
+#include "rive/animation/blend_animation_direct.hpp"
+#include "rive/animation/blend_state_direct_instance.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
 #include <iostream>
 
 using namespace rive;

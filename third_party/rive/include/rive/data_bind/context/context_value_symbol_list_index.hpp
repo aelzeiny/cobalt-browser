@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_BIND_CONTEXT_VALUE_SYMBOL_LIST_INDEX_HPP_
 #define _RIVE_DATA_BIND_CONTEXT_VALUE_SYMBOL_LIST_INDEX_HPP_
-#include "third_party/rive/include/rive/data_bind/context/context_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_symbol_list_index.hpp"
+#include "rive/data_bind/context/context_value.hpp"
+#include "rive/data_bind/data_values/data_value_symbol_list_index.hpp"
 namespace rive
 {
 class DataBindContextValueSymbolListIndex : public DataBindContextValue

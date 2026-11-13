@@ -1,6 +1,6 @@
 #ifndef _RIVE_STATE_MACHINE_FIRE_ACTION_HPP_
 #define _RIVE_STATE_MACHINE_FIRE_ACTION_HPP_
-#include "third_party/rive/include/rive/generated/animation/state_machine_fire_action_base.hpp"
+#include "rive/generated/animation/state_machine_fire_action_base.hpp"
 #include <stdio.h>
 namespace rive
 {

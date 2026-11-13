@@ -3,10 +3,10 @@
 
 #include <string>
 #include <stdint.h>
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_runtime.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_type.hpp"
+#include "rive/file.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_runtime.hpp"
+#include "rive/data_bind/data_values/data_type.hpp"
 
 namespace rive
 {
@@ -17,6 +17,7 @@ struct PropertyData
   DataType type;
   std::string name;
   std::string enumName;
+  std::string viewModelName;
 };
 
 class ViewModelRuntime : public RefCnt<ViewModelRuntime>
@@ -34,8 +35,10 @@ public:
   rcp<ViewModelInstanceRuntime> createDefaultInstance() const;
   rcp<ViewModelInstanceRuntime> createInstance() const;
   std::vector<PropertyData> properties();
+  // viewModelName is only filled in when file is given.
   static std::vector<PropertyData> buildPropertiesData(
-      std::vector<rive::ViewModelProperty*>& properties);
+      std::vector<rive::ViewModelProperty*>& properties,
+      const File* file = nullptr);
   std::vector<std::string> instanceNames() const;
 
 private:

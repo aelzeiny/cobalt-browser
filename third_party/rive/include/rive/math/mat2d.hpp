@@ -1,10 +1,10 @@
 #ifndef _RIVE_MAT2D_HPP_
 #define _RIVE_MAT2D_HPP_
 
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/span.hpp"
 #include <array>
 #include <cstddef>
 

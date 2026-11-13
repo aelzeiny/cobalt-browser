@@ -1,7 +1,7 @@
 #ifndef _RIVE_WASM_GAMEPAD_WIRE_HPP_
 #define _RIVE_WASM_GAMEPAD_WIRE_HPP_
 
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
+#include "rive/animation/listener_invocation.hpp"
 
 #include <cstdint>
 #include <cstring>

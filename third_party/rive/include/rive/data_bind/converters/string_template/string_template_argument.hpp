@@ -1,7 +1,7 @@
 #ifndef _RIVE_STRING_TEMPLATE_ARGUMENT_HPP_
 #define _RIVE_STRING_TEMPLATE_ARGUMENT_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/string_template/string_template_argument_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/generated/data_bind/converters/string_template/string_template_argument_base.hpp"
+#include "rive/data_bind/data_bind.hpp"
 #include <stdio.h>
 #include <string>
 namespace rive

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/bindable_property_color_base.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
+#include "rive/generated/data_bind/bindable_property_color_base.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
 
 using namespace rive;
 

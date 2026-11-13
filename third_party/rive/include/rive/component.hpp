@@ -1,12 +1,12 @@
 #ifndef _RIVE_COMPONENT_HPP_
 #define _RIVE_COMPONENT_HPP_
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/generated/component_base.hpp"
-#include "third_party/rive/include/rive/dependency_helper.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/generated/component_base.hpp"
+#include "rive/dependency_helper.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/math/vec2d.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 
 #include <vector>
@@ -248,8 +248,10 @@ public:
   /// silently breaking dirt propagation into the artboard's
   /// component pass.
   /// `EditorFile::finalizeBatch` calls this after every Pass 1-5
-  /// completes, when the parent chain is fully hydrated.
-  void setArtboardForEditor(Artboard* ab) { m_Artboard = ab; }
+  /// completes, when the parent chain is fully hydrated. A layout moving
+  /// to another artboard, or to none, leaves the old one's dirty layouts,
+  /// and so do the artboards a host moving that way lays out.
+  void setArtboardForEditor(Artboard* ab);
   // Body in `editor_native/native/src/editor/component_editor.cpp`.
   // Resolves through `editorArena()` to convert pointer ↔ handle.
   void setParentForEditor(ContainerComponent* p);

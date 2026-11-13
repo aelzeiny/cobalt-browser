@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/animation/text_input_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
+#include "rive/animation/text_input_listener_group.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/file.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/text/text_input.hpp"
 #include <chrono>
 
 using namespace rive;

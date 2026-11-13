@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_VALUE_ASSET_BLOB_HPP_
 #define _RIVE_DATA_VALUE_ASSET_BLOB_HPP_
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/assets/blob_asset.hpp"
+#include "rive/refcnt.hpp"
 
 #include <iostream>
 namespace rive

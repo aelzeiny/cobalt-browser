@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/assets/script_module_asset.hpp"
-#include "third_party/rive/include/rive/signed_content_header.hpp"
+#include "rive/assets/script_module_asset.hpp"
+#include "rive/signed_content_header.hpp"
 
 using namespace rive;
 

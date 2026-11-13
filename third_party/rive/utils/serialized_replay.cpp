@@ -2,11 +2,11 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/include/utils/serialized_replay.hpp"
-#include "third_party/rive/include/utils/serialize_ops.hpp"
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/utils/no_op_renderer.hpp"
+#include "utils/serialized_replay.hpp"
+#include "utils/serialize_ops.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/math/mat2d.hpp"
+#include "utils/no_op_renderer.hpp"
 #include <unordered_map>
 #include <vector>
 

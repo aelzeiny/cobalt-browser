@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/keyframe.hpp"
-#include "third_party/rive/include/rive/animation/cubic_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/keyed_property.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/keyed_property_importer.hpp"
+#include "rive/animation/keyframe.hpp"
+#include "rive/animation/cubic_interpolator.hpp"
+#include "rive/animation/keyed_property.hpp"
+#include "rive/core_context.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/keyed_property_importer.hpp"
 
 using namespace rive;
 
@@ -17,7 +17,7 @@ StatusCode KeyFrame::import(ImportStack& importStack)
 {
   auto importer = importStack.latest<KeyedPropertyImporter>(
       KeyedProperty::typeKey);
-  if (importer == nullptr)
+  if (importer == nullptr || !importer->hasKeyedProperty())
   {
     return StatusCode::MissingObject;
   }

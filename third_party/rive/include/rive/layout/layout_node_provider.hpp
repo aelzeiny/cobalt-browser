@@ -1,8 +1,8 @@
 #ifndef _RIVE_LAYOUT_NODE_PROVIDER_HPP_
 #define _RIVE_LAYOUT_NODE_PROVIDER_HPP_
 
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
+#include "rive/layout/layout_enums.hpp"
+#include "rive/math/aabb.hpp"
 #include <assert.h>
 #include <vector>
 

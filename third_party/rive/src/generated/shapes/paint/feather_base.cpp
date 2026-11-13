@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/feather_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
+#include "rive/generated/shapes/paint/feather_base.hpp"
+#include "rive/shapes/paint/feather.hpp"
 
 using namespace rive;
 

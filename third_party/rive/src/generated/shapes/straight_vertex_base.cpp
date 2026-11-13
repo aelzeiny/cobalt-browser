@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/straight_vertex_base.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
+#include "rive/generated/shapes/straight_vertex_base.hpp"
+#include "rive/shapes/straight_vertex.hpp"
 
 using namespace rive;
 

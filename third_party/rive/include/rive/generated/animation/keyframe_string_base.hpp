@@ -1,8 +1,8 @@
 #ifndef _RIVE_KEY_FRAME_STRING_BASE_HPP_
 #define _RIVE_KEY_FRAME_STRING_BASE_HPP_
 #include <string>
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
 namespace rive
 {
 class KeyFrameStringBase : public InterpolatingKeyFrame

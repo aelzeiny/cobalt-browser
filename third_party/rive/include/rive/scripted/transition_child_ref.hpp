@@ -1,9 +1,9 @@
 #ifndef _RIVE_TRANSITION_CHILD_REF_HPP_
 #define _RIVE_TRANSITION_CHILD_REF_HPP_
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/scripted/script_backend.hpp"
+#include "rive/artboard.hpp"
+#include "rive/renderer.hpp"
+#include "rive/scripted/script_backend.hpp"
 
 namespace rive
 {

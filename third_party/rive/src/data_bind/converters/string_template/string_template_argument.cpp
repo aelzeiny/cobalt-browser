@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_template.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument.hpp"
+#include "rive/data_bind/converters/data_converter_string_template.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/backboard.hpp"
 
 using namespace rive;
 

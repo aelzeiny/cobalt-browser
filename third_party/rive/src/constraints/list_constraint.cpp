@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/constraints/list_follow_path_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/list_constraint.hpp"
+#include "rive/component.hpp"
+#include "rive/constraints/list_follow_path_constraint.hpp"
+#include "rive/constraints/list_constraint.hpp"
 
 using namespace rive;
 

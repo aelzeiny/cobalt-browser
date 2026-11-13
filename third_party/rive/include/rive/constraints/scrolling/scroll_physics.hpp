@@ -1,14 +1,14 @@
 #ifndef _RIVE_SCROLL_PHYSICS_HPP_
 #define _RIVE_SCROLL_PHYSICS_HPP_
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/constraints/draggable_constraint.hpp"
-#include "third_party/rive/include/rive/generated/constraints/scrolling/scroll_physics_base.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/artboard.hpp"
+#include "rive/backboard.hpp"
+#include "rive/constraints/draggable_constraint.hpp"
+#include "rive/generated/constraints/scrolling/scroll_physics_base.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/vec2d.hpp"
 #include <chrono>
 #include <stdio.h>
 #include <vector>
@@ -25,10 +25,15 @@ enum class ScrollPhysicsType : uint8_t
 class ScrollPhysics : public ScrollPhysicsBase
 {
 private:
-  long long m_lastTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                             std::chrono::high_resolution_clock::now()
-                                 .time_since_epoch())
-                             .count();
+  static long long steadyMicros()
+  {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
+  }
+  static long long clockMicros(float timeStamp);
+  // Microseconds in both modes.
+  long long m_lastTime = steadyMicros();
   bool m_isRunning = false;
 
 protected:
@@ -55,6 +60,10 @@ public:
   // Moves the simulation by delta, for content that moved under it.
   virtual void shift(Vec2D delta) {}
   virtual void accumulate(Vec2D delta, float timeStamp);
+  // Starts the clock at timeStamp without measuring a delta, so the next
+  // accumulate measures from here. reset() can't: in deterministic mode it
+  // has no stamp, and a sample measured from zero spans the whole replay.
+  void markTime(float timeStamp);
   virtual void run(
       Vec2D rangeMin,
       Vec2D rangeMax,

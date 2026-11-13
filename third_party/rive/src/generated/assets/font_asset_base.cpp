@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/assets/font_asset_base.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
+#include "rive/generated/assets/font_asset_base.hpp"
+#include "rive/assets/font_asset.hpp"
 
 using namespace rive;
 

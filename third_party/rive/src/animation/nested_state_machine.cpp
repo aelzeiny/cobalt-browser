@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/animation/nested_bool.hpp"
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/animation/nested_number.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/animation/nested_number.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/nested_artboard.hpp"
 
 using namespace rive;
 
@@ -33,6 +33,13 @@ void NestedStateMachine::initializeAnimation(
     std::unique_ptr<StateMachineInstance> instance)
 {
   m_StateMachineInstance = std::move(instance);
+  // A machine handed over already built joins this tree without being
+  // constructed into it.
+  if (m_StateMachineInstance != nullptr &&
+      m_StateMachineInstance->hasCaptureListeners())
+  {
+    StateMachineInstance::captureTopologyChanged();
+  }
   if (m_StateMachineInstance != nullptr)
   {
     // Share parent's focus manager and build nested focus tree.
@@ -179,6 +186,21 @@ HitResult NestedStateMachine::pointerExit(Vec2D position, int pointerId)
   if (m_StateMachineInstance != nullptr)
   {
     return m_StateMachineInstance->pointerExit(position, pointerId);
+  }
+  return HitResult::none;
+}
+
+HitResult NestedStateMachine::pointerMiss(
+    Vec2D position,
+    ListenerType hitType,
+    float timeStamp,
+    int pointerId,
+    PointerButton button)
+{
+  if (m_StateMachineInstance != nullptr)
+  {
+    return m_StateMachineInstance
+        ->pointerMiss(position, hitType, timeStamp, pointerId, button);
   }
   return HitResult::none;
 }

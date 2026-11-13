@@ -1,369 +1,369 @@
 #ifndef _RIVE_CORE_REGISTRY_HPP_
 #define _RIVE_CORE_REGISTRY_HPP_
-#include "third_party/rive/include/rive/animation/advanceable_state.hpp"
-#include "third_party/rive/include/rive/animation/animation.hpp"
-#include "third_party/rive/include/rive/animation/animation_state.hpp"
-#include "third_party/rive/include/rive/animation/any_state.hpp"
-#include "third_party/rive/include/rive/animation/blend_animation.hpp"
-#include "third_party/rive/include/rive/animation/blend_animation_1d.hpp"
-#include "third_party/rive/include/rive/animation/blend_animation_direct.hpp"
-#include "third_party/rive/include/rive/animation/blend_state.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_input.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_transition.hpp"
-#include "third_party/rive/include/rive/animation/cubic_ease_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/cubic_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/cubic_interpolator_component.hpp"
-#include "third_party/rive/include/rive/animation/cubic_value_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/elastic_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/entry_state.hpp"
-#include "third_party/rive/include/rive/animation/exit_state.hpp"
-#include "third_party/rive/include/rive/animation/focus_action.hpp"
-#include "third_party/rive/include/rive/animation/focus_action_clear.hpp"
-#include "third_party/rive/include/rive/animation/focus_action_target.hpp"
-#include "third_party/rive/include/rive/animation/focus_action_traversal.hpp"
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
-#include "third_party/rive/include/rive/animation/keyed_property.hpp"
-#include "third_party/rive/include/rive/animation/keyframe.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_bool.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_callback.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_color.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_double.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_id.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_int.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_string.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_uint.hpp"
-#include "third_party/rive/include/rive/animation/layer_state.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/listener_action.hpp"
-#include "third_party/rive/include/rive/animation/listener_align_target.hpp"
-#include "third_party/rive/include/rive/animation/listener_bool_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_fire_event.hpp"
-#include "third_party/rive/include/rive/animation/listener_input_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_number_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_trigger_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_event.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_gamepad.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_keyboard.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_pointer_button.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_semantic.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_text.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/listener_viewmodel_change.hpp"
-#include "third_party/rive/include/rive/animation/nested_bool.hpp"
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/animation/nested_linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/nested_number.hpp"
-#include "third_party/rive/include/rive/animation/nested_remap_animation.hpp"
-#include "third_party/rive/include/rive/animation/nested_simple_animation.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/nested_trigger.hpp"
-#include "third_party/rive/include/rive/animation/scripted_listener_action.hpp"
-#include "third_party/rive/include/rive/animation/scripted_transition_condition.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_bool.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_component.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_action.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_event.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_trigger.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer_component.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener_single.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_number.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_trigger.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/animation/transition_artboard_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_bool_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_focus_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_input_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_number_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_artboard_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_component_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_property_viewmodel_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_self_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_trigger_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_artboard_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_asset_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_boolean_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_color_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_condition.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_enum_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_id_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_number_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_string_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_value_trigger_comparator.hpp"
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/artboard_list_map_rule.hpp"
-#include "third_party/rive/include/rive/assets/asset.hpp"
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
-#include "third_party/rive/include/rive/assets/drawable_asset.hpp"
-#include "third_party/rive/include/rive/assets/export_audio.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_contents.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/assets/manifest_asset.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/assets/script_module_asset.hpp"
-#include "third_party/rive/include/rive/assets/shader_asset.hpp"
-#include "third_party/rive/include/rive/assets/text_asset.hpp"
-#include "third_party/rive/include/rive/audio_event.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/bitmap_cache.hpp"
-#include "third_party/rive/include/rive/bones/bone.hpp"
-#include "third_party/rive/include/rive/bones/cubic_weight.hpp"
-#include "third_party/rive/include/rive/bones/root_bone.hpp"
-#include "third_party/rive/include/rive/bones/skeletal_component.hpp"
-#include "third_party/rive/include/rive/bones/skin.hpp"
-#include "third_party/rive/include/rive/bones/tendon.hpp"
-#include "third_party/rive/include/rive/bones/weight.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/component_origin.hpp"
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/constraints/distance_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/draggable_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/follow_path_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/ik_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/list_follow_path_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/rotation_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scale_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/clamped_scroll_physics.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/elastic_scroll_physics.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_bar_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_physics.hpp"
-#include "third_party/rive/include/rive/constraints/targeted_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/transform_component_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/transform_component_constraint_y.hpp"
-#include "third_party/rive/include/rive/constraints/transform_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/transform_space_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/translation_constraint.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/custom_property_boolean.hpp"
-#include "third_party/rive/include/rive/custom_property_color.hpp"
-#include "third_party/rive/include/rive/custom_property_enum.hpp"
-#include "third_party/rive/include/rive/custom_property_group.hpp"
-#include "third_party/rive/include/rive/custom_property_number.hpp"
-#include "third_party/rive/include/rive/custom_property_string.hpp"
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_id.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_integer.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_list.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_boolean_negate.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_formula.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_interpolator.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_list_to_length.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_number_to_list.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation_value.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_range_mapper.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_rounder.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_pad.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_remove_zeros.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_template.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_trim.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_system_degs_to_rads.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_system_normalizer.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_to_number.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_to_string.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_argument_separator.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_function.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_input.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_operation.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis_open.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_value.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument_number.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument_string.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_path.hpp"
-#include "third_party/rive/include/rive/draw_rules.hpp"
-#include "third_party/rive/include/rive/draw_target.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/event.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
-#include "third_party/rive/include/rive/foreground_layout_drawable.hpp"
-#include "third_party/rive/include/rive/generated/shapes/paint/color_channels_base.hpp"
-#include "third_party/rive/include/rive/inputs/gamepad_input.hpp"
-#include "third_party/rive/include/rive/inputs/keyboard_input.hpp"
-#include "third_party/rive/include/rive/inputs/semantic_input.hpp"
-#include "third_party/rive/include/rive/inputs/user_input.hpp"
-#include "third_party/rive/include/rive/joystick.hpp"
-#include "third_party/rive/include/rive/layer_mask.hpp"
-#include "third_party/rive/include/rive/layout/artboard_component_list_override.hpp"
-#include "third_party/rive/include/rive/layout/axis.hpp"
-#include "third_party/rive/include/rive/layout/axis_x.hpp"
-#include "third_party/rive/include/rive/layout/axis_y.hpp"
-#include "third_party/rive/include/rive/layout/grid_item_placement.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout/layout_component_style.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_style.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
-#include "third_party/rive/include/rive/layout/layout_sizing_style.hpp"
-#include "third_party/rive/include/rive/layout/n_sliced_node.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer_tile_mode.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/nested_animation.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard_layout.hpp"
-#include "third_party/rive/include/rive/nested_artboard_leaf.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/open_url_event.hpp"
-#include "third_party/rive/include/rive/script_input_artboard.hpp"
-#include "third_party/rive/include/rive/script_input_boolean.hpp"
-#include "third_party/rive/include/rive/script_input_color.hpp"
-#include "third_party/rive/include/rive/script_input_number.hpp"
-#include "third_party/rive/include/rive/script_input_string.hpp"
-#include "third_party/rive/include/rive/script_input_trigger.hpp"
-#include "third_party/rive/include/rive/script_input_viewmodel_property.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_data_converter.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_path_effect.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
-#include "third_party/rive/include/rive/selection_style.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_data.hpp"
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/shapes/contour_mesh_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_asymmetric_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_detached_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_mirrored_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/ellipse.hpp"
-#include "third_party/rive/include/rive/shapes/image.hpp"
-#include "third_party/rive/include/rive/shapes/list_path.hpp"
-#include "third_party/rive/include/rive/shapes/mesh.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/paint/angular_gradient.hpp"
-#include "third_party/rive/include/rive/shapes/paint/dash.hpp"
-#include "third_party/rive/include/rive/shapes/paint/dash_path.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/gradient_stop.hpp"
-#include "third_party/rive/include/rive/shapes/paint/group_effect.hpp"
-#include "third_party/rive/include/rive/shapes/paint/linear_gradient.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_image.hpp"
-#include "third_party/rive/include/rive/shapes/paint/radial_gradient.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/solid_color.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/shapes/paint/target_effect.hpp"
-#include "third_party/rive/include/rive/shapes/paint/trim_path.hpp"
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/shapes/path_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/points_common_path.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
-#include "third_party/rive/include/rive/shapes/polygon.hpp"
-#include "third_party/rive/include/rive/shapes/rectangle.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/shapes/star.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/triangle.hpp"
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
-#include "third_party/rive/include/rive/solo.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_follow_path_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
-#include "third_party/rive/include/rive/text/text_input_cursor.hpp"
-#include "third_party/rive/include/rive/text/text_input_drawable.hpp"
-#include "third_party/rive/include/rive/text/text_input_selected_text.hpp"
-#include "third_party/rive/include/rive/text/text_input_selection.hpp"
-#include "third_party/rive/include/rive/text/text_input_text.hpp"
-#include "third_party/rive/include/rive/text/text_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_range.hpp"
-#include "third_party/rive/include/rive/text/text_shape_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/text/text_style_axis.hpp"
-#include "third_party/rive/include/rive/text/text_style_background.hpp"
-#include "third_party/rive/include/rive/text/text_style_feature.hpp"
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/text/text_style_reference.hpp"
-#include "third_party/rive/include/rive/text/text_target_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/text/text_variation_modifier.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_custom.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_system.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_component.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_blob.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_font.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_image.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_boolean.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_color.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_symbol.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_trigger.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_artboard.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset_blob.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset_font.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset_image.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_boolean.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_color.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum_custom.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum_system.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_list.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_symbol.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_trigger.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/world_transform_component.hpp"
+#include "rive/animation/advanceable_state.hpp"
+#include "rive/animation/animation.hpp"
+#include "rive/animation/animation_state.hpp"
+#include "rive/animation/any_state.hpp"
+#include "rive/animation/blend_animation.hpp"
+#include "rive/animation/blend_animation_1d.hpp"
+#include "rive/animation/blend_animation_direct.hpp"
+#include "rive/animation/blend_state.hpp"
+#include "rive/animation/blend_state_1d.hpp"
+#include "rive/animation/blend_state_1d_input.hpp"
+#include "rive/animation/blend_state_1d_viewmodel.hpp"
+#include "rive/animation/blend_state_direct.hpp"
+#include "rive/animation/blend_state_transition.hpp"
+#include "rive/animation/cubic_ease_interpolator.hpp"
+#include "rive/animation/cubic_interpolator.hpp"
+#include "rive/animation/cubic_interpolator_component.hpp"
+#include "rive/animation/cubic_value_interpolator.hpp"
+#include "rive/animation/elastic_interpolator.hpp"
+#include "rive/animation/entry_state.hpp"
+#include "rive/animation/exit_state.hpp"
+#include "rive/animation/focus_action.hpp"
+#include "rive/animation/focus_action_clear.hpp"
+#include "rive/animation/focus_action_target.hpp"
+#include "rive/animation/focus_action_traversal.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/keyed_property.hpp"
+#include "rive/animation/keyframe.hpp"
+#include "rive/animation/keyframe_bool.hpp"
+#include "rive/animation/keyframe_callback.hpp"
+#include "rive/animation/keyframe_color.hpp"
+#include "rive/animation/keyframe_double.hpp"
+#include "rive/animation/keyframe_id.hpp"
+#include "rive/animation/keyframe_int.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/animation/keyframe_string.hpp"
+#include "rive/animation/keyframe_uint.hpp"
+#include "rive/animation/layer_state.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/listener_action.hpp"
+#include "rive/animation/listener_align_target.hpp"
+#include "rive/animation/listener_bool_change.hpp"
+#include "rive/animation/listener_fire_event.hpp"
+#include "rive/animation/listener_input_change.hpp"
+#include "rive/animation/listener_number_change.hpp"
+#include "rive/animation/listener_trigger_change.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/animation/listener_types/listener_input_type_event.hpp"
+#include "rive/animation/listener_types/listener_input_type_gamepad.hpp"
+#include "rive/animation/listener_types/listener_input_type_keyboard.hpp"
+#include "rive/animation/listener_types/listener_input_type_pointer_button.hpp"
+#include "rive/animation/listener_types/listener_input_type_semantic.hpp"
+#include "rive/animation/listener_types/listener_input_type_text.hpp"
+#include "rive/animation/listener_types/listener_input_type_viewmodel.hpp"
+#include "rive/animation/listener_viewmodel_change.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/animation/nested_linear_animation.hpp"
+#include "rive/animation/nested_number.hpp"
+#include "rive/animation/nested_remap_animation.hpp"
+#include "rive/animation/nested_simple_animation.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/nested_trigger.hpp"
+#include "rive/animation/scripted_listener_action.hpp"
+#include "rive/animation/scripted_transition_condition.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_bool.hpp"
+#include "rive/animation/state_machine_component.hpp"
+#include "rive/animation/state_machine_fire_action.hpp"
+#include "rive/animation/state_machine_fire_event.hpp"
+#include "rive/animation/state_machine_fire_trigger.hpp"
+#include "rive/animation/state_machine_input.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/animation/state_machine_layer_component.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/animation/state_machine_listener_single.hpp"
+#include "rive/animation/state_machine_number.hpp"
+#include "rive/animation/state_machine_trigger.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/animation/transition_artboard_condition.hpp"
+#include "rive/animation/transition_bool_condition.hpp"
+#include "rive/animation/transition_comparator.hpp"
+#include "rive/animation/transition_condition.hpp"
+#include "rive/animation/transition_focus_condition.hpp"
+#include "rive/animation/transition_input_condition.hpp"
+#include "rive/animation/transition_number_condition.hpp"
+#include "rive/animation/transition_property_artboard_comparator.hpp"
+#include "rive/animation/transition_property_comparator.hpp"
+#include "rive/animation/transition_property_component_comparator.hpp"
+#include "rive/animation/transition_property_viewmodel_comparator.hpp"
+#include "rive/animation/transition_self_comparator.hpp"
+#include "rive/animation/transition_trigger_condition.hpp"
+#include "rive/animation/transition_value_artboard_comparator.hpp"
+#include "rive/animation/transition_value_asset_comparator.hpp"
+#include "rive/animation/transition_value_boolean_comparator.hpp"
+#include "rive/animation/transition_value_color_comparator.hpp"
+#include "rive/animation/transition_value_comparator.hpp"
+#include "rive/animation/transition_value_condition.hpp"
+#include "rive/animation/transition_value_enum_comparator.hpp"
+#include "rive/animation/transition_value_id_comparator.hpp"
+#include "rive/animation/transition_value_number_comparator.hpp"
+#include "rive/animation/transition_value_string_comparator.hpp"
+#include "rive/animation/transition_value_trigger_comparator.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/artboard.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/artboard_list_map_rule.hpp"
+#include "rive/assets/asset.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/assets/blob_asset.hpp"
+#include "rive/assets/drawable_asset.hpp"
+#include "rive/assets/export_audio.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/file_asset_contents.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/assets/manifest_asset.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/assets/script_module_asset.hpp"
+#include "rive/assets/shader_asset.hpp"
+#include "rive/assets/text_asset.hpp"
+#include "rive/audio_event.hpp"
+#include "rive/backboard.hpp"
+#include "rive/bitmap_cache.hpp"
+#include "rive/bones/bone.hpp"
+#include "rive/bones/cubic_weight.hpp"
+#include "rive/bones/root_bone.hpp"
+#include "rive/bones/skeletal_component.hpp"
+#include "rive/bones/skin.hpp"
+#include "rive/bones/tendon.hpp"
+#include "rive/bones/weight.hpp"
+#include "rive/component.hpp"
+#include "rive/component_origin.hpp"
+#include "rive/constraints/constraint.hpp"
+#include "rive/constraints/distance_constraint.hpp"
+#include "rive/constraints/draggable_constraint.hpp"
+#include "rive/constraints/follow_path_constraint.hpp"
+#include "rive/constraints/ik_constraint.hpp"
+#include "rive/constraints/list_follow_path_constraint.hpp"
+#include "rive/constraints/rotation_constraint.hpp"
+#include "rive/constraints/scale_constraint.hpp"
+#include "rive/constraints/scrolling/clamped_scroll_physics.hpp"
+#include "rive/constraints/scrolling/elastic_scroll_physics.hpp"
+#include "rive/constraints/scrolling/scroll_bar_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_physics.hpp"
+#include "rive/constraints/targeted_constraint.hpp"
+#include "rive/constraints/transform_component_constraint.hpp"
+#include "rive/constraints/transform_component_constraint_y.hpp"
+#include "rive/constraints/transform_constraint.hpp"
+#include "rive/constraints/transform_space_constraint.hpp"
+#include "rive/constraints/translation_constraint.hpp"
+#include "rive/container_component.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/custom_property_boolean.hpp"
+#include "rive/custom_property_color.hpp"
+#include "rive/custom_property_enum.hpp"
+#include "rive/custom_property_group.hpp"
+#include "rive/custom_property_number.hpp"
+#include "rive/custom_property_string.hpp"
+#include "rive/custom_property_trigger.hpp"
+#include "rive/data_bind/bindable_property.hpp"
+#include "rive/data_bind/bindable_property_artboard.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
+#include "rive/data_bind/bindable_property_enum.hpp"
+#include "rive/data_bind/bindable_property_id.hpp"
+#include "rive/data_bind/bindable_property_integer.hpp"
+#include "rive/data_bind/bindable_property_list.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/bindable_property_trigger.hpp"
+#include "rive/data_bind/bindable_property_viewmodel.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/data_converter_boolean_negate.hpp"
+#include "rive/data_bind/converters/data_converter_formula.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/data_bind/converters/data_converter_interpolator.hpp"
+#include "rive/data_bind/converters/data_converter_list_to_length.hpp"
+#include "rive/data_bind/converters/data_converter_number_to_list.hpp"
+#include "rive/data_bind/converters/data_converter_operation.hpp"
+#include "rive/data_bind/converters/data_converter_operation_value.hpp"
+#include "rive/data_bind/converters/data_converter_operation_viewmodel.hpp"
+#include "rive/data_bind/converters/data_converter_range_mapper.hpp"
+#include "rive/data_bind/converters/data_converter_rounder.hpp"
+#include "rive/data_bind/converters/data_converter_string_pad.hpp"
+#include "rive/data_bind/converters/data_converter_string_remove_zeros.hpp"
+#include "rive/data_bind/converters/data_converter_string_template.hpp"
+#include "rive/data_bind/converters/data_converter_string_trim.hpp"
+#include "rive/data_bind/converters/data_converter_system_degs_to_rads.hpp"
+#include "rive/data_bind/converters/data_converter_system_normalizer.hpp"
+#include "rive/data_bind/converters/data_converter_to_number.hpp"
+#include "rive/data_bind/converters/data_converter_to_string.hpp"
+#include "rive/data_bind/converters/data_converter_trigger.hpp"
+#include "rive/data_bind/converters/formula/formula_token.hpp"
+#include "rive/data_bind/converters/formula/formula_token_argument_separator.hpp"
+#include "rive/data_bind/converters/formula/formula_token_function.hpp"
+#include "rive/data_bind/converters/formula/formula_token_input.hpp"
+#include "rive/data_bind/converters/formula/formula_token_operation.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis_open.hpp"
+#include "rive/data_bind/converters/formula/formula_token_value.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument_number.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument_string.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/data_bind/data_bind_path.hpp"
+#include "rive/draw_rules.hpp"
+#include "rive/draw_target.hpp"
+#include "rive/drawable.hpp"
+#include "rive/event.hpp"
+#include "rive/focus_data.hpp"
+#include "rive/foreground_layout_drawable.hpp"
+#include "rive/generated/shapes/paint/color_channels_base.hpp"
+#include "rive/inputs/gamepad_input.hpp"
+#include "rive/inputs/keyboard_input.hpp"
+#include "rive/inputs/semantic_input.hpp"
+#include "rive/inputs/user_input.hpp"
+#include "rive/joystick.hpp"
+#include "rive/layer_mask.hpp"
+#include "rive/layout/artboard_component_list_override.hpp"
+#include "rive/layout/axis.hpp"
+#include "rive/layout/axis_x.hpp"
+#include "rive/layout/axis_y.hpp"
+#include "rive/layout/grid_item_placement.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout/layout_component_style.hpp"
+#include "rive/layout/layout_node_style.hpp"
+#include "rive/layout/layout_participant.hpp"
+#include "rive/layout/layout_sizing_style.hpp"
+#include "rive/layout/n_sliced_node.hpp"
+#include "rive/layout/n_slicer.hpp"
+#include "rive/layout/n_slicer_tile_mode.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/nested_animation.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/nested_artboard_layout.hpp"
+#include "rive/nested_artboard_leaf.hpp"
+#include "rive/node.hpp"
+#include "rive/open_url_event.hpp"
+#include "rive/script_input_artboard.hpp"
+#include "rive/script_input_boolean.hpp"
+#include "rive/script_input_color.hpp"
+#include "rive/script_input_number.hpp"
+#include "rive/script_input_string.hpp"
+#include "rive/script_input_trigger.hpp"
+#include "rive/script_input_viewmodel_property.hpp"
+#include "rive/scripted/scripted_data_converter.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
+#include "rive/scripted/scripted_layout.hpp"
+#include "rive/scripted/scripted_path_effect.hpp"
+#include "rive/scripted/scripted_transition.hpp"
+#include "rive/selection_style.hpp"
+#include "rive/semantic/semantic_data.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/shapes/contour_mesh_vertex.hpp"
+#include "rive/shapes/cubic_asymmetric_vertex.hpp"
+#include "rive/shapes/cubic_detached_vertex.hpp"
+#include "rive/shapes/cubic_mirrored_vertex.hpp"
+#include "rive/shapes/cubic_vertex.hpp"
+#include "rive/shapes/ellipse.hpp"
+#include "rive/shapes/image.hpp"
+#include "rive/shapes/list_path.hpp"
+#include "rive/shapes/mesh.hpp"
+#include "rive/shapes/mesh_vertex.hpp"
+#include "rive/shapes/paint/angular_gradient.hpp"
+#include "rive/shapes/paint/dash.hpp"
+#include "rive/shapes/paint/dash_path.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/gradient_stop.hpp"
+#include "rive/shapes/paint/group_effect.hpp"
+#include "rive/shapes/paint/linear_gradient.hpp"
+#include "rive/shapes/paint/paint_image.hpp"
+#include "rive/shapes/paint/radial_gradient.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/solid_color.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/shapes/paint/target_effect.hpp"
+#include "rive/shapes/paint/trim_path.hpp"
+#include "rive/shapes/parametric_path.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/shapes/path_vertex.hpp"
+#include "rive/shapes/points_common_path.hpp"
+#include "rive/shapes/points_path.hpp"
+#include "rive/shapes/polygon.hpp"
+#include "rive/shapes/rectangle.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/shapes/star.hpp"
+#include "rive/shapes/straight_vertex.hpp"
+#include "rive/shapes/triangle.hpp"
+#include "rive/shapes/vertex.hpp"
+#include "rive/solo.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_follow_path_modifier.hpp"
+#include "rive/text/text_input.hpp"
+#include "rive/text/text_input_cursor.hpp"
+#include "rive/text/text_input_drawable.hpp"
+#include "rive/text/text_input_selected_text.hpp"
+#include "rive/text/text_input_selection.hpp"
+#include "rive/text/text_input_text.hpp"
+#include "rive/text/text_modifier.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text/text_modifier_range.hpp"
+#include "rive/text/text_shape_modifier.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/text/text_style_axis.hpp"
+#include "rive/text/text_style_background.hpp"
+#include "rive/text/text_style_feature.hpp"
+#include "rive/text/text_style_global.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/text/text_style_reference.hpp"
+#include "rive/text/text_target_modifier.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/text/text_variation_modifier.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/data_enum_custom.hpp"
+#include "rive/viewmodel/data_enum_system.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_component.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_blob.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_font.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_image.hpp"
+#include "rive/viewmodel/viewmodel_instance_boolean.hpp"
+#include "rive/viewmodel/viewmodel_instance_color.hpp"
+#include "rive/viewmodel/viewmodel_instance_enum.hpp"
+#include "rive/viewmodel/viewmodel_instance_list.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
+#include "rive/viewmodel/viewmodel_instance_symbol.hpp"
+#include "rive/viewmodel/viewmodel_instance_symbol_list_index.hpp"
+#include "rive/viewmodel/viewmodel_instance_trigger.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_property.hpp"
+#include "rive/viewmodel/viewmodel_property_artboard.hpp"
+#include "rive/viewmodel/viewmodel_property_asset.hpp"
+#include "rive/viewmodel/viewmodel_property_asset_blob.hpp"
+#include "rive/viewmodel/viewmodel_property_asset_font.hpp"
+#include "rive/viewmodel/viewmodel_property_asset_image.hpp"
+#include "rive/viewmodel/viewmodel_property_boolean.hpp"
+#include "rive/viewmodel/viewmodel_property_color.hpp"
+#include "rive/viewmodel/viewmodel_property_enum.hpp"
+#include "rive/viewmodel/viewmodel_property_enum_custom.hpp"
+#include "rive/viewmodel/viewmodel_property_enum_system.hpp"
+#include "rive/viewmodel/viewmodel_property_list.hpp"
+#include "rive/viewmodel/viewmodel_property_number.hpp"
+#include "rive/viewmodel/viewmodel_property_string.hpp"
+#include "rive/viewmodel/viewmodel_property_symbol.hpp"
+#include "rive/viewmodel/viewmodel_property_symbol_list_index.hpp"
+#include "rive/viewmodel/viewmodel_property_trigger.hpp"
+#include "rive/viewmodel/viewmodel_property_viewmodel.hpp"
+#include "rive/world_transform_component.hpp"
 namespace rive
 {
 class CoreRegistry
@@ -1328,8 +1328,17 @@ public:
       case TextInputBase::textPropertyKey:
         object->as<TextInputBase>()->text(value);
         break;
+      case TextInputBase::languagePropertyKey:
+        object->as<TextInputBase>()->language(value);
+        break;
+      case TextBase::languagePropertyKey:
+        object->as<TextBase>()->language(value);
+        break;
       case TextValueRunBase::textPropertyKey:
         object->as<TextValueRunBase>()->text(value);
+        break;
+      case TextValueRunBase::languagePropertyKey:
+        object->as<TextValueRunBase>()->language(value);
         break;
       case FileAssetBase::cdnBaseUrlPropertyKey:
         object->as<FileAssetBase>()->cdnBaseUrl(value);
@@ -1491,6 +1500,9 @@ public:
       case LayoutComponentStyleBase::positionBottomUnitsValuePropertyKey:
         object->as<LayoutComponentStyleBase>()->positionBottomUnitsValue(value);
         break;
+      case LayoutComponentStyleBase::aspectRatioAxisValuePropertyKey:
+        object->as<LayoutComponentStyleBase>()->aspectRatioAxisValue(value);
+        break;
       case LayoutComponentStyleBase::flexBasisUnitsValuePropertyKey:
         object->as<LayoutComponentStyleBase>()->flexBasisUnitsValue(value);
         break;
@@ -1608,6 +1620,12 @@ public:
         break;
       case BlendAnimationDirectBase::blendSourcePropertyKey:
         object->as<BlendAnimationDirectBase>()->blendSource(value);
+        break;
+      case StateMachineListenerBase::phaseValuePropertyKey:
+        object->as<StateMachineListenerBase>()->phaseValue(value);
+        break;
+      case StateMachineListenerBase::listenerFlagsPropertyKey:
+        object->as<StateMachineListenerBase>()->listenerFlags(value);
         break;
       case StateMachineListenerSingleBase::listenerTypeValuePropertyKey:
         object->as<StateMachineListenerSingleBase>()->listenerTypeValue(value);
@@ -1899,6 +1917,9 @@ public:
       case TextInputBase::maxLinesPropertyKey:
         object->as<TextInputBase>()->maxLines(value);
         break;
+      case TextInputBase::languageIdPropertyKey:
+        object->as<TextInputBase>()->languageId(value);
+        break;
       case TextStyleAxisBase::tagPropertyKey:
         object->as<TextStyleAxisBase>()->tag(value);
         break;
@@ -1931,6 +1952,12 @@ public:
         break;
       case TextBase::verticalTrimBottomValuePropertyKey:
         object->as<TextBase>()->verticalTrimBottomValue(value);
+        break;
+      case TextBase::languageIdPropertyKey:
+        object->as<TextBase>()->languageId(value);
+        break;
+      case TextValueRunBase::languageIdPropertyKey:
+        object->as<TextValueRunBase>()->languageId(value);
         break;
       case FileAssetBase::assetIdPropertyKey:
         object->as<FileAssetBase>()->assetId(value);
@@ -3560,8 +3587,14 @@ public:
         return object->as<BindablePropertyStringBase>()->propertyValue();
       case TextInputBase::textPropertyKey:
         return object->as<TextInputBase>()->text();
+      case TextInputBase::languagePropertyKey:
+        return object->as<TextInputBase>()->language();
+      case TextBase::languagePropertyKey:
+        return object->as<TextBase>()->language();
       case TextValueRunBase::textPropertyKey:
         return object->as<TextValueRunBase>()->text();
+      case TextValueRunBase::languagePropertyKey:
+        return object->as<TextValueRunBase>()->language();
       case FileAssetBase::cdnBaseUrlPropertyKey:
         return object->as<FileAssetBase>()->cdnBaseUrl();
       case TextAssetBase::folderPathPropertyKey:
@@ -3678,6 +3711,8 @@ public:
       case LayoutComponentStyleBase::positionBottomUnitsValuePropertyKey:
         return object->as<LayoutComponentStyleBase>()
             ->positionBottomUnitsValue();
+      case LayoutComponentStyleBase::aspectRatioAxisValuePropertyKey:
+        return object->as<LayoutComponentStyleBase>()->aspectRatioAxisValue();
       case LayoutComponentStyleBase::flexBasisUnitsValuePropertyKey:
         return object->as<LayoutComponentStyleBase>()->flexBasisUnitsValue();
       case LayoutComponentStyleBase::layoutAlignmentTypePropertyKey:
@@ -3761,6 +3796,10 @@ public:
         return object->as<KeyFrameUintBase>()->value();
       case BlendAnimationDirectBase::blendSourcePropertyKey:
         return object->as<BlendAnimationDirectBase>()->blendSource();
+      case StateMachineListenerBase::phaseValuePropertyKey:
+        return object->as<StateMachineListenerBase>()->phaseValue();
+      case StateMachineListenerBase::listenerFlagsPropertyKey:
+        return object->as<StateMachineListenerBase>()->listenerFlags();
       case StateMachineListenerSingleBase::listenerTypeValuePropertyKey:
         return object->as<StateMachineListenerSingleBase>()
             ->listenerTypeValue();
@@ -3959,6 +3998,8 @@ public:
         return object->as<TextInputBase>()->maxCharacters();
       case TextInputBase::maxLinesPropertyKey:
         return object->as<TextInputBase>()->maxLines();
+      case TextInputBase::languageIdPropertyKey:
+        return object->as<TextInputBase>()->languageId();
       case TextStyleAxisBase::tagPropertyKey:
         return object->as<TextStyleAxisBase>()->tag();
       case TextBase::alignValuePropertyKey:
@@ -3981,6 +4022,10 @@ public:
         return object->as<TextBase>()->verticalTrimTopValue();
       case TextBase::verticalTrimBottomValuePropertyKey:
         return object->as<TextBase>()->verticalTrimBottomValue();
+      case TextBase::languageIdPropertyKey:
+        return object->as<TextBase>()->languageId();
+      case TextValueRunBase::languageIdPropertyKey:
+        return object->as<TextValueRunBase>()->languageId();
       case FileAssetBase::assetIdPropertyKey:
         return object->as<FileAssetBase>()->assetId();
       case ScriptAssetBase::generatorFunctionRefPropertyKey:
@@ -5030,7 +5075,10 @@ public:
       case DataConverterToStringBase::colorFormatPropertyKey:
       case BindablePropertyStringBase::propertyValuePropertyKey:
       case TextInputBase::textPropertyKey:
+      case TextInputBase::languagePropertyKey:
+      case TextBase::languagePropertyKey:
       case TextValueRunBase::textPropertyKey:
+      case TextValueRunBase::languagePropertyKey:
       case FileAssetBase::cdnBaseUrlPropertyKey:
       case TextAssetBase::folderPathPropertyKey:
         return CoreStringType::id;
@@ -5083,6 +5131,7 @@ public:
       case LayoutComponentStyleBase::positionRightUnitsValuePropertyKey:
       case LayoutComponentStyleBase::positionTopUnitsValuePropertyKey:
       case LayoutComponentStyleBase::positionBottomUnitsValuePropertyKey:
+      case LayoutComponentStyleBase::aspectRatioAxisValuePropertyKey:
       case LayoutComponentStyleBase::flexBasisUnitsValuePropertyKey:
       case LayoutComponentStyleBase::layoutAlignmentTypePropertyKey:
       case LayoutComponentStyleBase::animationStyleTypePropertyKey:
@@ -5123,6 +5172,8 @@ public:
       case InterpolatingKeyFrameBase::interpolationTypePropertyKey:
       case KeyFrameUintBase::valuePropertyKey:
       case BlendAnimationDirectBase::blendSourcePropertyKey:
+      case StateMachineListenerBase::phaseValuePropertyKey:
+      case StateMachineListenerBase::listenerFlagsPropertyKey:
       case StateMachineListenerSingleBase::listenerTypeValuePropertyKey:
       case KeyedPropertyBase::propertyKeyPropertyKey:
       case TransitionPropertyArtboardComparatorBase::propertyTypePropertyKey:
@@ -5212,6 +5263,7 @@ public:
       case TextInputBase::verticalAlignValuePropertyKey:
       case TextInputBase::maxCharactersPropertyKey:
       case TextInputBase::maxLinesPropertyKey:
+      case TextInputBase::languageIdPropertyKey:
       case TextStyleAxisBase::tagPropertyKey:
       case TextBase::alignValuePropertyKey:
       case TextBase::sizingValuePropertyKey:
@@ -5223,6 +5275,8 @@ public:
       case TextBase::verticalTrimValuePropertyKey:
       case TextBase::verticalTrimTopValuePropertyKey:
       case TextBase::verticalTrimBottomValuePropertyKey:
+      case TextBase::languageIdPropertyKey:
+      case TextValueRunBase::languageIdPropertyKey:
       case FileAssetBase::assetIdPropertyKey:
       case ScriptAssetBase::generatorFunctionRefPropertyKey:
       case ScriptAssetBase::serializedImplementedMethodsPropertyKey:
@@ -5876,7 +5930,13 @@ public:
         return BindablePropertyStringBase::typeKey;
       case TextInputBase::textPropertyKey:
         return TextInputBase::typeKey;
+      case TextInputBase::languagePropertyKey:
+        return TextInputBase::typeKey;
+      case TextBase::languagePropertyKey:
+        return TextBase::typeKey;
       case TextValueRunBase::textPropertyKey:
+        return TextValueRunBase::typeKey;
+      case TextValueRunBase::languagePropertyKey:
         return TextValueRunBase::typeKey;
       case FileAssetBase::cdnBaseUrlPropertyKey:
         return FileAssetBase::typeKey;
@@ -5980,6 +6040,8 @@ public:
         return LayoutComponentStyleBase::typeKey;
       case LayoutComponentStyleBase::positionBottomUnitsValuePropertyKey:
         return LayoutComponentStyleBase::typeKey;
+      case LayoutComponentStyleBase::aspectRatioAxisValuePropertyKey:
+        return LayoutComponentStyleBase::typeKey;
       case LayoutComponentStyleBase::flexBasisUnitsValuePropertyKey:
         return LayoutComponentStyleBase::typeKey;
       case LayoutComponentStyleBase::layoutAlignmentTypePropertyKey:
@@ -6057,6 +6119,10 @@ public:
         return KeyFrameUintBase::typeKey;
       case BlendAnimationDirectBase::blendSourcePropertyKey:
         return BlendAnimationDirectBase::typeKey;
+      case StateMachineListenerBase::phaseValuePropertyKey:
+        return StateMachineListenerBase::typeKey;
+      case StateMachineListenerBase::listenerFlagsPropertyKey:
+        return StateMachineListenerBase::typeKey;
       case StateMachineListenerSingleBase::listenerTypeValuePropertyKey:
         return StateMachineListenerSingleBase::typeKey;
       case KeyedPropertyBase::propertyKeyPropertyKey:
@@ -6227,6 +6293,8 @@ public:
         return TextInputBase::typeKey;
       case TextInputBase::maxLinesPropertyKey:
         return TextInputBase::typeKey;
+      case TextInputBase::languageIdPropertyKey:
+        return TextInputBase::typeKey;
       case TextStyleAxisBase::tagPropertyKey:
         return TextStyleAxisBase::typeKey;
       case TextBase::alignValuePropertyKey:
@@ -6249,6 +6317,10 @@ public:
         return TextBase::typeKey;
       case TextBase::verticalTrimBottomValuePropertyKey:
         return TextBase::typeKey;
+      case TextBase::languageIdPropertyKey:
+        return TextBase::typeKey;
+      case TextValueRunBase::languageIdPropertyKey:
+        return TextValueRunBase::typeKey;
       case FileAssetBase::assetIdPropertyKey:
         return FileAssetBase::typeKey;
       case ScriptAssetBase::generatorFunctionRefPropertyKey:

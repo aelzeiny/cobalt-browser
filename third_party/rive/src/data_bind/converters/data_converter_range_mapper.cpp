@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_range_mapper.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/animation/data_converter_range_mapper_flags.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_range_mapper.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/animation/data_converter_range_mapper_flags.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 
 using namespace rive;
 

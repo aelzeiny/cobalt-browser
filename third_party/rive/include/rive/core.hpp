@@ -1,13 +1,13 @@
 #ifndef _RIVE_CORE_HPP_
 #define _RIVE_CORE_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/status_code.hpp"
-#include "third_party/rive/include/rive/core/editor_hooks.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/status_code.hpp"
+#include "rive/core/editor_hooks.hpp"
 
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/core/fractional_index.hpp"
+#include "rive/core/fractional_index.hpp"
 #include <cstdio>
 #include <atomic>
 #include <string>

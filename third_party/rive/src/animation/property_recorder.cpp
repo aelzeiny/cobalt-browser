@@ -1,16 +1,18 @@
-#include "third_party/rive/include/rive/property_recorder.hpp"
-#include "third_party/rive/include/rive/core/vector_binary_writer.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_number.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_bool.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_trigger.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/animation/layer_state.hpp"
-#include "third_party/rive/include/rive/animation/blend_state.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
+#include "rive/property_recorder.hpp"
+#include "rive/core/vector_binary_writer.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/artboard.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_input.hpp"
+#include "rive/animation/state_machine_number.hpp"
+#include "rive/animation/state_machine_bool.hpp"
+#include "rive/animation/state_machine_trigger.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/animation/layer_state.hpp"
+#include "rive/animation/blend_state.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_number.hpp"
 
 using namespace rive;
 
@@ -87,6 +89,9 @@ void PropertyRecorder::complete(
 
 void PropertyRecorder::recordArtboard(const Artboard* artboard)
 {
+  // Reached through a nested artboard's source, which may not have been
+  // instanced (and so decoded) yet.
+  artboard = artboard->decoded();
   // The machine a list row runs: the artboard's default, else the first (see
   // ArtboardComponentList::createStateMachineInstance). Recording another one
   // resets the wrong inputs and properties when the row is reused.
@@ -256,6 +261,30 @@ CoreObjectData* PropertyRecorder::getCoreObjectData(uint32_t id)
   return ref;
 }
 
+// A nested input's getter reads the input of the nested artboard's state
+// machine, which a source artboard doesn't run: it reads 0 or false there. An
+// instance starts the input from the value the nested input stores (see
+// NestedNumber::applyValue), so that is the value to restore.
+static float recordedDouble(Core* object, uint16_t propertyKey)
+{
+  if (propertyKey == NestedNumberBase::nestedValuePropertyKey &&
+      object->is<NestedNumber>())
+  {
+    return object->as<NestedNumber>()->NestedNumberBase::nestedValue();
+  }
+  return CoreRegistry::getDouble(object, propertyKey);
+}
+
+static bool recordedBool(Core* object, uint16_t propertyKey)
+{
+  if (propertyKey == NestedBoolBase::nestedValuePropertyKey &&
+      object->is<NestedBool>())
+  {
+    return object->as<NestedBool>()->NestedBoolBase::nestedValue();
+  }
+  return CoreRegistry::getBool(object, propertyKey);
+}
+
 void PropertyRecorder::writeProperties(const Artboard* artboard)
 {
   for (auto& coreObjectData : m_coreObjectsData)
@@ -273,7 +302,7 @@ void PropertyRecorder::writeProperties(const Artboard* artboard)
           case CoreDoubleType::id:
           {
             writePropertyKey(propertyKey, m_binaryWriter);
-            auto value = CoreRegistry::getDouble(object, propertyKey);
+            auto value = recordedDouble(object, propertyKey);
             writePropertyValue(value, m_binaryWriter);
           }
           break;
@@ -301,7 +330,7 @@ void PropertyRecorder::writeProperties(const Artboard* artboard)
           case CoreBoolType::id:
           {
             writePropertyKey(propertyKey, m_binaryWriter);
-            auto value = CoreRegistry::getBool(object, propertyKey);
+            auto value = recordedBool(object, propertyKey);
             writePropertyValue(value, m_binaryWriter);
           }
           break;

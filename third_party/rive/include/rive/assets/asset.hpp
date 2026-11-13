@@ -1,6 +1,6 @@
 #ifndef _RIVE_ASSET_HPP_
 #define _RIVE_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/asset_base.hpp"
+#include "rive/generated/assets/asset_base.hpp"
 #include <stdio.h>
 namespace rive
 {

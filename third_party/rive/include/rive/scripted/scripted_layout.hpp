@@ -1,8 +1,8 @@
 #ifndef _RIVE_SCRIPTED_LAYOUT_HPP_
 #define _RIVE_SCRIPTED_LAYOUT_HPP_
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
-#include "third_party/rive/include/rive/layout/layout_measure_mode.hpp"
-#include "third_party/rive/include/rive/generated/scripted/scripted_layout_base.hpp"
+#include "rive/layout/layout_enums.hpp"
+#include "rive/layout/layout_measure_mode.hpp"
+#include "rive/generated/scripted/scripted_layout_base.hpp"
 #include <stdio.h>
 namespace rive
 {

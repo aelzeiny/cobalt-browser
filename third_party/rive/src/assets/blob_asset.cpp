@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
+#include "rive/assets/blob_asset.hpp"
 
 using namespace rive;
 

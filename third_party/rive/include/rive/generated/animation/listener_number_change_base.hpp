@@ -1,7 +1,7 @@
 #ifndef _RIVE_LISTENER_NUMBER_CHANGE_BASE_HPP_
 #define _RIVE_LISTENER_NUMBER_CHANGE_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_input_change.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/animation/listener_input_change.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class ListenerNumberChangeBase : public ListenerInputChange

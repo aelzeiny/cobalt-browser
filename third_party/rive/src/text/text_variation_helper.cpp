@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_variation_helper.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/text/text_variation_helper.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

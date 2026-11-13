@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/shapes/triangle.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/math/circle_constant.hpp"
+#include "rive/shapes/triangle.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/math/circle_constant.hpp"
 
 using namespace rive;
 

@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEWMODEL_INSTANCE_LIST_IMPORTER_HPP_
 #define _RIVE_VIEWMODEL_INSTANCE_LIST_IMPORTER_HPP_
 
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/refcnt.hpp"
 
 namespace rive
 {

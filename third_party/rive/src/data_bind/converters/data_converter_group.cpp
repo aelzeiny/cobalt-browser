@@ -1,8 +1,8 @@
 #include <algorithm>
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
 
 using namespace rive;
 
@@ -17,6 +17,8 @@ DataConverterGroup::~DataConverterGroup()
 void DataConverterGroup::addItem(DataConverterGroupItem* item)
 {
   m_items.push_back(item);
+  // mayAdvance reads the items too.
+  dataBindsChanged();
 }
 
 DataValue* DataConverterGroup::convert(DataValue* input, DataBind* dataBind)
@@ -50,6 +52,7 @@ DataValue* DataConverterGroup::reverseConvert(
 Core* DataConverterGroup::clone() const
 {
   auto cloned = DataConverterGroupBase::clone()->as<DataConverterGroup>();
+  cloned->m_items.reserve(m_items.size());
   for (auto& item : m_items)
   {
     if (item->converter() == nullptr)
@@ -127,12 +130,41 @@ bool DataConverterGroup::mayAdvance() const
       return true;
     }
   }
-  return false;
+  return Super::mayAdvance();
+}
+
+AdvancingComponent::QuietState DataConverterGroup::advanceQuietState() const
+{
+  using QuietState = AdvancingComponent::QuietState;
+  auto state = Super::advanceQuietState();
+  if (state == QuietState::never)
+  {
+    return state;
+  }
+  for (auto& item : m_items)
+  {
+    auto converter = item->converter();
+    if (converter == nullptr)
+    {
+      continue;
+    }
+    switch (converter->advanceQuietState())
+    {
+      case QuietState::never:
+        return QuietState::never;
+      case QuietState::busy:
+        state = QuietState::busy;
+        break;
+      case QuietState::quiet:
+        break;
+    }
+  }
+  return state;
 }
 
 bool DataConverterGroup::advance(float elapsedSeconds)
 {
-  bool didUpdate = false;
+  bool didUpdate = Super::advance(elapsedSeconds);
   for (auto& item : m_items)
   {
     auto converter = item->converter();

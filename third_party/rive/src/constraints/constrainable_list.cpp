@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/constraints/list_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/constrainable_list.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/component.hpp"
+#include "rive/constraints/list_constraint.hpp"
+#include "rive/constraints/constrainable_list.hpp"
 
 using namespace rive;
 

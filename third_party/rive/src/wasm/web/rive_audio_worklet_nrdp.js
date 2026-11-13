@@ -11,6 +11,7 @@
 
 // The console imports every lane gets.
 const kLaneConsole = [
+    'console.caller',
     'console.log',
     'console.debug',
     'console.info',
@@ -21,6 +22,7 @@ const kLaneConsole = [
 // [module, name or null for all of it, kinds, refusal or null], the
 // first match deciding.
 const kLaneImportRules = [
+    ['rive_rt_v1', 'now', ['job', 'worker'], null],
     ['rive_lanes_v1', 'wait_within', [], 'blocks on a signal, which only the main lane may; a worker awaits Signal.next or Port.receive instead'],
     ['rive_shared_v1', 'region_lock', ['job', 'worker'], 'locks a shared region, which the audio thread may not wait on; share through atomics, rings and snapshots instead'],
     ['rive_shared_v1', 'read_done', [], null],
@@ -28,6 +30,7 @@ const kLaneImportRules = [
     ['rive_lane_v1', null, ['job', 'worker', 'processor'], null],
     ['rive_job_v1', null, ['job'], null],
     ['rive_worker_v1', null, ['worker'], null],
+    ['env', 'console.caller', ['job', 'worker', 'processor'], null],
     ['env', 'console.log', ['job', 'worker', 'processor'], null],
     ['env', 'console.debug', ['job', 'worker', 'processor'], null],
     ['env', 'console.info', ['job', 'worker', 'processor'], null],
@@ -76,13 +79,24 @@ const kLaneStates = {
 // What a processor event carries for a console line, in place of a state.
 const kProcessorEventLog = 0xffffffff;
 
-// The most 64 KiB pages a job instance's memory may have grown to for another
-// job to reuse it, as memory never shrinks.
-const kReuseMaxPages = 256;
-
 // How long a processor's init may run in milliseconds, natively per step and in
 // a worklet as a whole, far longer than a block as it may build tables.
 const kProcessorInitMs = 1000;
+
+// Where a parallel call's control block keeps each word, in bytes from its
+// start. The words its parts race on sit 128 bytes apart, each alone on a cache
+// line, Apple's included. The claim takes 8 bytes, so no grain can wrap it.
+const kParallelThunk = 0;
+const kParallelArgs = 4;
+const kParallelParts = 8;
+const kParallelCount = 12;
+const kParallelAtOnce = 16;
+const kParallelCallerParks = 20;
+const kParallelGeneration = 128;
+const kParallelArrived = 256;
+const kParallelSleepers = 384;
+const kParallelClaim = 512;
+const kParallelStop = 640;
 
 // The exports a lane module may carry besides its entries.
 const kLaneAllocExport = '__rive_lane_alloc';
@@ -810,6 +824,7 @@ function laneConsole(memory, log, timers = new Map()) {
         }
         log(`${label}: ${(monotonicNow() - started).toFixed(3)}ms`);
     };
+    env['console.caller'] = () => {};
     env['console.time'] = (ptr) => timers.set(text(ptr), monotonicNow());
     env['console.timeLog'] = report(false);
     env['console.timeEnd'] = report(true);
@@ -819,7 +834,8 @@ function laneConsole(memory, log, timers = new Map()) {
 const noFuelCheck = () => {};
 
 // An instance of lane.module whose imports reach the lane's own natives, log,
-// timers and fuel check. Returns { exports, memory, failure } or { error }.
+// timers, clock and fuel check. Returns { exports, memory, failure } or
+// { error }.
 function instantiateLane(lane) {
     let memory = null;
     let thrown = null;
@@ -827,6 +843,7 @@ function instantiateLane(lane) {
     const imports = {
         'env': laneConsole(() => memory, lane.log, lane.timers),
         'rive_shared_v1': lane.shared(() => memory),
+        'rive_rt_v1': { 'now': lane.now ?? monotonicNow },
         'rive_lane_v1': {
             'error': (ptr, byteLength) => {
                 thrown = utf16Text(memory.buffer, ptr, byteLength);

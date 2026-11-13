@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
-#include "third_party/rive/include/rive/shapes/path_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/bones/skin.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/shapes/shape_path_flags.hpp"
+#include "rive/artboard.hpp"
+#include "rive/shapes/points_path.hpp"
+#include "rive/shapes/cubic_vertex.hpp"
+#include "rive/shapes/vertex.hpp"
+#include "rive/shapes/path_vertex.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/bones/skin.hpp"
+#include "rive/span.hpp"
+#include "rive/shapes/shape_path_flags.hpp"
 
 #include <algorithm>
 #include <cmath>

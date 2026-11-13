@@ -1,8 +1,8 @@
 #ifndef _RIVE_N_SLICED_NODE_HPP_
 #define _RIVE_N_SLICED_NODE_HPP_
-#include "third_party/rive/include/rive/generated/layout/n_sliced_node_base.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer_details.hpp"
-#include "third_party/rive/include/rive/shapes/deformer.hpp"
+#include "rive/generated/layout/n_sliced_node_base.hpp"
+#include "rive/layout/n_slicer_details.hpp"
+#include "rive/shapes/deformer.hpp"
 #include <stdio.h>
 namespace rive
 {

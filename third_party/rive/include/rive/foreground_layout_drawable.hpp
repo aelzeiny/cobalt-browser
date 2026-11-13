@@ -1,7 +1,7 @@
 #ifndef _RIVE_FOREGROUND_LAYOUT_DRAWABLE_HPP_
 #define _RIVE_FOREGROUND_LAYOUT_DRAWABLE_HPP_
-#include "third_party/rive/include/rive/generated/foreground_layout_drawable_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
+#include "rive/generated/foreground_layout_drawable_base.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
 #include <stdio.h>
 namespace rive
 {

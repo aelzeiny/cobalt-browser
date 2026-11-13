@@ -1,6 +1,6 @@
 #ifndef _RIVE_CUBIC_EASE_INTERPOLATOR_BASE_HPP_
 #define _RIVE_CUBIC_EASE_INTERPOLATOR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/cubic_interpolator.hpp"
+#include "rive/animation/cubic_interpolator.hpp"
 namespace rive
 {
 class CubicEaseInterpolatorBase : public CubicInterpolator

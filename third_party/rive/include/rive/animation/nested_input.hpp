@@ -1,8 +1,8 @@
 #ifndef _RIVE_NESTED_INPUT_HPP_
 #define _RIVE_NESTED_INPUT_HPP_
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/generated/animation/nested_input_base.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/generated/animation/nested_input_base.hpp"
 #include <stdio.h>
 namespace rive
 {

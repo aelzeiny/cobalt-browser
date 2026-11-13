@@ -1,13 +1,13 @@
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/cubic_detached_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/deformer.hpp"
-#include "third_party/rive/include/rive/shapes/path_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/shapes/points_path.hpp"
+#include "rive/renderer.hpp"
+#include "rive/shapes/cubic_vertex.hpp"
+#include "rive/shapes/cubic_detached_vertex.hpp"
+#include "rive/shapes/deformer.hpp"
+#include "rive/shapes/path_vertex.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/shapes/straight_vertex.hpp"
+#include "rive/math/math_types.hpp"
 #include <algorithm>
 #include <cassert>
 
@@ -183,6 +183,18 @@ void Path::addRoundedRect(
   // adjacent edges are its full width and height, so every corner shares one
   // limit.
   const float maxRadius = std::min(bounds.width(), bounds.height()) * 0.5f;
+
+  // Room for the whole outline at once: a move, a line into each other corner,
+  // a line back to the start and a close, plus a cubic for each rounded
+  // corner.
+  size_t rounded = 0;
+  for (const Corner& corner : corners)
+  {
+    rounded += corner.radius != 0.0f ? 1 : 0;
+  }
+  rawPath.reserve(
+      rawPath.verbs().size() + 6 + rounded,
+      rawPath.points().size() + 5 + 3 * rounded);
 
   Vec2D start;
   for (int i = 0; i < 4; i++)

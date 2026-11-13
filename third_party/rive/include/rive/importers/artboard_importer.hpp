@@ -1,7 +1,7 @@
 #ifndef _RIVE_ARTBOARD_IMPORTER_HPP_
 #define _RIVE_ARTBOARD_IMPORTER_HPP_
 
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
+#include "rive/importers/import_stack.hpp"
 #include <cstddef>
 
 namespace rive
@@ -29,7 +29,7 @@ public:
   void addStateMachine(StateMachine* stateMachine);
   void addDataBind(DataBind* dataBind);
   StatusCode resolve() override;
-  const Artboard* artboard() const { return m_Artboard; }
+  Artboard* artboard() const { return m_Artboard; }
 
   bool readNullObject() override;
 };

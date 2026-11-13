@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_STYLE_SHARE_CACHE_HPP_
 #define _RIVE_TEXT_STYLE_SHARE_CACHE_HPP_
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/text/text_style.hpp"
 #include <map>
 #include <memory>
 #include <mutex>

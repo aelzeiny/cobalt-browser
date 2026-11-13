@@ -1,10 +1,10 @@
 #ifndef _RIVE_NESTED_ARTBOARD_LAYOUT_HPP_
 #define _RIVE_NESTED_ARTBOARD_LAYOUT_HPP_
-#include "third_party/rive/include/rive/generated/nested_artboard_layout_base.hpp"
-#include "third_party/rive/include/rive/constraints/layout_constraint.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
-#include "third_party/rive/include/rive/layout/style_overrider.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/generated/nested_artboard_layout_base.hpp"
+#include "rive/constraints/layout_constraint.hpp"
+#include "rive/layout/layout_node_provider.hpp"
+#include "rive/layout/style_overrider.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
 
 namespace rive
 {
@@ -37,6 +37,7 @@ public:
   void referencedArtboard(Artboard* artboard) override;
   void updateArtboard(
       ViewModelInstanceArtboard* viewModelInstanceArtboard) override;
+  void remount() override;
 
   TransformComponent* transformComponent() override
   {

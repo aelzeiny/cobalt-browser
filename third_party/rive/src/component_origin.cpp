@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/component_origin.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
+#include "rive/component_origin.hpp"
+#include "rive/artboard.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/nested_artboard.hpp"
 
 using namespace rive;
 

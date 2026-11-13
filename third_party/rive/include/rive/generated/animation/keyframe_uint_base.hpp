@@ -1,7 +1,7 @@
 #ifndef _RIVE_KEY_FRAME_UINT_BASE_HPP_
 #define _RIVE_KEY_FRAME_UINT_BASE_HPP_
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 namespace rive
 {
 class KeyFrameUintBase : public InterpolatingKeyFrame

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/constraints/follow_path_constraint_base.hpp"
-#include "third_party/rive/include/rive/constraints/follow_path_constraint.hpp"
+#include "rive/generated/constraints/follow_path_constraint_base.hpp"
+#include "rive/constraints/follow_path_constraint.hpp"
 
 using namespace rive;
 

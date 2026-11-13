@@ -1,7 +1,7 @@
 #ifndef _RIVE_ELASTIC_SCROLL_PHYSICS_BASE_HPP_
 #define _RIVE_ELASTIC_SCROLL_PHYSICS_BASE_HPP_
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_physics.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/constraints/scrolling/scroll_physics.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class ElasticScrollPhysicsBase : public ScrollPhysics

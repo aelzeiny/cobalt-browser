@@ -1,14 +1,14 @@
 #ifndef _RIVE_LAYOUT_SIZING_STYLE_BASE_HPP_
 #define _RIVE_LAYOUT_SIZING_STYLE_BASE_HPP_
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/component.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif
 #ifndef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/sidecar.hpp"
+#include "rive/sidecar.hpp"
 #endif
 namespace rive
 {
@@ -87,7 +87,7 @@ protected:
   uint8_t m_JustifySelfValue = 6;
   uint8_t m_DisplayValue = 0;
 #ifndef WITH_RIVE_EDITOR
-  Sidecar<LayoutSizingStyleMinMaxSizingSidecar> m_minMaxSizing;
+  SharedSidecar<LayoutSizingStyleMinMaxSizingSidecar> m_minMaxSizing;
 #endif
 public:
 #ifdef WITH_RIVE_EDITOR

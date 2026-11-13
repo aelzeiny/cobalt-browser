@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
-#include "third_party/rive/include/rive/animation/keyed_property.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/importers/linear_animation_importer.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/keyed_property.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/artboard.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/importers/linear_animation_importer.hpp"
+#include "rive/generated/core_registry.hpp"
 
 using namespace rive;
 

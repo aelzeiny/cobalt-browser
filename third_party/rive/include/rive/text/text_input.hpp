@@ -1,12 +1,12 @@
 #ifndef _RIVE_TEXT_INPUT_HPP_
 #define _RIVE_TEXT_INPUT_HPP_
 
-#include "third_party/rive/include/rive/generated/text/text_input_base.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/text/raw_text_input.hpp"
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
+#include "rive/generated/text/text_input_base.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/text/raw_text_input.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/input/focusable.hpp"
 #include <cmath>
 
 namespace rive
@@ -34,6 +34,11 @@ public:
   void markPaintDirty() override;
   void markShapeDirty() override;
   StatusCode onAddedClean(CoreContext* context) override;
+  bool deserialize(uint16_t propertyKey, BinaryReader& reader) override;
+  // A file carries languageId in place of language, resolved into it while
+  // decoding (see deserialize), so there is no index to keep.
+  void setLanguageId(uint32_t value) override {}
+  uint32_t languageId() override { return -1; }
 
   // localBounds() is the LAYOUT box, not the ink. Glyphs escape it through
   // negative side bearings, italic overhang, TextOverflow::visible,
@@ -120,6 +125,7 @@ protected:
   void obscuredChanged() override;
   void maxCharactersChanged() override;
   void maxLinesChanged() override;
+  void languageChanged() override;
 
 private:
   /// Push the current alignment and the width to align it within down to the
@@ -165,6 +171,10 @@ private:
   /// Whether the user is currently dragging to select text.
   bool m_isDragging = false;
 
+  /// Whether the caret was placed (by a press, a key, typing or a focus)
+  /// since text set from outside last reset it to the start.
+  bool m_caretPlaced = false;
+
   /// Whether this text input currently has focus.
   bool m_focused = false;
 
@@ -183,7 +193,14 @@ private:
   float m_layoutWidth = NAN;
   float m_layoutHeight = NAN;
 
+  /// TextLanguages::generation() the input last shaped for, so a change to
+  /// the system languages reshapes it on the next advance.
+  uint32_t m_languageGeneration = 0;
+
 #ifdef WITH_RIVE_TEXT
+  /// Font::fallbackFontsGeneration() the input last shaped for, so new
+  /// fallback fonts reshape it on the next advance.
+  uint32_t m_fallbackFontsGeneration = 0;
   RawTextInput m_rawTextInput;
 #endif
 };

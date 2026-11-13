@@ -1,6 +1,6 @@
 
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_enum_runtime.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_enum_runtime.hpp"
+#include "rive/viewmodel/viewmodel_property_enum.hpp"
 
 // Default namespace for Rive Cpp code
 using namespace rive;

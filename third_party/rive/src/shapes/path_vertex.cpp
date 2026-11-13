@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/path_vertex.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
+#include "rive/shapes/path_vertex.hpp"
+#include "rive/shapes/path.hpp"
 
 using namespace rive;
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/bindable_property_asset_base.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
+#include "rive/generated/data_bind/bindable_property_asset_base.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
 
 using namespace rive;
 

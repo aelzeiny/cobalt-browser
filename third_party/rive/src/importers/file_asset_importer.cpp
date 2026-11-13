@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/importers/file_asset_importer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_contents.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/file_asset_loader.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/importers/file_asset_importer.hpp"
+#include "rive/assets/file_asset_contents.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/file_asset_loader.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 
 using namespace rive;

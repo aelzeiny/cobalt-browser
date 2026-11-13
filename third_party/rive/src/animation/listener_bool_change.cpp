@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/animation/listener_bool_change.hpp"
-#include "third_party/rive/include/rive/animation/nested_bool.hpp"
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_bool.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
+#include "rive/animation/listener_bool_change.hpp"
+#include "rive/animation/nested_bool.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/state_machine_bool.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
 using namespace rive;
 
 bool ListenerBoolChange::validateInputType(const StateMachineInput* input) const

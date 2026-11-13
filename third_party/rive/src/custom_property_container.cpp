@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/custom_property_container.hpp"
+#include "rive/component.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/custom_property_container.hpp"
 
 using namespace rive;
 

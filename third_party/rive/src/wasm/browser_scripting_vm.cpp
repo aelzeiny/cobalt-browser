@@ -1,9 +1,10 @@
 #if defined(WITH_RIVE_SCRIPTING_WASM) && defined(__EMSCRIPTEN__)
 
-#include "third_party/rive/include/rive/wasm/browser_scripting_vm.hpp"
+#include "rive/wasm/browser_scripting_vm.hpp"
 
 #include <emscripten/em_js.h>
 #include <emscripten/emscripten.h>
+#include <emscripten/eventloop.h>
 #include <emscripten/stack.h>
 
 #include <cassert>
@@ -16,9 +17,11 @@ EM_JS_DEPS(riveWebScripting,
            "$UTF8ToString,$stringToUTF8,$stringToNewUTF8,"
            "$stackSave,$stackAlloc,$stackRestore,$wasmTable,malloc,free");
 
+EM_JS(double, riveWebTimeOrigin, (), { return performance.timeOrigin; });
+
 // The runner is web/rive_script_runner.mjs, installed on each thread; only
 // librive sees its heap and exports, so they are handed over here.
-EM_JS(int, riveWebAttach, (), {
+EM_JS(int, riveWebAttachRunner, (double pageOrigin), {
     const runner = Module['riveScripting'];
     if (!runner)
     {
@@ -54,16 +57,21 @@ EM_JS(int, riveWebAttach, (), {
             const text = _rive_web_lane_fuel(lane);
             return text === 0 ? null : UTF8ToString(text);
         },
+        pageOrigin: pageOrigin,
     });
     return 1;
 });
 
 #ifdef __EMSCRIPTEN_PTHREADS__
 // The page hands the lane modules it compiles to its idle threads, as a
-// running one never takes a message and would only pin them.
+// running one never takes a message and would only pin them. Its parallel
+// team are threads it started, whose workers it reaches by thread.
 EM_JS(void, riveWebAttachThreads, (), {
-    Module['riveScripting'].attachThreads(() => PThread.unusedWorkers);
+    Module['riveScripting'].attachThreads(
+        () => PThread.unusedWorkers,
+        (thread) => PThread.pthreads[thread]);
 });
+
 #endif
 
 EM_JS(void, riveWebRegister, (uint32_t vm, const uint8_t* bytes, uint32_t size), {
@@ -118,6 +126,32 @@ EM_JS(uint32_t, riveWebMemoryPages, (uint32_t vm), {
     return Module['riveScripting'].pages(vm);
 });
 // clang-format on
+
+// Static init runs only on the page's thread, so pool threads see its origin.
+static const double s_pageOrigin = riveWebTimeOrigin();
+
+extern "C" int riveWebAttach() { return riveWebAttachRunner(s_pageOrigin); }
+
+#ifdef __EMSCRIPTEN_PTHREADS__
+// A thread of the page's parallel team runs no C++ of its own. It stays alive
+// in its worker's event loop, where the runner's team loop runs once the page
+// sends it the team's words, and where it can still take each new module's
+// memory.
+extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rive_web_parallel_team_thread()
+{
+  pthread_t thread;
+  auto enter = [](void*) -> void* {
+    emscripten_runtime_keepalive_push();
+    return nullptr;
+  };
+  if (pthread_create(&thread, nullptr, enter, nullptr) != 0)
+  {
+    return 0;
+  }
+  pthread_detach(thread);
+  return (uint32_t)(uintptr_t)thread;
+}
+#endif
 
 extern "C" EMSCRIPTEN_KEEPALIVE void rive_web_vm_module_export(
     uint32_t vm,

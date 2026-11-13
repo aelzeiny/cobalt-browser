@@ -1,7 +1,7 @@
 #ifndef _RIVE_GAMEPAD_LISTENER_GROUP_HPP_
 #define _RIVE_GAMEPAD_LISTENER_GROUP_HPP_
 
-#include "third_party/rive/include/rive/input/gamepad_listener.hpp"
+#include "rive/input/gamepad_listener.hpp"
 
 namespace rive
 {

@@ -1,8 +1,8 @@
 #ifndef _RIVE_SKIN_HPP_
 #define _RIVE_SKIN_HPP_
-#include "third_party/rive/include/rive/generated/bones/skin_base.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/generated/bones/skin_base.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/span.hpp"
 #include <stdio.h>
 #include <vector>
 

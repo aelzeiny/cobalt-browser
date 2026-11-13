@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/layout/n_slicer.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer_tile_mode.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_host.hpp"
-#include "third_party/rive/include/rive/shapes/slice_mesh.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/layout/n_slicer.hpp"
+#include "rive/layout/n_slicer_tile_mode.hpp"
+#include "rive/shapes/mesh_host.hpp"
+#include "rive/shapes/slice_mesh.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

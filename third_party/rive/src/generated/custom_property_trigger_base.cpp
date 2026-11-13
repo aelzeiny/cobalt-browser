@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/custom_property_trigger_base.hpp"
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
+#include "rive/generated/custom_property_trigger_base.hpp"
+#include "rive/custom_property_trigger.hpp"
 
 using namespace rive;
 

@@ -1,10 +1,10 @@
 #ifndef _RIVE_AUDIO_SOURCE_HPP_
 #define _RIVE_AUDIO_SOURCE_HPP_
 
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
-#include "third_party/rive/include/rive/audio/audio_format.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
+#include "rive/simple_array.hpp"
+#include "rive/audio/audio_format.hpp"
 
 namespace rive
 {
@@ -35,6 +35,9 @@ public:
       uint32_t sampleRate);
 
 #ifdef WITH_RIVE_AUDIO
+  // An MP3 decoder that seeks builds these, so a seek jumps near its frame
+  // instead of decoding from the start.
+  static constexpr uint32_t kDecoderSeekPoints = 256;
   rcp<AudioReader> makeReader(uint32_t numChannels, uint32_t sampleRate);
 #endif
 

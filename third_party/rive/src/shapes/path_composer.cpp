@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/renderer.hpp"
+#include "rive/shapes/path.hpp"
 #include <algorithm>
 #include <limits>
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/factory.hpp"
+#include "rive/shapes/points_path.hpp"
 
 using namespace rive;
 

@@ -3,14 +3,14 @@
 #include <array>
 #include <algorithm>
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/viewmodel_instance_importer.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/artboard.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_property_symbol_list_index.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/viewmodel_instance_importer.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/refcnt.hpp"
 
 using namespace rive;
 
@@ -87,17 +87,19 @@ ViewModelProperty* ViewModelInstanceValue::viewModelProperty()
 
 void ViewModelInstanceValue::addDependent(ViewModelValueDependent* value)
 {
-  m_DependencyHelper.addDependent(value);
+  m_dependents.add(value);
 }
 
 void ViewModelInstanceValue::removeDependent(ViewModelValueDependent* value)
 {
-  m_DependencyHelper.removeDependent(value);
+  m_dependents.remove(value);
 }
 
 void ViewModelInstanceValue::addDirt(ComponentDirt value)
 {
-  m_DependencyHelper.addDirtToDependents(value);
+  m_dependents.forEach([value](ViewModelValueDependent* dependent) {
+    dependent->addDirt(value, true);
+  });
 }
 
 void ViewModelInstanceValue::setRoot(rcp<ViewModelInstance> viewModelInstance)
@@ -166,6 +168,16 @@ void ViewModelInstanceValue::restoreDelegation()
   m_changeFlags &= ~ValueFlags::delegating;
 }
 
+void ViewModelInstanceValue::flushDeferredDelegation()
+{
+  m_changeFlags &= ~ValueFlags::deferring;
+  if (enums::is_flag_set(m_changeFlags, ValueFlags::pendingDelegation))
+  {
+    m_changeFlags &= ~ValueFlags::pendingDelegation;
+    onValueChanged();
+  }
+}
+
 void ViewModelInstanceValue::onValueChanged()
 {
   // One sequence for every value, so a state machine can tell the changes
@@ -177,6 +189,13 @@ void ViewModelInstanceValue::onValueChanged()
   // logic entirely.
   if (m_delegates.empty())
   {
+    return;
+  }
+
+  if (enums::is_flag_set(m_changeFlags, ValueFlags::deferring))
+  {
+    // Held back by deferDelegation; reported by flushDeferredDelegation.
+    m_changeFlags |= ValueFlags::pendingDelegation;
     return;
   }
 

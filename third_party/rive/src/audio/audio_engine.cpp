@@ -1,10 +1,10 @@
 #ifdef WITH_RIVE_AUDIO
-#include "third_party/rive/include/rive/math/simd.hpp"
-#include "third_party/rive_miniaudio/miniaudio.h"
+#include "rive/math/simd.hpp"
+#include "miniaudio.h"
 
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_sound.hpp"
+#include "rive/audio/audio_source.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -364,6 +364,7 @@ rcp<AudioSound> AudioEngine::internalPlaySound(
         ma_format_f32,
         channels(),
         sampleRate());
+    config.seekPointCount = AudioSource::kDecoderSeekPoints;
     auto sourceBytes = source->bytes();
     if (ma_decoder_init_memory(
             sourceBytes.data(),

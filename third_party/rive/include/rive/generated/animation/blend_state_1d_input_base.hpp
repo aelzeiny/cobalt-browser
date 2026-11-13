@@ -1,8 +1,8 @@
 #ifndef _RIVE_BLEND_STATE1_DINPUT_BASE_HPP_
 #define _RIVE_BLEND_STATE1_DINPUT_BASE_HPP_
-#include "third_party/rive/include/rive/animation/blend_state_1d.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/animation/blend_state_1d.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class BlendState1DInputBase : public BlendState1D

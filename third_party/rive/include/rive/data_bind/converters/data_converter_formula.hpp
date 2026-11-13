@@ -1,11 +1,11 @@
 #ifndef _RIVE_DATA_CONVERTER_FORMULA_HPP_
 #define _RIVE_DATA_CONVERTER_FORMULA_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_formula_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_value_dependent.hpp"
+#include "rive/generated/data_bind/converters/data_converter_formula_base.hpp"
+#include "rive/data_bind/converters/formula/formula_token.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_value_dependent.hpp"
 #include <stdio.h>
 #include <unordered_map>
 namespace rive

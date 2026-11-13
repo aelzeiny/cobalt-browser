@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/layout/axis_x.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer_details.hpp"
+#include "rive/container_component.hpp"
+#include "rive/layout/axis_x.hpp"
+#include "rive/layout/n_slicer_details.hpp"
 
 using namespace rive;
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/bones/tendon_base.hpp"
-#include "third_party/rive/include/rive/bones/tendon.hpp"
+#include "rive/generated/bones/tendon_base.hpp"
+#include "rive/bones/tendon.hpp"
 
 using namespace rive;
 

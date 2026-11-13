@@ -1,12 +1,12 @@
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/artboard.hpp"
+#include "rive/core_context.hpp"
+#include "rive/factory.hpp"
+#include "rive/node.hpp"
+#include "rive/renderer.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/shapes/shape.hpp"
 
 using namespace rive;
 

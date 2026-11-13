@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/custom_property_boolean_base.hpp"
-#include "third_party/rive/include/rive/custom_property_boolean.hpp"
+#include "rive/generated/custom_property_boolean_base.hpp"
+#include "rive/custom_property_boolean.hpp"
 
 using namespace rive;
 

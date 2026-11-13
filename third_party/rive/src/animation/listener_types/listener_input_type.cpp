@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_listener_importer.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/state_machine_listener_importer.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/animation/state_machine.hpp"
 
 using namespace rive;
 

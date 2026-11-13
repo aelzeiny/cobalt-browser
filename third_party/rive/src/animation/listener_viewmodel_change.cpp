@@ -1,16 +1,16 @@
-#include "third_party/rive/include/rive/animation/listener_viewmodel_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_input_value.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/importers/bindable_property_importer.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/animation/listener_viewmodel_change.hpp"
+#include "rive/animation/listener_input_value.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/data_bind/bindable_property.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/bindable_property_viewmodel.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/importers/bindable_property_importer.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
 
 using namespace rive;
 
@@ -175,6 +175,16 @@ bool ListenerViewModelChange::applyInputValue(
   return false;
 }
 
+// A view model value set to "My ViewModel" is stored as a to-target bind whose
+// source path holds only the root view model id, as transition comparands do
+// (see ConditionComparandViewModelBindable).
+static bool isMyViewModel(DataBind* dataBindToTarget)
+{
+  return dataBindToTarget != nullptr &&
+         dataBindToTarget->is<DataBindContext>() &&
+         dataBindToTarget->as<DataBindContext>()->sourcePathLength() == 1;
+}
+
 // Note: perform works the same way whether the value comes from a direct value
 // assignment or from another view model. In the case of coming from another
 // view model, the state machine instance method "updataDataBinds" will handle
@@ -206,8 +216,12 @@ void ListenerViewModelChange::perform(
       bindableInstance);
   if (dataBind != nullptr)
   {
+    // A view model value from another property is already in the bindable,
+    // written by its to-target bind. "My ViewModel" resolves to no property,
+    // so write the data context's own instance for it.
     if (dataBind->target() != nullptr &&
-        dataBind->target()->is<BindablePropertyViewModel>())
+        dataBind->target()->is<BindablePropertyViewModel>() &&
+        isMyViewModel(dataBindToTarget))
     {
       auto targetValue = dataBind->target()->as<BindablePropertyViewModel>();
       auto context = stateMachineInstance->dataContext();

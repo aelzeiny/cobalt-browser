@@ -2,17 +2,17 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/viewmodel_instance_importer.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/data_bind/data_values/data_value_viewmodel.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_property_viewmodel.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/backboard.hpp"
+#include "rive/file.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/viewmodel_instance_importer.hpp"
 
 using namespace rive;
 

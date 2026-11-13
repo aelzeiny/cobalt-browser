@@ -1,6 +1,6 @@
 #ifndef _RIVE_FOCUS_ACTION_BASE_HPP_
 #define _RIVE_FOCUS_ACTION_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_action.hpp"
+#include "rive/animation/listener_action.hpp"
 namespace rive
 {
 class FocusActionBase : public ListenerAction

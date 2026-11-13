@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/renderer.hpp"
 
 using namespace rive;
 

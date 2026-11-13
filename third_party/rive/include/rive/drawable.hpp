@@ -1,13 +1,13 @@
 #ifndef _RIVE_DRAWABLE_HPP_
 #define _RIVE_DRAWABLE_HPP_
-#include "third_party/rive/include/rive/generated/drawable_base.hpp"
-#include "third_party/rive/include/rive/hit_info.hpp"
-#include "third_party/rive/include/rive/lazy_vector.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/clip_result.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/drawable_flag.hpp"
-#include "third_party/rive/include/rive/shapes/paint/blend_mode.hpp"
+#include "rive/generated/drawable_base.hpp"
+#include "rive/hit_info.hpp"
+#include "rive/lazy_vector.hpp"
+#include "rive/renderer.hpp"
+#include "rive/clip_result.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/drawable_flag.hpp"
+#include "rive/shapes/paint/blend_mode.hpp"
 #include <vector>
 
 namespace rive
@@ -105,6 +105,12 @@ public:
   }
 
   BlendMode blendMode() const { return (BlendMode)blendModeValue(); }
+
+  /// blendMode() as the renderer wants it; see renderBlendModeFor.
+  BlendMode renderBlendMode() const
+  {
+    return renderBlendModeFor(blendMode(), additiveAmount());
+  }
 
   /// additiveAmount() as the renderer wants it: 0 (plain srcOver) to 1
   /// (fully additive), and always 0 for the modes that ignore it.

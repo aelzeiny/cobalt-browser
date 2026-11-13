@@ -3,9 +3,9 @@
 
 #ifdef WITH_RIVE_TEXT
 
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/text_layout_view.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/text_layout_view.hpp"
 
 namespace rive
 {
@@ -116,7 +116,7 @@ public:
   template <typename F> void forEachGlyph(uint32_t line, F&& visit)
   {
     const OrderedLine& orderedLine = orderedLines()[line];
-    float x = orderedLine.glyphLine().startX;
+    float x = orderedLine.startX();
     float y = orderedLine.y();
     for (auto [run, glyphIndex] : orderedLine)
     {

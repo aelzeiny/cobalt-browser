@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/solo_base.hpp"
-#include "third_party/rive/include/rive/solo.hpp"
+#include "rive/generated/solo_base.hpp"
+#include "rive/solo.hpp"
 
 using namespace rive;
 

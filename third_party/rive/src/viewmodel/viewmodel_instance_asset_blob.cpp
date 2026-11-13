@@ -2,11 +2,11 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_blob.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_asset_blob.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_blob.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/data_bind/data_values/data_value_asset_blob.hpp"
 
 using namespace rive;
 

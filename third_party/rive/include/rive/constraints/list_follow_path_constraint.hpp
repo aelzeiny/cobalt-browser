@@ -1,7 +1,7 @@
 #ifndef _RIVE_LIST_FOLLOW_PATH_CONSTRAINT_HPP_
 #define _RIVE_LIST_FOLLOW_PATH_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/constraints/list_constraint.hpp"
-#include "third_party/rive/include/rive/generated/constraints/list_follow_path_constraint_base.hpp"
+#include "rive/constraints/list_constraint.hpp"
+#include "rive/generated/constraints/list_follow_path_constraint_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,10 +1,10 @@
 #ifndef _RIVE_SEMANTIC_MANAGER_HPP_
 #define _RIVE_SEMANTIC_MANAGER_HPP_
 
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_dirt.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_node.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_snapshot.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/semantic/semantic_dirt.hpp"
+#include "rive/semantic/semantic_node.hpp"
+#include "rive/semantic/semantic_snapshot.hpp"
 
 #include <cstdint>
 #include <unordered_map>

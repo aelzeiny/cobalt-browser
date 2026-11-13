@@ -1,6 +1,6 @@
 #ifndef _RIVE_BLEND_STATE1_DINPUT_HPP_
 #define _RIVE_BLEND_STATE1_DINPUT_HPP_
-#include "third_party/rive/include/rive/generated/animation/blend_state_1d_input_base.hpp"
+#include "rive/generated/animation/blend_state_1d_input_base.hpp"
 #include <stdio.h>
 namespace rive
 {

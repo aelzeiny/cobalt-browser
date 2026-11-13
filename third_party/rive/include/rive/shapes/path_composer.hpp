@@ -1,11 +1,11 @@
 #ifndef _RIVE_PATH_COMPOSER_HPP_
 #define _RIVE_PATH_COMPOSER_HPP_
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/shapes/path_flags.hpp"
+#include "rive/component.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/shapes/path_flags.hpp"
 #include <cmath>
 #include <vector>
 

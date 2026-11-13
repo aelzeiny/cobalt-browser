@@ -1,8 +1,8 @@
 #ifndef _RIVE_DRAW_RULES_HPP_
 #define _RIVE_DRAW_RULES_HPP_
-#include "third_party/rive/include/rive/generated/draw_rules_base.hpp"
+#include "rive/generated/draw_rules_base.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 namespace rive

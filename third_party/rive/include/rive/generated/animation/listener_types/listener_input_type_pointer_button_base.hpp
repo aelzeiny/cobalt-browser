@@ -1,7 +1,7 @@
 #ifndef _RIVE_LISTENER_INPUT_TYPE_POINTER_BUTTON_BASE_HPP_
 #define _RIVE_LISTENER_INPUT_TYPE_POINTER_BUTTON_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 namespace rive
 {
 class ListenerInputTypePointerButtonBase : public ListenerInputType

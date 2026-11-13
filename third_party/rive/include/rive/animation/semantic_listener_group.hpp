@@ -1,8 +1,8 @@
 #ifndef _RIVE_SEMANTIC_LISTENER_GROUP_HPP_
 #define _RIVE_SEMANTIC_LISTENER_GROUP_HPP_
 
-#include "third_party/rive/include/rive/semantic/semantic_listener.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
+#include "rive/semantic/semantic_listener.hpp"
+#include "rive/listener_type.hpp"
 
 #include <cstdint>
 

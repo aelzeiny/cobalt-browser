@@ -1,6 +1,6 @@
 #ifndef _RIVE_GRID_TRACK_HPP_
 #define _RIVE_GRID_TRACK_HPP_
-#include "third_party/rive/include/rive/generated/layout/grid_track_base.hpp"
+#include "rive/generated/layout/grid_track_base.hpp"
 #ifdef WITH_RIVE_LAYOUT
 class YGStyle;
 #endif

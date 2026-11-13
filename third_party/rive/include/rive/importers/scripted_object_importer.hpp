@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCRIPTED_OBJECT_IMPORTER_HPP_
 #define _RIVE_SCRIPTED_OBJECT_IMPORTER_HPP_
 
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
+#include "rive/importers/import_stack.hpp"
 #include <cstdint>
 
 namespace rive

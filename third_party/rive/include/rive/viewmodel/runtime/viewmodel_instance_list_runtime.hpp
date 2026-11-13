@@ -4,9 +4,9 @@
 #include <string>
 #include <stdint.h>
 #include <unordered_map>
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
+#include "rive/viewmodel/viewmodel_instance_list.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
 
 namespace rive
 {

@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_INPUT_CURSOR_BASE_HPP_
 #define _RIVE_TEXT_INPUT_CURSOR_BASE_HPP_
-#include "third_party/rive/include/rive/text/text_input_drawable.hpp"
+#include "rive/text/text_input_drawable.hpp"
 namespace rive
 {
 class TextInputCursorBase : public TextInputDrawable

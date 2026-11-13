@@ -2,10 +2,10 @@
 #define _RIVE_INTRINSICALLY_SIZEABLE_HPP_
 
 #include <stdint.h>
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
-#include "third_party/rive/include/rive/layout/layout_measure_mode.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/component.hpp"
+#include "rive/layout/layout_enums.hpp"
+#include "rive/layout/layout_measure_mode.hpp"
+#include "rive/math/vec2d.hpp"
 
 namespace rive
 {

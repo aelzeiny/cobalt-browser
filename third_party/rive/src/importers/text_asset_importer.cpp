@@ -1,12 +1,12 @@
 #ifdef WITH_RIVE_SCRIPTING
-#include "third_party/rive/include/rive/importers/text_asset_importer.hpp"
-#include "third_party/rive/include/rive/importers/file_asset_importer.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_contents.hpp"
-#include "third_party/rive/include/rive/assets/shader_asset.hpp"
-#include "third_party/rive/include/rive/assets/text_asset.hpp"
-#include "third_party/rive/include/rive/signed_content_header.hpp"
-#include "third_party/rive/include/rive/file_asset_loader.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/importers/text_asset_importer.hpp"
+#include "rive/importers/file_asset_importer.hpp"
+#include "rive/assets/file_asset_contents.hpp"
+#include "rive/assets/shader_asset.hpp"
+#include "rive/assets/text_asset.hpp"
+#include "rive/signed_content_header.hpp"
+#include "rive/file_asset_loader.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 #include "libhydrogen.h"
 

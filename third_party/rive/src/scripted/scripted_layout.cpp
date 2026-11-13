@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/scripted/scripted_layout.hpp"
 
 using namespace rive;
 

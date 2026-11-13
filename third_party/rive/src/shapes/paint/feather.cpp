@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/artboard.hpp"
 
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

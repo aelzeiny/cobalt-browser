@@ -1,7 +1,7 @@
 #ifndef _RIVE_TRANSITION_VALUE_COLOR_COMPARATOR_BASE_HPP_
 #define _RIVE_TRANSITION_VALUE_COLOR_COMPARATOR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/transition_value_comparator.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_color_type.hpp"
+#include "rive/animation/transition_value_comparator.hpp"
+#include "rive/core/field_types/core_color_type.hpp"
 namespace rive
 {
 class TransitionValueColorComparatorBase : public TransitionValueComparator

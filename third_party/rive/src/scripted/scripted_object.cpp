@@ -1,22 +1,22 @@
 #ifdef WITH_RIVE_SCRIPTING
 #ifdef WITH_RIVE_SCRIPTING_LUAU
-#include "third_party/rive/include/rive/lua/rive_lua_libs.hpp"
+#include "rive/lua/rive_lua_libs.hpp"
 #endif
 #endif
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/script_input_artboard.hpp"
-#include "third_party/rive/include/rive/animation/scripted_listener_action.hpp"
-#include "third_party/rive/include/rive/animation/scripted_transition_condition.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_data_converter.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_layout.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_path_effect.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/artboard.hpp"
+#include "rive/file.hpp"
+#include "rive/script_input_artboard.hpp"
+#include "rive/animation/scripted_listener_action.hpp"
+#include "rive/animation/scripted_transition_condition.hpp"
+#include "rive/scripted/scripted_data_converter.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
+#include "rive/scripted/scripted_layout.hpp"
+#include "rive/scripted/scripted_transition.hpp"
+#include "rive/scripted/scripted_path_effect.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/data_bind/data_bind.hpp"
 
 using namespace rive;
 

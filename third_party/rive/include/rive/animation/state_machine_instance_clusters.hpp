@@ -18,13 +18,15 @@
 // than the per-container `.empty()` probes it replaces; write paths call the
 // matching `ensure...()` on StateMachineInstance.
 
-#include "third_party/rive/include/rive/animation/gamepad_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/keyboard_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
-#include "third_party/rive/include/rive/event_report.hpp"
-#include "third_party/rive/include/rive/input/gamepad_snapshot.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_manager.hpp"
+#include "rive/animation/gamepad_listener_group.hpp"
+#include "rive/animation/keyboard_listener_group.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/event_report.hpp"
+#include "rive/input/gamepad_snapshot.hpp"
+#include "rive/pointer_button.hpp"
+#include "rive/semantic/semantic_manager.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
@@ -37,7 +39,11 @@ class BindableProperty;
 class BindablePropertyNumber;
 class Core;
 class DataBind;
+class Component;
 class FocusListenerGroup;
+class HitComponent;
+class HitDrawable;
+class ListenerGroup;
 class ListenerViewModel;
 class ScriptedDrawable;
 class ScriptedObject;
@@ -105,14 +111,44 @@ public:
     m_count++;
   }
 
+  /// Adds [shared] -> [instance] where another entry already holds
+  /// [instance]: its twin's (see StateMachine::bindableTwins).
+  void insertTwin(BindableProperty* shared, BindableProperty* instance)
+  {
+    insert(shared, instance);
+    m_hasTwins = true;
+  }
+
+  /// Visits each instance once, twins' included.
   template <typename F> void forEachInstance(F&& visit) const
   {
+    if (!m_hasTwins)
+    {
+      for (const Entry& entry : m_entries)
+      {
+        if (entry.shared != nullptr)
+        {
+          visit(entry.instance);
+        }
+      }
+      return;
+    }
+    std::vector<BindableProperty*> instances;
+    instances.reserve(m_count);
     for (const Entry& entry : m_entries)
     {
       if (entry.shared != nullptr)
       {
-        visit(entry.instance);
+        instances.push_back(entry.instance);
       }
+    }
+    std::sort(instances.begin(), instances.end());
+    instances.erase(
+        std::unique(instances.begin(), instances.end()),
+        instances.end());
+    for (BindableProperty* instance : instances)
+    {
+      visit(instance);
     }
   }
 
@@ -120,6 +156,7 @@ public:
   {
     m_entries.clear();
     m_count = 0;
+    m_hasTwins = false;
   }
 
 private:
@@ -164,7 +201,9 @@ private:
 
   // Power-of-two size; a null shared pointer marks an empty entry.
   std::vector<Entry> m_entries;
-  size_t m_count = 0;
+  // 32 bits, so the flag shares their 8 bytes.
+  uint32_t m_count = 0;
+  bool m_hasTwins = false;
 };
 
 /// Which view model changes are pending for one layer of a state machine
@@ -183,7 +222,8 @@ struct SMILayerChangeWindow
 /// Allocated only when a state machine data bind targets one of them.
 struct SMIBindables
 {
-  /// Shared BindableProperty -> this instance's owned clone.
+  /// Shared BindableProperty -> this instance's owned clone. Twins hold
+  /// one clone between them (see StateMachine::bindableTwins).
   BindablePropertyInstances propertyInstances;
   std::unordered_map<BindableProperty*, DataBind*> dataBindsToTarget;
   std::unordered_map<BindableProperty*, DataBind*> dataBindsToSource;
@@ -234,6 +274,35 @@ struct QueuedSemanticEvent
   SemanticActionType actionType;
 };
 
+/// A capture-phase pointer listener on one of the hit drawables its target
+/// resolves to: a group's listener flattens to its leaf shapes, one each.
+struct CaptureHit
+{
+  HitDrawable* hit;
+  ListenerGroup* group;
+  /// The listener's target (a layout, not its proxy), which is what a claim
+  /// covers.
+  Component* target;
+  /// How deep target sits under the artboard. Capture runs shallow first.
+  uint32_t depth;
+  /// hit's place in the hit components, topmost first. Breaks depth ties,
+  /// and tells what is drawn above it.
+  size_t drawIndex;
+};
+
+/// A press a capture listener claimed, held until that pointer's release.
+struct PointerClaim
+{
+  int pointerId;
+  PointerButton button;
+  /// The claiming listener's target.
+  Component* scope;
+  /// What the claim turned off: hit components under scope (whole nested
+  /// machines included), and capture listeners on targets under it.
+  std::vector<HitComponent*> hits;
+  std::vector<ListenerGroup*> captureGroups;
+};
+
 /// Everything driven by focus, keyboard, gamepad, or accessibility rather than
 /// by pointer events. Allocated when the file declares a focus/blur, keyboard,
 /// textInput, gamepad, or semanticAction listener, when a script wants keyboard
@@ -260,6 +329,19 @@ struct SMIInputExtras
   /// Queued for deferred execution during advance().
   std::vector<QueuedFocusEvent> queuedFocusEvents;
   std::vector<QueuedSemanticEvent> queuedSemanticEvents;
+
+  /// Capture-phase pointer listeners. Their groups are kept apart from the
+  /// instance's listener groups, which the normal phase resets on every
+  /// event. Allocated with the rest of this cluster when the machine has
+  /// one, so a machine without stays on the null-sidecar path.
+  std::vector<std::unique_ptr<ListenerGroup>> captureGroups;
+  /// In capture order: shallowest target first, then topmost first.
+  std::vector<CaptureHit> captureHits;
+  std::vector<PointerClaim> pointerClaims;
+  /// treeHasCaptureListeners' answer, and the capture topology epoch it
+  /// was computed at (0: never).
+  uint32_t captureTreeEpoch = 0;
+  bool captureTreeHas = false;
 };
 
 /// Per-instance clones of the state machine's scripted objects. Allocated only

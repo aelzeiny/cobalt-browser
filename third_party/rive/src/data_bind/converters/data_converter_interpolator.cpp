@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_interpolator.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_color.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_interpolator.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_color.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 
 using namespace rive;
 
@@ -181,6 +181,7 @@ void DataConverterInterpolator::interpolator(KeyFrameInterpolator* interpolator)
 
 bool DataConverterInterpolator::advance(float elapsedTime)
 {
+  bool didAdvanceBinds = Super::advance(elapsedTime);
   // Advance can be called multiple times in a single frame.
   // We want to make sure that two advances with time > 0 have elapsed before
   // considering the state as second frame.
@@ -192,7 +193,29 @@ bool DataConverterInterpolator::advance(float elapsedTime)
   {
     return true;
   }
-  return m_advancer.advance(elapsedTime);
+  return m_advancer.advance(elapsedTime) || didAdvanceBinds;
+}
+
+AdvancingComponent::QuietState DataConverterInterpolator::advanceQuietState()
+    const
+{
+  using QuietState = AdvancingComponent::QuietState;
+  auto state = Super::advanceQuietState();
+  // Given a value it can't ease, advance reports work on every frame and
+  // never sets up anything to settle.
+  if (state == QuietState::never || m_cannotEase)
+  {
+    return QuietState::never;
+  }
+  // advance counts its first frames, which decide whether a new value
+  // animates, and reports work until it has a value to animate, which is
+  // about to arrive. Once its value has landed it does nothing until convert
+  // takes a new one, which only happens for a dirty bind.
+  if (isFirstRun() || !m_advancer.initialized() || !m_advancer.settled())
+  {
+    return QuietState::busy;
+  }
+  return state;
 }
 
 DataValue* DataConverterInterpolator::convert(
@@ -216,8 +239,10 @@ DataValue* DataConverterInterpolator::convert(
     }
     else
     {
+      m_cannotEase = true;
       return input;
     }
+    m_cannotEase = false;
   }
   if (m_output != nullptr &&
       (input->is<DataValueNumber>() || input->is<DataValueColor>()))
@@ -239,6 +264,7 @@ DataValue* DataConverterInterpolator::convert(
 void DataConverterInterpolator::reset()
 {
   m_advanceCount = 0;
+  m_cannotEase = false;
   m_advancer.reset();
 }
 

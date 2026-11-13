@@ -1,6 +1,6 @@
 #ifndef _RIVE_STATE_MACHINE_LAYER_HPP_
 #define _RIVE_STATE_MACHINE_LAYER_HPP_
-#include "third_party/rive/include/rive/generated/animation/state_machine_layer_base.hpp"
+#include "rive/generated/animation/state_machine_layer_base.hpp"
 #include <stdio.h>
 #include <vector>
 

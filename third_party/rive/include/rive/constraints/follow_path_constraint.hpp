@@ -1,8 +1,8 @@
 #ifndef _RIVE_FOLLOW_PATH_CONSTRAINT_HPP_
 #define _RIVE_FOLLOW_PATH_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/follow_path_constraint_base.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
+#include "rive/generated/constraints/follow_path_constraint_base.hpp"
+#include "rive/math/transform_components.hpp"
+#include "rive/math/path_measure.hpp"
 namespace rive
 {
 class FollowPathConstraint : public FollowPathConstraintBase

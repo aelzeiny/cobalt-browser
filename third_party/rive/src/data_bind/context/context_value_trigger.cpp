@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_trigger.hpp"
-#include "third_party/rive/include/rive/custom_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_trigger.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_trigger.hpp"
+#include "rive/data_bind/context/context_value_trigger.hpp"
+#include "rive/custom_property_trigger.hpp"
+#include "rive/data_bind/bindable_property_trigger.hpp"
+#include "rive/data_bind/data_values/data_value_trigger.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/viewmodel/viewmodel_instance_trigger.hpp"
 
 using namespace rive;
 

@@ -1,6 +1,6 @@
 #ifndef _RIVE_LISTENER_ALIGN_TARGET_HPP_
 #define _RIVE_LISTENER_ALIGN_TARGET_HPP_
-#include "third_party/rive/include/rive/generated/animation/listener_align_target_base.hpp"
+#include "rive/generated/animation/listener_align_target_base.hpp"
 #include <stdio.h>
 namespace rive
 {

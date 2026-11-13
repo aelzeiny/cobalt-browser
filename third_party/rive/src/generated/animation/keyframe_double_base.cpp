@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/keyframe_double_base.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_double.hpp"
+#include "rive/generated/animation/keyframe_double_base.hpp"
+#include "rive/animation/keyframe_double.hpp"
 
 using namespace rive;
 

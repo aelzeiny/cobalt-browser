@@ -9,9 +9,9 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/math/mat2d.hpp"
 
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/math/math_types.hpp"
 #include <cmath>
 
 static inline float sdot(float a, float b, float c, float d)

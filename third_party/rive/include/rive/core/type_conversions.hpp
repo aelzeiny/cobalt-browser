@@ -5,7 +5,7 @@
 #ifndef _RIVE_TYPE_CONVERSIONS_HPP_
 #define _RIVE_TYPE_CONVERSIONS_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 #include <limits>
 #include <type_traits>
 

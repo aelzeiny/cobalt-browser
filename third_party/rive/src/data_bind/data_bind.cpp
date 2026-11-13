@@ -1,51 +1,54 @@
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/data_bind_flags.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_asset.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_list.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_integer.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_any.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_asset_image.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_asset_font.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_asset_blob.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_string.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_enum.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_list.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_color.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/data_bind/context/context_value_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_argument.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/animation/transition_viewmodel_condition.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/generated/node_base.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/viewmodel_instance_importer.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/viewmodel/write_attribution.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/animation/keyframe.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/importers/linear_animation_importer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/data_bind_flags.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/data_bind/bindable_property_artboard.hpp"
+#include "rive/data_bind/bindable_property_asset.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
+#include "rive/data_bind/bindable_property_enum.hpp"
+#include "rive/data_bind/bindable_property_list.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_trigger.hpp"
+#include "rive/data_bind/bindable_property_integer.hpp"
+#include "rive/data_bind/bindable_property_viewmodel.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/data_bind/context/context_value.hpp"
+#include "rive/data_bind/context/context_value_any.hpp"
+#include "rive/data_bind/context/context_value_asset_image.hpp"
+#include "rive/data_bind/context/context_value_asset_font.hpp"
+#include "rive/data_bind/context/context_value_asset_blob.hpp"
+#include "rive/data_bind/context/context_value_artboard.hpp"
+#include "rive/data_bind/context/context_value_boolean.hpp"
+#include "rive/data_bind/context/context_value_number.hpp"
+#include "rive/data_bind/context/context_value_string.hpp"
+#include "rive/data_bind/context/context_value_enum.hpp"
+#include "rive/data_bind/context/context_value_list.hpp"
+#include "rive/data_bind/context/context_value_color.hpp"
+#include "rive/data_bind/context/context_value_trigger.hpp"
+#include "rive/data_bind/context/context_value_symbol_list_index.hpp"
+#include "rive/data_bind/context/context_value_viewmodel.hpp"
+#include "rive/data_bind/data_values/data_type.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/formula/formula_token.hpp"
+#include "rive/data_bind/converters/string_template/string_template_argument.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/animation/transition_viewmodel_condition.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/generated/node_base.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/importers/viewmodel_instance_importer.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/component.hpp"
+#include "rive/viewmodel/write_attribution.hpp"
 
 using namespace rive;
 
@@ -137,6 +140,20 @@ StatusCode DataBind::import(ImportStack& importStack)
         }
         default:
         {
+          // A keyframe's binds belong to its animation, which is the one
+          // being read: playing it clones them per instance (see
+          // LinearAnimation::addKeyFrameBind).
+          if (target()->is<KeyFrame>())
+          {
+            auto animationImporter = importStack
+                                         .latest<LinearAnimationImporter>(
+                                             LinearAnimationBase::typeKey);
+            if (animationImporter != nullptr)
+            {
+              animationImporter->animation()->addKeyFrameBind(this);
+              return Super::import(importStack);
+            }
+          }
           // Prefer the artboard that actually owns the target object.
           // Relying on latest<ArtboardImporter> can attach binds to
           // the wrong source artboard when multiple artboards are
@@ -640,6 +657,16 @@ void DataBind::collapse(bool isCollapsed)
   if (!isCollapsed && m_Dirt != ComponentDirt::None && m_container)
   {
     m_container->addDirtyDataBind(this);
+  }
+}
+
+void DataBind::converter(DataConverter* value)
+{
+  m_dataConverter = value;
+  if (m_container != nullptr)
+  {
+    // Its container's cached mayAdvanceDataBinds read this bind's converter.
+    m_container->dataBindsChanged();
   }
 }
 

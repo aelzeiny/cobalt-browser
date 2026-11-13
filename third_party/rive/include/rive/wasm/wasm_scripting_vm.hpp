@@ -3,31 +3,38 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/async/threading.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/scripted/script_backend.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/viewmodel/write_attribution.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_layout_gen.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_policy.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_signal_wait.hpp"
+#include "rive/async/threading.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/scripted/script_backend.hpp"
+#include "rive/span.hpp"
+#include "rive/viewmodel/write_attribution.hpp"
+#include "rive/wasm/wasm_lane_layout_gen.hpp"
+#include "rive/wasm/wasm_lane_policy.hpp"
+#include "rive/wasm/wasm_signal_wait.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <deque>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace rive
 {
 class WasmJobs;
+class WasmParallel;
 class WasmWorkers;
 class WasmProcessors;
 class WasmLane;
+class WasmAudioDecode;
+struct HostAudioStream;
+class AudioSource;
 struct VMPollList;
 class SharedRegion;
 
@@ -73,6 +80,32 @@ public:
   /// The VM is going away.
   virtual void onDetach(WasmScriptingVM& vm) = 0;
 };
+
+#ifdef WITH_RIVE_TOOLS
+/// The objects behind a path effect's node handles for a host whose shapes
+/// are not runtime TransformComponents, like the editor's Dart stage. Ids
+/// are the source's own, 0 is none; they and every node they back hold for
+/// the one update that lent the shape.
+class WasmNodeSource
+{
+public:
+  virtual ~WasmNodeSource() = default;
+  /// x, y, rotation, scaleX, scaleY.
+  virtual void transform(uint32_t node, float out[5]) = 0;
+  /// An ArtboardWire node field.
+  virtual void set(uint32_t node, uint32_t field, float v0, float v1) = 0;
+  virtual void worldTransform(uint32_t node, float out[6]) = 0;
+  virtual void setWorldTransform(uint32_t node, const float values[6]) = 0;
+  /// Sets the local transform that puts the node at world.
+  virtual void decompose(uint32_t node, const float world[6]) = 0;
+  /// False when the node is not a path.
+  virtual bool path(uint32_t node, RawPath& out) = 0;
+  /// 0 when the parent is not a node.
+  virtual uint32_t parent(uint32_t node) = 0;
+  /// The children that are nodes, in order.
+  virtual void children(uint32_t node, std::vector<uint32_t>& out) = 0;
+};
+#endif
 
 class WasmScriptingVM : public ScriptBackend
 {
@@ -128,6 +161,7 @@ public:
       node,
       audioSource,
       audioSound,
+      audioStream,
       drawable,
       text,
       transitionChild,
@@ -290,12 +324,27 @@ public:
   void deliverHeldOutcomes();
   /// deliverHeldOutcomes() for every VM on this thread holding some.
   static void deliverAllHeldOutcomes();
-  /// True while a decode or fetch this VM started has yet to reach the
-  /// module, held outcomes included.
+  /// True while work this VM started still needs a poll to reach the module:
+  /// a decode or fetch out, held outcomes, a main lane wait, an unfinished
+  /// job, a worker due a step, a processor starting, or an audio stream to
+  /// top up.
   bool hasPendingAsyncWork() const;
+  /// hasPendingAsyncWork() for the VMs this thread's polls reach: those
+  /// holding outcomes, and those whose lanes, main waits or streams started
+  /// here. For a host that polls the thread as a whole, like the editor,
+  /// rather than through artboards. Fetches and native decodes are
+  /// rive_hasPendingAsyncWork()'s.
+  static bool hasPendingAsyncWorkOnThread();
 
   /// The module's jobs section, null when it carries none.
   WasmJobs* jobs() const { return m_jobs.get(); }
+  /// The parts a parallel call runs at once: 1 in safe mode, without
+  /// threads, or while a debugger is attached.
+  uint32_t parallelSize() const;
+  /// Runs the parallel call whose control block lies at control, raising
+  /// the first failure of any part as this call's trap. Answers the threads
+  /// that ran parts.
+  uint32_t runParallel(uint32_t control);
   /// The module's workers section, null when it carries none.
   WasmWorkers* workers() const { return m_workers.get(); }
   /// The module's audio section, null when it carries none.
@@ -331,11 +380,22 @@ public:
   /// The main lane's awaits, settled at a poll through host_lane_wake with
   /// the token they answer.
   uint32_t watchLane(uint32_t lane);
+  /// Settled with the stream's handle once its first records are queued.
+  uint32_t watchStream(uint32_t stream);
   uint32_t waitOnMain(uint32_t signal, double after, double timeoutSeconds);
   /// Drops the await token answers, whose promise was cancelled.
   void cancelMainWait(uint32_t token);
+  /// Decodes source on a job, settled at a poll through host_lane_wake with
+  /// the blob's id, a Create code, or -1 when it did not decode.
+  uint32_t startAudioDecode(
+      rcp<AudioSource> source,
+      uint32_t sampleRate,
+      uint32_t channels);
   /// Owns the shared objects this VM creates, released with it.
   uint64_t sharedOwner();
+  /// The audio streams each poll tops up, released ones a reader still holds
+  /// included.
+  std::vector<HostAudioStream*>& audioStreams() { return m_audioStreams; }
   /// The holds a ring or snapshot read carried, kept until the std has
   /// decoded the value or, when decoding threw, until the frame ends.
   void keepReadHolds(Span<const uint32_t> ids);
@@ -389,6 +449,17 @@ public:
       const PathEffectPaintWire& paint,
       TransformComponent* shape,
       RawPath* outPath);
+#ifdef WITH_RIVE_TOOLS
+  /// The same call with the shape behind source, under its id shape.
+  bool callPathEffectUpdate(
+      ScriptedObject* object,
+      int selfRef,
+      const RawPath& sourcePath,
+      const PathEffectPaintWire& paint,
+      WasmNodeSource* source,
+      uint32_t shape,
+      RawPath* outPath);
+#endif
   bool callDataConvert(
       ScriptedObject* object,
       int selfRef,
@@ -494,6 +565,9 @@ public:
   bool isPlaying() const { return m_isPlaying; }
 #endif
 
+  /// Shaders this VM already told its author about.
+  std::unordered_set<std::string>& noticedShaders() { return m_noticedShaders; }
+
   const std::string& lastError() const { return m_lastError; }
 
   /// The representation the module booted on; it runs there for life.
@@ -504,6 +578,12 @@ public:
     aotO3 = 2,
   };
   ExecutionTier executionTier() const { return m_tier; }
+  /// Whether the module runs code that leaves its bounds to guard pages.
+#ifndef __EMSCRIPTEN__
+  bool hardwareBounds() const;
+#else
+  bool hardwareBounds() const { return false; }
+#endif
   /// How a host's log names a tier, with why it is the interpreter.
   static std::string tierName(
       ExecutionTier tier,
@@ -517,7 +597,19 @@ public:
       Span<const uint8_t> bytes,
       ExecutionTier& tier,
       std::string& interpReason,
-      std::string& error);
+      std::string& error,
+      bool checkedBounds = false);
+  /// For an instance that found no address space to reserve for its
+  /// hardware bounds memory: the module on code that checks its bounds.
+  static std::shared_ptr<void> loadFallbackModule(
+      Span<const uint8_t> bytes,
+      const char* what,
+      ExecutionTier& tier,
+      std::string& interpReason);
+  /// The wasm behind a module whose code skips bounds checks, kept once per
+  /// loaded module for loadFallbackModule; empty for any other.
+  static Span<const uint8_t> hardwareBoundsWasm(
+      const std::shared_ptr<void>& lease);
   /// How many modules nothing leases stay loaded for a later load of the
   /// same bytes; a load past it unloads the least recently leased.
   static constexpr size_t kIdleModules = 8;
@@ -551,6 +643,9 @@ public:
 
   /// Current size of the module's linear memory in 64KB wasm pages.
   uint32_t memoryPages() const;
+  /// Gives the system back the whole pages in [start, start + length) of
+  /// the module's memory, which read as zero when touched again.
+  void releasePages(uint32_t start, uint32_t length);
 
   /// Backend seams: host code reaches module memory and module functions
   /// only through these, so a browser backend can substitute staged
@@ -661,6 +756,24 @@ public:
   {
     m_print = std::move(handler);
   }
+  /// Says the print sink takes calls from any thread, though never two at
+  /// once, so a main lane stuck waiting on a lane still shows what the lane
+  /// logs: a thread of its own hands its lines over once the VM goes
+  /// lane_timing::kLaneLogStallMs without a poll. Call it after onPrint.
+  /// Native only.
+  void printFromAnyThread();
+
+  /// Values scripts read with Context.arg, as rive-cli's --arg sets them.
+  void setArgs(std::unordered_map<std::string, std::string> args)
+  {
+    m_args = std::move(args);
+  }
+  /// The value given for name, or null.
+  const std::string* arg(const std::string& name) const
+  {
+    auto found = m_args.find(name);
+    return found != m_args.end() ? &found->second : nullptr;
+  }
 
   /// Receives each script error line, such as a trapped call, a failed
   /// lane or a module that failed to start. Without it they go to stderr,
@@ -677,6 +790,10 @@ public:
   /// outlive the VM or clear themselves first.
   void setDebugHooks(WasmDebugHooks* hooks) { m_debugHooks = hooks; }
   WasmDebugHooks* debugHooks() const { return m_debugHooks; }
+
+  /// The file and line the std's console named as the caller of the line
+  /// this thread is writing, false for a line that names none.
+  static bool consoleCaller(std::string& file, uint32_t& line);
 
   /// Runs for every VM made on the calling thread, after its print sink
   /// is set and before its module starts, with the module as baked: the
@@ -704,6 +821,7 @@ protected:
   // Out of line so subclass TUs need no complete member types.
   WasmScriptingVM();
   std::string m_lastError;
+  std::unordered_set<std::string> m_noticedShaders;
   // Full text of the last raiseModuleError; see fullTrapMessage().
   std::string m_moduleErrorDetail;
   Factory* m_factory = nullptr;
@@ -727,6 +845,17 @@ protected:
   bool m_transitionManagesToExport = false;
   std::function<void(const char*, size_t)> m_print;
   std::function<void(const std::string&)> m_error;
+  // Held over each line to the print sink, which the stall flusher may
+  // reach; recursive for a sink that prints back into the VM.
+  std::recursive_mutex m_printMutex;
+  bool m_printFromAnyThread = false;
+  bool m_stallWatched = false;
+  std::atomic<std::chrono::steady_clock::time_point> m_lastPoll{};
+  void watchStalls();
+  void flushLaneLogs();
+  // Hands each watched VM's lane lines over once it stalls, forever.
+  static void flushStalledLaneLogs();
+  std::unordered_map<std::string, std::string> m_args;
 
   /// Reads a flag export. Backends call it off the module before start,
   /// which runs every script's top level and already passes strings.
@@ -750,6 +879,14 @@ protected:
   uint32_t mintTransitionChild(const TransitionChildRef& ref);
   void releaseTransitionChild(uint32_t handle);
   void releaseScopedNodes(size_t from);
+  // Runs update with node, a handle the caller scoped to this call or 0.
+  bool callPathEffectWithNode(
+      ScriptedObject* object,
+      int selfRef,
+      const RawPath& sourcePath,
+      const PathEffectPaintWire& paint,
+      uint32_t node,
+      RawPath* outPath);
   // A method name in guest memory: made once per instance when the module
   // can keep it past the frame, else copied for this call alone.
   class GuestName
@@ -801,6 +938,9 @@ private:
   };
   std::vector<OpenCanvasFrame> m_openCanvasFrames;
   uint64_t m_nextCanvasFrameToken = 1;
+#ifdef WITH_RIVE_TOOLS
+  bool m_warnedSampledOpenCanvas = false;
+#endif
   /// Object handles minted for the init scoped context, released once init
   /// completes or the context ref is released.
   std::unordered_map<int, uint32_t> m_contextObjects;
@@ -834,8 +974,8 @@ private:
       uint32_t argc,
       HitResult* outResult);
   /// In-flight fetches: module token to scriptnet request id, for
-  /// cancellation. The owner id scopes this VM's rate limits and lets
-  /// teardown cancel everything it started.
+  /// cancellation. The owner id scopes this VM's limits and lets teardown
+  /// cancel everything it started.
   std::unordered_map<uint32_t, uint32_t> m_pendingFetches;
   uint64_t m_netOwnerId = 0;
   void deliverFetchFailure(
@@ -852,12 +992,23 @@ private:
     SignalWait wait;
     // The watched lane's handle, 0 for a signal wait.
     uint32_t lane;
+    rcp<WasmAudioDecode> decode;
+    // The handle of a stream that is not ready yet, released on a cancel.
+    uint32_t stream = 0;
   };
+  /// Stops what a wait no one will settle still runs or holds.
+  void abandonWait(const MainWait& wait);
   std::vector<MainWait> m_mainWaits;
+  std::vector<HostAudioStream*> m_audioStreams;
+  bool streaming() const;
   uint32_t m_nextMainWait = 1;
   void settleMainWaits();
+  void wakeMain(uint32_t token, double value);
   std::unique_ptr<BudgetSlot> m_budgetSlot;
   std::unique_ptr<WasmJobs> m_jobs;
+#ifndef __EMSCRIPTEN__
+  std::unique_ptr<WasmParallel> m_parallel;
+#endif
   std::unique_ptr<WasmWorkers> m_workers;
   std::unique_ptr<WasmProcessors> m_processors;
   std::string m_laneLoadErrors[3];
@@ -930,6 +1081,10 @@ private:
   /// Module exports __riveFrameRelease: its reap queues the handles it
   /// finds dead and the host releases them right after each collection.
   bool m_frameRelease = false;
+  /// Module exports __riveFrameTrim, which hands idle free chunks to
+  /// releasePages.
+  bool m_frameTrim = false;
+  uint32_t m_boundariesSinceTrim = 0;
   /// Module exports __riveHeapUsed; the leak watch reads bump bytes
   /// instead of page counts.
   bool m_heapUsedProbe = false;

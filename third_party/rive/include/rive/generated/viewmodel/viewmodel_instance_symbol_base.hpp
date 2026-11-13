@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_SYMBOL_BASE_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_SYMBOL_BASE_HPP_
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
 namespace rive
 {
 class ViewModelInstanceSymbolBase : public ViewModelInstanceValue

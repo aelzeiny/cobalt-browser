@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_YGCONFIG_H_
-#define THIRD_PARTY_YOGA_YOGA_YGCONFIG_H_
-
 #include <yoga/Yoga.h>
 
 #include "BitUtils.h"
@@ -78,6 +75,20 @@ struct YOGA_EXPORT YGConfig {
   void setPointScaleFactor(float pointScaleFactor);
   float getPointScaleFactor() const;
 
+  // rive: raised for the duration of an intrinsic-sizing probe (grid
+  // min-content, see TrackSizing.h). A measure func that clamps to the space
+  // it is offered can tell an AtMost(0) probe from a genuinely zero-sized box.
+  // A depth counter, not a bool: probes nest through intermediate layouts.
+  // Kept per thread, not per config: every Rive node shares the default
+  // config, and each worker lays out on its own thread.
+  static void beginMinContentProbe();
+  static void endMinContentProbe();
+  static bool isMeasuringMinContent();
+  // A layout a measure func starts inside a probe isn't part of it: see
+  // YGNodeCalculateLayoutWithContext.
+  static uint32_t suspendMinContentProbe();
+  static void resumeMinContentProbe(uint32_t depth);
+
   void setContext(void* context);
   void* getContext() const;
 
@@ -111,5 +122,3 @@ private:
   float pointScaleFactor_ = 1.0f;
   void* context_ = nullptr;
 };
-
-#endif  // THIRD_PARTY_YOGA_YOGA_YGCONFIG_H_

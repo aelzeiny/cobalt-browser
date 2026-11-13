@@ -1,10 +1,10 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_ASSET_IMAGE_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_ASSET_IMAGE_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_asset_image_base.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_asset_image_base.hpp"
+#include "rive/renderer.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/assets/image_asset.hpp"
 #include <stdio.h>
 namespace rive
 {

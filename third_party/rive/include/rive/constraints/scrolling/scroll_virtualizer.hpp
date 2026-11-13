@@ -1,9 +1,9 @@
 #ifndef _RIVE_SCROLL_VIRTUALIZER_HPP_
 #define _RIVE_SCROLL_VIRTUALIZER_HPP_
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/world_transform_component.hpp"
-#include "third_party/rive/include/rive/virtualizing_component.hpp"
+#include "rive/artboard.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/world_transform_component.hpp"
+#include "rive/virtualizing_component.hpp"
 #include <stdio.h>
 #include <vector>
 namespace rive

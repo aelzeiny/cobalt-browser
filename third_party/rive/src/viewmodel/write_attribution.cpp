@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/viewmodel/write_attribution.hpp"
+#include "rive/viewmodel/write_attribution.hpp"
 
 #ifdef WITH_RIVE_TOOLS
 namespace rive

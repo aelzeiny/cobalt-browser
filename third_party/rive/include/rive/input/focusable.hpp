@@ -1,9 +1,9 @@
 #ifndef _RIVE_FOCUSABLE_HPP_
 #define _RIVE_FOCUSABLE_HPP_
 
-#include "third_party/rive/include/rive/enums.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/enums.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/vec2d.hpp"
 #include <string>
 
 namespace rive
@@ -182,6 +182,19 @@ public:
       bool isRepeat) = 0;
   virtual bool textInput(const std::string& text) = 0;
 
+  /// The capture phase of a key event, offered root first along the path to
+  /// the primary focus before keyInput bubbles back out. Returning true
+  /// claims the key: nothing deeper sees its capture phase and the bubble
+  /// never runs. Only reached on nodes flagged capturesKeyInput.
+  virtual bool captureKeyInput(
+      Key value,
+      KeyModifiers modifiers,
+      bool isPressed,
+      bool isRepeat)
+  {
+    return false;
+  }
+
   /// Fills outText with the currently selected text within this focusable.
   /// Returns true when this focusable handled the request and the focus
   /// lookup stops here, even with outText left empty (how an obscured
@@ -190,9 +203,8 @@ public:
   /// clipboard access).
   virtual bool selectedText(std::string& outText) const { return false; }
 
-  /// Whether this focusable consumes typed text (a text input). Lets hosts
-  /// decide to start routing the keyboard to the runtime when one takes
-  /// focus. Default: no.
+  /// Whether this focusable consumes typed text (a text input or text-input
+  /// listeners; keys alone don't). Hosts raise a soft keyboard for it.
   virtual bool acceptsTextInput() const { return false; }
 
   /// Gamepad `ListenerInvocation` from the focus bubble. Default: ignore.
@@ -221,8 +233,7 @@ public:
 
   /// Returns true if this focusable consumes keyboard input — either
   /// intrinsically (e.g. a text-editable input) or by having registered
-  /// key/text listeners. Hosts use this to decide whether to surface a
-  /// soft keyboard / IME when this element holds focus.
+  /// key/text listeners.
   virtual bool acceptsKeyboardInput() const { return false; }
 
   /// Whether a primary press landing outside this focusable takes focus

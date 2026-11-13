@@ -1,6 +1,6 @@
 #ifndef _RIVE_CUBIC_EASE_INTERPOLATOR_HPP_
 #define _RIVE_CUBIC_EASE_INTERPOLATOR_HPP_
-#include "third_party/rive/include/rive/generated/animation/cubic_ease_interpolator_base.hpp"
+#include "rive/generated/animation/cubic_ease_interpolator_base.hpp"
 #include <stdio.h>
 namespace rive
 {

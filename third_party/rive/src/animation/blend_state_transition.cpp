@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_transition.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_input.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_direct_instance.hpp"
+#include "rive/artboard.hpp"
+#include "rive/animation/blend_state_transition.hpp"
+#include "rive/animation/blend_state_instance.hpp"
+#include "rive/animation/blend_state_1d_input.hpp"
+#include "rive/animation/blend_state_1d_viewmodel.hpp"
+#include "rive/animation/blend_state_direct.hpp"
+#include "rive/animation/blend_state_1d_instance.hpp"
+#include "rive/animation/blend_state_direct_instance.hpp"
 
 using namespace rive;
 

@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/simd.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/simd.hpp"
+#include "rive/math/transform_components.hpp"
+#include "rive/math/vec2d.hpp"
 #include <cmath>
 
 using namespace rive;

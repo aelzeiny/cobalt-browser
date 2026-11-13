@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/importers/linear_animation_importer.hpp"
-#include "third_party/rive/include/rive/animation/keyed_object.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/importers/linear_animation_importer.hpp"
+#include "rive/animation/keyed_object.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

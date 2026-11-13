@@ -5,9 +5,9 @@
 #ifndef _RIVE_CONTOUR_MEASURE_HPP_
 #define _RIVE_CONTOUR_MEASURE_HPP_
 
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/refcnt.hpp"
 #include <utility>
 
 namespace rive
@@ -76,7 +76,12 @@ public:
     /// Squared distance to point projected to curve.
     float sqDistanceToPoint;
 
-    PosTanDistance() : distance(0.0f), sqDistanceToPoint(0.0f) {}
+    PosTanDistance()
+        : pos(0.0f, 0.0f)
+        , tan(0.0f, 0.0f)
+        , distance(0.0f)
+        , sqDistanceToPoint(0.0f)
+    {}
     PosTanDistance(PosTan posTan, float dist)
         : pos(posTan.pos)
         , tan(posTan.tan)

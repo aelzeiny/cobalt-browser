@@ -2,7 +2,7 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/include/utils/svg_factory.hpp"
+#include "utils/svg_factory.hpp"
 #include <cstring>
 #include <iomanip>
 

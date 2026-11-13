@@ -2,8 +2,8 @@
 #define _RIVE_FILE_ASSET_REFERENCER_HPP_
 
 #include <vector>
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/assets/file_asset.hpp"
 
 namespace rive
 {

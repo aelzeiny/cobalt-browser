@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_ASSET_FONT_BASE_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_ASSET_FONT_BASE_HPP_
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset.hpp"
 namespace rive
 {
 class ViewModelInstanceAssetFontBase : public ViewModelInstanceAsset

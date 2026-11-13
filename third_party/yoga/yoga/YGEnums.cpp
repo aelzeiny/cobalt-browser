@@ -27,6 +27,25 @@ const char* YGAlignToString(const YGAlign value) {
       return "space-between";
     case YGAlignSpaceAround:
       return "space-around";
+    case YGAlignStart:
+      return "start";
+    case YGAlignEnd:
+      return "end";
+    case YGAlignSpaceEvenly:
+      return "space-evenly";
+  }
+  return "unknown";
+}
+
+// rive: explicit aspect ratio axis
+const char* YGAspectRatioAxisToString(const YGAspectRatioAxis value) {
+  switch (value) {
+    case YGAspectRatioAxisAuto:
+      return "auto";
+    case YGAspectRatioAxisWidth:
+      return "width";
+    case YGAspectRatioAxisHeight:
+      return "height";
   }
   return "unknown";
 }
@@ -59,6 +78,8 @@ const char* YGDisplayToString(const YGDisplay value) {
       return "flex";
     case YGDisplayNone:
       return "none";
+    case YGDisplayGrid:
+      return "grid";
   }
   return "unknown";
 }
@@ -127,6 +148,22 @@ const char* YGFlexDirectionToString(const YGFlexDirection value) {
   return "unknown";
 }
 
+const char* YGGridTrackTypeToString(const YGGridTrackType value) {
+  switch (value) {
+    case YGGridTrackTypeAuto:
+      return "auto";
+    case YGGridTrackTypePoints:
+      return "points";
+    case YGGridTrackTypePercent:
+      return "percent";
+    case YGGridTrackTypeFr:
+      return "fr";
+    case YGGridTrackTypeMinmax:
+      return "minmax";
+  }
+  return "unknown";
+}
+
 const char* YGGutterToString(const YGGutter value) {
   switch (value) {
     case YGGutterColumn:
@@ -153,6 +190,14 @@ const char* YGJustifyToString(const YGJustify value) {
       return "space-around";
     case YGJustifySpaceEvenly:
       return "space-evenly";
+    case YGJustifyAuto:
+      return "auto";
+    case YGJustifyStretch:
+      return "stretch";
+    case YGJustifyStart:
+      return "start";
+    case YGJustifyEnd:
+      return "end";
   }
   return "unknown";
 }

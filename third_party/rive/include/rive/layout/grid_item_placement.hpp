@@ -1,8 +1,8 @@
 #ifndef _RIVE_GRID_ITEM_PLACEMENT_HPP_
 #define _RIVE_GRID_ITEM_PLACEMENT_HPP_
 
-#include "third_party/rive/include/rive/generated/layout/grid_item_placement_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
+#include "rive/generated/layout/grid_item_placement_base.hpp"
+#include "rive/layout/layout_style_applier.hpp"
 
 namespace rive
 {

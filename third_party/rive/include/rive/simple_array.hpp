@@ -5,10 +5,10 @@
 #ifndef _RIVE_SIMPLE_ARRAY_HPP_
 #define _RIVE_SIMPLE_ARRAY_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/core/type_conversions.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/core/type_conversions.hpp"
+#include <cstdlib>  // Cobalt patch: malloc/free.
 
-#include <cstdlib>
 #include <atomic>
 #include <initializer_list>
 #include <type_traits>

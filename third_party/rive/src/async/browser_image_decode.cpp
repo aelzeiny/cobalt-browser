@@ -1,6 +1,6 @@
 #ifdef __EMSCRIPTEN__
 
-#include "third_party/rive/include/rive/async/browser_image_decode.hpp"
+#include "rive/async/browser_image_decode.hpp"
 
 #include <emscripten.h>
 #include <cstdlib>

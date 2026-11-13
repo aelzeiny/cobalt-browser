@@ -1,8 +1,8 @@
 #ifndef _RIVE_FOCUS_LISTENER_GROUP_HPP_
 #define _RIVE_FOCUS_LISTENER_GROUP_HPP_
 
-#include "third_party/rive/include/rive/input/focus_listener.hpp"
-#include "third_party/rive/include/rive/listener_type.hpp"
+#include "rive/input/focus_listener.hpp"
+#include "rive/listener_type.hpp"
 
 namespace rive
 {

@@ -1,10 +1,10 @@
 #ifndef _RIVE_DRAW_TARGET_HPP_
 #define _RIVE_DRAW_TARGET_HPP_
 
-#include "third_party/rive/include/rive/draw_target_placement.hpp"
-#include "third_party/rive/include/rive/generated/draw_target_base.hpp"
+#include "rive/draw_target_placement.hpp"
+#include "rive/generated/draw_target_base.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 

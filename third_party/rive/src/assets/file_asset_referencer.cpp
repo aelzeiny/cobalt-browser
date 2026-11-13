@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/backboard.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/importers/backboard_importer.hpp"
 
 using namespace rive;
 

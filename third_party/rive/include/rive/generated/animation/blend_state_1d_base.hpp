@@ -1,6 +1,6 @@
 #ifndef _RIVE_BLEND_STATE1_DBASE_HPP_
 #define _RIVE_BLEND_STATE1_DBASE_HPP_
-#include "third_party/rive/include/rive/animation/blend_state.hpp"
+#include "rive/animation/blend_state.hpp"
 namespace rive
 {
 class BlendState1DBase : public BlendState

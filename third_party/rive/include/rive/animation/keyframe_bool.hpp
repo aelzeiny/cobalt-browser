@@ -1,6 +1,6 @@
 #ifndef _RIVE_KEY_FRAME_BOOL_HPP_
 #define _RIVE_KEY_FRAME_BOOL_HPP_
-#include "third_party/rive/include/rive/generated/animation/keyframe_bool_base.hpp"
+#include "rive/generated/animation/keyframe_bool_base.hpp"
 
 namespace rive
 {

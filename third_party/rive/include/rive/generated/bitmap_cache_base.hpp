@@ -1,9 +1,9 @@
 #ifndef _RIVE_BITMAP_CACHE_BASE_HPP_
 #define _RIVE_BITMAP_CACHE_BASE_HPP_
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
+#include "rive/component.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
 namespace rive
 {
 class BitmapCacheBase : public Component

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/scripted/scripted_transition_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_transition.hpp"
+#include "rive/generated/scripted/scripted_transition_base.hpp"
+#include "rive/scripted/scripted_transition.hpp"
 
 using namespace rive;
 

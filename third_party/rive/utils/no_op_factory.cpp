@@ -1,5 +1,5 @@
-#include "third_party/rive/include/utils/no_op_factory.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "utils/no_op_factory.hpp"
+#include "rive/refcnt.hpp"
 
 using namespace rive;
 

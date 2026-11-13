@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/bones/root_bone.hpp"
+#include "rive/bones/root_bone.hpp"
 
 using namespace rive;
 

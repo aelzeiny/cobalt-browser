@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
 #include <algorithm>
 
 using namespace rive;
@@ -33,6 +33,14 @@ void DataBindContainer::deleteDataBinds()
 #endif
     delete dataBind;
   }
+}
+
+void DataBindContainer::discardDataBinds()
+{
+  deleteDataBinds();
+  m_dataBinds.clear();
+  m_dirtyDataBinds.clear();
+  m_queues.reset();
 }
 
 void DataBindContainer::unbindDataBinds()
@@ -71,7 +79,9 @@ void DataBindContainer::bindDataBindsFromContext()
 
 bool DataBindContainer::advanceDataBinds(float elapsedSeconds)
 {
-  if (m_dataBinds.size() == 0)
+  // Artboards advance every bind with a converter each frame, and a formula
+  // walks a bind per bound token, so most of that walk advances nothing.
+  if (!mayAdvanceDataBinds())
   {
     return false;
   }
@@ -100,6 +110,7 @@ void DataBindContainer::removeDataBind(DataBind* dataBind)
     v.erase(std::remove(v.begin(), v.end(), dataBind), v.end());
   };
   eraseOne(m_dataBinds);
+  dataBindsChanged();
   // A bind can only be flagged into one of the queues if the queues were
   // allocated to hold it, but the flags live on the bind, so stay defensive.
   auto* queues = m_queues.get();
@@ -139,6 +150,7 @@ void DataBindContainer::addDataBind(DataBind* dataBind)
     return;
   }
   m_dataBinds.push_back(dataBind);
+  dataBindsChanged();
   // toSource binds: prefer push notifications when the target supports it
   // (Alternative A — Core::notifyPropertyChanged). Fall back to per-frame
   // polling via the persisting list for the few derived/computed targets
@@ -160,31 +172,101 @@ void DataBindContainer::addDataBind(DataBind* dataBind)
 uint64_t DataBindContainer::sm_dataBindUpdates = 0;
 #endif
 
-bool DataBindContainer::hasDataBindWork() const
+bool DataBindContainer::hasDataBindWork(bool applyTargetToSource) const
 {
   if (!m_dirtyDataBinds.empty())
   {
     return true;
   }
   auto* queues = m_queues.get();
-  return queues != nullptr &&
-         (!queues->persisting.empty() || !queues->dirtyToSource.empty() ||
-          !queues->pendingDirtyToSource.empty() ||
-          !queues->pendingDirty.empty() || !queues->pendingAdditions.empty() ||
-          !queues->pendingRemovals.empty() || !queues->pendingDeletes.empty());
-}
-
-bool DataBindContainer::mayAdvanceDataBinds() const
-{
-  for (auto dataBind : m_dataBinds)
+  if (queues == nullptr)
   {
-    auto converter = dataBind->converter();
-    if (converter != nullptr && converter->mayAdvance())
+    return false;
+  }
+  if (!queues->dirtyToSource.empty() || !queues->pendingDirtyToSource.empty() ||
+      !queues->pendingDirty.empty() || !queues->pendingAdditions.empty() ||
+      !queues->pendingRemovals.empty() || !queues->pendingDeletes.empty())
+  {
+    return true;
+  }
+  if (applyTargetToSource)
+  {
+    return !queues->persisting.empty();
+  }
+  for (auto dataBind : queues->persisting)
+  {
+    if (dataBind->dirt() != ComponentDirt::None)
     {
       return true;
     }
   }
   return false;
+}
+
+// Starts at 1 so a container's initial epoch of 0 is never current.
+std::atomic<uint32_t> DataBindContainer::sm_mayAdvanceEpoch{1};
+
+bool DataBindContainer::mayAdvanceDataBinds() const
+{
+  auto epoch = sm_mayAdvanceEpoch.load(std::memory_order_relaxed);
+  if (m_mayAdvanceEpoch != epoch)
+  {
+    m_mayAdvanceDataBinds = false;
+    for (auto dataBind : m_dataBinds)
+    {
+      auto converter = dataBind->converter();
+      if (converter != nullptr && converter->mayAdvance())
+      {
+        m_mayAdvanceDataBinds = true;
+        break;
+      }
+    }
+    m_mayAdvanceEpoch = epoch;
+  }
+  return m_mayAdvanceDataBinds;
+}
+
+AdvancingComponent::QuietState DataBindContainer::dataBindsQuietState() const
+{
+  using QuietState = AdvancingComponent::QuietState;
+  if (!mayAdvanceDataBinds())
+  {
+    return QuietState::quiet;
+  }
+  auto state = QuietState::quiet;
+  for (auto dataBind : m_dataBinds)
+  {
+    auto converter = dataBind->converter();
+    // DataBind::advance skips a bind with no source. A collapsed bind is
+    // asked all the same: its converter may have stopped mid tween, and
+    // uncollapsing a clean bind wakes nothing.
+    if (converter == nullptr || dataBind->source() == nullptr)
+    {
+      continue;
+    }
+    switch (converter->advanceQuietState())
+    {
+      case QuietState::never:
+        return QuietState::never;
+      case QuietState::busy:
+        state = QuietState::busy;
+        break;
+      case QuietState::quiet:
+        break;
+    }
+  }
+  return state;
+}
+
+void DataBindContainer::dataBindsChanged() { m_mayAdvanceEpoch = 0; }
+
+void DataBindContainer::mayAdvanceChanged()
+{
+  // 0 marks an answer that was never cached, so skip it if the count wraps.
+  if (sm_mayAdvanceEpoch.fetch_add(1, std::memory_order_relaxed) + 1 == 0)
+  {
+    sm_mayAdvanceEpoch.fetch_add(1, std::memory_order_relaxed);
+  }
 }
 
 void DataBindContainer::updateDataBind(
@@ -215,6 +297,11 @@ void DataBindContainer::updateDataBind(
                               (d & ComponentDirt::BindingsTarget) ==
                                   ComponentDirt::BindingsTarget);
 
+  // Clear the captured work before either direction can raise new dirt.
+  // In particular, a target-first source validator can queue a correction
+  // that must survive until the next pass.
+  dataBind->dirt(ComponentDirt::None);
+
   if (wantsTargetToSource && !dataBind->sourceToTargetRunsFirst())
   {
 
@@ -222,7 +309,6 @@ void DataBindContainer::updateDataBind(
   }
   if (d != ComponentDirt::None)
   {
-    dataBind->dirt(ComponentDirt::None);
     dataBind->update(d);
   }
   if (wantsTargetToSource && dataBind->sourceToTargetRunsFirst())
@@ -260,7 +346,11 @@ void DataBindContainer::updateDataBinds(bool applyTargetToSource)
   {
     for (auto& dataBind : queues->persisting)
     {
-      if (!dataBind->canSkip())
+      // A polled bind is polled for its target's value. Without that pass,
+      // a clean one has nothing to do: a state machine's listeners apply
+      // their to-source binds themselves, and its passes never do.
+      if (!dataBind->canSkip() &&
+          (applyTargetToSource || dataBind->dirt() != ComponentDirt::None))
       {
         updateDataBind(dataBind, applyTargetToSource);
       }

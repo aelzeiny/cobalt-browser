@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/bitmap_cache.hpp"
+#include "rive/bitmap_cache.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
+#include "rive/artboard.hpp"
+#include "rive/renderer/render_canvas.hpp"
 #endif
 
 using namespace rive;

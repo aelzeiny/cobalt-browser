@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_CONVERTER_STRING_TEMPLATE_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_STRING_TEMPLATE_BASE_HPP_
 #include <string>
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
 namespace rive
 {
 class DataConverterStringTemplateBase : public DataConverter

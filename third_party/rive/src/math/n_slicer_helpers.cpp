@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/layout/axis.hpp"
-#include "third_party/rive/include/rive/layout/n_sliced_node.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/n_slicer_helpers.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
+#include "rive/layout/axis.hpp"
+#include "rive/layout/n_sliced_node.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/n_slicer_helpers.hpp"
 
 using namespace rive;
 

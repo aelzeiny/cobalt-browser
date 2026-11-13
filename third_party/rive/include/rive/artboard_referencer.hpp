@@ -1,6 +1,6 @@
 #ifndef _RIVE_ARTBOARD_REFERENCER_HPP_
 #define _RIVE_ARTBOARD_REFERENCER_HPP_
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 #include <stdio.h>
 namespace rive
 {

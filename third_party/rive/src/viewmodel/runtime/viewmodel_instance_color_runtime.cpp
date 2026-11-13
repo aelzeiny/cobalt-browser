@@ -1,6 +1,6 @@
 
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_color_runtime.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_color_runtime.hpp"
+#include "rive/shapes/paint/color.hpp"
 
 // Default namespace for Rive Cpp code
 using namespace rive;

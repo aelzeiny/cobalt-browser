@@ -1,6 +1,6 @@
 #ifndef _RIVE_FORMULA_TOKEN_PARENTHESIS_OPEN_BASE_HPP_
 #define _RIVE_FORMULA_TOKEN_PARENTHESIS_OPEN_BASE_HPP_
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
 namespace rive
 {
 class FormulaTokenParenthesisOpenBase : public FormulaTokenParenthesis

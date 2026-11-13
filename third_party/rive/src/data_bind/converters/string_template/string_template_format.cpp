@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/data_bind/converters/string_template/string_template_format.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_remove_zeros.hpp"
+#include "rive/data_bind/converters/string_template/string_template_format.hpp"
+#include "rive/data_bind/converters/data_converter_string_remove_zeros.hpp"
 #include <cmath>
 #include <cstdio>
 

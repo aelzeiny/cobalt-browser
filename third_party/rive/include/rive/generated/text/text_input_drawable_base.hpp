@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_INPUT_DRAWABLE_BASE_HPP_
 #define _RIVE_TEXT_INPUT_DRAWABLE_BASE_HPP_
-#include "third_party/rive/include/rive/drawable.hpp"
+#include "rive/drawable.hpp"
 namespace rive
 {
 class TextInputDrawableBase : public Drawable

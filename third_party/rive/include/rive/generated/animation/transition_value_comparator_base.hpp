@@ -1,6 +1,6 @@
 #ifndef _RIVE_TRANSITION_VALUE_COMPARATOR_BASE_HPP_
 #define _RIVE_TRANSITION_VALUE_COMPARATOR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/transition_comparator.hpp"
+#include "rive/animation/transition_comparator.hpp"
 namespace rive
 {
 class TransitionValueComparatorBase : public TransitionComparator

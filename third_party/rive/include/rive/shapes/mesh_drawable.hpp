@@ -1,8 +1,8 @@
 #ifndef _RIVE_MESH_DRAWABLE_HPP_
 #define _RIVE_MESH_DRAWABLE_HPP_
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/renderer.hpp"
+#include "rive/math/mat2d.hpp"
 #include <vector>
 
 namespace rive
@@ -36,6 +36,17 @@ public:
       BlendMode blendMode,
       float opacity,
       float additiveness) = 0;
+  // Whether `position` (in the same space as the host's world transform)
+  // lands on a triangle draw() would fill.
+  virtual bool hitTest(Vec2D position) = 0;
+  // The 0..1 UV drawn at `position`, in the same space as hitTest. `inside`
+  // is false when no triangle covers it; the UV then extends the nearest
+  // one. False when there are no triangles to map through. `toUV`, when
+  // given, is set to the affine map from position to UV through the
+  // triangle used.
+  virtual bool uvAt(Vec2D position, Vec2D* uv, bool* inside, Mat2D* toUV) = 0;
+  // Where `uv` is drawn, the inverse of uvAt.
+  virtual bool positionAtUV(Vec2D uv, Vec2D* position) = 0;
 };
 } // namespace rive
 

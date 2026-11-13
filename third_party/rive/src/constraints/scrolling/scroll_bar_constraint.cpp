@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/constraints/draggable_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_bar_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_bar_constraint_proxy.hpp"
-#include "third_party/rive/include/rive/constraints/transform_constraint.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/constraints/draggable_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_bar_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_bar_constraint_proxy.hpp"
+#include "rive/constraints/transform_constraint.hpp"
+#include "rive/core_context.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/math/mat2d.hpp"
 
 using namespace rive;
 

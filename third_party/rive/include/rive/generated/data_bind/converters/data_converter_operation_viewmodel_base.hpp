@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_CONVERTER_OPERATION_VIEW_MODEL_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_OPERATION_VIEW_MODEL_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_bytes_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core/field_types/core_bytes_type.hpp"
+#include "rive/data_bind/converters/data_converter_operation.hpp"
+#include "rive/span.hpp"
 namespace rive
 {
 class DataConverterOperationViewModelBase : public DataConverterOperation

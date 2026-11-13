@@ -1,6 +1,6 @@
 #ifndef _RIVE_USER_INPUT_HPP_
 #define _RIVE_USER_INPUT_HPP_
-#include "third_party/rive/include/rive/generated/inputs/user_input_base.hpp"
+#include "rive/generated/inputs/user_input_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_style_axis.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/text/text_style_axis.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/container_component.hpp"
 
 using namespace rive;
 

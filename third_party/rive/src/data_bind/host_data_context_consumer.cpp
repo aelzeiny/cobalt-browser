@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/data_bind/host_data_context_consumer.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
+#include "rive/data_bind/host_data_context_consumer.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_style_global.hpp"
 
 using namespace rive;
 

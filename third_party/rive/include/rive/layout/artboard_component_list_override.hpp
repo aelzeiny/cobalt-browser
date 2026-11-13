@@ -1,7 +1,7 @@
 #ifndef _RIVE_ARTBOARD_COMPONENT_LIST_OVERRIDE_HPP_
 #define _RIVE_ARTBOARD_COMPONENT_LIST_OVERRIDE_HPP_
-#include "third_party/rive/include/rive/generated/layout/artboard_component_list_override_base.hpp"
-#include "third_party/rive/include/rive/layout/style_overrider.hpp"
+#include "rive/generated/layout/artboard_component_list_override_base.hpp"
+#include "rive/layout/style_overrider.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -11,6 +11,13 @@ class ArtboardComponentListOverride : public ArtboardComponentListOverrideBase
 public:
   void addArtboard(ArtboardInstance* artboard);
   void removeArtboard(ArtboardInstance* artboard);
+  void clearArtboards() { m_artboards.clear(); }
+#ifdef TESTING
+  const std::vector<ArtboardInstance*>& artboards() const
+  {
+    return m_artboards;
+  }
+#endif
   float actualInstanceWidth(ArtboardInstance* artboardInstance);
   float actualInstanceHeight(ArtboardInstance* artboardInstance);
   void markHostingLayoutDirty(ArtboardInstance* artboardInstance);

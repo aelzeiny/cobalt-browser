@@ -1,9 +1,9 @@
-#include "third_party/rive/src/semantic/semantic_inference_registry.hpp"
+#include "semantic_inference_registry.hpp"
 
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/generated/text/text_base.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_role.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
+#include "rive/component.hpp"
+#include "rive/generated/text/text_base.hpp"
+#include "rive/semantic/semantic_role.hpp"
+#include "rive/text/text.hpp"
 
 namespace rive
 {

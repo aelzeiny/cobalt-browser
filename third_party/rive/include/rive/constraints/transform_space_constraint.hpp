@@ -1,7 +1,7 @@
 #ifndef _RIVE_TRANSFORM_SPACE_CONSTRAINT_HPP_
 #define _RIVE_TRANSFORM_SPACE_CONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/transform_space_constraint_base.hpp"
-#include "third_party/rive/include/rive/transform_space.hpp"
+#include "rive/generated/constraints/transform_space_constraint_base.hpp"
+#include "rive/transform_space.hpp"
 #include <stdio.h>
 namespace rive
 {

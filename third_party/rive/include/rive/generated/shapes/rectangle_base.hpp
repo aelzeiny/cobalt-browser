@@ -1,10 +1,10 @@
 #ifndef _RIVE_RECTANGLE_BASE_HPP_
 #define _RIVE_RECTANGLE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/shapes/parametric_path.hpp"
 #ifndef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/sidecar.hpp"
+#include "rive/sidecar.hpp"
 #endif
 namespace rive
 {
@@ -51,7 +51,7 @@ protected:
   float m_CornerRadiusBR = 0.0f;
 #endif
 #ifndef WITH_RIVE_EDITOR
-  Sidecar<RectangleCornerRadiusSidecar> m_cornerRadius;
+  SharedSidecar<RectangleCornerRadiusSidecar> m_cornerRadius;
 #endif
 public:
 #ifdef WITH_RIVE_EDITOR

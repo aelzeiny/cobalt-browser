@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/text/text_style_base.hpp"
-#include "third_party/rive/include/rive/text/text_style.hpp"
+#include "rive/generated/text/text_style_base.hpp"
+#include "rive/text/text_style.hpp"
 
 using namespace rive;
 

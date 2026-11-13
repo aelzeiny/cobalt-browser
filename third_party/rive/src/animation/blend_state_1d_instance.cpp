@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/blend_state_1d_input.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d_viewmodel.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/animation/layer_state_flags.hpp"
+#include "rive/animation/blend_state_1d_input.hpp"
+#include "rive/animation/blend_state_1d_instance.hpp"
+#include "rive/animation/blend_state_1d_viewmodel.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/animation/layer_state_flags.hpp"
 
 using namespace rive;
 
@@ -69,6 +69,11 @@ int BlendState1DInstance::animationIndex(float value)
 
 void BlendState1DInstance::apply(ArtboardInstance* instance, float mix)
 {
+  // At zero weight the reset baseline would overwrite what lies underneath.
+  if (mix == 0.0f)
+  {
+    return;
+  }
   if (m_AnimationReset != nullptr)
   {
     m_AnimationReset->seed(instance, m_accumulator);

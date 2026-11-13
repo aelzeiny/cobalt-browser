@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/listener_types/listener_input_type_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_viewmodel.hpp"
+#include "rive/generated/animation/listener_types/listener_input_type_viewmodel_base.hpp"
+#include "rive/animation/listener_types/listener_input_type_viewmodel.hpp"
 
 using namespace rive;
 

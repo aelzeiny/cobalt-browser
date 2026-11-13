@@ -1,14 +1,13 @@
 #ifndef _RIVE_LAYOUT_COMPONENT_STYLE_HPP_
 #define _RIVE_LAYOUT_COMPONENT_STYLE_HPP_
-#include "third_party/rive/include/rive/generated/layout/layout_component_style_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
+#include "rive/generated/layout/layout_component_style_base.hpp"
+#include "rive/layout/layout_style_applier.hpp"
+#include "rive/layout/layout_enums.hpp"
 #ifndef TESTING
-#include "third_party/rive/include/rive/internal/assert_internal_only.hpp"
+#include "rive/internal/assert_internal_only.hpp"
 #endif
 #ifdef WITH_RIVE_LAYOUT
-#include "third_party/rive/google/yoga_grid_shim.hpp"
-#include "third_party/yoga/yoga/Yoga.h"
+#include "yoga/Yoga.h"
 #endif
 #include <stdio.h>
 namespace rive
@@ -100,6 +99,7 @@ public:
   void flexWrapValueChanged() override;
   void flexBasisChanged() override;
   void aspectRatioChanged() override;
+  void aspectRatioAxisValueChanged() override;
   void gapHorizontalChanged() override;
   void gapVerticalChanged() override;
   void maxWidthChanged() override;

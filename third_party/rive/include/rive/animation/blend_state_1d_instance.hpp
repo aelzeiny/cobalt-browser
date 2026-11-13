@@ -1,11 +1,11 @@
 #ifndef _RIVE_BLEND_STATE_1D_INSTANCE_HPP_
 #define _RIVE_BLEND_STATE_1D_INSTANCE_HPP_
 
-#include "third_party/rive/include/rive/animation/blend_state_instance.hpp"
-#include "third_party/rive/include/rive/animation/blend_state_1d.hpp"
-#include "third_party/rive/include/rive/animation/blend_animation_1d.hpp"
-#include "third_party/rive/include/rive/animation/animation_reset.hpp"
-#include "third_party/rive/include/rive/animation/animation_reset_factory.hpp"
+#include "rive/animation/blend_state_instance.hpp"
+#include "rive/animation/blend_state_1d.hpp"
+#include "rive/animation/blend_animation_1d.hpp"
+#include "rive/animation/animation_reset.hpp"
+#include "rive/animation/animation_reset_factory.hpp"
 
 namespace rive
 {

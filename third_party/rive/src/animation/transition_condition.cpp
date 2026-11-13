@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/animation/transition_condition.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/importers/state_transition_importer.hpp"
+#include "rive/animation/transition_condition.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/importers/state_transition_importer.hpp"
 
 using namespace rive;
 

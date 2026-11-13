@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/importers/viewmodel_instance_importer.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/importers/viewmodel_instance_importer.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
 
 using namespace rive;
 

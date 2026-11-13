@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/bones/bone.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/bones/bone.hpp"
+#include "rive/math/vec2d.hpp"
 #include <algorithm>
 
 using namespace rive;

@@ -2,9 +2,9 @@
  * Copyright 2024 Rive
  */
 
-#include "third_party/rive/include/rive/animation/focus_action_traversal.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
+#include "rive/animation/focus_action_traversal.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
 
 using namespace rive;
 

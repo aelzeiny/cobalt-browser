@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/container_component.hpp"
 #include <algorithm>
 using namespace rive;
 

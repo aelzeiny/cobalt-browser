@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_LIST_ITEM_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_LIST_ITEM_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_list_item_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_list_item_base.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/refcnt.hpp"
 #include <stdio.h>
 namespace rive
 {

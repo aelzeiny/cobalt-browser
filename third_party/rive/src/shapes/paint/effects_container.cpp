@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/shapes/paint/effects_container.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/shapes/paint/group_effect.hpp"
+#include "rive/shapes/paint/effects_container.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/shapes/paint/group_effect.hpp"
 
 using namespace rive;
 

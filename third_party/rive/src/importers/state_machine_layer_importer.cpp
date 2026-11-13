@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/importers/state_machine_layer_importer.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/animation/animation_state.hpp"
-#include "third_party/rive/include/rive/animation/state_transition.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/importers/state_machine_layer_importer.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/animation/animation_state.hpp"
+#include "rive/animation/state_transition.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 StateMachineLayerImporter::StateMachineLayerImporter(

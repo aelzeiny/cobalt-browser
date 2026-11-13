@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/formula/formula_token_parenthesis_close_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
+#include "rive/generated/data_bind/converters/formula/formula_token_parenthesis_close_base.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
 
 using namespace rive;
 

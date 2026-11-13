@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/scripted/scripted_path_effect_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_path_effect.hpp"
+#include "rive/generated/scripted/scripted_path_effect_base.hpp"
+#include "rive/scripted/scripted_path_effect.hpp"
 
 using namespace rive;
 

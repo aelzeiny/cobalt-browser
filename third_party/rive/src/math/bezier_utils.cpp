@@ -10,9 +10,9 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/math/bezier_utils.hpp"
+#include "rive/math/bezier_utils.hpp"
 
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/math/math_types.hpp"
 
 namespace rive
 {

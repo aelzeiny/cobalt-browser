@@ -2,7 +2,7 @@
  * Copyright 2022 Rive
  */
 
-#include "third_party/rive/include/rive/hittest_command_path.hpp"
+#include "rive/hittest_command_path.hpp"
 
 using namespace rive;
 

@@ -1,6 +1,6 @@
 #ifndef _RIVE_FOCUS_ACTION_CLEAR_BASE_HPP_
 #define _RIVE_FOCUS_ACTION_CLEAR_BASE_HPP_
-#include "third_party/rive/include/rive/animation/focus_action.hpp"
+#include "rive/animation/focus_action.hpp"
 namespace rive
 {
 class FocusActionClearBase : public FocusAction

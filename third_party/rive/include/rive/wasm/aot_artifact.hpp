@@ -1,7 +1,7 @@
 #ifndef _RIVE_AOT_ARTIFACT_HPP_
 #define _RIVE_AOT_ARTIFACT_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <string>

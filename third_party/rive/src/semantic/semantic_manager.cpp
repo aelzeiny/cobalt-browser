@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/semantic/semantic_manager.hpp"
+#include "rive/semantic/semantic_manager.hpp"
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_data.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_node.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_provider.hpp"
-#include "third_party/rive/include/rive/semantic/semantic_role.hpp"
+#include "rive/artboard.hpp"
+#include "rive/component.hpp"
+#include "rive/semantic/semantic_data.hpp"
+#include "rive/semantic/semantic_node.hpp"
+#include "rive/semantic/semantic_provider.hpp"
+#include "rive/semantic/semantic_role.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

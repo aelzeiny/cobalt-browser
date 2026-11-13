@@ -2,8 +2,8 @@
 #ifndef _RIVE_AUDIO_ENGINE_HPP_
 #define _RIVE_AUDIO_ENGINE_HPP_
 
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
 #include <vector>
 #include <stdio.h>
 #include <cstdint>

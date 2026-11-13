@@ -2,12 +2,12 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/importers/backboard_importer.hpp"
-#include "third_party/rive/include/rive/backboard.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/importers/backboard_importer.hpp"
+#include "rive/backboard.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/refcnt.hpp"
 
 using namespace rive;
 

@@ -1,8 +1,8 @@
 #ifdef WITH_RIVE_AUDIO
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_reader.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
+#include "rive/audio/audio_sound.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_reader.hpp"
+#include "rive/audio/audio_source.hpp"
 
 using namespace rive;
 
@@ -73,7 +73,7 @@ void AudioSound::play()
     return;
   }
   ma_sound_seek_to_pcm_frame(&m_sound, 0);
-  ma_sound_start(&m_sound);
+  resume();
 }
 
 void AudioSound::pause() { stop(0); }
@@ -84,6 +84,8 @@ void AudioSound::resume()
   {
     return;
   }
+  // A faded stop leaves a stop time and fade that keep the sound silent.
+  ma_sound_reset_stop_time_and_fade(&m_sound);
   ma_sound_start(&m_sound);
 }
 

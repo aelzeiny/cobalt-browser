@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_trigger.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/data_bind/converters/data_converter_trigger.hpp"
+#include "rive/data_bind/data_values/data_value_trigger.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
 
 using namespace rive;
 

@@ -1,7 +1,7 @@
 #ifndef _RIVE_TRANSITION_CONDITION_HPP_
 #define _RIVE_TRANSITION_CONDITION_HPP_
-#include "third_party/rive/include/rive/generated/animation/transition_condition_base.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
+#include "rive/generated/animation/transition_condition_base.hpp"
+#include "rive/animation/state_machine_instance.hpp"
 
 namespace rive
 {

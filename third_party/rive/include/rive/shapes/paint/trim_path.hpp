@@ -1,12 +1,12 @@
 #ifndef _RIVE_TRIM_PATH_HPP_
 #define _RIVE_TRIM_PATH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/paint/trim_path_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
+#include "rive/generated/shapes/paint/trim_path_base.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
+#include "rive/renderer.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/math/contour_measure.hpp"
 
 namespace rive
 {

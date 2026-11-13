@@ -1,9 +1,9 @@
 #ifndef _RIVE_TEXT_STYLE_PAINT_HPP_
 #define _RIVE_TEXT_STYLE_PAINT_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_paint_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_path.hpp"
-#include "third_party/rive/include/rive/text/text_style_geometry.hpp"
+#include "rive/generated/text/text_style_paint_base.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
+#include "rive/shapes/shape_paint_path.hpp"
+#include "rive/text/text_style_geometry.hpp"
 
 namespace rive
 {
@@ -13,9 +13,22 @@ class TextStylePaint : public TextStylePaintBase, public ShapePaintContainer
 {
 public:
   TextStylePaint();
-  bool addPath(const RawPath& rawPath, float opacity);
+  bool addPath(
+      const RawPath& rawPath,
+      float opacity,
+      const Mat2D* transform = nullptr);
   void rewindPath();
-  void draw(Renderer* renderer, const Mat2D& worldTransform);
+  /// Makes room in this paint's glyph paths (see TextStyleGeometry::reserve).
+  void reservePath(size_t verbs, size_t points, bool allOpaque)
+  {
+    m_geometry.reserve(verbs, points, allOpaque);
+  }
+  /// [imageBounds] is what a paint image fits to, in the glyphs' space: the
+  /// drawing Text's layout box (see Text::glyphSpaceBounds).
+  void draw(
+      Renderer* renderer,
+      const Mat2D& worldTransform,
+      const AABB& imageBounds);
 
   /// Draws [geometry] (some Text's glyphs) with this paint. A paint shared
   /// by several Texts draws each one's own geometry, modulated by that
@@ -25,7 +38,8 @@ public:
       Renderer* renderer,
       const Mat2D& worldTransform,
       TextStyleGeometry& geometry,
-      float opacityModifier);
+      float opacityModifier,
+      const AABB& imageBounds);
 
   /// Whether this is the paint of a style instance every Text using it
   /// draws (see SharedTextStyle): it never holds any Text's glyphs, each

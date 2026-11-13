@@ -1,10 +1,10 @@
 #ifndef _RIVE_LAYER_MASK_HPP_
 #define _RIVE_LAYER_MASK_HPP_
-#include "third_party/rive/include/rive/generated/layer_mask_base.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
+#include "rive/generated/layer_mask_base.hpp"
+#include "rive/drawable.hpp"
+#include "rive/math/aabb.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 #endif
 #include <cstdint>
 #include <vector>
@@ -132,6 +132,17 @@ public:
                : MaskMode::alpha;
   }
 
+  // The blend the flattened layer composites with: the masked drawable's own,
+  // so a masked shape keeps the blend mode its inspector shows. Inside the
+  // content canvas a blend mode has only transparent pixels as a backdrop, so
+  // the source colour passes straight through; the composite is the first
+  // point that can see what the layer actually covers.
+  //
+  // Additive answers srcOver because it is already in the raster, as colour
+  // over reduced alpha, and src-over is what applies it. A plain Node has no
+  // blend mode of its own, so a masked group composites as normal.
+  BlendMode compositeBlendMode() const;
+
 #ifdef WITH_RIVE_EDITOR
   // Dual storage, as every other editor-mutable cross-reference has:
   // DrawTarget::m_DrawableHandle, DrawRules::m_ActiveTargetHandle,
@@ -233,7 +244,9 @@ public:
 
   // "Your cached pixels are stale." For the handful of changes that alter
   // what a shape paints without raising any ComponentDirt, so the graph
-  // cannot carry the news -- see SolidColor::colorValueChanged.
+  // cannot carry the news -- see SolidColor::colorValueChanged -- and for a
+  // nested artboard, whose changes raise dirt in another artboard's graph --
+  // see NestedArtboard::syncLayerMasks.
   void markRasterDirty();
 
   // Proxy pooling, mirroring ClippingShape: sortDrawOrder runs on every

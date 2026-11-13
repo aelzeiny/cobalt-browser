@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/component_origin_base.hpp"
-#include "third_party/rive/include/rive/component_origin.hpp"
+#include "rive/generated/component_origin_base.hpp"
+#include "rive/component_origin.hpp"
 
 using namespace rive;
 

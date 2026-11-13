@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/scripted/scripted_interpolator_base.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/generated/scripted/scripted_interpolator_base.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 
 using namespace rive;
 

@@ -1,6 +1,6 @@
 #ifndef _RIVE_MANIFEST_ASSET_BASE_HPP_
 #define _RIVE_MANIFEST_ASSET_BASE_HPP_
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
+#include "rive/assets/file_asset.hpp"
 namespace rive
 {
 class ManifestAssetBase : public FileAsset

@@ -1,6 +1,6 @@
 #ifndef _RIVE_PATH_VERTEX_BASE_HPP_
 #define _RIVE_PATH_VERTEX_BASE_HPP_
-#include "third_party/rive/include/rive/shapes/vertex.hpp"
+#include "rive/shapes/vertex.hpp"
 namespace rive
 {
 class PathVertexBase : public Vertex

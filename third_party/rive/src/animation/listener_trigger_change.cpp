@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/animation/listener_trigger_change.hpp"
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/animation/nested_trigger.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_trigger.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_callback_type.hpp"
+#include "rive/animation/listener_trigger_change.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/animation/nested_trigger.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/state_machine_trigger.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/core/field_types/core_callback_type.hpp"
 
 using namespace rive;
 

@@ -1,11 +1,11 @@
 #ifndef _RIVE_RELATIVE_LOCAL_ASSET_RESOLVER_HPP_
 #define _RIVE_RELATIVE_LOCAL_ASSET_RESOLVER_HPP_
 
-#include "third_party/rive/include/rive/file_asset_loader.hpp"
-#include "third_party/rive/include/rive/assets/file_asset.hpp"
+#include "rive/file_asset_loader.hpp"
+#include "rive/assets/file_asset.hpp"
 #include <cstdio>
 #include <string>
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 
 namespace rive
 {

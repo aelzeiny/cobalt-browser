@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/importers/data_converter_formula_importer.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_formula.hpp"
+#include "rive/artboard.hpp"
+#include "rive/importers/data_converter_formula_importer.hpp"
+#include "rive/data_bind/converters/data_converter_formula.hpp"
 
 using namespace rive;
 

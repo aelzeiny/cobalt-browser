@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/text/text_input.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/text/text_input.hpp"
+#include "rive/text/text.hpp"
 
 using namespace rive;
 

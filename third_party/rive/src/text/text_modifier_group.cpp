@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text/text_follow_path_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_shape_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_range.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text/text_follow_path_modifier.hpp"
+#include "rive/text/text_shape_modifier.hpp"
+#include "rive/text/text_modifier_range.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/artboard.hpp"
 #include <limits>
 
 using namespace rive;
@@ -286,6 +286,7 @@ static TextRun copyRun(const TextRun& source, uint32_t unicharCount)
       source.script,
       source.styleId,
       source.level,
+      source.language,
   };
 }
 
@@ -332,7 +333,7 @@ TextRun TextModifierGroup::modifyShape(
     if (!same)
     {
       m_variationCoords = std::move(coords);
-      m_variableFont = font->makeAtCoords(m_variationCoords);
+      m_variableFont = font->sharedAtCoords(m_variationCoords);
       m_variableFontBase = style->font();
     }
     return {
@@ -344,6 +345,7 @@ TextRun TextModifierGroup::modifyShape(
         run.script,
         run.styleId,
         run.level,
+        run.language,
     };
   }
   else

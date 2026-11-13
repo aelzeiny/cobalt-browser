@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_boolean_base.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_color_base.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_enum_base.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_string_base.hpp"
-#include "third_party/rive/include/rive/generated/custom_property_trigger_base.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/drawable.hpp"
+#include "rive/generated/custom_property_boolean_base.hpp"
+#include "rive/generated/custom_property_color_base.hpp"
+#include "rive/generated/custom_property_enum_base.hpp"
+#include "rive/generated/custom_property_string_base.hpp"
+#include "rive/generated/custom_property_trigger_base.hpp"
 
 using namespace rive;
 

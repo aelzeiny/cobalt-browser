@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/text/utf.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/line_break.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/text/utf.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/line_break.hpp"
 #include <cstring>
 using namespace rive;
 
@@ -12,6 +12,126 @@ bool rive::isWhiteSpace(Unichar c)
   return c <= ' ' || c == 0x0085 || c == 0x1680 ||
          (c >= 0x2000 && c <= 0x200B && c != 0x2007) || c == 0x2028 ||
          c == 0x2029 || c == 0x205F || c == 0x3000;
+}
+
+// A run's block starts with xpos, which always has an entry, then the other
+// 4 byte arrays, offsets, and glyphs last so each array stays aligned.
+static constexpr size_t kGlyphBytes = sizeof(float) + sizeof(float) +
+                                      sizeof(uint32_t) + sizeof(Vec2D) +
+                                      sizeof(GlyphID);
+
+static size_t glyphBlockBytes(size_t glyphCount)
+{
+  return glyphCount * kGlyphBytes + sizeof(float);
+}
+
+GlyphRun::GlyphRun(size_t glyphCount) { allocateGlyphs(glyphCount); }
+
+GlyphRun::GlyphRun(const GlyphRun& other)
+    : font(other.font)
+    , size(other.size)
+    , lineHeight(other.lineHeight)
+    , letterSpacing(other.letterSpacing)
+    , breaks(other.breaks)
+    , styleId(other.styleId)
+    , level(other.level)
+    , language(other.language)
+    , joiners(other.joiners)
+{
+  if (other.xpos.data() == nullptr)
+  {
+    return;
+  }
+  allocateGlyphs(other.glyphs.size());
+  if (xpos.data() != nullptr)
+  {
+    memcpy(xpos.data(), other.xpos.data(), glyphBlockBytes(glyphs.size()));
+  }
+}
+
+GlyphRun::GlyphRun(GlyphRun&& other) noexcept
+    : font(std::move(other.font))
+    , size(other.size)
+    , lineHeight(other.lineHeight)
+    , letterSpacing(other.letterSpacing)
+    , breaks(std::move(other.breaks))
+    , styleId(other.styleId)
+    , level(other.level)
+    , language(other.language)
+    , joiners(std::move(other.joiners))
+{
+  takeGlyphs(other);
+}
+
+GlyphRun& GlyphRun::operator=(GlyphRun&& other) noexcept
+{
+  if (this != &other)
+  {
+    freeGlyphs();
+    font = std::move(other.font);
+    size = other.size;
+    lineHeight = other.lineHeight;
+    letterSpacing = other.letterSpacing;
+    breaks = std::move(other.breaks);
+    styleId = other.styleId;
+    level = other.level;
+    language = other.language;
+    joiners = std::move(other.joiners);
+    takeGlyphs(other);
+  }
+  return *this;
+}
+
+GlyphRun::~GlyphRun() { freeGlyphs(); }
+
+void GlyphRun::allocateGlyphs(size_t glyphCount)
+{
+  size_t perGlyph;
+  if (!checkedMul<size_t>(glyphCount, kGlyphBytes, &perGlyph) ||
+      perGlyph > SIZE_MAX - sizeof(float))
+  {
+    return;
+  }
+  auto* block = static_cast<uint8_t*>(malloc(perGlyph + sizeof(float)));
+  if (block == nullptr)
+  {
+    return;
+  }
+  auto* xs = reinterpret_cast<float*>(block);
+  auto* ws = xs + glyphCount + 1;
+  auto* indices = reinterpret_cast<uint32_t*>(ws + glyphCount);
+  auto* offs = reinterpret_cast<Vec2D*>(indices + glyphCount);
+  auto* ids = reinterpret_cast<GlyphID*>(offs + glyphCount);
+  xpos.set(xs, glyphCount + 1);
+  advances.set(ws, glyphCount);
+  textIndices.set(indices, glyphCount);
+  offsets.set(offs, glyphCount);
+  glyphs.set(ids, glyphCount);
+}
+
+void GlyphRun::takeGlyphs(GlyphRun& other)
+{
+  glyphs.set(other.glyphs.data(), other.glyphs.size());
+  textIndices.set(other.textIndices.data(), other.textIndices.size());
+  advances.set(other.advances.data(), other.advances.size());
+  xpos.set(other.xpos.data(), other.xpos.size());
+  offsets.set(other.offsets.data(), other.offsets.size());
+  other.glyphs.set(nullptr, 0);
+  other.textIndices.set(nullptr, 0);
+  other.advances.set(nullptr, 0);
+  other.xpos.set(nullptr, 0);
+  other.offsets.set(nullptr, 0);
+}
+
+void GlyphRun::freeGlyphs()
+{
+  // xpos leads the block.
+  free(xpos.data());
+  glyphs.set(nullptr, 0);
+  textIndices.set(nullptr, 0);
+  advances.set(nullptr, 0);
+  xpos.set(nullptr, 0);
+  offsets.set(nullptr, 0);
 }
 
 #ifdef WITH_RIVE_TEXT
@@ -47,6 +167,7 @@ OrderedLine::OrderedLine(
     const Paragraph& paragraph,
     const GlyphLine& line,
     float lineWidth,
+    TextAlign align,
     bool wantEllipsis,
     bool isEllipsisLineLast,
     GlyphRun* ellipsisRun,
@@ -54,18 +175,40 @@ OrderedLine::OrderedLine(
     : m_startGlyphIndex(line.startGlyphIndex)
     , m_endGlyphIndex(line.endGlyphIndex)
     , m_glyphLine(&line)
+    , m_startX(line.startX)
     , m_y(y)
 {
   std::vector<const GlyphRun*> logicalRuns;
   const SimpleArray<GlyphRun>& glyphRuns = paragraph.runs;
 
-  if (!wantEllipsis || !buildEllipsisRuns(
-                           logicalRuns,
-                           paragraph,
-                           line,
-                           lineWidth,
-                           isEllipsisLineLast,
-                           ellipsisRun))
+  float ellipsizedWidth = wantEllipsis ? buildEllipsisRuns(
+                                             logicalRuns,
+                                             paragraph,
+                                             line,
+                                             lineWidth,
+                                             isEllipsisLineLast,
+                                             ellipsisRun)
+                                       : -1.0f;
+  if (ellipsizedWidth >= 0.0f)
+  {
+    // The line breaker aligned the full line, which overflows the box when
+    // it doesn't wrap. Shift by however much the ellipsis changed its width
+    // so right and center aligned lines sit inside the box again.
+    float fullWidth = glyphRuns[line.endRunIndex].xpos[line.endGlyphIndex] -
+                      glyphRuns[line.startRunIndex].xpos[line.startGlyphIndex];
+    switch (align)
+    {
+      case TextAlign::right:
+        m_startX += fullWidth - ellipsizedWidth;
+        break;
+      case TextAlign::center:
+        m_startX += (fullWidth - ellipsizedWidth) / 2.0f;
+        break;
+      case TextAlign::left:
+        break;
+    }
+  }
+  else
   {
     for (uint32_t i = line.startRunIndex; i < line.endRunIndex + 1; i++)
     {
@@ -200,7 +343,7 @@ GlyphItr& GlyphItr::operator++()
   return *this;
 }
 
-bool OrderedLine::buildEllipsisRuns(
+float OrderedLine::buildEllipsisRuns(
     std::vector<const GlyphRun*>& logicalRuns,
     const Paragraph& paragraph,
     const GlyphLine& line,
@@ -238,7 +381,7 @@ bool OrderedLine::buildEllipsisRuns(
     if (fits)
     {
       // It fits, just get the regular glyphs.
-      return false;
+      return -1.0f;
     }
   }
 
@@ -247,6 +390,9 @@ bool OrderedLine::buildEllipsisRuns(
 
   rcp<Font> ellipsisFont = nullptr;
   float ellipsisFontSize = 0.0f;
+  // The language shapes the ellipsis too (its forms and fallback), so a run
+  // in another one reshapes it like another font would.
+  uint8_t ellipsisLanguage = 0;
 
   GlyphRun ellipsisRun = {};
   float ellipsisWidth = 0.0f;
@@ -258,12 +404,14 @@ bool OrderedLine::buildEllipsisRuns(
   for (uint32_t i = line.startRunIndex; i < line.endRunIndex + 1; i++)
   {
     const GlyphRun& run = glyphRuns[i];
-    if (run.font != ellipsisFont && run.size != ellipsisFontSize)
+    if (run.font != ellipsisFont || run.size != ellipsisFontSize ||
+        run.language != ellipsisLanguage)
     {
       // Track the latest we've checked (even if we discard it so we don't
       // try to do this again for this ellipsis).
       ellipsisFont = run.font;
       ellipsisFontSize = run.size;
+      ellipsisLanguage = run.language;
 
       // Get the next shape so we can check if it fits, otherwise keep
       // using the last one.
@@ -275,10 +423,16 @@ bool OrderedLine::buildEllipsisRuns(
           (uint32_t)ellipsisCodePoints.size(),
           0, // default, TextRun.script
           run.styleId,
+          0, // TextRun.level, from the paragraph below
+          run.language,
       }};
+      // Shape in the paragraph's direction so the ellipsis resolves to the
+      // paragraph's level and reorders to its end edge (the left of a right
+      // to left paragraph), instead of always flowing left to right.
       auto nextEllipsisShape = ellipsisFont->shapeText(
           ellipsisCodePoints,
-          Span<TextRun>(ellipsisRuns, 1));
+          Span<TextRun>(ellipsisRuns, 1),
+          paragraph.level & 1);
 
       // Hard assumption one run and para
       const Paragraph& para = nextEllipsisShape[0];
@@ -335,7 +489,7 @@ bool OrderedLine::buildEllipsisRuns(
   m_startLogical = storedEllipsisRun == logicalRuns.front()
                        ? nullptr
                        : logicalRuns.front();
-  return true;
+  return x + ellipsisWidth;
 }
 
 float OrderedLine::bottom() const
@@ -343,11 +497,18 @@ float OrderedLine::bottom() const
   return m_y - m_glyphLine->baseline + m_glyphLine->bottom;
 }
 
+#ifdef TESTING
+uint64_t Font::sm_shapeCount = 0;
+#endif
+
 SimpleArray<Paragraph> Font::shapeText(
     Span<const Unichar> text,
     Span<const TextRun> runs,
     int textDirectionFlag) const
 {
+#ifdef TESTING
+  sm_shapeCount++;
+#endif
 #ifdef DEBUG
   size_t count = 0;
   for (const TextRun& tr : runs)

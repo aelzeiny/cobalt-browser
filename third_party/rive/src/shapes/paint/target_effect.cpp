@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/target_effect.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/shapes/paint/group_effect.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/target_effect.hpp"
+#include "rive/artboard.hpp"
+#include "rive/shapes/paint/group_effect.hpp"
 
 using namespace rive;
 

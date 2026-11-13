@@ -1,15 +1,15 @@
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/input/gamepad_batch.hpp"
-#include "third_party/rive/include/rive/input/gamepad_snapshot.hpp"
-#include "third_party/rive/include/rive/input/standard_gamepad.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/input/gamepad_batch.hpp"
+#include "rive/input/gamepad_snapshot.hpp"
+#include "rive/input/standard_gamepad.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/span.hpp"
 // Defines StateMachineInstance's SMIInputExtras cluster, which owns the
 // embedder gamepad snapshots and the gamepad-aware scripted drawables.
-#include "third_party/rive/include/rive/animation/state_machine_instance_clusters.hpp"
+#include "rive/animation/state_machine_instance_clusters.hpp"
 
 namespace rive
 {

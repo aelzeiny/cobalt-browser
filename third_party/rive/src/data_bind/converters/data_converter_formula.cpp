@@ -1,20 +1,20 @@
 #include <algorithm>
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_formula.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_value.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_argument_separator.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_input.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_operation.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_function.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis_open.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
-#include "third_party/rive/include/rive/animation/arithmetic_operation.hpp"
-#include "third_party/rive/include/rive/random_mode.hpp"
-#include "third_party/rive/include/rive/function_type.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/math/random.hpp"
+#include "rive/data_bind/converters/data_converter_formula.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_symbol_list_index.hpp"
+#include "rive/data_bind/converters/formula/formula_token_value.hpp"
+#include "rive/data_bind/converters/formula/formula_token_argument_separator.hpp"
+#include "rive/data_bind/converters/formula/formula_token_input.hpp"
+#include "rive/data_bind/converters/formula/formula_token_operation.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis.hpp"
+#include "rive/data_bind/converters/formula/formula_token_function.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis_open.hpp"
+#include "rive/data_bind/converters/formula/formula_token_parenthesis_close.hpp"
+#include "rive/animation/arithmetic_operation.hpp"
+#include "rive/random_mode.hpp"
+#include "rive/function_type.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/math/random.hpp"
 #include <cmath>
 
 using namespace rive;
@@ -525,9 +525,20 @@ void DataConverterFormula::bindFromContext(
     DataBind* dataBind)
 {
   DataConverter::bindFromContext(dataContext, dataBind);
-  if (dataBind && dataBind->source())
+  auto source = dataBind != nullptr ? dataBind->source() : nullptr;
+  if (source == m_source.get())
   {
-    m_source = ref_rcp<ViewModelInstanceValue>(dataBind->source());
+    return;
+  }
+  // A rebind can resolve the bind to another value. Leave the previous one,
+  // or it keeps pointing at this converter after the converter is deleted.
+  if (m_source)
+  {
+    m_source->removeDependent(this);
+  }
+  m_source = ref_rcp(source);
+  if (m_source)
+  {
     m_source->addDependent(this);
   }
 }

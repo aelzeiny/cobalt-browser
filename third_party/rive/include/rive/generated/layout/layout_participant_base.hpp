@@ -1,6 +1,6 @@
 #ifndef _RIVE_LAYOUT_PARTICIPANT_BASE_HPP_
 #define _RIVE_LAYOUT_PARTICIPANT_BASE_HPP_
-#include "third_party/rive/include/rive/layout/layout_node_style.hpp"
+#include "rive/layout/layout_node_style.hpp"
 namespace rive
 {
 class LayoutParticipantBase : public LayoutNodeStyle

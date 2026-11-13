@@ -1,12 +1,12 @@
 #ifndef _RIVE_DATA_CONVERTER_NUMBER_TO_LIST_HPP_
 #define _RIVE_DATA_CONVERTER_NUMBER_TO_LIST_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_number_to_list_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_list.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/generated/data_bind/converters/data_converter_number_to_list_base.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_list.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/file.hpp"
 #include <stdio.h>
 namespace rive
 {

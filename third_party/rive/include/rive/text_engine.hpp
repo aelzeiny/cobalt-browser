@@ -5,12 +5,13 @@
 #ifndef _RIVE_TEXT_ENGINE_HPP_
 #define _RIVE_TEXT_ENGINE_HPP_
 
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/span.hpp"
+#include "rive/simple_array.hpp"
 
+#include <string>
 #include <vector>
 
 namespace rive
@@ -291,14 +292,54 @@ public:
     return this->makeAtCoords(Span<const Coord>(&c, 1));
   }
 
+  // A new font with these options merged over this font's. Each call makes
+  // one of its own, so the caller may hand it to another thread.
   virtual rcp<Font> withOptions(
       Span<const Coord> variableAxes,
       Span<const Feature> features) const = 0;
+
+  // The font withOptions would make, or one this font already made for the
+  // same options on this thread and that is still alive. Text styles and
+  // variation modifiers ask this way, so a list's rows share one variable
+  // font and the outlines it draws. The font may be in use elsewhere on this
+  // thread, and a font's caches aren't locked, so it stays on this thread: a
+  // font to hand to another comes from withOptions.
+  virtual rcp<Font> sharedWithOptions(
+      Span<const Coord> variableAxes,
+      Span<const Feature> features) const
+  {
+    return withOptions(variableAxes, features);
+  }
+
+  rcp<Font> sharedAtCoords(Span<const Coord> coords) const
+  {
+    return sharedWithOptions(coords, Span<const Feature>(nullptr, 0));
+  }
 
   // Returns a 1-point path for this glyph. It will be positioned
   // relative to (0,0) with the typographic baseline at y = 0.
   //
   virtual RawPath getPath(GlyphID) const = 0;
+
+  // The same path as getPath, lent instead of copied. It stays valid until
+  // the next glyphPath or getPath on this font, either of which may replace
+  // it, so use it before asking for another glyph.
+  virtual const RawPath& glyphPath(GlyphID glyph) const
+  {
+    m_lentPath = getPath(glyph);
+    return m_lentPath;
+  }
+
+  // For a caller that looks at outlines before drawing them, without making
+  // the draw outline a glyph again: the outline glyphPath would lend for
+  // [glyph] if the font has it cached, else null, caching nothing.
+  virtual const RawPath* cachedGlyphPath(GlyphID glyph) const
+  {
+    return nullptr;
+  }
+  // How many more outlines glyphPath can cache before it drops the ones it
+  // has. A font that caches none has no room.
+  virtual size_t glyphPathCacheRoom() const { return 0; }
 
   // Color glyph (emoji) support via COLR/CPAL tables.
 
@@ -381,8 +422,53 @@ public:
       const uint32_t fallbackIndex,
       const rive::Font*);
   static FallbackProc gFallbackProc;
+
+  // What a FallbackRequestProc is asked for. It can grow, so a host keeps
+  // working when it does.
+  struct FallbackRequest
+  {
+    // The first codepoint this font has no glyph for.
+    Unichar missing;
+    // 0 for the first fallback asked for this text, and one more for each
+    // fallback asked for what the previous one was missing.
+    uint32_t fallbackIndex;
+    const Font* font;
+    // The run's script, as an ISO 15924 tag (hb_script_t).
+    uint32_t script;
+    // Most preferred first: the text's own language when it has one, then
+    // the system languages (see TextLanguages). Usually BCP 47 tags, but
+    // passed on exactly as authored, so a host may use formats of its own.
+    Span<const std::string> languages;
+    // Whether languages[0] is the text's own language. When it isn't, a
+    // host's own idea of the language (a hint it was configured with) can
+    // reasonably come before the system ones.
+    bool hasTextLanguage;
+  };
+  using FallbackRequestProc =
+      rive::rcp<rive::Font> (*)(const FallbackRequest& request);
+  // Preferred over gFallbackProc when both are set.
+  static FallbackRequestProc gFallbackRequestProc;
   static bool gFallbackProcEnabled;
   static constexpr unsigned kRegularWeight = 400;
+
+  // Changes whenever fallback fonts may be picked differently than before:
+  // a new gFallbackProc, gFallbackRequestProc or gFallbackProcEnabled, which
+  // hosts assign directly
+  // and this notices, or a host telling fallbackFontsChanged() that the
+  // fonts its proc picks from changed. A shape is only reused under the
+  // generation it was made in.
+  static uint32_t fallbackGeneration();
+  // Changes with fallbackGeneration(), except for gFallbackProcEnabled: when
+  // the fonts fallbacks are picked from may have changed, not whether they
+  // are used. Every Text and TextInput reshapes on its next advance once it
+  // moves. The editor turns fallbacks off and on around its own shaping,
+  // which mustn't reshape every text each time.
+  static uint32_t fallbackFontsGeneration();
+  static void fallbackFontsChanged();
+#ifdef TESTING
+  // Shapes made by any font, for tests to count.
+  static uint64_t sm_shapeCount;
+#endif
 
 protected:
   Font(const LineMetrics& lm) : m_lineMetrics(lm) {}
@@ -395,6 +481,8 @@ protected:
 private:
   /// The font specified line metrics (automatic line metrics).
   const LineMetrics m_lineMetrics;
+  /// What the default glyphPath lends.
+  mutable RawPath m_lentPath;
 };
 
 // A user defined styling guide for a set of unicode codepoints within a larger
@@ -409,33 +497,73 @@ struct TextRun
   uint32_t script;
   uint16_t styleId;
   uint8_t level;
+  // TextLanguageId of the run's language, 0 to inherit the system one. Sits
+  // in what was padding, so the struct the bindings mirror keeps its size.
+  uint8_t language = 0;
+};
+
+// One of a GlyphRun's per-glyph arrays: a view into the one block the run
+// allocates for all of them. Laid out like a SimpleArray (pointer, then
+// size), since GlyphRuns are read by field offset from Dart and wasm.
+template <typename T> class GlyphRunArray
+{
+public:
+  GlyphRunArray(const GlyphRunArray&) = delete;
+  GlyphRunArray& operator=(const GlyphRunArray&) = delete;
+
+  T& operator[](size_t index)
+  {
+    assert(index < m_size);
+    return m_ptr[index];
+  }
+  const T& operator[](size_t index) const
+  {
+    assert(index < m_size);
+    return m_ptr[index];
+  }
+
+  T* data() { return m_ptr; }
+  const T* data() const { return m_ptr; }
+  size_t size() const { return m_size; }
+  bool empty() const { return m_size == 0; }
+
+  T* begin() { return m_ptr; }
+  T* end() { return m_ptr + m_size; }
+  const T* begin() const { return m_ptr; }
+  const T* end() const { return m_ptr + m_size; }
+
+  T& front() { return (*this)[0]; }
+  const T& front() const { return (*this)[0]; }
+  T& back() { return (*this)[m_size - 1]; }
+  const T& back() const { return (*this)[m_size - 1]; }
+
+private:
+  friend struct GlyphRun;
+  GlyphRunArray() = default;
+  void set(T* ptr, size_t size)
+  {
+    m_ptr = ptr;
+    m_size = size;
+  }
+
+  T* m_ptr = nullptr;
+  size_t m_size = 0;
 };
 
 // The corresponding system generated run for the user provided TextRuns.
 // GlyphRuns may not match TextRuns if the system needs to split the run (for
 // fallback fonts) or if codepoints get ligated/shaped to a single glyph.
+//
+// Its per-glyph arrays share one allocation, so it copies and moves its
+// members by hand: a member added here must be added to those too.
 struct GlyphRun
 {
-  GlyphRun(size_t glyphCount = 0)
-      : glyphs(glyphCount)
-      , textIndices(glyphCount)
-      , advances(glyphCount)
-      , xpos(glyphCount + 1)
-      , offsets(glyphCount)
-  {}
-
-  GlyphRun(
-      SimpleArray<GlyphID> glyphIds,
-      SimpleArray<uint32_t> offsets,
-      SimpleArray<float> ws,
-      SimpleArray<float> xs,
-      SimpleArray<rive::Vec2D> offs)
-      : glyphs(glyphIds)
-      , textIndices(offsets)
-      , advances(ws)
-      , xpos(xs)
-      , offsets(offs)
-  {}
+  GlyphRun(size_t glyphCount = 0);
+  GlyphRun(const GlyphRun& other);
+  GlyphRun(GlyphRun&& other) noexcept;
+  GlyphRun& operator=(GlyphRun&& other) noexcept;
+  GlyphRun& operator=(const GlyphRun&) = delete;
+  ~GlyphRun();
 
   rcp<Font> font;
   float size;
@@ -444,25 +572,25 @@ struct GlyphRun
 
   // List of glyphs, represented by font specific glyph ids. Length is equal
   // to number of glyphs in the run.
-  SimpleArray<GlyphID> glyphs;
+  GlyphRunArray<GlyphID> glyphs;
 
   // Index in the unicode text array representing the text displayed in this
   // run. Because each glyph can be composed of multiple unicode values, this
   // index points to the first index in the unicode text. Length is equal to
   // number of glyphs in the run.
-  SimpleArray<uint32_t> textIndices;
+  GlyphRunArray<uint32_t> textIndices;
 
   // X position of each glyph in visual order (xpos is in logical/memory
   // order).
-  SimpleArray<float> advances;
+  GlyphRunArray<float> advances;
 
   // X position of each glyph, with an extra value at the end for the right
   // most extent of the last glyph.
-  SimpleArray<float> xpos;
+  GlyphRunArray<float> xpos;
 
   // X and Y offset each glyphs draws at relative to its baseline and advance
   // position.
-  SimpleArray<rive::Vec2D> offsets;
+  GlyphRunArray<rive::Vec2D> offsets;
 
   // List of possible indices to line break at. Has a stride of 2 uint32_ts
   // where each pair marks the start and end of a word, with the exception of
@@ -477,6 +605,9 @@ struct GlyphRun
   // Bidi level (even is LTR, odd is RTL)
   uint8_t level;
 
+  // TextLanguageId the run was shaped with (see TextRun::language).
+  uint8_t language = 0;
+
   // List of indices where words are joined by a word-joiner character.
   // During text breaking, these joins should be honored and not split at
   // those points
@@ -486,6 +617,13 @@ struct GlyphRun
   {
     return level & 1 ? TextDirection::rtl : TextDirection::ltr;
   }
+
+private:
+  // Points the per-glyph arrays into one new block for [glyphCount] glyphs.
+  void allocateGlyphs(size_t glyphCount);
+  // Takes [other]'s block, leaving it with none.
+  void takeGlyphs(GlyphRun& other);
+  void freeGlyphs();
 };
 
 class OrderedLine;
@@ -548,12 +686,15 @@ public:
       const Paragraph& paragraph,
       const GlyphLine& line,
       float lineWidth, // for ellipsis
+      TextAlign align, // re-aligns a line the ellipsis shortened
       bool wantEllipsis,
       bool isEllipsisLineLast,
       GlyphRun* ellipsisRun,
       float y);
 
-  bool buildEllipsisRuns(
+  // Returns the width of the ellipsized line, or a negative value when the
+  // line didn't need one.
+  float buildEllipsisRuns(
       std::vector<const GlyphRun*>& logicalRuns,
       const Paragraph& paragraph,
       const GlyphLine& line,
@@ -579,6 +720,9 @@ public:
   }
 
   const GlyphLine& glyphLine() const { return *m_glyphLine; }
+  // Where the line's first visual glyph starts. Matches glyphLine().startX
+  // unless an ellipsis changed the line's width.
+  float startX() const { return m_startX; }
   float y() const { return m_y; }
   float bottom() const;
 
@@ -603,6 +747,7 @@ private:
   uint32_t m_endGlyphIndex;
   std::vector<const GlyphRun*> m_runs;
   const GlyphLine* m_glyphLine;
+  float m_startX;
   float m_y;
 
 public:

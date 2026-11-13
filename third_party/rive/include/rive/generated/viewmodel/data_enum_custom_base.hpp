@@ -1,8 +1,8 @@
 #ifndef _RIVE_DATA_ENUM_CUSTOM_BASE_HPP_
 #define _RIVE_DATA_ENUM_CUSTOM_BASE_HPP_
 #include <string>
-#include "third_party/rive/include/rive/core/field_types/core_string_type.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
+#include "rive/core/field_types/core_string_type.hpp"
+#include "rive/viewmodel/data_enum.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

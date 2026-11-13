@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/constraints/rotation_constraint.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/constraints/rotation_constraint.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/math_types.hpp"
 
 using namespace rive;
 

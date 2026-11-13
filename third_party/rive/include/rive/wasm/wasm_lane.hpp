@@ -3,9 +3,9 @@
 
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_layout_gen.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
+#include "rive/wasm/wasm_lane_layout_gen.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -79,12 +79,29 @@ public:
   void park(Instance instance);
   /// A parked instance, or an empty one when there is none.
   Instance unpark();
+  /// The module on code that checks its bounds, loaded the first time an
+  /// instance finds no address space for a hardware bounds memory.
+  void* fallbackModule(const char* what);
+  /// The tier its lanes run on, as a host's log names it, the fallback's
+  /// once one loaded.
+  const std::string& currentTier() const
+  {
+    return m_fellBack.load(std::memory_order_acquire) ? m_fallbackTier : tier;
+  }
+  bool runsCompiled() const
+  {
+    return m_fellBack.load(std::memory_order_acquire) ? m_fallbackCompiled
+                                                      : compiled;
+  }
+  /// Whether its lanes run code that leaves bounds to guard pages, false
+  /// once a fallback loaded.
+  bool hardwareBounds() const;
 
   /// A lease on the WAMR module, which keeps it loaded.
   std::shared_ptr<void> module;
   /// Exports the reset that lets one job run in another's instance.
   bool resets = false;
-  /// The tier its lanes run on, as a host's log names it.
+  /// The tier the module loaded on.
   std::string tier;
 #endif
   bool compiled = false;
@@ -96,6 +113,9 @@ public:
   /// The page runner's cache key for its compiled module on each thread,
   /// the same for the same bytes.
   uint32_t id = 0;
+  /// The most 64 KiB pages a job's instance may have grown to for another
+  /// job to reuse it, as memory never shrinks.
+  uint32_t reuseMaxPages = 0;
 #ifndef __EMSCRIPTEN__
   /// Each entry's export name, so a run builds none.
   std::vector<std::string> entryNames;
@@ -104,6 +124,12 @@ private:
   // Whichever thread runs the next job takes one.
   std::mutex m_parkedMutex;
   std::vector<Instance> m_parked;
+  std::mutex m_fallbackMutex;
+  std::shared_ptr<void> m_fallback;
+  std::string m_fallbackTier;
+  bool m_fallbackCompiled = false;
+  // Set once the fields above are written.
+  std::atomic<bool> m_fellBack{false};
 #endif
 };
 
@@ -166,12 +192,17 @@ public:
   void fail(std::string_view message);
   void failUtf16(const uint8_t* text, uint32_t bytes);
 
-  // On the VM's thread.
   /// Frees the ring, then hands deliver each console line since the last
-  /// take and a note of any it dropped.
+  /// take, with the file and line its console call named, and a note of any
+  /// it dropped. On the VM's thread, or the stall flusher's for a stalled VM.
   void takeLogs(
-      void (*deliver)(void* context, std::string_view line),
+      void (*deliver)(
+          void* context,
+          std::string_view file,
+          uint32_t line,
+          std::string_view text),
       void* context);
+  // On the VM's thread.
   std::string failure() const;
   /// Whether it failed, from any thread.
   bool hasFailure() const { return m_failureClaimed.load(); }
@@ -225,8 +256,16 @@ public:
   bool dropShared(uint32_t id);
 
 #ifndef __EMSCRIPTEN__
-  /// The std's console string (UTF-16 after its byte length) as a line.
-  void logConsole(void* execEnv, uint32_t text);
+  /// The std's console string (UTF-16 after its byte length) as a line,
+  /// named by the call site the std's console reported.
+  void logConsole(
+      void* execEnv,
+      uint32_t text,
+      std::string_view file,
+      uint32_t line);
+  /// The std's console string as UTF-8 into out, reusing its capacity so
+  /// an audio thread's console call allocates once.
+  void consoleText(void* execEnv, uint32_t text, std::string& out);
   /// console.time on the lane's own timers, or with report timeLog, and
   /// timeEnd with end too.
   void consoleTimer(void* execEnv, uint32_t label, bool report, bool end);
@@ -294,7 +333,10 @@ protected:
 
 private:
   struct Text;
-  void writeLine(const Text& text);
+  void writeLine(
+      const Text& text,
+      std::string_view file = {},
+      uint32_t line = 0);
   void writeFailure(const Text& text);
 
   LaneKind m_kind;
@@ -305,13 +347,17 @@ private:
   std::mutex m_holdsMutex;
   std::vector<uint32_t> m_holds;
   std::vector<uint32_t> m_created;
-  // Console lines, each a two byte length then its bytes: one writer and
-  // one reader, so neither waits.
+  // Console lines, each a two byte length, a one byte file length (255 for
+  // the previous line's file), a four byte line, the file, then its bytes:
+  // one writer and one reader at a time, so the writer never waits.
+  std::mutex m_logReaderMutex;
   const uint32_t m_logCapacity;
   std::unique_ptr<uint8_t[]> m_logBytes;
   std::atomic<uint32_t> m_logWrite{0};
   std::atomic<uint32_t> m_logRead{0};
   std::atomic<uint32_t> m_logsDropped{0};
+  std::string m_logWriteFile;
+  std::string m_logReadFile;
 #ifdef __EMSCRIPTEN__
   // When a stop's interrupt is due, in steady clock nanoseconds: a web call
   // ends only at its own fuel check.
@@ -335,20 +381,34 @@ public:
   explicit WasmLaneSet(rcp<WasmLaneModule> module) : m_module(std::move(module))
   {}
 
+  /// On the VM's thread, the only one that adds or prunes them.
   const std::vector<rcp<T>>& lanes() const { return m_lanes; }
+  /// Visits each lane from another thread.
+  template <class F> void forEachLocked(F visit) const
+  {
+    std::lock_guard<std::mutex> lock(m_lanesMutex);
+    for (const rcp<T>& lane : m_lanes)
+    {
+      visit(lane.get());
+    }
+  }
   /// The VM whose shared memory its lanes hold.
   void setSharedOwner(uint64_t owner) { m_sharedOwner = owner; }
   uint32_t entryCount() const { return m_module->entryCount; }
-  /// True when its lanes run compiled code rather than the interpreter.
-  bool compiled() const { return m_module->compiled; }
 #ifndef __EMSCRIPTEN__
+  /// True when its lanes run compiled code rather than the interpreter.
+  bool compiled() const { return m_module->runsCompiled(); }
   /// The tier its lanes run on, as a host's log names it.
-  const std::string& tier() const { return m_module->tier; }
+  const std::string& tier() const { return m_module->currentTier(); }
+  bool hardwareBounds() const { return m_module->hardwareBounds(); }
+#else
+  bool compiled() const { return m_module->compiled; }
 #endif
   /// Drops lanes that are over and that no script holds, once their
   /// output is out.
   void prune()
   {
+    std::lock_guard<std::mutex> lock(m_lanesMutex);
     m_lanes.erase(
         std::remove_if(m_lanes.begin(), m_lanes.end(), &unneeded),
         m_lanes.end());
@@ -356,6 +416,7 @@ public:
   /// As prune, for one lane whose output is out.
   void prune(const WasmLane* lane)
   {
+    std::lock_guard<std::mutex> lock(m_lanesMutex);
     auto found = std::find_if(
         m_lanes.begin(),
         m_lanes.end(),
@@ -375,11 +436,13 @@ protected:
   rcp<T> add(rcp<T> lane)
   {
     lane->setSharedOwner(m_sharedOwner);
+    std::lock_guard<std::mutex> lock(m_lanesMutex);
     m_lanes.push_back(lane);
     return lane;
   }
 
   rcp<WasmLaneModule> m_module;
+  mutable std::mutex m_lanesMutex;
   std::vector<rcp<T>> m_lanes;
   uint64_t m_sharedOwner = 0;
 };
@@ -401,8 +464,10 @@ private:
   std::chrono::steady_clock::time_point m_outer;
 };
 #else
-/// Hardware bounds checks trap through a per thread signal handler.
-void ensureLaneThreadEnv();
+/// Sets up WAMR on a thread it did not start. Hardware bounds checks trap
+/// through WAMR's per thread signal state, and on Windows a wait in wasm code
+/// parks on per thread data, so every thread sets it up before it runs wasm.
+void ensureWasmThreadEnv();
 /// The 32 bit cells a WAMR function's parameters take, or ~0u when its
 /// parameters or results would not fit in limit cells, at most 8.
 uint32_t wasmCallCells(void* instance, void* function, uint32_t limit);

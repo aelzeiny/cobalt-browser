@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/bones/tendon.hpp"
-#include "third_party/rive/include/rive/bones/bone.hpp"
-#include "third_party/rive/include/rive/bones/skin.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/bones/tendon.hpp"
+#include "rive/bones/bone.hpp"
+#include "rive/bones/skin.hpp"
+#include "rive/core_context.hpp"
 
 using namespace rive;
 

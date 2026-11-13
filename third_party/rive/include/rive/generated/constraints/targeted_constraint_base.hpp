@@ -1,8 +1,8 @@
 #ifndef _RIVE_TARGETED_CONSTRAINT_BASE_HPP_
 #define _RIVE_TARGETED_CONSTRAINT_BASE_HPP_
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/constraints/constraint.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class TargetedConstraintBase : public Constraint

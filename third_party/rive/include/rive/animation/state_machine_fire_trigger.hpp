@@ -1,7 +1,7 @@
 #ifndef _RIVE_STATE_MACHINE_FIRE_TRIGGER_HPP_
 #define _RIVE_STATE_MACHINE_FIRE_TRIGGER_HPP_
-#include "third_party/rive/include/rive/generated/animation/state_machine_fire_trigger_base.hpp"
-#include "third_party/rive/include/rive/data_bind_path_referencer.hpp"
+#include "rive/generated/animation/state_machine_fire_trigger_base.hpp"
+#include "rive/data_bind_path_referencer.hpp"
 #include <stdio.h>
 namespace rive
 {

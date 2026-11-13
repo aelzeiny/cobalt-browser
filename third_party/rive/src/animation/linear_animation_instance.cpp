@@ -1,25 +1,25 @@
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/interpolating_keyframe.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/loop.hpp"
-#include "third_party/rive/include/rive/animation/keyed_callback_reporter.hpp"
-#include "third_party/rive/include/rive/animation/keyframe.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_double.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_color.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_bool.hpp"
-#include "third_party/rive/include/rive/animation/keyframe_string.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_number.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_color.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_string.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/profiler/profiler_macros.h"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance_extras.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/interpolating_keyframe.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/loop.hpp"
+#include "rive/animation/keyed_callback_reporter.hpp"
+#include "rive/animation/keyframe.hpp"
+#include "rive/animation/keyframe_double.hpp"
+#include "rive/animation/keyframe_color.hpp"
+#include "rive/animation/keyframe_bool.hpp"
+#include "rive/animation/keyframe_string.hpp"
+#include "rive/artboard.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/bindable_property.hpp"
+#include "rive/data_bind/bindable_property_number.hpp"
+#include "rive/data_bind/bindable_property_color.hpp"
+#include "rive/data_bind/bindable_property_boolean.hpp"
+#include "rive/data_bind/bindable_property_string.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/profiler/profiler_macros.h"
+#include "rive/scripted/scripted_interpolator.hpp"
+#include "rive/animation/linear_animation_instance_extras.hpp"
 
 #include <cmath>
 #include <cassert>
@@ -40,7 +40,11 @@ LinearAnimationInstance::LinearAnimationInstance(
     , m_lastTotalTime(0.0f)
     , m_spilledTime(0.0f)
     , m_direction(1)
-{}
+{
+  // Playing an animation is what first needs its keyframes, so this is where
+  // a body the import deferred gets decoded (FileImportOptions).
+  animation->ensureDecoded();
+}
 
 LinearAnimationInstance::LinearAnimationInstance(
     LinearAnimationInstance const& lhs)
@@ -82,6 +86,13 @@ LinearAnimationInstance::~LinearAnimationInstance()
   // Each StatefulScriptedInterpolator removes + deletes the binds it parked
   // on the artboard before it destroys its clone.
   extras.scriptedInterpolators.clear();
+  releaseKeyFrameValueBinds();
+  m_bindingExtras.reset();
+}
+
+void LinearAnimationInstance::releaseKeyFrameValueBinds()
+{
+  auto& extras = *m_bindingExtras;
   if (m_artboardInstance != nullptr)
   {
     // Keyframe value bind clones target the holders below, so remove +
@@ -101,8 +112,6 @@ LinearAnimationInstance::~LinearAnimationInstance()
     delete pair.second;
   }
   extras.keyFrameValueHolders.clear();
-
-  m_bindingExtras.reset();
 }
 
 // The BindableProperty value property key matching a keyframe's value type, or
@@ -182,22 +191,21 @@ BindableProperty* LinearAnimationInstance::resolveKeyFrameValueHolder(
       return it->second;
     }
   }
-  // Lazily resolve from the source artboard's keyframe data binds. The gate
-  // keeps playback in files without any keyframe binds free of per-keyframe
-  // work (hasKeyFrameSourceBinds() is a cached O(1) check).
+  // Lazily resolve from the animation's keyframe binds, which it owns. The
+  // gate keeps playback of animations without any free of per-keyframe work
+  // (hasKeyFrameBinds() is a flag).
   if (m_artboardInstance == nullptr)
   {
     return nullptr;
   }
-  const Artboard* source = m_artboardInstance->artboardSource();
-  if (source == nullptr || !source->hasKeyFrameSourceBinds())
+  if (!m_animation->hasKeyFrameBinds())
   {
 #ifndef WITH_RIVE_EDITOR
     m_noKeyFrameBinds = true;
 #endif
     return nullptr;
   }
-  DataBind* sourceBind = source->keyFrameSourceBind(keyframe);
+  DataBind* sourceBind = m_animation->keyFrameBind(keyframe);
   if (sourceBind == nullptr)
   {
     return nullptr;
@@ -487,6 +495,36 @@ void LinearAnimationInstance::reset(float speedMultiplier = 1.0)
 {
   m_time = (speedMultiplier >= 0) ? m_animation->startTime()
                                   : m_animation->endTime();
+}
+
+bool LinearAnimationInstance::restart(float speedMultiplier)
+{
+  if (m_bindingExtras != nullptr)
+  {
+    // A scripted interpolator's clone keeps script state of its own.
+    if (!m_bindingExtras->scriptedInterpolators.empty())
+    {
+      return false;
+    }
+    // A new instance has no keyframe value binds until it applies a bound
+    // keyframe, which makes and binds them then. Kept, a bind could hold
+    // what a new one wouldn't: a converter's state (an interpolator's ease),
+    // a value a bind-once bind took before its source changed, a value
+    // bound before the view model was unbound. So they go, to be made anew.
+    releaseKeyFrameValueBinds();
+  }
+  m_time = (speedMultiplier >= 0) ? m_animation->startTime()
+                                  : m_animation->endTime();
+  m_speedDirection = (speedMultiplier >= 0) ? 1 : -1;
+  m_totalTime = 0.0f;
+  m_lastTotalTime = 0.0f;
+  m_spilledTime = 0.0f;
+  m_direction = 1;
+  m_didLoop = false;
+  m_loopValue = -1;
+  m_blendAccumulator = nullptr;
+  m_accumulatorSuspended = false;
+  return true;
 }
 
 uint32_t LinearAnimationInstance::fps() const { return m_animation->fps(); }

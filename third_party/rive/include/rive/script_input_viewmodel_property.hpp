@@ -1,9 +1,9 @@
 #ifndef _RIVE_SCRIPT_INPUT_VIEW_MODEL_PROPERTY_HPP_
 #define _RIVE_SCRIPT_INPUT_VIEW_MODEL_PROPERTY_HPP_
-#include "third_party/rive/include/rive/generated/script_input_viewmodel_property_base.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/data_bind_path_referencer.hpp"
+#include "rive/generated/script_input_viewmodel_property_base.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/data_bind_path_referencer.hpp"
 #include <stdio.h>
 namespace rive
 {

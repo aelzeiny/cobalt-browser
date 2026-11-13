@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/event_base.hpp"
-#include "third_party/rive/include/rive/event.hpp"
+#include "rive/generated/event_base.hpp"
+#include "rive/event.hpp"
 
 using namespace rive;
 

@@ -3,9 +3,9 @@
 
 #ifdef WITH_RIVE_TEXT
 #include <cstdint>
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text/fully_shaped_text.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text/fully_shaped_text.hpp"
 
 #include <vector>
 

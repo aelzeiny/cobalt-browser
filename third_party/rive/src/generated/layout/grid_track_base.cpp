@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/grid_track_base.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
+#include "rive/generated/layout/grid_track_base.hpp"
+#include "rive/layout/grid_track.hpp"
 
 using namespace rive;
 

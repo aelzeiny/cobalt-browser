@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_COMPACTVALUE_H_
-#define THIRD_PARTY_YOGA_YOGA_COMPACTVALUE_H_
-
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -215,5 +212,3 @@ constexpr bool operator!=(CompactValue a, CompactValue b) noexcept {
 } // namespace detail
 } // namespace yoga
 } // namespace facebook
-
-#endif  // THIRD_PARTY_YOGA_YOGA_COMPACTVALUE_H_

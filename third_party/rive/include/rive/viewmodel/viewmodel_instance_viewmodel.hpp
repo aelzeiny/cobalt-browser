@@ -1,9 +1,9 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_VIEW_MODEL_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_VIEW_MODEL_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_viewmodel_consumer.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_viewmodel_base.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/data_bind/data_bind_viewmodel_consumer.hpp"
 #include <stdio.h>
 namespace rive
 {

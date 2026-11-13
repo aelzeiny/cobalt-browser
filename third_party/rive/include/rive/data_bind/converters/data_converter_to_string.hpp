@@ -1,10 +1,10 @@
 #ifndef _RIVE_DATA_CONVERTER_TO_STRING_HPP_
 #define _RIVE_DATA_CONVERTER_TO_STRING_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_to_string_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_color.hpp"
+#include "rive/generated/data_bind/converters/data_converter_to_string_base.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/data_bind/data_values/data_value_color.hpp"
 #include <stdio.h>
 #include <string>
 #include <cmath>

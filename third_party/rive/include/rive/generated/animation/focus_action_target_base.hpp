@@ -1,8 +1,8 @@
 #ifndef _RIVE_FOCUS_ACTION_TARGET_BASE_HPP_
 #define _RIVE_FOCUS_ACTION_TARGET_BASE_HPP_
-#include "third_party/rive/include/rive/animation/focus_action.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
+#include "rive/animation/focus_action.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
 namespace rive
 {
 class FocusActionTargetBase : public FocusAction

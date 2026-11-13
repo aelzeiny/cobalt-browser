@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/shapes/mesh_host.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard_mesh_host.hpp"
-#include "third_party/rive/include/rive/shapes/image.hpp"
+#include "rive/shapes/mesh_host.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/nested_artboard_mesh_host.hpp"
+#include "rive/shapes/image.hpp"
 
 using namespace rive;
 

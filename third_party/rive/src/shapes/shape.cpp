@@ -1,21 +1,21 @@
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/hittest_command_path.hpp"
-#include "third_party/rive/include/rive/shapes/deformer.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/shapes/paint/paint_outset.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
-#include "third_party/rive/include/rive/shapes/clipping_shape.hpp"
-#include "third_party/rive/include/rive/shapes/paint/blend_mode.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/path_composer.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/clip_result.hpp"
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/profiler/profiler_macros.h"
+#include "rive/constraints/constraint.hpp"
+#include "rive/hittest_command_path.hpp"
+#include "rive/shapes/deformer.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/shapes/points_path.hpp"
+#include "rive/shapes/parametric_path.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/shapes/paint/paint_outset.hpp"
+#include "rive/layout/layout_participant.hpp"
+#include "rive/shapes/clipping_shape.hpp"
+#include "rive/shapes/paint/blend_mode.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/path_composer.hpp"
+#include "rive/artboard.hpp"
+#include "rive/clip_result.hpp"
+#include "rive/math/contour_measure.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/profiler/profiler_macros.h"
 #include <algorithm>
 #include <limits>
 
@@ -161,7 +161,10 @@ void Shape::draw(Renderer* renderer)
                             m_ShapePaints.size() > 1;
   for (auto shapePaint : m_ShapePaints)
   {
-    if (!shapePaint->isVisible())
+    // A paint whose color or gradient is fully transparent draws nothing,
+    // in any blend mode. (willDraw() still counts the shape, since layer
+    // masks decide what to do from it.)
+    if (!shapePaint->shouldDraw())
     {
       continue;
     }

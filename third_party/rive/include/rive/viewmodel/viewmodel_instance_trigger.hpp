@@ -1,8 +1,8 @@
 #ifndef _RIVE_VIEW_MODEL_INSTANCE_TRIGGER_HPP_
 #define _RIVE_VIEW_MODEL_INSTANCE_TRIGGER_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_trigger_base.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_integer.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_trigger_base.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
+#include "rive/data_bind/data_values/data_value_integer.hpp"
 #include <stdio.h>
 namespace rive
 {

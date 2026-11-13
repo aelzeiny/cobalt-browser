@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "third_party/rive/include/rive/scriptnet/http.hpp"
-#include "third_party/rive/include/rive/scriptnet/net_policy.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/scriptnet/http.hpp"
+#include "rive/scriptnet/net_policy.hpp"
+#include "rive/refcnt.hpp"
 
 #include <cstdint>
 
@@ -56,8 +56,9 @@ public:
 };
 
 /// This platform's transport, or null where there is none yet. Apple builds
-/// get a cookie-less, credential-less NSURLSession. Nothing is installed by
-/// default: a host opts in with setProvider(makePlatformProvider()).
+/// get a cookie-less, credential-less NSURLSession; Windows builds the same
+/// over WinHTTP. Nothing is installed by default: a host opts in with
+/// setProvider(makePlatformProvider()).
 rcp<Provider> makePlatformProvider();
 
 /// Replaces the transport. Null (the default) denies every request.

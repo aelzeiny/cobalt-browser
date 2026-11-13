@@ -3,7 +3,7 @@
 
 #ifdef WITH_RIVE_SCRIPTING
 #include "lua.h"
-#include "third_party/rive/include/rive/scripted/scripted_interpolator.hpp"
+#include "rive/scripted/scripted_interpolator.hpp"
 #endif
 #include <vector>
 

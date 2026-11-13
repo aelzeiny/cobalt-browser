@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/scripted_transition_condition_base.hpp"
-#include "third_party/rive/include/rive/animation/scripted_transition_condition.hpp"
+#include "rive/generated/animation/scripted_transition_condition_base.hpp"
+#include "rive/animation/scripted_transition_condition.hpp"
 
 using namespace rive;
 

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/layout_participant_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
+#include "rive/generated/layout/layout_participant_base.hpp"
+#include "rive/layout/layout_participant.hpp"
 
 using namespace rive;
 

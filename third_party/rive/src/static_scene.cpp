@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/static_scene.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/profiler/profiler_macros.h"
+#include "rive/static_scene.hpp"
+#include "rive/artboard.hpp"
+#include "rive/profiler/profiler_macros.h"
 
 using namespace rive;
 

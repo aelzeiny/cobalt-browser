@@ -1,35 +1,36 @@
-#include "third_party/rive/include/rive/text/text_style_share_cache.hpp"
-#include "third_party/rive/include/rive/animation/any_state.hpp"
-#include "third_party/rive/include/rive/animation/entry_state.hpp"
-#include "third_party/rive/include/rive/animation/exit_state.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_group_item.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_formula_base.hpp"
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_operation_viewmodel_base.hpp"
-#include "third_party/rive/include/rive/generated/scripted/scripted_data_converter_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_component_style.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/gradient_stop.hpp"
-#include "third_party/rive/include/rive/shapes/paint/linear_gradient.hpp"
-#include "third_party/rive/include/rive/shapes/paint/radial_gradient.hpp"
-#include "third_party/rive/include/rive/shapes/paint/solid_color.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/text/text_interface.hpp"
-#include "third_party/rive/include/rive/text/text_style_axis.hpp"
-#include "third_party/rive/include/rive/text/text_style_feature.hpp"
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/text/text_style_share_cache.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/any_state.hpp"
+#include "rive/animation/entry_state.hpp"
+#include "rive/animation/exit_state.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/artboard.hpp"
+#include "rive/data_bind/converters/data_converter.hpp"
+#include "rive/data_bind/converters/data_converter_group.hpp"
+#include "rive/data_bind/converters/data_converter_group_item.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
+#include "rive/file.hpp"
+#include "rive/generated/data_bind/converters/data_converter_formula_base.hpp"
+#include "rive/generated/data_bind/converters/data_converter_operation_viewmodel_base.hpp"
+#include "rive/generated/scripted/scripted_data_converter_base.hpp"
+#include "rive/layout/layout_component_style.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/gradient_stop.hpp"
+#include "rive/shapes/paint/linear_gradient.hpp"
+#include "rive/shapes/paint/radial_gradient.hpp"
+#include "rive/shapes/paint/solid_color.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/text/text_interface.hpp"
+#include "rive/text/text_style_axis.hpp"
+#include "rive/text/text_style_feature.hpp"
+#include "rive/text/text_style_global.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
 #include <algorithm>
 
 using namespace rive;
@@ -174,6 +175,7 @@ TextStyleShareInfo TextStyleShareCache::analyze(
   {
     return info;
   }
+  source = source->decoded();
   uint32_t ownViewModelId = source->viewModelId();
   // Whether [dataBind] reads nothing but the style's own view model.
   auto readsOwnViewModel = [ownViewModelId](const DataBind* dataBind) {
@@ -186,8 +188,7 @@ TextStyleShareInfo TextStyleShareCache::analyze(
   };
   bool onlyOwnViewModel = true;
   bool staticBinds = true;
-  for (auto dataBind : source->dataBinds())
-  {
+  auto visitBind = [&](const DataBind* dataBind) {
     if (!readsOwnViewModel(dataBind))
     {
       onlyOwnViewModel = false;
@@ -196,6 +197,18 @@ TextStyleShareInfo TextStyleShareCache::analyze(
         !isStaticConverter(dataBind->converter()))
     {
       staticBinds = false;
+    }
+  };
+  for (auto dataBind : source->dataBinds())
+  {
+    visitBind(dataBind);
+  }
+  // Its animations' keyframe binds, which they own, read the same context.
+  for (size_t i = 0; i < source->animationCount(); i++)
+  {
+    for (auto dataBind : source->animation(i)->keyFrameBinds())
+    {
+      visitBind(dataBind);
     }
   }
   // The state machine's binds (its conditions, listener actions) read the
@@ -254,6 +267,14 @@ TextStyleShareInfo TextStyleShareCache::analyze(
 
 TextStyleShareInfo TextStyleShareCache::info(const Artboard* source)
 {
+  // The answer is cached for good, so it must come from the decoded body
+  // and its animations' keyframe binds. Decoded outside the lock, which the
+  // decodes never take.
+  source = source->decoded();
+  for (size_t i = 0; i < source->animationCount(); i++)
+  {
+    source->animation(i)->keyFrameBinds();
+  }
   std::lock_guard<std::mutex> lock(m_mutex);
   auto itr = m_info.find(source);
   if (itr != m_info.end())
@@ -279,7 +300,10 @@ bool TextStyleShareCache::anyListensToRuns()
   {
     for (auto artboard : m_file->artboards())
     {
-      if (TextStyleGlobal::firstTextStylePaint(artboard) != nullptr &&
+      // Listening to runs takes a listener, so a deferred body without one
+      // needn't be decoded to rule it out.
+      if (artboard->mayHaveStateMachineListener() &&
+          TextStyleGlobal::firstTextStylePaint(artboard) != nullptr &&
           info(artboard).listensToRuns)
       {
         any = true;

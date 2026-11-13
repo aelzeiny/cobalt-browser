@@ -1,7 +1,7 @@
 #ifndef _RIVE_AUDIO_EVENT_HPP_
 #define _RIVE_AUDIO_EVENT_HPP_
-#include "third_party/rive/include/rive/generated/audio_event_base.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
+#include "rive/generated/audio_event_base.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
 
 namespace rive
 {

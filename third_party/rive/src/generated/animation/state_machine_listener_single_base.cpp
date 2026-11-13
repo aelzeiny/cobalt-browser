@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/state_machine_listener_single_base.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener_single.hpp"
+#include "rive/generated/animation/state_machine_listener_single_base.hpp"
+#include "rive/animation/state_machine_listener_single.hpp"
 
 using namespace rive;
 

@@ -1,7 +1,7 @@
 #ifndef _RIVE_BLOB_ASSET_HPP_
 #define _RIVE_BLOB_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/blob_asset_base.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/generated/assets/blob_asset_base.hpp"
+#include "rive/simple_array.hpp"
 
 namespace rive
 {

@@ -1,9 +1,9 @@
 #ifndef _RIVE_FILE_ASSET_HPP_
 #define _RIVE_FILE_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/file_asset_base.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/generated/assets/file_asset_base.hpp"
+#include "rive/span.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/simple_array.hpp"
 #include <string>
 
 namespace rive

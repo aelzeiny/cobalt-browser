@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_BIND_CONTEXT_TARGET_VALUE_HPP_
 #define _RIVE_DATA_BIND_CONTEXT_TARGET_VALUE_HPP_
 #include <stdio.h>
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
 namespace rive
 {
 class DataBind;

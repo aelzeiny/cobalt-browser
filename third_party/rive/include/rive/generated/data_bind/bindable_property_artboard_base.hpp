@@ -1,6 +1,6 @@
 #ifndef _RIVE_BINDABLE_PROPERTY_ARTBOARD_BASE_HPP_
 #define _RIVE_BINDABLE_PROPERTY_ARTBOARD_BASE_HPP_
-#include "third_party/rive/include/rive/data_bind/bindable_property_id.hpp"
+#include "rive/data_bind/bindable_property_id.hpp"
 namespace rive
 {
 class BindablePropertyArtboardBase : public BindablePropertyId

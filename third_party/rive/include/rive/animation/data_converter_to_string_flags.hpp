@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_CONVERTER_TO_STRING_FLAGS_HPP_
 #define _RIVE_DATA_CONVERTER_TO_STRING_FLAGS_HPP_
 
-#include "third_party/rive/include/rive/enums.hpp"
+#include "rive/enums.hpp"
 
 namespace rive
 {

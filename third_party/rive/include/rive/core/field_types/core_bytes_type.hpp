@@ -1,7 +1,7 @@
 #ifndef _RIVE_CORE_BYTES_TYPE_HPP_
 #define _RIVE_CORE_BYTES_TYPE_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/span.hpp"
 #include <cstdint>
 
 namespace rive

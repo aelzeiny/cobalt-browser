@@ -2,8 +2,8 @@
  * Copyright 2024 Rive
  */
 
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/input/focus_manager.hpp"
 #include <algorithm>
 #include <cstddef>
 

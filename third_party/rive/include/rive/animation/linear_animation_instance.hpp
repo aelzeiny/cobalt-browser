@@ -1,10 +1,10 @@
 #ifndef _RIVE_LINEAR_ANIMATION_INSTANCE_HPP_
 #define _RIVE_LINEAR_ANIMATION_INSTANCE_HPP_
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_callback_type.hpp"
-#include "third_party/rive/include/rive/nested_animation.hpp"
-#include "third_party/rive/include/rive/scene.hpp"
+#include "rive/artboard.hpp"
+#include "rive/core/field_types/core_callback_type.hpp"
+#include "rive/nested_animation.hpp"
+#include "rive/scene.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -44,7 +44,7 @@ public:
   // Returns the per-instance holder receiving the data-bound value for the
   // given keyframe in this animation instance, lazily building it on first
   // request. On first use for a keyframe that has a source data bind (see
-  // Artboard::keyFrameSourceBind), it clones that bind onto a freshly created
+  // LinearAnimation::keyFrameBind), it clones that bind onto a freshly created
   // BindableProperty holder, parks the clone on the artboard's data-bind
   // container (advanced with the rest each frame), and caches the holder.
   // Returns nullptr when the keyframe is not data bound; keyframes then fall
@@ -66,10 +66,21 @@ public:
   static uint64_t sm_keyFrameHolderResolves;
 #endif
 
-  // Where this instance's number and color writes go instead of straight to
-  // the objects, when a blend state owns it; see BlendAccumulator.
-  BlendAccumulator* blendAccumulator() const { return m_blendAccumulator; }
+  // Where this instance's writes go instead of straight to the objects,
+  // when a blend state or a state machine collects them; see
+  // BlendAccumulator.
+  BlendAccumulator* blendAccumulator() const
+  {
+    return m_accumulatorSuspended ? nullptr : m_blendAccumulator;
+  }
   void blendAccumulator(BlendAccumulator* value) { m_blendAccumulator = value; }
+  // Writes go straight to the objects while suspended: LinearAnimation::apply
+  // suspends a state machine's accumulator around the keyed objects it
+  // tracks nothing of, so their writes skip it.
+  void suspendAccumulator(bool suspended) const
+  {
+    m_accumulatorSuspended = suspended;
+  }
 
   // Returns the current point in time at which this instance has advance
   // to
@@ -158,6 +169,10 @@ public:
   bool advanceAndApply(float seconds) override;
   std::string name() const override;
   void reset(float speedMultiplier);
+  // Back to where the constructor leaves it, for a state machine reusing
+  // this instance. False when it can't be: a scripted interpolator's clone
+  // keeps state of its own.
+  bool restart(float speedMultiplier);
   void reportEvent(Event* event, float secondsDelay = 0.0f) override;
 
 private:
@@ -179,6 +194,8 @@ private:
   // index; the index is never rebuilt. The editor adds binds live and
   // always looks.
   mutable bool m_noKeyFrameBinds = false;
+  // See suspendAccumulator; in the padding after m_noKeyFrameBinds.
+  mutable bool m_accumulatorSuspended = false;
   int m_loopValue = -1;
 
   // The four data-binding / scripted-interpolator containers this instance
@@ -192,6 +209,9 @@ private:
 
   // Allocates the cold cluster on first use and returns it.
   LAIBindingExtras& ensureBindingExtras() const;
+  // Removes this instance's keyframe value binds from the artboard and
+  // deletes them, then the holders they target. Needs m_bindingExtras.
+  void releaseKeyFrameValueBinds();
 
   // keyFrameValueHolder past its no-binds check.
   BindableProperty* resolveKeyFrameValueHolder(const KeyFrame* keyframe) const;

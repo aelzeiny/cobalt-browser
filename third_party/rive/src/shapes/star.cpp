@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/shapes/star.hpp"
-#include "third_party/rive/include/rive/shapes/straight_vertex.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/shapes/star.hpp"
+#include "rive/shapes/straight_vertex.hpp"
+#include "rive/math/math_types.hpp"
 #include <cmath>
 #include <cstdio>
 

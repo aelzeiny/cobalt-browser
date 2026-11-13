@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/triangle_base.hpp"
-#include "third_party/rive/include/rive/shapes/triangle.hpp"
+#include "rive/generated/shapes/triangle_base.hpp"
+#include "rive/shapes/triangle.hpp"
 
 using namespace rive;
 

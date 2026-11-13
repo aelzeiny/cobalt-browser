@@ -107,13 +107,26 @@ LANE_LAYOUT = [
      ' in place of a state.', [
          ('log', 0xffffffff),
      ]),
-    ('Reuse', 'The most 64 KiB pages a job instance\'s memory may have grown'
-     ' to for another job to reuse it, as memory never shrinks.', [
-         ('maxPages', 256),
-     ]),
     ('Processor', 'How long a processor\'s init may run in milliseconds,'
      ' natively per step and in a worklet as a whole, far longer than a block'
      ' as it may build tables.', [
          ('initMs', 1000),
+     ]),
+    ('Parallel', 'Where a parallel call\'s control block keeps each word, in'
+     ' bytes from its start. The words its parts race on sit 128 bytes apart,'
+     ' each alone on a cache line, Apple\'s included. The claim takes 8 bytes,'
+     ' so no grain can wrap it.', [
+         ('thunk', 0),
+         ('args', 4),
+         ('parts', 8),
+         ('count', 12),
+         ('atOnce', 16),
+         ('callerParks', 20),
+         ('generation', 128),
+         ('arrived', 256),
+         ('sleepers', 384),
+         ('claim', 512),
+         ('stop', 640),
+         ('bytes', 768),
      ]),
 ]

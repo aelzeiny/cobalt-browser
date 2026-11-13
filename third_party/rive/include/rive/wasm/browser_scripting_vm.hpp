@@ -3,7 +3,7 @@
 
 #if defined(WITH_RIVE_SCRIPTING_WASM) && defined(__EMSCRIPTEN__)
 
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
 
 #ifdef __EMSCRIPTEN_PTHREADS__
 #include <pthread.h>

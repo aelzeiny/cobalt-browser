@@ -1,6 +1,6 @@
 #ifndef _RIVE_KEY_FRAME_UINT_HPP_
 #define _RIVE_KEY_FRAME_UINT_HPP_
-#include "third_party/rive/include/rive/generated/animation/keyframe_uint_base.hpp"
+#include "rive/generated/animation/keyframe_uint_base.hpp"
 #include <stdio.h>
 namespace rive
 {

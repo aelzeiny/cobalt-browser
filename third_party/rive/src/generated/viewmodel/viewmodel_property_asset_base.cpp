@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_property_asset_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset.hpp"
+#include "rive/generated/viewmodel/viewmodel_property_asset_base.hpp"
+#include "rive/viewmodel/viewmodel_property_asset.hpp"
 
 using namespace rive;
 

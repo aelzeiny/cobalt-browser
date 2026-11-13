@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/animation/state_machine_layer.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_machine_base.hpp"
-#include "third_party/rive/include/rive/animation/any_state.hpp"
-#include "third_party/rive/include/rive/animation/entry_state.hpp"
-#include "third_party/rive/include/rive/animation/exit_state.hpp"
+#include "rive/animation/state_machine_layer.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/generated/animation/state_machine_base.hpp"
+#include "rive/animation/any_state.hpp"
+#include "rive/animation/entry_state.hpp"
+#include "rive/animation/exit_state.hpp"
 
 using namespace rive;
 

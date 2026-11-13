@@ -1,7 +1,7 @@
 #ifndef _RIVE_DATA_VALUE_VIEWMODEL_HPP_
 #define _RIVE_DATA_VALUE_VIEWMODEL_HPP_
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
 
 #include <stdio.h>
 namespace rive

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/state_machine_fire_trigger_base.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_fire_trigger.hpp"
+#include "rive/generated/animation/state_machine_fire_trigger_base.hpp"
+#include "rive/animation/state_machine_fire_trigger.hpp"
 
 using namespace rive;
 

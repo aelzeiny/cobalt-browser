@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/text/glyph_lookup.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text/glyph_lookup.hpp"
+#include "rive/text_engine.hpp"
 
 using namespace rive;
 

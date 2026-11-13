@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/animation/gamepad_listener_group.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_gamepad.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/focus_data.hpp"
+#include "rive/animation/gamepad_listener_group.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/listener_types/listener_input_type_gamepad.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/focus_data.hpp"
 
 using namespace rive;
 

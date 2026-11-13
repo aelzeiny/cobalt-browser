@@ -1,6 +1,6 @@
 #ifndef _RIVE_STRING_TEMPLATE_ARGUMENT_NUMBER_HPP_
 #define _RIVE_STRING_TEMPLATE_ARGUMENT_NUMBER_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/string_template/string_template_argument_number_base.hpp"
+#include "rive/generated/data_bind/converters/string_template/string_template_argument_number_base.hpp"
 #include <stdio.h>
 namespace rive
 {

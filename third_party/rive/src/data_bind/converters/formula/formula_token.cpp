@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_formula.hpp"
-#include "third_party/rive/include/rive/importers/data_converter_formula_importer.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_context.hpp"
+#include "rive/data_bind/converters/formula/formula_token.hpp"
+#include "rive/data_bind/converters/data_converter_formula.hpp"
+#include "rive/importers/data_converter_formula_importer.hpp"
+#include "rive/data_bind/data_bind_context.hpp"
 #include <cmath>
 
 using namespace rive;

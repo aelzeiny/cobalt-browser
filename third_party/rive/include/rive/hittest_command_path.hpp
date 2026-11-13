@@ -5,8 +5,8 @@
 #ifndef _RIVE_HITTEST_COMMAND_PATH_HPP_
 #define _RIVE_HITTEST_COMMAND_PATH_HPP_
 
-#include "third_party/rive/include/rive/command_path.hpp"
-#include "third_party/rive/include/rive/math/hit_test.hpp"
+#include "rive/command_path.hpp"
+#include "rive/math/hit_test.hpp"
 
 namespace rive
 {

@@ -1,7 +1,7 @@
 #ifndef _RIVE_FORMULA_TOKEN_VALUE_BASE_HPP_
 #define _RIVE_FORMULA_TOKEN_VALUE_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/data_bind/converters/formula/formula_token.hpp"
 namespace rive
 {
 class FormulaTokenValueBase : public FormulaToken

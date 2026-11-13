@@ -1,10 +1,10 @@
 #ifndef _RIVE_PROPERTY_RECORDER_HPP_
 #define _RIVE_PROPERTY_RECORDER_HPP_
 
-#include "third_party/rive/include/rive/core/binary_writer.hpp"
-#include "third_party/rive/include/rive/core/vector_binary_writer.hpp"
-#include "third_party/rive/include/rive/core/binary_data_reader.hpp"
-#include "third_party/rive/include/rive/core/binary_data_reader.hpp"
+#include "rive/core/binary_writer.hpp"
+#include "rive/core/vector_binary_writer.hpp"
+#include "rive/core/binary_data_reader.hpp"
+#include "rive/core/binary_data_reader.hpp"
 #include <algorithm>
 #include <memory>
 #include <string>

@@ -1,8 +1,8 @@
 #ifndef _RIVE_TEXT_STYLE_BACKGROUND_HPP_
 #define _RIVE_TEXT_STYLE_BACKGROUND_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_background_base.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
-#include "third_party/rive/include/rive/text/text_selection_path.hpp"
+#include "rive/generated/text/text_style_background_base.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
+#include "rive/text/text_selection_path.hpp"
 #include <vector>
 
 namespace rive

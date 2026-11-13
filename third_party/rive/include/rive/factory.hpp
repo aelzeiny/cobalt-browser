@@ -5,12 +5,12 @@
 #ifndef _RIVE_FACTORY_HPP_
 #define _RIVE_FACTORY_HPP_
 
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
+#include "rive/renderer.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/audio/audio_source.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/span.hpp"
+#include "rive/math/aabb.hpp"
 
 #include <stdio.h>
 #include <cstdint>
@@ -95,6 +95,10 @@ public:
   virtual rcp<RenderPaint> makeRenderPaint() = 0;
 
   virtual rcp<RenderImage> decodeImage(Span<const uint8_t>) = 0;
+
+  // An import is about to pass at most this many bytes of embedded assets
+  // through decodeImage; a factory that stores them can make room first.
+  virtual void reserveForImport(size_t fileBytes) {}
 
   // GPU ore context, when this factory is backed by a RenderContext.
   // Null for non-GPU factories. Kept last in the virtual section to avoid

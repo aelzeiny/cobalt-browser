@@ -2,13 +2,13 @@
  * Copyright 2023 Rive
  */
 
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
 
 #ifdef __APPLE__
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/core/type_conversions.hpp"
-#include "third_party/rive/include/utils/auto_cf.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/core/type_conversions.hpp"
+#include "utils/auto_cf.hpp"
 
 #include <TargetConditionals.h>
 

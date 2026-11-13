@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/artboard_component_list_base.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
+#include "rive/generated/artboard_component_list_base.hpp"
+#include "rive/artboard_component_list.hpp"
 
 using namespace rive;
 

@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/layout/layout_sizing_style.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout/layout_enums.hpp"
+#include "rive/layout/layout_sizing_style.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout/layout_enums.hpp"
 #ifdef WITH_RIVE_LAYOUT
 // YGStyle is only forward declared in the headers; the setters below need it.
-#include "third_party/rive/include/rive/layout/layout_data.hpp"
+#include "rive/layout/layout_data.hpp"
 #endif
 
 using namespace rive;

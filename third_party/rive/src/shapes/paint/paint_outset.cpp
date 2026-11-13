@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/shapes/paint/paint_outset.hpp"
+#include "rive/shapes/paint/paint_outset.hpp"
 
-#include "third_party/rive/include/rive/math/math_types.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/shapes/shape_paint_container.hpp"
-#include "third_party/rive/include/rive/transform_space.hpp"
+#include "rive/math/math_types.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/shapes/shape_paint_container.hpp"
+#include "rive/transform_space.hpp"
 
 #include <algorithm>
 #include <cmath>

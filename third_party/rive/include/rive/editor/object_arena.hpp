@@ -17,7 +17,7 @@
 #ifndef _RIVE_EDITOR_OBJECT_ARENA_HPP_
 #define _RIVE_EDITOR_OBJECT_ARENA_HPP_
 
-#include "third_party/rive/include/rive/editor/core_handle.hpp"
+#include "rive/editor/core_handle.hpp"
 
 namespace rive
 {

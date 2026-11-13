@@ -1,5 +1,6 @@
 config("yoga_config") {
   include_dirs = [ "." ]
+  defines = [ "YOGA_EXPORT=" ]
   cflags_cc = [ "-Wno-bitwise-instead-of-logical", "-Wno-deprecated-copy" ]
 }
 
@@ -7,6 +8,7 @@ source_set("yoga") {
   sources = [
     "yoga/BitUtils.h",
     "yoga/CompactValue.h",
+    "yoga/ScratchArena.h",
     "yoga/Utils.cpp",
     "yoga/Utils.h",
     "yoga/YGConfig.cpp",
@@ -14,6 +16,9 @@ source_set("yoga") {
     "yoga/YGEnums.cpp",
     "yoga/YGEnums.h",
     "yoga/YGFloatOptional.h",
+    "yoga/YGGridTrack.h",
+    "yoga/YGGridTrackList.cpp",
+    "yoga/YGGridTrackList.h",
     "yoga/YGLayout.cpp",
     "yoga/YGLayout.h",
     "yoga/YGMacros.h",
@@ -30,6 +35,12 @@ source_set("yoga") {
     "yoga/Yoga.h",
     "yoga/event/event.cpp",
     "yoga/event/event.h",
+    "yoga/grid/AutoPlacement.h",
+    "yoga/grid/GridLayout.cpp",
+    "yoga/grid/GridLayout.h",
+    "yoga/grid/GridTrack.h",
+    "yoga/grid/TrackSizing.h",
+    "yoga/grid/YGGridCompat.h",
     "yoga/log.cpp",
     "yoga/log.h",
   ]

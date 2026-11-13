@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_COMPONENT_HPP_
 #define _RIVE_VIEW_MODEL_COMPONENT_HPP_
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_component_base.hpp"
+#include "rive/generated/viewmodel/viewmodel_component_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/animation/listener_number_change.hpp"
-#include "third_party/rive/include/rive/animation/nested_input.hpp"
-#include "third_party/rive/include/rive/animation/nested_number.hpp"
-#include "third_party/rive/include/rive/animation/nested_state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_number.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_input_instance.hpp"
+#include "rive/animation/listener_number_change.hpp"
+#include "rive/animation/nested_input.hpp"
+#include "rive/animation/nested_number.hpp"
+#include "rive/animation/nested_state_machine.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/state_machine_number.hpp"
+#include "rive/animation/state_machine_input_instance.hpp"
 
 using namespace rive;
 

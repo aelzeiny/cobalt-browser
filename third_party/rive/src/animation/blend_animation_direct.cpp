@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/animation/blend_animation_direct.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_number.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/importers/bindable_property_importer.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
+#include "rive/animation/blend_animation_direct.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/animation/state_machine_number.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/importers/bindable_property_importer.hpp"
+#include "rive/data_bind/bindable_property.hpp"
 
 using namespace rive;
 

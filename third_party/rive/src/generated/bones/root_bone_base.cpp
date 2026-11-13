@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/bones/root_bone_base.hpp"
-#include "third_party/rive/include/rive/bones/root_bone.hpp"
+#include "rive/generated/bones/root_bone_base.hpp"
+#include "rive/bones/root_bone.hpp"
 
 using namespace rive;
 

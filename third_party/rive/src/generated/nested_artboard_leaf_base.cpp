@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/nested_artboard_leaf_base.hpp"
-#include "third_party/rive/include/rive/nested_artboard_leaf.hpp"
+#include "rive/generated/nested_artboard_leaf_base.hpp"
+#include "rive/nested_artboard_leaf.hpp"
 
 using namespace rive;
 

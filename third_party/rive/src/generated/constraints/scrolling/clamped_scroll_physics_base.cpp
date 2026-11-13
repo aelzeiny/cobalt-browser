@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/constraints/scrolling/clamped_scroll_physics_base.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/clamped_scroll_physics.hpp"
+#include "rive/generated/constraints/scrolling/clamped_scroll_physics_base.hpp"
+#include "rive/constraints/scrolling/clamped_scroll_physics.hpp"
 
 using namespace rive;
 

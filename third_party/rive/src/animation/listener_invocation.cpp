@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/semantic_listener_group.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
 
 #include <string>
 #include <utility>

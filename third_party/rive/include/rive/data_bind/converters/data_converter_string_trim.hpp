@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_CONVERTER_STRING_TRIM_HPP_
 #define _RIVE_DATA_CONVERTER_STRING_TRIM_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_string_trim_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
-#include "third_party/rive/include/rive/trim_type.hpp"
+#include "rive/generated/data_bind/converters/data_converter_string_trim_base.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/trim_type.hpp"
 #include <stdio.h>
 #include <algorithm>
 #include <cctype>

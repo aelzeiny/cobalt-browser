@@ -2,9 +2,9 @@
  * Copyright 2023 Rive
  */
 
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
-#include "third_party/rive/include/rive/rive_types.hpp"
-#include "third_party/rive/include/rive/math/simd.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
+#include "rive/rive_types.hpp"
+#include "rive/math/simd.hpp"
 #include <stdio.h>
 #include <string.h>
 

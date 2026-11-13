@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/nested_artboard_mesh_host.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/bitmap_cache.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/shapes/mesh_drawable.hpp"
+#include "rive/nested_artboard_mesh_host.hpp"
+#include "rive/artboard.hpp"
+#include "rive/bitmap_cache.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/shapes/mesh_drawable.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
 #endif
 
 using namespace rive;
@@ -93,11 +93,10 @@ Mat2D NestedArtboardMeshHost::meshHostWorldTransform() const
 
 float NestedArtboardMeshHost::meshRasterResolution() const
 {
-  if (instance() != nullptr && instance()->bitmapCache() != nullptr)
-  {
-    return instance()->bitmapCache()->resolution();
-  }
-  return 1.0f;
+  // A cache that's off has no say, the same as having none.
+  const BitmapCache* cache = instance() != nullptr ? instance()->bitmapCache()
+                                                   : nullptr;
+  return cache != nullptr && cache->cacheEnabled() ? cache->resolution() : 1.0f;
 }
 
 Mat2D NestedArtboardMeshHost::meshHostUVTransform() const
@@ -154,7 +153,8 @@ bool NestedArtboardMeshHost::underClip() const
   return false;
 }
 
-// A fresh composite renderer (WebGL) inherits no clip.
+// A host whose fresh composite renderer would not carry the clip. None in tree
+// today; WebGL2 copies it across.
 bool NestedArtboardMeshHost::compositeDropsClip() const
 {
   if (instance() == nullptr || !underClip())
@@ -185,7 +185,7 @@ bool NestedArtboardMeshHost::draw(Renderer* renderer)
     return true;
   }
 
-  // Ignores Bitmap Cache Enabled: a deformed instance needs a bitmap.
+  // Rasterizes with Bitmap Cache off too: a deformed instance needs a bitmap.
   offscreen::RasterPlan plan;
   cmd::DeferredCanvasHost* host = nullptr;
   rcp<RenderImage> image = instance->rasterImage(
@@ -214,13 +214,104 @@ bool NestedArtboardMeshHost::draw(Renderer* renderer)
       placement.renderer,
       image.get(),
       ImageSampler::LinearClamp(),
-      m_owner->blendMode(),
+      m_owner->renderBlendMode(),
       placement.opacity,
-      0.0f);
+      m_owner->additiveness());
   offscreen::endComposite(placement);
   return true;
 }
 #endif
+
+bool NestedArtboardMeshHost::pointersFollowMesh() const
+{
+#ifdef RIVE_CANVAS
+  return m_mesh != nullptr && m_drewThroughMesh && instance() != nullptr;
+#else
+  return false;
+#endif
+}
+
+bool NestedArtboardMeshHost::localThroughMesh(
+    Vec2D world,
+    Vec2D* local,
+    bool* offMesh,
+    Mat2D* toLocal)
+{
+#ifdef RIVE_CANVAS
+  if (!pointersFollowMesh())
+  {
+    return false;
+  }
+  Vec2D uv;
+  bool inside;
+  Mat2D toUV;
+  if (!m_mesh->uvAt(world, &uv, &inside, toLocal != nullptr ? &toUV : nullptr))
+  {
+    return false;
+  }
+  // The raster spans the artboard's bounds, so its UVs do too.
+  ArtboardInstance* instance = this->instance();
+  const AABB box = instance->bounds();
+  const Vec2D content(
+      box.left() + uv.x * box.width(),
+      box.top() + uv.y * box.height());
+  *local = instance->hasSelfTransform() ? instance->selfTransform() * content
+                                        : content;
+  *offMesh = !inside;
+  if (toLocal != nullptr)
+  {
+    *toLocal = Mat2D::fromScaleAndTranslation(
+                   box.width(),
+                   box.height(),
+                   box.left(),
+                   box.top()) *
+               toUV;
+    if (instance->hasSelfTransform())
+    {
+      *toLocal = instance->selfTransform() * *toLocal;
+    }
+  }
+  m_pointerWorld = world;
+  m_pointerContent = content;
+  m_hasPointer = true;
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool NestedArtboardMeshHost::worldThroughMesh(Vec2D content, Vec2D* world) const
+{
+#ifdef RIVE_CANVAS
+  if (!pointersFollowMesh())
+  {
+    return false;
+  }
+  // The inner hit tests asking are testing the pointer just mapped, so
+  // answer with where it was. Mapping back can't always: UVs repeat across
+  // repeated N-Slice tiles, and the last tile holding them would win.
+  // Content positions come back through the artboard's self transform and
+  // its inverse, so allow a little rounding.
+  if (m_hasPointer &&
+      Vec2D::distanceSquared(content, m_pointerContent) <= 1e-6f)
+  {
+    *world = m_pointerWorld;
+    return true;
+  }
+  const AABB box = instance()->bounds();
+  if (box.width() == 0.0f || box.height() == 0.0f)
+  {
+    return false;
+  }
+  return m_mesh->positionAtUV(
+      Vec2D(
+          (content.x - box.left()) / box.width(),
+          (content.y - box.top()) / box.height()),
+      world);
+#else
+  return false;
+#endif
+}
 
 float NestedArtboardMeshHost::meshHostScaleX() const
 {

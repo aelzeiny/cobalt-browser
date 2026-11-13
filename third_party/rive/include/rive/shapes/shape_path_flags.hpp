@@ -1,7 +1,7 @@
 #ifndef _RIVE_SHAPE_PATH_FLAGS_HPP_
 #define _RIVE_SHAPE_PATH_FLAGS_HPP_
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 
 namespace rive
 {

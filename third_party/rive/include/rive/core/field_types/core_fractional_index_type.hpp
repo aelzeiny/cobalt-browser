@@ -3,8 +3,8 @@
 
 #ifdef WITH_RIVE_EDITOR
 
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/core/fractional_index.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/core/fractional_index.hpp"
 
 namespace rive
 {

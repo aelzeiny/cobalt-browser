@@ -1,9 +1,9 @@
 #ifndef _RIVE_IMAGE_ASSET_HPP_
 #define _RIVE_IMAGE_ASSET_HPP_
 
-#include "third_party/rive/include/rive/generated/assets/image_asset_base.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/simple_array.hpp"
+#include "rive/generated/assets/image_asset_base.hpp"
+#include "rive/renderer.hpp"
+#include "rive/simple_array.hpp"
 #include <functional>
 #include <string>
 

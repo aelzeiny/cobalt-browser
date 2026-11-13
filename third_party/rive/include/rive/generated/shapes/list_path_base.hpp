@@ -1,8 +1,8 @@
 #ifndef _RIVE_LIST_PATH_BASE_HPP_
 #define _RIVE_LIST_PATH_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/shapes/points_common_path.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/shapes/points_common_path.hpp"
 namespace rive
 {
 class ListPathBase : public PointsCommonPath

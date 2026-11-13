@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/data_bind/context/context_value_viewmodel.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/generated/data_bind/bindable_property_id_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_viewmodel_consumer.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/data_bind/context/context_value_viewmodel.hpp"
+#include "rive/data_bind/bindable_property_viewmodel.hpp"
+#include "rive/generated/data_bind/bindable_property_id_base.hpp"
+#include "rive/data_bind/data_bind_viewmodel_consumer.hpp"
+#include "rive/generated/core_registry.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
 
 using namespace rive;
 

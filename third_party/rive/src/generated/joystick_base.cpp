@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/joystick_base.hpp"
-#include "third_party/rive/include/rive/joystick.hpp"
+#include "rive/generated/joystick_base.hpp"
+#include "rive/joystick.hpp"
 
 using namespace rive;
 

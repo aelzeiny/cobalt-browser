@@ -1,6 +1,6 @@
 #ifndef _RIVE_LISTENER_TRIGGER_CHANGE_BASE_HPP_
 #define _RIVE_LISTENER_TRIGGER_CHANGE_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_input_change.hpp"
+#include "rive/animation/listener_input_change.hpp"
 namespace rive
 {
 class ListenerTriggerChangeBase : public ListenerInputChange

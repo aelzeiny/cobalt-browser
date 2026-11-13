@@ -1,0 +1,37 @@
+Name: Rive Runtime and Rive Renderer
+Short Name: rive
+URL: https://github.com/rive-app/rive-runtime
+Version: runtime-v0.1.747
+Revision: 38fe8bb8360866a86b480d76363dc6494d858154
+License: MIT
+License File: LICENSE
+Security Critical: yes
+Shipped: yes
+
+Description:
+Rive's C++ runtime (src/, include/, utils/, decoders/) and Rive Renderer, its
+GPU renderer (renderer/), used by Cobalt's native <rive-player> element
+(third_party/blink/renderer/core/html/rive/).
+
+Only the GL backend of Rive Renderer is vendored (no D3D, Metal, Vulkan,
+WebGPU or Ore). Scripting (src/lua) is not vendored. Layout uses Rive's Yoga
+fork, vendored in //third_party/yoga.
+
+renderer/generated_include/generated/shaders/ holds the minified shader
+headers, generated once with upstream's script and Chromium's ply:
+  cd renderer/src/shaders  # in an upstream checkout at the revision above
+  make OUT=<out>/generated/shaders \
+      FLAGS="-p <chromium>/src/third_party" minify
+  cp <out>/generated/shaders/*.hpp <out>/generated/shaders/*.exports.h \
+      renderer/generated_include/generated/shaders/
+
+Local Modifications (marked "Cobalt patch"):
+- include/rive/simple_array.hpp: include <cstdlib>.
+- renderer/include/rive/renderer/gl/gles3.hpp: RIVE_CHROMIUM_GL, which calls
+  GL through Chromium's GPU command buffer client (gles2_c_lib): headers,
+  macros mapping GLES 3.x entry points to the names the command buffer
+  exposes, and glDelete* wrappers that skip 0 (the client DCHECKs on it).
+- renderer/src/gl/render_context_gl_impl.cpp: zero-initialize glGet* out
+  params (the command buffer client DCHECKs that they are 0).
+- cobalt/: Cobalt's interface to Rive Renderer (not upstream).
+- BUILD.gn is Cobalt's own.

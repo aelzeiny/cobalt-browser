@@ -1,6 +1,6 @@
 #ifdef WITH_RIVE_SCRIPTING
-#include "third_party/rive/include/rive/scripted/script_backend.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
+#include "rive/scripted/script_backend.hpp"
+#include "rive/scripted/scripted_object.hpp"
 
 #include <vector>
 
@@ -26,6 +26,16 @@ void ScriptBackend::displayScale(float scale)
     {
       object->displayScaleChanged();
     }
+  }
+}
+
+void ScriptBackend::asyncWorkDelivered()
+{
+  // Unlike displayScale, no script runs here, so the set can't change while
+  // it is walked.
+  for (ScriptedObject* object : m_scriptedObjects)
+  {
+    object->asyncWorkDelivered();
   }
 }
 

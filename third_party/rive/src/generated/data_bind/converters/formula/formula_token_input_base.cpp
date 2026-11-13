@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/formula/formula_token_input_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/formula/formula_token_input.hpp"
+#include "rive/generated/data_bind/converters/formula/formula_token_input_base.hpp"
+#include "rive/data_bind/converters/formula/formula_token_input.hpp"
 
 using namespace rive;
 

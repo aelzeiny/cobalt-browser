@@ -1,8 +1,8 @@
 #ifndef _RIVE_AUDIO_EVENT_BASE_HPP_
 #define _RIVE_AUDIO_EVENT_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/event.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/event.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif

@@ -1,9 +1,12 @@
 #ifndef _RIVE_DATA_BIND_CONTAINER_HPP_
 #define _RIVE_DATA_BIND_CONTAINER_HPP_
+#include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/sidecar.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/sidecar.hpp"
 
 namespace rive
 {
@@ -80,6 +83,13 @@ public:
   // in the frame. A no-op when the bind is not dirty.
   void flushDataBind(DataBind* dataBind) { updateDataBind(dataBind, false); }
   const std::vector<DataBind*>& dataBinds() const { return m_dataBinds; }
+  // Room for [count] binds, and for all of them to be dirty at once, as they
+  // are when first bound, for a container about to get that many.
+  void reserveDataBinds(size_t count)
+  {
+    m_dataBinds.reserve(count);
+    m_dirtyDataBinds.reserve(count);
+  }
   virtual void addDirtyDataBind(DataBind* dataBind);
   virtual void rebind() {};
   virtual void relinkDataContext() {};
@@ -88,12 +98,25 @@ public:
   // The context this container holds was set, replaced or cleared. Called
   // after the change, and before any rebinding that follows it.
   virtual void dataContextChanged() {};
-  // Whether updateDataBinds would process anything: a bind waiting in any
-  // queue, or one it polls on every pass.
-  bool hasDataBindWork() const;
+  // Whether updateDataBinds(applyTargetToSource) would process anything: a
+  // bind waiting in any queue, or one it polls. A polled bind only has work
+  // in a pass that applies target to source, or once it is dirty.
+  bool hasDataBindWork(bool applyTargetToSource = true) const;
   // Whether advanceDataBinds could do anything: some bind's converter
-  // advances.
+  // advances. Cached until a bind here changes (dataBindsChanged) or a
+  // converter whose answer is cached does (mayAdvanceChanged).
   bool mayAdvanceDataBinds() const;
+  // Whether advanceDataBinds would currently do nothing (`quiet`), would do
+  // work (`busy`), or some converter can't say (`never`). A converter that
+  // is quiet stays so until a change dirties the bind it converts for, which
+  // reaches this container through addDirtyDataBind.
+  AdvancingComponent::QuietState dataBindsQuietState() const;
+  // A bind was added or removed, or one changed the converter it uses.
+  virtual void dataBindsChanged();
+  // Every cached mayAdvanceDataBinds answer may be stale: a converter's answer
+  // depends on the converters its binds use, and those don't know their
+  // users.
+  static void mayAdvanceChanged();
 #ifdef TESTING
   // Binds processed by updateDataBinds, across every container.
   static uint64_t sm_dataBindUpdates;
@@ -114,6 +137,9 @@ protected:
   // binds are walked; it follows this with bindDataBindsFromContext().
   void dataBindContext(rcp<DataContext> dataContext);
   void deleteDataBinds();
+  // Deletes every data bind and forgets them: for binds added but never
+  // bound, dropped with the rest of a body that failed to decode.
+  void discardDataBinds();
   bool advanceDataBinds(float);
   bool isProcessingDataBinds() const { return m_isProcessing; }
   // Sets the context and re-points every DataBindContext at it.
@@ -122,6 +148,12 @@ protected:
   void bindDataBindsFromContext();
   void unbindDataBinds();
   void sortDataBinds();
+  // Whether mayAdvanceDataBinds holds an answer no change has made stale.
+  bool mayAdvanceCached() const
+  {
+    return m_mayAdvanceEpoch ==
+           sm_mayAdvanceEpoch.load(std::memory_order_relaxed);
+  }
 
 private:
   void updateDataBind(DataBind* dataBind, bool applyTargetToSource);
@@ -133,6 +165,12 @@ private:
   // No default member initializer here on purpose; see the note above.
   rcp<DataContext> m_dataContext;
   bool m_isProcessing = false;
+  // The cached mayAdvanceDataBinds answer, valid while m_mayAdvanceEpoch
+  // matches sm_mayAdvanceEpoch (0 never does). Both sit in the padding after
+  // m_isProcessing, so caching costs no memory.
+  mutable bool m_mayAdvanceDataBinds = false;
+  mutable uint32_t m_mayAdvanceEpoch = 0;
+  static std::atomic<uint32_t> sm_mayAdvanceEpoch;
 };
 } // namespace rive
 

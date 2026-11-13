@@ -3,9 +3,9 @@
 
 #include <string>
 #include <stdint.h>
-#include "third_party/rive/include/rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/bindable_artboard.hpp"
 
 namespace rive
 {

@@ -1,17 +1,18 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/wasm_scripting_vm.hpp"
-#include "third_party/rive/include/rive/async/compare_exchange.hpp"
-#include "third_party/rive/include/rive/async/timeouts.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_jobs.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_shared.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_workers.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_processors.hpp"
+#include "rive/wasm/wasm_scripting_vm.hpp"
+#include "rive/async/compare_exchange.hpp"
+#include "rive/async/timeouts.hpp"
+#include "rive/wasm/wasm_jobs.hpp"
+#include "rive/wasm/wasm_parallel.hpp"
+#include "rive/wasm/wasm_lane.hpp"
+#include "rive/wasm/wasm_shared.hpp"
+#include "rive/wasm/wasm_workers.hpp"
+#include "rive/wasm/wasm_processors.hpp"
 #ifndef __EMSCRIPTEN__
-#include "third_party/rive/include/rive/wasm/aot_artifact.hpp"
-#include "third_party/rive/include/rive/wasm/module_tier_ladder.hpp"
-#include "third_party/rive/include/rive/wasm/prelinked_aot.hpp"
+#include "rive/wasm/aot_artifact.hpp"
+#include "rive/wasm/module_tier_ladder.hpp"
+#include "rive/wasm/prelinked_aot.hpp"
 #else
 #include <emscripten/emscripten.h>
 #include <emscripten/threading.h>
@@ -20,123 +21,124 @@
 #include <thread>
 #include <unordered_map>
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/raw_text.hpp"
-#include "third_party/rive/include/rive/text/cursor.hpp"
-#include "third_party/rive/include/rive/text/font_hb.hpp"
+#include "rive/text/raw_text.hpp"
+#include "rive/text/cursor.hpp"
+#include "rive/text/font_hb.hpp"
 #endif
 
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation_instance.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/input/focus_manager.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/assets/blob_asset.hpp"
-#include "third_party/rive/include/rive/custom_property_boolean.hpp"
-#include "third_party/rive/include/rive/custom_property_color.hpp"
-#include "third_party/rive/include/rive/assets/manifest_asset.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/custom_property_number.hpp"
-#include "third_party/rive/include/rive/custom_property_string.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/artboard.hpp"
+#include "rive/assets/blob_asset.hpp"
+#include "rive/custom_property_boolean.hpp"
+#include "rive/custom_property_color.hpp"
+#include "rive/assets/manifest_asset.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/custom_property_number.hpp"
+#include "rive/custom_property_string.hpp"
+#include "rive/drawable.hpp"
 #ifdef WITH_RIVE_AUDIO
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_reader.hpp"
+#include "rive/audio/audio_sound.hpp"
+#include "rive/audio/audio_source.hpp"
 #endif
-#include "third_party/rive/include/rive/bones/root_bone.hpp"
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
-#include "third_party/rive/include/rive/node.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_symbol_list_index.hpp"
-#include "third_party/rive/include/rive/wasm/artboard_wire.hpp"
-#include "third_party/rive/include/rive/assets/font_asset.hpp"
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/assets/shader_asset.hpp"
-#include "third_party/rive/include/rive/async/work_pool.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_boolean.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_color.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_number.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value_string.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/fill.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/solid_color.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/math/raw_path.hpp"
-#include "third_party/rive/include/rive/math/contour_measure.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/scripted/decoded_file.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
-#include "third_party/rive/include/rive/scripted/transition_child_ref.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_boolean.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_number.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/data_enum_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_color.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_trigger.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_list_item.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_blob.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_font.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_image.hpp"
-#include "third_party/rive/include/rive/wasm/data_convert_wire.hpp"
-#include "third_party/rive/include/rive/wasm/gamepad_wire.hpp"
-#include "third_party/rive/include/rive/wasm/listener_wire.hpp"
-#include "third_party/rive/include/rive/wasm/path_effect_wire.hpp"
-#include "third_party/rive/include/rive/wasm/net_wire.hpp"
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/bones/root_bone.hpp"
+#include "rive/constraints/constraint.hpp"
+#include "rive/container_component.hpp"
+#include "rive/math/transform_components.hpp"
+#include "rive/node.hpp"
+#include "rive/shapes/path.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/viewmodel/viewmodel_instance_symbol_list_index.hpp"
+#include "rive/wasm/artboard_wire.hpp"
+#include "rive/assets/font_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/assets/shader_asset.hpp"
+#include "rive/async/work_pool.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/data_bind/data_values/data_value_boolean.hpp"
+#include "rive/data_bind/data_values/data_value_color.hpp"
+#include "rive/data_bind/data_values/data_value_number.hpp"
+#include "rive/data_bind/data_values/data_value_string.hpp"
+#include "rive/factory.hpp"
+#include "rive/file.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/fill.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/solid_color.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/math/raw_path.hpp"
+#include "rive/math/contour_measure.hpp"
+#include "rive/math/path_measure.hpp"
+#include "rive/renderer.hpp"
+#include "rive/scripted/decoded_file.hpp"
+#include "rive/scripted/scripted_object.hpp"
+#include "rive/scripted/transition_child_ref.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel_instance_boolean.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
+#include "rive/viewmodel/data_enum.hpp"
+#include "rive/viewmodel/data_enum_value.hpp"
+#include "rive/viewmodel/viewmodel_instance_color.hpp"
+#include "rive/viewmodel/viewmodel_instance_enum.hpp"
+#include "rive/viewmodel/viewmodel_property_enum.hpp"
+#include "rive/viewmodel/viewmodel_instance_trigger.hpp"
+#include "rive/viewmodel/viewmodel_instance_list.hpp"
+#include "rive/viewmodel/viewmodel_instance_list_item.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_blob.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_font.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_image.hpp"
+#include "rive/wasm/data_convert_wire.hpp"
+#include "rive/wasm/gamepad_wire.hpp"
+#include "rive/wasm/listener_wire.hpp"
+#include "rive/wasm/path_effect_wire.hpp"
+#include "rive/wasm/net_wire.hpp"
+#include "rive/bindable_artboard.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
 #ifdef WITH_RIVE_SCRIPTNET
-#include "third_party/rive/include/rive/scriptnet/net.hpp"
+#include "rive/scriptnet/net.hpp"
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include "third_party/rive/include/rive/async/browser_image_decode.hpp"
+#include "rive/async/browser_image_decode.hpp"
 #elif defined(RIVE_DECODERS)
-#include "third_party/rive/decoders/include/rive/decoders/bitmap_decoder.hpp"
+#include "rive/decoders/bitmap_decoder.hpp"
 
 #include <chrono>
 #include <sys/stat.h>
 #endif
 
 #ifdef RIVE_CANVAS
-#include "third_party/rive/renderer/include/rive/renderer/render_context.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_canvas_host.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/rive_render_image.hpp"
+#include "rive/renderer/render_context.hpp"
+#include "rive/renderer/render_canvas.hpp"
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/renderer/rive_render_image.hpp"
 #endif
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_context.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_deferred_bind_groups.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_draw_bindings.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_script_guards.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_buffer.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_texture.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_sampler.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_shader_module.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_shader_asset_modules.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_bind_group_layout.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_bind_group.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/ore_pipeline.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/ore/cmd/ore_deferred_render_pass.hpp"
-#include "third_party/rive/renderer/include/rive/renderer/cmd/deferred_render_resource.hpp"
+#include "rive/renderer/ore/ore_context.hpp"
+#include "rive/renderer/ore/ore_deferred_bind_groups.hpp"
+#include "rive/renderer/ore/ore_draw_bindings.hpp"
+#include "rive/renderer/ore/ore_script_guards.hpp"
+#include "rive/renderer/ore/ore_buffer.hpp"
+#include "rive/renderer/ore/ore_texture.hpp"
+#include "rive/renderer/ore/ore_sampler.hpp"
+#include "rive/renderer/ore/ore_shader_module.hpp"
+#include "rive/renderer/ore/ore_shader_asset_modules.hpp"
+#include "rive/renderer/ore/ore_bind_group_layout.hpp"
+#include "rive/renderer/ore/ore_bind_group.hpp"
+#include "rive/renderer/ore/ore_pipeline.hpp"
+#include "rive/renderer/ore/cmd/ore_deferred_render_pass.hpp"
+#include "rive/renderer/cmd/deferred_render_resource.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -150,6 +152,7 @@
 #endif
 
 #ifndef __EMSCRIPTEN__
+#include "system_pages.hpp"
 #include "wasm_export.h"
 #endif
 #include "wasm_utf16.hpp"
@@ -161,6 +164,14 @@
 #include <time.h>
 
 using namespace rive;
+
+// Streams only feed audio processors, so builds that refuse those leave them
+// out, answering as a build without audio.
+#if defined(WITH_RIVE_AUDIO) && RIVE_PROCESSOR_AUDIO()
+#define RIVE_AUDIO_STREAMS() 1
+#else
+#define RIVE_AUDIO_STREAMS() 0
+#endif
 
 namespace
 {
@@ -292,11 +303,28 @@ thread_local std::shared_ptr<VMPollList>
     t_laneVMs = std::make_shared<VMPollList>(t_pollMutex);
 #endif
 constexpr size_t kLaneResultBytesPerPoll = 8u << 20;
+
+// The VMs whose sinks take any thread and that have lanes, which a thread of
+// their own watches for stalls. Leaked, as that thread outlives static
+// destructors.
+struct StallWatch
+{
+  std::mutex mutex;
+  std::condition_variable changed;
+  std::vector<WasmScriptingVM*> vms;
+};
+
+StallWatch& stallWatch()
+{
+  static StallWatch* watch = new StallWatch();
+  return *watch;
+}
 } // namespace
 
 struct rive::WasmScriptingVMNatives
 {
   static void print(WasmScriptingVM* vm, const char* data, size_t size);
+  static std::unique_lock<std::recursive_mutex> lockPrint(WasmScriptingVM* vm);
   static int startFuelMs(const WasmScriptingVM* vm);
   static const char* startRefusal(const WasmScriptingVM* vm);
 #ifndef __EMSCRIPTEN__
@@ -306,6 +334,12 @@ struct rive::WasmScriptingVMNatives
 #endif
   static std::unordered_map<std::string, int64_t>& consoleTimers(
       WasmScriptingVM* vm);
+#ifdef WITH_RIVE_TOOLS
+  static bool& warnedSampledOpenCanvas(WasmScriptingVM* vm)
+  {
+    return vm->m_warnedSampledOpenCanvas;
+  }
+#endif
 };
 
 #ifndef __EMSCRIPTEN__
@@ -321,6 +355,8 @@ struct SharedWasmModule
   WasmScriptingVM::ExecutionTier tier = WasmScriptingVM::ExecutionTier::interp;
   // No device run covers unloading prelinked code.
   bool pinned = false;
+  // The wasm behind code that skips bounds checks, for a fallback.
+  std::vector<uint8_t> hardwareBoundsWasm;
   // Orders the idle ones, so the least recently leased unloads first.
   uint64_t lastLeased = 0;
 
@@ -771,8 +807,23 @@ namespace
 {
 // Module calls live on this thread, any VM's.
 thread_local uint32_t t_moduleCalls = 0;
+// Where the std's console says the line this thread writes next was called
+// from, until the write takes it.
+thread_local std::string t_consoleFile;
+thread_local uint32_t t_consoleLine = 0;
 using Clock = std::chrono::steady_clock;
 } // namespace
+
+bool WasmScriptingVM::consoleCaller(std::string& file, uint32_t& line)
+{
+  if (t_consoleFile.empty())
+  {
+    return false;
+  }
+  file = t_consoleFile;
+  line = t_consoleLine;
+  return true;
+}
 
 // What the module call on this thread has left of its budget, infinity
 // when nothing bounds it.
@@ -965,6 +1016,27 @@ uint32_t WasmScriptingVM::pageThreadBudgetMs() const
   return boundsCalls() ? (uint32_t)m_timeoutMs : 0;
 }
 
+uint32_t WasmScriptingVM::parallelSize() const
+{
+#ifdef RIVE_WASM_PARALLEL
+  // A debugger steps one thread, so every part runs on the one it stops,
+  // and a top level runs before its instance can take members.
+  return m_limits.parallelSafeMode || m_debugHooks != nullptr ||
+                 s_booting == this
+             ? 1
+             : WasmParallel::size();
+#elif defined(__EMSCRIPTEN_PTHREADS__)
+  // The page runs parts on its own team of threads, as many as its runner
+  // picks up to a native call's 64.
+  return m_limits.parallelSafeMode || m_debugHooks != nullptr ||
+                 s_booting == this
+             ? 1
+             : 64;
+#else
+  return 1;
+#endif
+}
+
 // Only joins, region locks and signal waits read the call deadline.
 bool WasmScriptingVM::armDeadline()
 {
@@ -1048,6 +1120,7 @@ WasmScriptingVM::CallOutcome WasmScriptingVM::callModuleChecked(
   }
   bool ok;
   {
+    ensureWasmThreadEnv();
     WamrState::CallStateScope callState(*m_state);
     // Runtime services, the collector among them, must never be cut off.
     ScriptCallScope callScope(this, strncmp(name, "__rive", 6) != 0);
@@ -1115,6 +1188,7 @@ WasmScriptingVM::CallOutcome WasmScriptingVM::callF64(
   wasm_val_t ret[1];
   bool ok;
   {
+    ensureWasmThreadEnv();
     WamrState::CallStateScope callState(*m_state);
     ScriptCallScope callScope(this);
     ok = wasm_runtime_call_wasm_a(
@@ -1418,6 +1492,16 @@ const char* WasmScriptingVMNatives::startRefusal(const WasmScriptingVM* vm)
 #endif
 }
 
+// The VM print reaches, the booting one during module start.
+std::unique_lock<std::recursive_mutex> WasmScriptingVMNatives::lockPrint(
+    WasmScriptingVM* vm)
+{
+  vm = vm != nullptr ? vm : s_booting;
+  return vm != nullptr
+             ? std::unique_lock<std::recursive_mutex>(vm->m_printMutex)
+             : std::unique_lock<std::recursive_mutex>();
+}
+
 void WasmScriptingVMNatives::print(
     WasmScriptingVM* vm,
     const char* data,
@@ -1598,6 +1682,20 @@ WasmScriptingVM* bootVmFromHandle(uint32_t handle)
 }
 #endif
 
+#ifndef __EMSCRIPTEN__
+// A trap from a module call that has no VM: a lane's, or a parallel call
+// member's, whose throw reaches the call that ran it.
+void vmlessTrap(
+    wasm_exec_env_t env,
+    const char* text,
+    const char* message = nullptr,
+    uint32_t length = 0)
+{
+  WasmParallel::noteMemberTrap(text, message, length);
+  wasm_runtime_set_exception(wasm_runtime_get_module_inst(env), text);
+}
+#endif
+
 // Prototypes, descriptor PODs, and registration tables for the rive_*_v1
 // namespaces come from the binding IDL (src/wasm/idl/bindings.py); the
 // declarations pin each implementation below to the contract signature.
@@ -1757,7 +1855,8 @@ double rtNowImpl(WasmScriptingVM* vm)
 {
   // Same dev hook as dateNow: clock() feeds Luau's default RNG seed. A
   // pinned clock also parks the module's execution budget.
-  if (getenv("RIVE_WASM_FIXED_DATE") != nullptr)
+  static const bool fixed = getenv("RIVE_WASM_FIXED_DATE") != nullptr;
+  if (fixed)
   {
     return 0;
   }
@@ -1777,6 +1876,8 @@ double rtDateNowImpl(WasmScriptingVM* vm)
   auto now = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration<double, std::milli>(now).count();
 }
+
+uint32_t rtFeaturesImpl(WasmScriptingVM* vm) { return kHostFeatures; }
 
 // The Luau host module reads the same clocks under the names emscripten
 // gives them.
@@ -2076,6 +2177,7 @@ uint32_t fdWrite(
     return 28; // EINVAL
   }
   uint32_t total = 0;
+  auto lock = WasmScriptingVMNatives::lockPrint(vm);
   for (uint32_t i = 0; i < iovcnt; i++)
   {
     uint32_t* io = iovs + i * 2;
@@ -2180,11 +2282,25 @@ std::string consoleString(wasm_exec_env_t env, uint32_t text)
   return std::string(utf8.data(), utf8.size());
 }
 
+void consoleCaller(wasm_exec_env_t env, uint32_t file, int32_t line)
+{
+  if (WasmLane* lane = WasmLane::current())
+  {
+    lane->consoleText(env, file, t_consoleFile);
+  }
+  else
+  {
+    t_consoleFile = consoleString(env, file);
+  }
+  t_consoleLine = line > 0 ? (uint32_t)line : 0;
+}
+
 void consoleLog(wasm_exec_env_t env, uint32_t text)
 {
   if (WasmLane* lane = WasmLane::current())
   {
-    lane->logConsole(env, text);
+    lane->logConsole(env, text, t_consoleFile, t_consoleLine);
+    t_consoleFile.clear();
     return;
   }
   consoleWrite(vmFromEnv(env), consoleString(env, text));
@@ -2235,6 +2351,7 @@ void envTrace(
 }
 
 NativeSymbol kEnvNatives[] = {
+    {"console.caller", (void*)consoleCaller, "(ii)", nullptr},
     {"console.log", (void*)consoleLog, "(i)", nullptr},
     {"console.debug", (void*)consoleLog, "(i)", nullptr},
     {"console.info", (void*)consoleLog, "(i)", nullptr},
@@ -2947,7 +3064,9 @@ void paintBlendModeImpl(WasmScriptingVM* vm, uint32_t handle, uint32_t value)
   auto paint = resolvePaint(vm, handle);
   if (paint != nullptr && validBlendMode(vm, value))
   {
+    // As ScriptedPaint::blendMode in the Luau lane: scripts have no amount.
     paint->blendMode((BlendMode)value);
+    paint->additiveness(additivenessFor((BlendMode)value, 255));
   }
 }
 void paintFeatherImpl(WasmScriptingVM* vm, uint32_t handle, float value)
@@ -3146,6 +3265,30 @@ HostImage* resolveImage(WasmScriptingVM* vm, uint32_t handle)
       vm->handles().resolve(handle, WasmScriptingVM::HandleTable::Tag::image));
 }
 
+#if defined(WITH_RIVE_TOOLS) && defined(RIVE_CANVAS)
+static void warnIfCanvasFrameOpen(
+    WasmScriptingVM* vm,
+    const Renderer* reader,
+    const HostImage* image)
+{
+  bool& warned = WasmScriptingVMNatives::warnedSampledOpenCanvas(vm);
+  cmd::DeferredCanvasHost* host = vm->factory()->deferredCanvasHost();
+  if (warned || host == nullptr || image->sourceCanvas == nullptr ||
+      !host->canvasContentOpen(image->sourceCanvas.get(), reader))
+  {
+    return;
+  }
+  warned = true;
+  consoleWrite(vm, cmd::kSampledOpenCanvasWarning);
+}
+#else
+static void warnIfCanvasFrameOpen(
+    WasmScriptingVM*,
+    const Renderer*,
+    const HostImage*)
+{}
+#endif
+
 uint32_t imageFromAssetImpl(
     WasmScriptingVM* vm,
     uint32_t objectHandle,
@@ -3199,6 +3342,47 @@ void imageDecodeCancelImpl(WasmScriptingVM* vm, uint32_t token)
     vm->cancelImageDecode(token);
   }
 }
+
+uint32_t imageLoadImpl(
+    WasmScriptingVM* vm,
+    const uint8_t* bytes,
+    uint32_t byteCount)
+{
+  if (vm == nullptr || vm->factory() == nullptr || bytes == nullptr ||
+      byteCount == 0)
+  {
+    return 0;
+  }
+  auto image = vm->factory()->decodeImage(
+      Span<const uint8_t>(bytes, byteCount));
+  if (image == nullptr)
+  {
+    return 0;
+  }
+  return vm->handles().mint(
+      WasmScriptingVM::HandleTable::Tag::image,
+      new HostImage{std::move(image)});
+}
+
+#ifdef RIVE_CANVAS
+// A deferred host mints a canvas before any device binds; only immediate
+// needs a render context.
+rcp<gpu::RenderCanvas> makeScriptCanvas(
+    WasmScriptingVM* vm,
+    uint32_t width,
+    uint32_t height)
+{
+  if (auto* deferredHost = vm->factory()->deferredCanvasHost())
+  {
+    return deferredHost->makeUnboundContentCanvas(width, height);
+  }
+  auto* renderContext = static_cast<gpu::RenderContext*>(
+      vm->factory()->renderContext());
+  return renderContext != nullptr
+             ? renderContext->makeRenderCanvas(width, height)
+             : nullptr;
+}
+#endif
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
 struct HostGpuCanvas
@@ -3315,17 +3499,12 @@ uint32_t gpuCanvasNewImpl(WasmScriptingVM* vm, uint32_t width, uint32_t height)
         WasmScriptingVM::HandleTable::Tag::gpuCanvas,
         new HostGpuCanvas{});
   }
-  auto* renderContext = static_cast<gpu::RenderContext*>(
-      vm->factory()->renderContext());
   ore::Context* oreContext = gpuOreContext(vm);
-  if (renderContext == nullptr || oreContext == nullptr)
+  if (oreContext == nullptr)
   {
     return 0;
   }
-  auto* deferredHost = vm->factory()->deferredCanvasHost();
-  auto canvas = deferredHost != nullptr
-                    ? deferredHost->makeContentCanvas(width, height)
-                    : renderContext->makeRenderCanvas(width, height);
+  auto canvas = makeScriptCanvas(vm, width, height);
   if (canvas == nullptr)
   {
     return 0;
@@ -3420,16 +3599,7 @@ uint32_t gpuCanvasResizeImpl(
   {
     return 0;
   }
-  auto* renderContext = static_cast<gpu::RenderContext*>(
-      vm->factory()->renderContext());
-  if (renderContext == nullptr)
-  {
-    return 0;
-  }
-  auto* deferredHost = vm->factory()->deferredCanvasHost();
-  auto canvas = deferredHost != nullptr
-                    ? deferredHost->makeContentCanvas(width, height)
-                    : renderContext->makeRenderCanvas(width, height);
+  auto canvas = makeScriptCanvas(vm, width, height);
   if (canvas == nullptr)
   {
     return 0;
@@ -3527,7 +3697,12 @@ uint32_t gpuFeaturesImpl(WasmScriptingVM* vm, uint32_t* out, uint32_t outCount)
     return 19;
   }
   out[19] = f.minUniformBufferOffsetAlignment;
-  return 20;
+  if (outCount < 21)
+  {
+    return 20;
+  }
+  out[20] = f.multisampledTextureRead ? 1 : 0;
+  return 21;
 }
 
 uint32_t gpuPassBeginImpl(
@@ -4449,6 +4624,7 @@ static uint32_t mintAssetEntryModule(
     WasmScriptingVM* vm,
     ore::Context* oreContext,
     const ShaderAsset& asset,
+    const std::string& name,
     uint32_t entry)
 {
   uint32_t handle = 0;
@@ -4458,10 +4634,29 @@ static uint32_t mintAssetEntryModule(
       [&](const ore::ShaderModuleDesc& desc,
           uint32_t first,
           uint32_t count,
-          const std::vector<ore::RstbEntryView>&) {
+          const std::vector<ore::RstbEntryView>& views) {
         if (entry < first || entry - first >= count)
         {
           return true;
+        }
+        // Judged per entry where each has its own module, so a fallback entry
+        // still builds beside one that reads a multisampled texture.
+        std::string notice;
+        if (!ore::admitMultisampledReads(
+                *oreContext,
+                asset,
+                name,
+                vm->noticedShaders(),
+                &notice,
+                count == 1 ? &views[entry] : nullptr))
+        {
+          handle = gpuRejected(vm, oreContext, "Shader");
+          return false;
+        }
+        if (!notice.empty())
+        {
+          notice += '\n';
+          WasmScriptingVMNatives::print(vm, notice.data(), notice.size());
         }
         handle = mintShaderModule(vm, oreContext, desc);
         return false;
@@ -4477,6 +4672,7 @@ static uint32_t mintRstbEntryModule(
     const uint8_t* rstb,
     uint32_t rstbCount,
     uint32_t assetId,
+    const std::string& name,
     uint32_t entry)
 {
   ShaderAsset asset;
@@ -4485,7 +4681,7 @@ static uint32_t mintRstbEntryModule(
     return 0;
   }
   asset.assetId(assetId);
-  return mintAssetEntryModule(vm, oreContext, asset, entry);
+  return mintAssetEntryModule(vm, oreContext, asset, name, entry);
 }
 #endif
 
@@ -4517,6 +4713,7 @@ uint32_t gpuShaderModuleFromAssetImpl(
         rstb->data(),
         (uint32_t)rstb->size(),
         fileAsset != nullptr ? fileAsset->assetId() : 0,
+        std::string(name, nameLength),
         entry);
   }
 #endif
@@ -4524,7 +4721,12 @@ uint32_t gpuShaderModuleFromAssetImpl(
   {
     return 0;
   }
-  return mintAssetEntryModule(vm, oreContext, *fileAsset, entry);
+  return mintAssetEntryModule(
+      vm,
+      oreContext,
+      *fileAsset,
+      std::string(name, nameLength),
+      entry);
 }
 
 #ifdef WITH_RIVE_TOOLS
@@ -4540,7 +4742,14 @@ uint32_t gpuShaderModuleFromRstbImpl(
   {
     return 0;
   }
-  return mintRstbEntryModule(vm, oreContext, rstb, rstbCount, assetId, entry);
+  return mintRstbEntryModule(
+      vm,
+      oreContext,
+      rstb,
+      rstbCount,
+      assetId,
+      std::string(),
+      entry);
 }
 #endif
 
@@ -5474,7 +5683,7 @@ HostRenderer* resolveHostRenderer(WasmScriptingVM* vm, uint32_t handle)
 struct HostCanvas
 {
   rcp<gpu::RenderCanvas> canvas;
-  // A size requested before the device bound, allocated on first use.
+  // A size no host could mint yet, allocated on first use.
   uint32_t pendingWidth = 0;
   uint32_t pendingHeight = 0;
   cmd::DeferredCanvasHost* frameHost = nullptr;
@@ -5492,29 +5701,23 @@ HostCanvas* resolveCanvas(WasmScriptingVM* vm, uint32_t handle)
       vm->handles().resolve(handle, WasmScriptingVM::HandleTable::Tag::canvas));
 }
 
-// Allocates a pending size once a device is there to allocate against.
-// False only when a device is present and refuses.
+// Allocates a pending size once a host can mint it. False only when a device
+// is present and refuses.
 bool canvasSatisfyPending(WasmScriptingVM* vm, HostCanvas* host)
 {
   if (host->pendingWidth == 0 || host->pendingHeight == 0)
   {
     return true;
   }
-  auto* renderContext = static_cast<gpu::RenderContext*>(
-      vm->factory()->renderContext());
-  if (renderContext == nullptr)
+  rcp<gpu::RenderCanvas> canvas = makeScriptCanvas(
+      vm,
+      host->pendingWidth,
+      host->pendingHeight);
+  if (canvas == nullptr && vm->factory()->renderContext() == nullptr)
   {
     return true;
   }
   // A refused size leaves the previous backing in place.
-  auto* deferredHost = vm->factory()->deferredCanvasHost();
-  rcp<gpu::RenderCanvas> canvas = deferredHost != nullptr
-                                      ? deferredHost->makeContentCanvas(
-                                            host->pendingWidth,
-                                            host->pendingHeight)
-                                      : renderContext->makeRenderCanvas(
-                                            host->pendingWidth,
-                                            host->pendingHeight);
   host->pendingWidth = 0;
   host->pendingHeight = 0;
   if (canvas == nullptr)
@@ -5536,7 +5739,7 @@ uint32_t canvasNewImpl(WasmScriptingVM* vm, uint32_t width, uint32_t height)
   {
     host->pendingWidth = width;
     host->pendingHeight = height;
-    // A size only waits when a recording host will bind a device later.
+    // A size waits only on a recording host that can't mint it yet.
     if (!canvasSatisfyPending(vm, host) ||
         (host->canvas == nullptr &&
          vm->factory()->deferredCanvasHost() == nullptr))
@@ -5988,6 +6191,7 @@ void rendererDrawImageImpl(
   {
     return;
   }
+  warnIfCanvasFrameOpen(vm, renderer, host);
   renderer->drawImage(
       host->image.get(),
       ImageSampler::SamplerFromKey((uint8_t)samplerKey),
@@ -6017,6 +6221,7 @@ void rendererDrawImageMeshImpl(
   {
     return;
   }
+  warnIfCanvasFrameOpen(vm, renderer, image);
   renderer->drawImageMesh(
       image->image.get(),
       ImageSampler::SamplerFromKey((uint8_t)samplerKey),
@@ -6051,6 +6256,7 @@ void rendererDrawImageMeshInstancedImpl(
   {
     return;
   }
+  warnIfCanvasFrameOpen(vm, renderer, image);
   renderer->drawImageMeshInstanced(
       image->image.get(),
       ImageSampler::SamplerFromKey((uint8_t)samplerKey),
@@ -6111,8 +6317,10 @@ void rtLogImpl(
     const char* message,
     uint32_t length)
 {
+  auto lock = WasmScriptingVMNatives::lockPrint(vm);
   WasmScriptingVMNatives::print(vm, message, length);
   WasmScriptingVMNatives::print(vm, "\n", 1);
+  t_consoleFile.clear();
 }
 
 void rtBudgetExceededImpl(WasmScriptingVM* vm, uint32_t ms)
@@ -6223,6 +6431,15 @@ uint32_t mat4InvertImpl(
 }
 #pragma clang fp contract(on)
 
+void rtReleasePagesImpl(WasmScriptingVM* vm, uint32_t start, uint32_t length)
+{
+  // A module's start function runs before the exec env carries its vm.
+  if (vm != nullptr)
+  {
+    vm->releasePages(start, length);
+  }
+}
+
 uint32_t rtUtcOffsetImpl(WasmScriptingVM* vm, double epochSeconds)
 {
   time_t at;
@@ -6253,6 +6470,20 @@ uint32_t rtZoneNameImpl(
   char name[64];
   size_t length = strftime(name, sizeof(name), "%Z", &local);
   return fillModuleString(vm, std::string(name, length), buffer, capacity);
+}
+
+uint32_t rtArgImpl(
+    WasmScriptingVM* vm,
+    const char* name,
+    uint32_t nameLength,
+    char* buffer,
+    uint32_t capacity)
+{
+  const std::string* value = vm != nullptr
+                                 ? vm->arg(std::string(name, nameLength))
+                                 : nullptr;
+  return value != nullptr ? fillModuleString(vm, *value, buffer, capacity)
+                          : UINT32_MAX;
 }
 
 // Module start has no exec env to carry the vm; the probes its top level
@@ -7852,7 +8083,9 @@ uint32_t artboardAnimationAdvanceImpl(
   {
     return 0;
   }
-  bool advanced = host->animation->advance(seconds);
+  // LinearAnimationInstance::advance(0) returns false whatever the loop mode.
+  bool advanced = host->animation->advance(seconds) ||
+                  (seconds == 0.0f && host->animation->keepGoing());
   host->animation->apply();
   return advanced ? 1 : 0;
 }
@@ -7888,6 +8121,17 @@ struct HostNode
 {
   rcp<HostArtboard> owner;
   TransformComponent* component;
+#ifdef WITH_RIVE_TOOLS
+  // Set in place of component when a host's source backs the node, always
+  // borrowed. The guest reads a path's verbs and points, and a node's child
+  // count and handles, in separate calls, so each is asked for once.
+  WasmNodeSource* source = nullptr;
+  uint32_t sourceId = 0;
+  bool sourcePathRead = false;
+  std::unique_ptr<RawPath> sourcePath;
+  bool sourceChildrenRead = false;
+  std::vector<uint32_t> sourceChildren;
+#endif
 };
 
 uint32_t mintNode(
@@ -7905,6 +8149,47 @@ uint32_t mintNode(
   }
   return handle;
 }
+
+#ifdef WITH_RIVE_TOOLS
+uint32_t mintSourceNode(
+    WasmScriptingVM* vm,
+    WasmNodeSource* source,
+    uint32_t id)
+{
+  auto node = new HostNode{nullptr, nullptr};
+  node->source = source;
+  node->sourceId = id;
+  uint32_t handle = vm->handles().mint(
+      WasmScriptingVM::HandleTable::Tag::node,
+      node);
+  vm->scopedNodes().push_back(handle);
+  return handle;
+}
+
+const RawPath* sourceNodePath(HostNode* host)
+{
+  if (!host->sourcePathRead)
+  {
+    host->sourcePathRead = true;
+    auto path = std::make_unique<RawPath>();
+    if (host->source->path(host->sourceId, *path))
+    {
+      host->sourcePath = std::move(path);
+    }
+  }
+  return host->sourcePath.get();
+}
+
+const std::vector<uint32_t>& sourceNodeChildren(HostNode* host)
+{
+  if (!host->sourceChildrenRead)
+  {
+    host->sourceChildrenRead = true;
+    host->source->children(host->sourceId, host->sourceChildren);
+  }
+  return host->sourceChildren;
+}
+#endif
 
 uint32_t artboardNodeImpl(
     WasmScriptingVM* vm,
@@ -7978,6 +8263,44 @@ uint32_t artboardGamepadEventImpl(
       dispatched);
 }
 
+// The Luau artboard:keyboardEvent/textEvent path: keys and text go to the
+// artboard's focused control through its own focus manager.
+uint32_t artboardKeyboardEventImpl(
+    WasmScriptingVM* vm,
+    uint32_t handle,
+    uint32_t key,
+    uint32_t modifiers,
+    uint32_t isPressed,
+    uint32_t isRepeat)
+{
+  auto host = resolveArtboard(vm, handle);
+  if (host == nullptr || host->stateMachine == nullptr)
+  {
+    return 0;
+  }
+  return host->stateMachine->keyInput(
+             (Key)(uint16_t)key,
+             (KeyModifiers)(uint8_t)modifiers,
+             isPressed != 0,
+             isRepeat != 0)
+             ? 1
+             : 0;
+}
+
+uint32_t artboardTextEventImpl(
+    WasmScriptingVM* vm,
+    uint32_t handle,
+    const char* text,
+    uint32_t length)
+{
+  auto host = resolveArtboard(vm, handle);
+  if (host == nullptr || host->stateMachine == nullptr)
+  {
+    return 0;
+  }
+  return host->stateMachine->textInput(std::string(text, length)) ? 1 : 0;
+}
+
 HostNode* resolveNode(WasmScriptingVM* vm, uint32_t handle)
 {
   if (vm == nullptr)
@@ -8018,6 +8341,13 @@ void artboardNodeTransformImpl(
     memcpy(out, identity, sizeof(identity));
     return;
   }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    host->source->transform(host->sourceId, out);
+    return;
+  }
+#endif
   out[0] = host->component->x();
   out[1] = host->component->y();
   out[2] = host->component->rotation();
@@ -8062,6 +8392,13 @@ void artboardNodeSetImpl(
   {
     return;
   }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    host->source->set(host->sourceId, field, v0, v1);
+    return;
+  }
+#endif
   TransformComponent* component = host->component;
   switch (field)
   {
@@ -8102,6 +8439,13 @@ void artboardNodeWorldTransformImpl(
     return;
   }
   auto host = resolveNode(vm, handle);
+#ifdef WITH_RIVE_TOOLS
+  if (host != nullptr && host->source != nullptr)
+  {
+    host->source->worldTransform(host->sourceId, out);
+    return;
+  }
+#endif
   Mat2D world = host != nullptr ? host->component->worldTransform() : Mat2D();
   for (int i = 0; i < 6; i++)
   {
@@ -8120,6 +8464,13 @@ void artboardNodeSetWorldTransformImpl(
   {
     return;
   }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    host->source->setWorldTransform(host->sourceId, values);
+    return;
+  }
+#endif
   host->component->mutableWorldTransform() = Mat2D(
       values[0],
       values[1],
@@ -8140,6 +8491,13 @@ void artboardNodeDecomposeImpl(
   {
     return;
   }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    host->source->decompose(host->sourceId, values);
+    return;
+  }
+#endif
   TransformComponent* component = host->component;
   Mat2D world = getParentWorld(*component).invertOrIdentity() * Mat2D(
                                                                     values[0],
@@ -8156,21 +8514,39 @@ void artboardNodeDecomposeImpl(
   component->rotation(components.rotation());
 }
 
+// Null when the node is stale or not a path.
+const RawPath* nodeRawPath(WasmScriptingVM* vm, uint32_t handle)
+{
+  auto host = resolveNode(vm, handle);
+  if (host == nullptr)
+  {
+    return nullptr;
+  }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    return sourceNodePath(host);
+  }
+#endif
+  if (!host->component->is<Path>())
+  {
+    return nullptr;
+  }
+  return &host->component->as<Path>()->rawPath();
+}
+
 uint32_t artboardNodePathVerbsImpl(
     WasmScriptingVM* vm,
     uint32_t handle,
     uint8_t* out,
     uint32_t outCount)
 {
-  auto host = resolveNode(vm, handle);
-  if (host == nullptr || !host->component->is<Path>())
+  auto rawPath = nodeRawPath(vm, handle);
+  if (rawPath == nullptr)
   {
     return ~0u;
   }
-  return fillOut(
-      pathVerbBytes(host->component->as<Path>()->rawPath()),
-      out,
-      outCount);
+  return fillOut(pathVerbBytes(*rawPath), out, outCount);
 }
 
 uint32_t artboardNodePathPointsImpl(
@@ -8179,15 +8555,12 @@ uint32_t artboardNodePathPointsImpl(
     float* out,
     uint32_t outCount)
 {
-  auto host = resolveNode(vm, handle);
-  if (host == nullptr || !host->component->is<Path>())
+  auto rawPath = nodeRawPath(vm, handle);
+  if (rawPath == nullptr)
   {
     return ~0u;
   }
-  return fillOut(
-      pathFloats(host->component->as<Path>()->rawPath()),
-      out,
-      outCount);
+  return fillOut(pathFloats(*rawPath), out, outCount);
 }
 
 uint32_t artboardNodePaintImpl(
@@ -8197,7 +8570,9 @@ uint32_t artboardNodePaintImpl(
     uint32_t outCount)
 {
   auto host = resolveNode(vm, handle);
-  if (host == nullptr || !host->component->is<ShapePaint>() || outCount < 7)
+  // A source backed node is a shape or one of its kin, never a paint.
+  if (host == nullptr || host->component == nullptr ||
+      !host->component->is<ShapePaint>() || outCount < 7)
   {
     return 0;
   }
@@ -8246,7 +8621,28 @@ uint32_t artboardNodeChildrenImpl(
     uint32_t outCount)
 {
   auto host = resolveNode(vm, handle);
-  if (host == nullptr || !host->component->is<ContainerComponent>())
+  if (host == nullptr)
+  {
+    return 0;
+  }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    WasmNodeSource* source = host->source;
+    const std::vector<uint32_t>& ids = sourceNodeChildren(host);
+    uint32_t idCount = (uint32_t)ids.size();
+    if (idCount > outCount)
+    {
+      return idCount;
+    }
+    for (uint32_t i = 0; i < idCount; i++)
+    {
+      out[i] = mintSourceNode(vm, source, ids[i]);
+    }
+    return idCount;
+  }
+#endif
+  if (!host->component->is<ContainerComponent>())
   {
     return 0;
   }
@@ -8281,6 +8677,13 @@ uint32_t artboardNodeParentImpl(WasmScriptingVM* vm, uint32_t handle)
   {
     return 0;
   }
+#ifdef WITH_RIVE_TOOLS
+  if (host->source != nullptr)
+  {
+    uint32_t parentId = host->source->parent(host->sourceId);
+    return parentId == 0 ? 0 : mintSourceNode(vm, host->source, parentId);
+  }
+#endif
   auto parent = host->component->parent();
   if (parent == nullptr || !parent->is<TransformComponent>())
   {
@@ -8748,7 +9151,7 @@ void buildTextSnapshot(WasmScriptingVM* vm, HostText* host)
          (uint32_t)text.lineDirection(line),
          orderedLine.firstCodePointIndex(lookup),
          orderedLine.lastCodePointIndex(lookup),
-         floatBits(orderedLine.glyphLine().startX),
+         floatBits(orderedLine.startX()),
          floatBits(text.lineTop(line)),
          floatBits(orderedLine.y()),
          floatBits(orderedLine.bottom())});
@@ -9069,12 +9472,13 @@ uint32_t blobAssetBytesImpl(
   return (uint32_t)bytes.size();
 }
 
-// --- rive_file_v1 and artboard properties: context:decodeFile ---------------
+// --- rive_file_v1 and artboard properties -----------------------------------
 //
-// The Luau lane's decodeFile, RiveFile, BindableArtboard and
-// Property<BindableArtboard> (lua_rive_file.cpp, ScriptedPropertyArtboard),
-// with the file and its bindables held host side. Like the Luau lane they
-// exist only where fetch() does; elsewhere every op answers none.
+// The Luau lane's decodeFile, RiveFile, BindableArtboard,
+// context:bindableArtboard and Property<BindableArtboard> (lua_rive_file.cpp,
+// ScriptedPropertyArtboard), with the file and its bindables held host side.
+// Like the Luau lane, only decodeFile needs fetch()'s build; elsewhere it
+// answers unavailable while the host file's own artboards still bind.
 
 struct HostRiveFile
 {
@@ -9180,7 +9584,7 @@ uint32_t fileArtboardNameImpl(
   }
   return fillModuleString(
       vm,
-      host->file->artboard(index)->name(),
+      host->file->artboardHeader(index)->name(),
       buffer,
       capacity);
 }
@@ -9231,7 +9635,7 @@ uint32_t fileBindableNameImpl(
   }
   return fillModuleString(
       vm,
-      host->artboard->artboard()->name(),
+      host->artboard->source()->name(),
       buffer,
       capacity);
 }
@@ -9258,25 +9662,51 @@ uint32_t fileBindableEqualImpl(WasmScriptingVM* vm, uint32_t a, uint32_t b)
              : 0;
 }
 
+// context.bindableArtboard: one of the script's own file's artboards, with no
+// view model of its own, so the host binds it as an authored artboard id.
+uint32_t fileHostBindableImpl(
+    WasmScriptingVM* vm,
+    uint32_t objectHandle,
+    const char* name,
+    uint32_t nameLength,
+    uint32_t useDefault)
+{
+  if (vm == nullptr)
+  {
+    return 0;
+  }
+  auto object = static_cast<ScriptedObject*>(vm->handles().resolve(
+      objectHandle,
+      WasmScriptingVM::HandleTable::Tag::object));
+  if (object == nullptr || object->scriptAsset() == nullptr ||
+      object->scriptAsset()->file() == nullptr)
+  {
+    return 0;
+  }
+  std::string named(name, nameLength);
+  auto bindable = hostBindableArtboard(
+      *object->scriptAsset()->file(),
+      useDefault != 0 ? nullptr : named.c_str());
+  if (bindable == nullptr)
+  {
+    return 0;
+  }
+  return vm->handles().mint(
+      WasmScriptingVM::HandleTable::Tag::bindableArtboard,
+      new HostBindableArtboard{std::move(bindable), nullptr});
+}
+
 uint32_t dataVmiArtboardImpl(
     WasmScriptingVM* vm,
     uint32_t vmiHandle,
     const char* name,
     uint32_t length)
 {
-#ifdef WITH_RIVE_SCRIPTNET
   return mintInstanceValue<ViewModelInstanceArtboard>(
       vm,
       vmiHandle,
       name,
       length);
-#else
-  (void)vm;
-  (void)vmiHandle;
-  (void)name;
-  (void)length;
-  return 0;
-#endif
 }
 
 // Mirrors ScriptedPropertyArtboard::pushValue: nil while the property names
@@ -9510,6 +9940,372 @@ uint32_t audioSourceChannelsImpl(WasmScriptingVM* vm, uint32_t handle)
 #endif
 }
 
+// Settles through the main lane's waits with the blob a job decoded.
+uint32_t audioSourceToBlobImpl(
+    WasmScriptingVM* vm,
+    uint32_t handle,
+    uint32_t sampleRate,
+    uint32_t channels)
+{
+#ifdef WITH_RIVE_AUDIO
+  auto host = resolveAudioSource(vm, handle);
+  if (host == nullptr)
+  {
+    return 0;
+  }
+  return vm->startAudioDecode(host->source, sampleRate, channels);
+#else
+  return 0;
+#endif
+}
+
+#if RIVE_AUDIO_STREAMS()
+bool isSharedId(uint32_t id);
+
+// The fewest chunks a poll decodes per stream, well ahead of a frame's worth.
+static constexpr uint32_t kStreamChunksPerPump = 16;
+
+// Leads each stream record. Our std's AudioStreamReader reads it in place,
+// and published files carry that reader, so it never changes.
+struct StreamRecordHeader
+{
+  // The seeks before it, which the processor drops records older than.
+  uint32_t seek;
+  uint32_t flags;
+  // Its first frame's place in the source, at the stream's rate.
+  double frame;
+};
+static_assert(sizeof(StreamRecordHeader) == 16, "the std reads 16 bytes");
+static constexpr size_t kRecordHeaderFloats = sizeof(StreamRecordHeader) /
+                                              sizeof(float);
+static constexpr uint32_t kRecordLast = 1;
+// A seek dropped the frames before it; a loop's wrap is seamless, so is not.
+static constexpr uint32_t kRecordDiscontinuity = 2;
+
+} // namespace
+
+// Keeps a ring a processor drains topped up with records of decoded frames.
+struct rive::HostAudioStream
+{
+  rcp<AudioReader> reader;
+  rcp<SharedRing> ring;
+  uint32_t ringId = 0;
+  rcp<SharedSignal> seeks;
+  uint32_t seeksId = 0;
+  uint64_t owner = 0;
+  // 0 once released, after which it decodes on while a reader holds the ring.
+  uint32_t handle = 0;
+  uint32_t chunkFrames = 0;
+  bool discontinuity = false;
+  double position = 0;
+  // The record in chunk that has not fit the ring yet, 0 when none.
+  uint32_t queuedBytes = 0;
+  // The ring's bytes after the last top up, so a poll sees what was played.
+  uint32_t usedAfterFill = 0;
+  uint32_t fullRecordBytes = 0;
+  bool queuedLast = false;
+  bool loop = false;
+  bool ended = false;
+  // A header, then chunkFrames frames.
+  std::vector<float> chunk;
+
+  ~HostAudioStream()
+  {
+    SharedRegistry::release(ringId, owner);
+    SharedRegistry::release(seeksId, owner);
+  }
+
+  void fill(uint32_t maxChunks)
+  {
+    for (uint32_t chunks = 0; !ended && chunks < maxChunks; chunks++)
+    {
+      if (queuedBytes == 0)
+      {
+        decodeRecord();
+      }
+      if (!ring->write(
+              Span<const uint8_t>((const uint8_t*)chunk.data(), queuedBytes)))
+      {
+        break;
+      }
+      queuedBytes = 0;
+      ended = queuedLast;
+    }
+    usedAfterFill = ring->used();
+  }
+
+  // Twice what was played since the last poll, so a processor reading
+  // faster than real time keeps up.
+  void pump()
+  {
+    uint32_t used = ring->used();
+    uint32_t played = usedAfterFill > used ? usedAfterFill - used : 0;
+    fill(std::max(kStreamChunksPerPump, 2 * (played / fullRecordBytes) + 1));
+  }
+
+  void decodeRecord()
+  {
+    float* samples = chunk.data() + kRecordHeaderFloats;
+    uint64_t read = 0;
+    bool decoded = reader->readInto(samples, chunkFrames, read);
+    // Rewound once a pass, so a source with no frames ends rather than spins.
+    if (decoded && read == 0 && loop && reader->rewind())
+    {
+      position = 0;
+      decoded = reader->readInto(samples, chunkFrames, read);
+    }
+    queuedLast = !decoded || read == 0;
+    // The signal's own count, so a notify the host did not make drops nothing.
+    StreamRecordHeader header = {
+        (uint32_t)seeks->seq(),
+        (discontinuity ? kRecordDiscontinuity : 0) |
+            (queuedLast ? kRecordLast : 0),
+        position};
+    memcpy(chunk.data(), &header, sizeof(header));
+    discontinuity = false;
+    position += (double)read;
+    queuedBytes = (uint32_t)(sizeof(header) +
+                             read * reader->channels() * sizeof(float));
+  }
+
+  // Drops what the processor has not played, so it hears frame next.
+  bool restart(uint64_t frame)
+  {
+    uint64_t landed = 0;
+    if (!reader->seek(frame, &landed))
+    {
+      return false;
+    }
+    // Before the drain, so the processor drops what it already took too.
+    seeks->notify();
+    uint32_t capacity = (uint32_t)(chunk.size() * sizeof(float));
+    while (ring->read((uint8_t*)chunk.data(), capacity) != 0)
+    {
+    }
+    queuedBytes = 0;
+    ended = false;
+    position = (double)landed;
+    discontinuity = true;
+    fill(kStreamChunksPerPump);
+    return true;
+  }
+
+  // Answers whether its first records are queued.
+  bool ready() { return ended || ring->used() != 0; }
+};
+
+namespace
+{
+
+HostAudioStream* resolveAudioStream(WasmScriptingVM* vm, uint32_t handle)
+{
+  if (vm == nullptr)
+  {
+    return nullptr;
+  }
+  return static_cast<HostAudioStream*>(vm->handles().resolve(
+      handle,
+      WasmScriptingVM::HandleTable::Tag::audioStream));
+}
+
+void pumpAudioStreams(WasmScriptingVM* vm)
+{
+  auto& streams = vm->audioStreams();
+  for (auto it = streams.begin(); it != streams.end();)
+  {
+    HostAudioStream* stream = *it;
+    if (stream->handle == 0 &&
+        (stream->ended ||
+         SharedRegistry::holds(stream->ringId, stream->owner) <= 1))
+    {
+      delete stream;
+      it = streams.erase(it);
+      continue;
+    }
+    stream->pump();
+    ++it;
+  }
+}
+
+// Another hold on id for the caller, which answers it; else 0.
+uint32_t retainedId(uint32_t id, uint64_t owner)
+{
+  return SharedRegistry::retain(id, owner) ? id : 0;
+}
+#endif
+
+uint32_t audioStreamImpl(
+    WasmScriptingVM* vm,
+    uint32_t source,
+    uint32_t sampleRate,
+    uint32_t channels,
+    uint32_t chunkFrames,
+    uint32_t bufferFrames)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto host = resolveAudioSource(vm, source);
+  if (host == nullptr || chunkFrames == 0)
+  {
+    return 0;
+  }
+  auto reader = host->source->makeReader(channels, sampleRate);
+  if (reader == nullptr)
+  {
+    return 0;
+  }
+  uint64_t chunkBytes = sizeof(StreamRecordHeader) +
+                        (uint64_t)chunkFrames * reader->channels() * 4;
+  if (chunkBytes > shared_layout::kSharedMaxBytes)
+  {
+    return 0;
+  }
+  uint64_t records = std::max<uint64_t>(
+      1,
+      ((uint64_t)bufferFrames + chunkFrames - 1) / chunkFrames);
+  uint64_t recordBytes = SharedRing::recordBytes((size_t)chunkBytes, 0);
+  uint64_t capacity = records * recordBytes;
+  if (capacity > shared_layout::kSharedMaxBytes)
+  {
+    return 0;
+  }
+  uint32_t ringId = sharedRingCreateImpl(vm, (uint32_t)capacity);
+  if (!isSharedId(ringId))
+  {
+    return 0;
+  }
+  uint64_t owner = vm->sharedOwner();
+  uint32_t seeksId = sharedSignalCreateImpl(vm);
+  if (!isSharedId(seeksId))
+  {
+    SharedRegistry::release(ringId, owner);
+    return 0;
+  }
+  auto stream = new HostAudioStream();
+  stream->owner = owner;
+  stream->ring = SharedRegistry::find<SharedRing>(ringId, owner);
+  stream->ringId = ringId;
+  stream->seeks = SharedRegistry::find<SharedSignal>(seeksId, owner);
+  stream->seeksId = seeksId;
+  stream->chunkFrames = chunkFrames;
+  stream->fullRecordBytes = (uint32_t)recordBytes;
+  stream->chunk.resize(
+      kRecordHeaderFloats + (size_t)chunkFrames * reader->channels());
+  stream->reader = std::move(reader);
+  stream->fill(kStreamChunksPerPump);
+  stream->handle = vm->handles().mint(
+      WasmScriptingVM::HandleTable::Tag::audioStream,
+      stream);
+  vm->audioStreams().push_back(stream);
+  vm->watchLanes();
+  return vm->watchStream(stream->handle);
+#else
+  return 0;
+#endif
+}
+
+uint32_t audioStreamRingImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr ? retainedId(stream->ringId, stream->owner) : 0;
+#else
+  return 0;
+#endif
+}
+
+uint32_t audioStreamSeeksImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr ? retainedId(stream->seeksId, stream->owner) : 0;
+#else
+  return 0;
+#endif
+}
+
+uint32_t audioStreamChannelsImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr ? stream->reader->channels() : 0;
+#else
+  return 0;
+#endif
+}
+
+uint32_t audioStreamSampleRateImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr ? stream->reader->sampleRate() : 0;
+#else
+  return 0;
+#endif
+}
+
+uint32_t audioStreamSeekFrameImpl(
+    WasmScriptingVM* vm,
+    uint32_t handle,
+    double frame)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr &&
+                 stream->restart(
+                     frame > 0 ? (uint64_t)std::min(frame, 1.8e19) : 0)
+             ? 1
+             : 0;
+#else
+  return 0;
+#endif
+}
+
+void audioStreamSetLoopImpl(WasmScriptingVM* vm, uint32_t handle, uint32_t loop)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  if (stream == nullptr)
+  {
+    return;
+  }
+  stream->loop = loop != 0;
+  if (!stream->loop)
+  {
+    return;
+  }
+  // A stream that ran out starts over, after what is queued.
+  if (stream->ended && stream->reader->rewind())
+  {
+    stream->ended = false;
+    stream->position = 0;
+    stream->fill(kStreamChunksPerPump);
+  }
+  // Its last record waits for room, so the next decode loops instead.
+  else if (
+      stream->queuedLast && stream->queuedBytes == sizeof(StreamRecordHeader))
+  {
+    stream->queuedBytes = 0;
+  }
+#endif
+}
+
+uint32_t audioStreamEndedImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  auto stream = resolveAudioStream(vm, handle);
+  return stream != nullptr && stream->ended ? 1 : 0;
+#else
+  return 0;
+#endif
+}
+
+void audioStreamReleaseImpl(WasmScriptingVM* vm, uint32_t handle)
+{
+#if RIVE_AUDIO_STREAMS()
+  releaseHostHandle(vm, handle, WasmScriptingVM::HandleTable::Tag::audioStream);
+#endif
+}
+
 uint32_t audioPlayImpl(WasmScriptingVM* vm, uint32_t source)
 {
 #ifdef WITH_RIVE_AUDIO
@@ -9597,6 +10393,16 @@ double audioTimeFrameImpl(WasmScriptingVM* vm)
 #else
   return 0.0;
 #endif
+}
+
+uint32_t audioProcessorSampleRateImpl(WasmScriptingVM* vm)
+{
+  return WasmProcessors::format().sampleRate;
+}
+
+uint32_t audioProcessorChannelsImpl(WasmScriptingVM* vm)
+{
+  return WasmProcessors::format().channels;
 }
 
 uint32_t audioSampleRateImpl(WasmScriptingVM* vm)
@@ -9867,13 +10673,19 @@ bool initRuntime()
          wasm_module_inst_t,
          wasm_exec_env_t env,
          void*) {
+        const char* why = reason == MAX_SIZE_REACHED
+                              ? "the module hit its wasmMaxPages ceiling"
+                              : "the device could not provide the memory";
+#ifdef RIVE_WASM_PARALLEL
+        if (WasmParallel::runningParts())
+        {
+          why = "the memory cannot grow during a parallel call";
+        }
+#endif
         reportScriptError(
             env != nullptr ? bootVmFromEnv(env) : nullptr,
             "wasm memory: growing " + std::to_string(currentBytes >> 20) +
-                " MB by " + std::to_string(incPages) + " pages failed: " +
-                (reason == MAX_SIZE_REACHED
-                     ? "the module hit its wasmMaxPages ceiling"
-                     : "the device could not provide the memory"));
+                " MB by " + std::to_string(incPages) + " pages failed: " + why);
       },
       nullptr);
   wasm_runtime_register_natives(
@@ -10158,7 +10970,7 @@ double sharedAtomic(
     uint32_t offset,
     Use use)
 {
-  auto found = sharedFind<SharedRegion>(vm, region);
+  SharedRegion* found = sharedRecentRegion(region, sharedHolder(vm));
   std::atomic<uint32_t>* word = found != nullptr ? found->word(offset)
                                                  : nullptr;
   return word != nullptr ? (double)use(*word) : -1.0;
@@ -10872,6 +11684,28 @@ double lanesWaitWithinImpl(
       .block();
 }
 
+// --- rive_parallel_v1: parallel calls -------------------------------------
+
+uint32_t parallelSizeImpl(WasmScriptingVM* vm)
+{
+  return vm != nullptr ? vm->parallelSize() : 1;
+}
+
+#ifdef RIVE_WASM_PARALLEL
+uint32_t parallelRunImpl(WasmScriptingVM* vm, uint32_t control)
+{
+  if (vm == nullptr)
+  {
+    WasmParallel::refuseMemberCall();
+    return 0;
+  }
+  return vm->runParallel(control);
+}
+#endif
+
+// Only a caller that cannot park calls it, and natively every caller parks.
+void parallelWaitingImpl(WasmScriptingVM* vm, uint32_t control) {}
+
 // --- rive_jobs_v1: script jobs ---------------------------------------------
 
 uint32_t jobsThreadsImpl(WasmScriptingVM* vm)
@@ -11003,6 +11837,12 @@ void deleteHostObject(
       break;
     case Tag::audioSound:
       delete static_cast<HostAudioSound*>(object);
+      break;
+    case Tag::audioStream:
+#if RIVE_AUDIO_STREAMS()
+      // Its poll frees it, once no reader holds the ring.
+      static_cast<HostAudioStream*>(object)->handle = 0;
+#endif
       break;
 #endif
 #ifdef RIVE_CANVAS
@@ -11187,15 +12027,73 @@ void WasmScriptingVM::callDraw(
   m_handles.release(handle, HandleTable::Tag::renderer);
 }
 
+#ifdef RIVE_WASM_PARALLEL
+uint32_t WasmScriptingVM::runParallel(uint32_t control)
+{
+  if (m_parallel == nullptr)
+  {
+    m_parallel = std::make_unique<WasmParallel>(m_state->instance);
+  }
+  WasmParallel::Outcome outcome = m_parallel->run(
+      m_state->execEnv,
+      control,
+      parallelSize() == 1);
+  using Kind = WasmParallel::Outcome::Kind;
+  switch (outcome.kind)
+  {
+    case Kind::ok:
+    case Kind::callerFailed:
+      break;
+    case Kind::trapped:
+      raiseModuleError(outcome.message.c_str());
+      break;
+    case Kind::threw:
+    {
+      WasmStringArg message(
+          this,
+          outcome.message.data(),
+          (uint32_t)outcome.message.size());
+      raiseThrown(std::string(message.data(), message.size()).c_str());
+      break;
+    }
+    case Kind::budget:
+      reportError(budgetExceededLine(m_timeoutMs));
+      raiseBudgetExceeded();
+      break;
+    case Kind::interrupted:
+      // The watchdog's own report names the timeout.
+      raiseModuleError("execution exceeded timeout");
+      break;
+  }
+  return outcome.threads;
+}
+#endif
+
 WasmScriptingVM::~WasmScriptingVM()
 {
   // First, so no poll reaches it while it goes.
   VMPollList::leave(m_laneList, this);
   VMPollList::leave(m_holdingList, this);
+  if (m_stallWatched)
+  {
+    StallWatch& watch = stallWatch();
+    std::lock_guard<std::mutex> lock(watch.mutex);
+    watch.vms.erase(
+        std::remove(watch.vms.begin(), watch.vms.end(), this),
+        watch.vms.end());
+  }
+  for (const MainWait& wait : m_mainWaits)
+  {
+    abandonWait(wait);
+  }
   // Workers and jobs may hold this VM's shared memory; they stop first.
   m_processors.reset();
   m_workers.reset();
   m_jobs.reset();
+#ifndef __EMSCRIPTEN__
+  // Members share the instance's memory, so they go before it.
+  m_parallel.reset();
+#endif
   if (m_sharedOwner != 0)
   {
     SharedRegistry::releaseOwner(m_sharedOwner);
@@ -11278,6 +12176,12 @@ WasmScriptingVM::~WasmScriptingVM()
     slot.object = nullptr;
     deleteHostObject(this, tag, object);
   }
+#if RIVE_AUDIO_STREAMS()
+  for (HostAudioStream* stream : m_audioStreams)
+  {
+    delete stream;
+  }
+#endif
 #ifndef __EMSCRIPTEN__
   // Last, as the stats call above can still arm and register a slot.
   if (m_budgetSlot != nullptr)
@@ -11461,6 +12365,7 @@ void WasmScriptingVM::deliverDecodeResult(const DecodeResult& result)
     {
       guestFree(pixelsPtr);
     }
+    asyncWorkDelivered();
     return;
   }
   uint32_t messagePtr = guestString(result.error.c_str());
@@ -11471,6 +12376,7 @@ void WasmScriptingVM::deliverDecodeResult(const DecodeResult& result)
   uint32_t args[3] = {m_L, result.token, messagePtr};
   callModule("host_image_decode_failed", 3, args);
   guestFree(messagePtr);
+  asyncWorkDelivered();
 }
 
 void WasmScriptingVM::resolveImageDecode(
@@ -11693,6 +12599,7 @@ void WasmScriptingVM::resolveFetch(
   uint32_t args[4] = {m_L, token, responsePtr, byteCount};
   callModule("host_fetch_resolved", 4, args);
   guestFree(responsePtr);
+  asyncWorkDelivered();
 }
 
 void WasmScriptingVM::rejectFetch(
@@ -11725,6 +12632,7 @@ void WasmScriptingVM::deliverFetchFailure(
   uint32_t args[4] = {m_L, token, code, messagePtr};
   callModule("host_fetch_failed", 4, args);
   guestFree(messagePtr);
+  asyncWorkDelivered();
 }
 
 bool WasmScriptingVM::inModuleCall() const { return m_callDepth != 0; }
@@ -11749,6 +12657,13 @@ void WasmScriptingVM::attachLanes(Span<const uint8_t> module)
       consoleWrite(
           this,
           std::string("script ") + laneNoun(kind) + "s unavailable: " + error);
+    }
+    if (lanes != nullptr)
+    {
+      // A wasm32 memory has at most 65536 pages.
+      lanes->reuseMaxPages = (uint32_t)std::min<uint64_t>(
+          m_limits.jobReuseBytes >> 16,
+          65536);
     }
     return lanes;
   };
@@ -11812,16 +12727,205 @@ void WasmScriptingVM::deliverAllLaneOutput()
   });
 }
 
+// Names the line by its lane's call site, as the main lane's console does.
+static void printLaneLine(
+    void* vm,
+    std::string_view file,
+    uint32_t line,
+    std::string_view text)
+{
+  t_consoleFile.assign(file.data(), file.size());
+  t_consoleLine = line;
+  rtLogImpl((WasmScriptingVM*)vm, 0, text.data(), (uint32_t)text.size());
+}
+
 void WasmScriptingVM::watchLanes()
 {
   // Its lanes start only from one thread, whose polls reach their output.
   assert(m_laneList == nullptr || m_laneList == t_laneVMs);
   VMPollList::join(m_laneList, t_laneVMs, this);
+  if (m_printFromAnyThread)
+  {
+    watchStalls();
+  }
+}
+
+void WasmScriptingVM::printFromAnyThread()
+{
+#ifndef __EMSCRIPTEN__
+  m_printFromAnyThread = true;
+  if (m_laneList != nullptr)
+  {
+    watchStalls();
+  }
+#endif
+}
+
+void WasmScriptingVM::watchStalls()
+{
+  StallWatch& watch = stallWatch();
+  {
+    std::lock_guard<std::mutex> lock(watch.mutex);
+    if (m_stallWatched)
+    {
+      return;
+    }
+    m_stallWatched = true;
+    m_lastPoll.store(std::chrono::steady_clock::now());
+    watch.vms.push_back(this);
+  }
+  static std::once_flag started;
+  std::call_once(started, [] { std::thread(flushStalledLaneLogs).detach(); });
+  watch.changed.notify_one();
+}
+
+void WasmScriptingVM::flushLaneLogs()
+{
+  auto flush = [this](const auto* set) {
+    if (set != nullptr)
+    {
+      set->forEachLocked(
+          [this](WasmLane* lane) { lane->takeLogs(printLaneLine, this); });
+    }
+  };
+  flush(m_jobs.get());
+  flush(m_workers.get());
+  flush(m_processors.get());
+}
+
+void WasmScriptingVM::flushStalledLaneLogs()
+{
+  constexpr auto kStall = std::chrono::milliseconds(
+      lane_timing::kLaneLogStallMs);
+  StallWatch& watch = stallWatch();
+  std::unique_lock<std::mutex> lock(watch.mutex);
+  for (;;)
+  {
+    watch.changed.wait(lock, [&] { return !watch.vms.empty(); });
+    watch.changed.wait_for(lock, kStall / 2);
+    auto now = std::chrono::steady_clock::now();
+    for (WasmScriptingVM* vm : watch.vms)
+    {
+      if (now - vm->m_lastPoll.load(std::memory_order_relaxed) >= kStall)
+      {
+        vm->flushLaneLogs();
+      }
+    }
+  }
+}
+
+// Decodes on a job thread into a blob the main lane registers as it settles.
+class rive::WasmAudioDecode : public JobTask
+{
+public:
+#ifdef WITH_RIVE_AUDIO
+  WasmAudioDecode(rcp<AudioReader> reader, uint64_t maxFrames)
+      : m_reader(std::move(reader))
+      , m_maxFrames(maxFrames)
+  {}
+#endif
+  // Bytes 0 when it did not decode; blob null when they cannot be one.
+  uint64_t bytes = 0;
+  rcp<SharedBlob> blob;
+  // What the main lane charged its owner up front, refunded as it settles.
+  uint64_t charged = 0;
+  uint64_t owner = 0;
+  // The main lane decodes it a slice per poll instead, as a pool with no
+  // threads runs a job to its end.
+  bool sliced = false;
+
+  // True once it is done, else it stopped at until.
+  bool decodeUntil(Clock::time_point until)
+  {
+#ifdef WITH_RIVE_AUDIO
+    bool done = false;
+    do
+    {
+      if (m_stop.load(std::memory_order_relaxed) ||
+          !m_reader->readBlock(m_maxFrames, m_samples, done))
+      {
+        m_samples = {};
+        return true;
+      }
+    } while (!done && Clock::now() < until);
+    if (!done)
+    {
+      return false;
+    }
+    bytes = m_samples.size() * sizeof(float);
+    if (bytes != 0 && bytes <= kSharedMaxBytes)
+    {
+      blob = make_rcp<SharedBlob>(
+          Span<const uint8_t>((const uint8_t*)m_samples.data(), bytes));
+    }
+    m_samples = {};
+#endif
+    return true;
+  }
+
+protected:
+  void run() override { decodeUntil(Clock::time_point::max()); }
+
+  void interrupt() override { m_stop.store(true, std::memory_order_relaxed); }
+
+private:
+  std::atomic<bool> m_stop{false};
+#ifdef WITH_RIVE_AUDIO
+  rcp<AudioReader> m_reader;
+  uint64_t m_maxFrames;
+  std::vector<float> m_samples;
+#endif
+};
+
+uint32_t WasmScriptingVM::startAudioDecode(
+    rcp<AudioSource> source,
+    uint32_t sampleRate,
+    uint32_t channels)
+{
+#ifdef WITH_RIVE_AUDIO
+  // Made here, as the source caches its format lazily and unguarded.
+  auto reader = source->makeReader(channels, sampleRate);
+  if (reader == nullptr)
+  {
+    return 0;
+  }
+  watchLanes();
+  uint64_t frameBytes = sizeof(float) * (uint64_t)reader->channels();
+  uint64_t maxFrames = kSharedMaxBytes / frameBytes;
+  // Charged now, so decodes running at once cannot outgrow the budget.
+  uint64_t estimate = std::min(reader->lengthInFrames(), maxFrames) *
+                      frameBytes;
+  uint64_t owner = sharedOwner();
+  uint32_t token = m_nextMainWait++;
+  if (!SharedRegistry::charge(owner, estimate))
+  {
+    wakeMain(token, shared_layout::kCreateNoMemory);
+    return token;
+  }
+  auto decode = make_rcp<WasmAudioDecode>(std::move(reader), maxFrames);
+  decode->charged = estimate;
+  decode->owner = owner;
+  decode->sliced = WasmJobs::pool().threadCount() == 0;
+  if (!decode->sliced)
+  {
+    WasmJobs::pool().submit(decode);
+  }
+  m_mainWaits.push_back({SignalWait(token), 0, std::move(decode)});
+  return token;
+#else
+  return 0;
+#endif
 }
 
 uint32_t WasmScriptingVM::watchLane(uint32_t lane)
 {
   m_mainWaits.push_back({SignalWait(m_nextMainWait), lane});
+  return m_nextMainWait++;
+}
+
+uint32_t WasmScriptingVM::watchStream(uint32_t stream)
+{
+  m_mainWaits.push_back({SignalWait(m_nextMainWait), 0, nullptr, stream});
   return m_nextMainWait++;
 }
 
@@ -11845,8 +12949,29 @@ uint32_t WasmScriptingVM::waitOnMain(
   return m_nextMainWait++;
 }
 
+void WasmScriptingVM::abandonWait(const MainWait& wait)
+{
+  if (wait.decode != nullptr)
+  {
+    WasmJobs::pool().cancel(wait.decode.get());
+    SharedRegistry::refund(wait.decode->owner, wait.decode->charged);
+  }
+#if RIVE_AUDIO_STREAMS()
+  releaseHostHandle(this, wait.stream, HandleTable::Tag::audioStream);
+#endif
+}
+
 void WasmScriptingVM::cancelMainWait(uint32_t token)
 {
+  for (const MainWait& wait : m_mainWaits)
+  {
+    if (wait.wait.id == token)
+    {
+      abandonWait(wait);
+      // A promise that parked it still takes one wake, which says it went.
+      wakeMain(token, 0);
+    }
+  }
   m_mainWaits.erase(
       std::remove_if(
           m_mainWaits.begin(),
@@ -11855,15 +12980,70 @@ void WasmScriptingVM::cancelMainWait(uint32_t token)
       m_mainWaits.end());
 }
 
+static constexpr double kOfflineDecodeSeconds = 10;
+
+// The blob's id or why not, -1 when nothing decoded.
+static double settleAudioDecode(WasmScriptingVM* vm, WasmAudioDecode& decode)
+{
+  SharedRegistry::refund(decode.owner, decode.charged);
+  if (decode.bytes == 0)
+  {
+    return -1;
+  }
+  uint32_t answer = 0;
+  uint64_t owner = sharedCreator(vm, decode.bytes, false, true, answer);
+  if (owner == 0)
+  {
+    return answer;
+  }
+  return sharedCreated(vm, owner, decode.bytes, std::move(decode.blob));
+}
+
 void WasmScriptingVM::settleMainWaits()
 {
   auto now = std::chrono::steady_clock::now();
+  auto sliceEnd = now +
+                  std::chrono::milliseconds(lane_timing::kCooperativeSliceMs);
   size_t resultBytes = 0;
   for (auto it = m_mainWaits.begin(); it != m_mainWaits.end();)
   {
     double value = 0;
     bool fire = false;
-    if (it->lane != 0)
+    if (it->decode != nullptr)
+    {
+      // Offline renders outrun real time, so one waits on what it decodes.
+#if RIVE_PROCESSOR_AUDIO()
+      bool offline = WasmProcessors::renderOffline();
+#else
+      bool offline = false;
+#endif
+      if (it->decode->sliced)
+      {
+        fire = it->decode->decodeUntil(
+            offline ? Clock::time_point::max() : sliceEnd);
+      }
+      else
+      {
+        if (offline)
+        {
+          WasmJobs::pool().join(it->decode.get(), kOfflineDecodeSeconds);
+        }
+        fire = it->decode->finished();
+      }
+      if (fire)
+      {
+        value = settleAudioDecode(this, *it->decode);
+      }
+    }
+#if RIVE_AUDIO_STREAMS()
+    else if (it->stream != 0)
+    {
+      HostAudioStream* stream = resolveAudioStream(this, it->stream);
+      fire = stream == nullptr || stream->ready();
+      value = stream != nullptr ? it->stream : 0;
+    }
+#endif
+    else if (it->lane != 0)
     {
       WasmLane* lane = resolveLane(this, it->lane);
       LaneState state = lane != nullptr ? lane->state() : LaneState::stopped;
@@ -11893,22 +13073,24 @@ void WasmScriptingVM::settleMainWaits()
     }
     uint32_t token = it->wait.id;
     it = m_mainWaits.erase(it);
-    // Held even outside a call, so an await always resumes at a poll.
-    holdOutcome([this, token, value] {
-      double args[3] = {(double)m_L, (double)token, value};
-      double unused = 0;
-      callF64("host_lane_wake", args, 3, &unused);
-    });
+    wakeMain(token, value);
   }
+}
+
+void WasmScriptingVM::wakeMain(uint32_t token, double value)
+{
+  // Held even outside a call, so an await always resumes at a poll.
+  holdOutcome([this, token, value] {
+    double args[3] = {(double)m_L, (double)token, value};
+    double unused = 0;
+    callF64("host_lane_wake", args, 3, &unused);
+    asyncWorkDelivered();
+  });
 }
 
 void WasmScriptingVM::deliverLaneOutput(WasmLane* lane)
 {
-  lane->takeLogs(
-      [](void* vm, std::string_view line) {
-        rtLogImpl((WasmScriptingVM*)vm, 0, line.data(), (uint32_t)line.size());
-      },
-      this);
+  lane->takeLogs(printLaneLine, this);
   // A job's failure is its joiner's result, so only workers and processors
   // announce theirs.
   if (lane->kind() == LaneKind::job || lane->reportedFailure ||
@@ -11932,7 +13114,11 @@ void WasmScriptingVM::deliverLaneOutput(WasmLane* lane)
 
 void WasmScriptingVM::deliverLaneOutput()
 {
+  m_lastPoll.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
   settleMainWaits();
+#if RIVE_AUDIO_STREAMS()
+  pumpAudioStreams(this);
+#endif
   auto deliver = [this](auto* set) {
     if (set == nullptr)
     {
@@ -11958,7 +13144,22 @@ bool WasmScriptingVM::hasPendingAsyncWork() const
          !m_heldOutcomes.empty() || !m_mainWaits.empty() ||
          (m_jobs != nullptr && m_jobs->hasUnfinished()) ||
          (m_workers != nullptr && m_workers->due()) ||
-         (m_processors != nullptr && m_processors->starting());
+         (m_processors != nullptr && m_processors->starting()) || streaming();
+}
+
+bool WasmScriptingVM::streaming() const
+{
+#if RIVE_AUDIO_STREAMS()
+  // Only a poll tops a stream up, so one still decoding keeps hosts ticking.
+  for (const HostAudioStream* stream : m_audioStreams)
+  {
+    if (!stream->ended)
+    {
+      return true;
+    }
+  }
+#endif
+  return false;
 }
 
 uint64_t WasmScriptingVM::sharedOwner()
@@ -12005,6 +13206,26 @@ void WasmScriptingVM::deliverAllHeldOutcomes()
   t_holdingVMs->deliver([](WasmScriptingVM* vm) { vm->deliverHeldOutcomes(); });
 }
 
+bool WasmScriptingVM::hasPendingAsyncWorkOnThread()
+{
+  {
+    VMPollList::Lock lock(*t_holdingVMs);
+    if (!t_holdingVMs->vms.empty())
+    {
+      return true;
+    }
+  }
+  VMPollList::Lock lock(*t_laneVMs);
+  for (WasmScriptingVM* vm : t_laneVMs->vms)
+  {
+    if (vm->hasPendingAsyncWork())
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 void WasmScriptingVM::setBootHook(BootHook hook)
 {
   s_bootHook = std::move(hook);
@@ -12043,7 +13264,8 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
     Span<const uint8_t> bytes,
     ExecutionTier& tier,
     std::string& interpReason,
-    std::string& outError)
+    std::string& outError,
+    bool checkedBounds)
 {
   if (!ensureRuntime())
   {
@@ -12085,7 +13307,7 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
         cacheDir,
         aotArtifactName(plainKey, ".hw").c_str());
     struct stat hwAotStat;
-    haveHwAot = stat(aotPath, &hwAotStat) == 0;
+    haveHwAot = !checkedBounds && stat(aotPath, &hwAotStat) == 0;
 #endif
     if (!haveHwAot)
     {
@@ -12126,6 +13348,12 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
   const char* tierEnv = getenv("RIVE_WASM_AOT_SYNC");
   bool wantInterp = tierEnv != nullptr && strcmp(tierEnv, "interp") == 0;
   TierSpecies species = bootTierSpecies();
+  // Where no reservation can be made, the checked build loads at once.
+  if (species == TierSpecies::hw &&
+      (checkedBounds || wasm_runtime_rive_hw_reserve_limit() == 0))
+  {
+    species = TierSpecies::o3;
+  }
   bool ladderArtifact = false;
   if (!haveAot && !haveHwAot)
   {
@@ -12163,14 +13391,24 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
   // Offline-compiled code linked into this binary; the only AOT shape on
   // platforms without runtime executable memory. The file lanes above never
   // fire there, but an explicit artifact still wins if one appears.
-  const PrelinkedAotModule* prelinked = haveAot || haveHwAot || haveO0Aot
-                                            ? nullptr
-                                            : findPrelinkedAotModule(
-                                                  plainKey,
-                                                  bytes.size());
+  const PrelinkedAotModule* prelinked = nullptr;
+  if (!haveAot && !haveHwAot && !haveO0Aot)
+  {
+    prelinked = findPrelinkedAotModule(
+        plainKey,
+        bytes.size(),
+        species == TierSpecies::hw);
+    // A bake from an older rive-cli has only the checked build.
+    if (prelinked == nullptr && species == TierSpecies::hw)
+    {
+      prelinked = findPrelinkedAotModule(plainKey, bytes.size(), false);
+    }
+  }
   if (prelinked != nullptr)
   {
-    moduleKey ^= 0x94d049bb133111ebull;
+    moduleKey = compiledModuleKey(
+        moduleKey ^ 0x94d049bb133111ebull,
+        prelinked->hardwareBounds ? TierSpecies::hw : TierSpecies::o3);
   }
 #endif
   if (haveAot || haveHwAot || haveO0Aot)
@@ -12277,11 +13515,11 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
     }
     if (loaded != nullptr)
     {
-      if (haveHwAot)
-      {
-        wasm_runtime_set_module_hw_bounds(loaded, true);
-      }
       auto entry = std::make_shared<SharedWasmModule>();
+      if (wasm_runtime_rive_module_hw_bounds(loaded))
+      {
+        entry->hardwareBoundsWasm.assign(bytes.begin(), bytes.end());
+      }
       entry->bytes = std::move(moduleBytes);
       entry->module = loaded;
       entry->tier = tier;
@@ -12316,6 +13554,56 @@ std::shared_ptr<void> WasmScriptingVM::loadSharedModule(
     interpReason.clear();
   }
   return lease;
+}
+
+std::shared_ptr<void> WasmScriptingVM::loadFallbackModule(
+    Span<const uint8_t> bytes,
+    const char* what,
+    ExecutionTier& tier,
+    std::string& interpReason)
+{
+  std::string error;
+  auto lease = loadSharedModule(bytes, tier, interpReason, error, true);
+  if (lease != nullptr)
+  {
+    fprintf(
+        stderr,
+        "wasm aot: no hardware bounds reservation left, %s falls back to "
+        "software bounds on %s\n",
+        what,
+        tierName(tier, interpReason).c_str());
+  }
+  else
+  {
+    fprintf(
+        stderr,
+        "wasm aot: no hardware bounds reservation left, and %s did not load "
+        "on software bounds: %s\n",
+        what,
+        error.c_str());
+  }
+  return lease;
+}
+
+Span<const uint8_t> WasmScriptingVM::hardwareBoundsWasm(
+    const std::shared_ptr<void>& lease)
+{
+  std::lock_guard<std::mutex> lock(sharedModuleCacheMutex());
+  for (const auto& cached : sharedModuleCache())
+  {
+    const std::vector<uint8_t>& wasm = cached.second->hardwareBoundsWasm;
+    if (cached.second->module == lease.get())
+    {
+      return Span<const uint8_t>(wasm.data(), wasm.size());
+    }
+  }
+  return {};
+}
+
+bool WasmScriptingVM::hardwareBounds() const
+{
+  return m_state != nullptr && m_state->module != nullptr &&
+         wasm_runtime_rive_module_hw_bounds(m_state->module);
 }
 
 bool WasmScriptingVM::init(Span<const uint8_t> module)
@@ -12391,15 +13679,9 @@ bool WasmScriptingVM::init(Span<const uint8_t> module)
           }
           if (begin)
           {
-            // A start nested in an outer call can run on that call's
-            // env, whose own armed watchdog then bounds it.
-            WasmScriptingVM* outer = vmFromEnv(env);
-            bool outerBounds = outer != nullptr && outer->m_budgetArmed &&
-                               outer->m_budgetSlot->env == env;
             // Trusted modules run their top level unbounded, like their
             // calls.
-            if (vm->m_hostBudget && !outerBounds && !vm->m_budgetArmed &&
-                vm->boundsCalls())
+            if (vm->m_hostBudget && !vm->m_budgetArmed && vm->boundsCalls())
             {
               vm->armWatchdog(env);
             }
@@ -12444,12 +13726,30 @@ bool WasmScriptingVM::init(Span<const uint8_t> module)
   // level that trapped inside exclusive must not leave its region held.
   uint32_t outerRegionId;
   SharedRegion* outerRegion = stashHeldRegion(&outerRegionId);
-  m_state->instance = wasm_runtime_instantiate(
-      m_state->module,
-      512 * 1024,
-      0,
-      error,
-      sizeof(error));
+  ensureWasmThreadEnv();
+  auto instantiate = [&]() {
+    m_state->instance = wasm_runtime_instantiate(
+        m_state->module,
+        512 * 1024,
+        0,
+        error,
+        sizeof(error));
+  };
+  instantiate();
+  if (m_state->instance == nullptr &&
+      strstr(error, WASM_RIVE_HW_RESERVE_FAILED) != nullptr)
+  {
+    if (auto checked = loadFallbackModule(
+            module,
+            "main module",
+            m_tier,
+            m_interpReason))
+    {
+      m_state->lease = std::move(checked);
+      m_state->module = (wasm_module_t)m_state->lease.get();
+      instantiate();
+    }
+  }
   restoreHeldRegion(outerRegionId, outerRegion);
   if (m_debugHooks != nullptr)
   {
@@ -12507,6 +13807,7 @@ bool WasmScriptingVM::bootModule()
   // rewinding or finalizing.
   m_frameMinor = hasExport("__riveFrameMinor");
   m_frameRelease = m_frameMinor && hasExport("__riveFrameRelease");
+  m_frameTrim = m_frameMinor && hasExport("__riveFrameTrim");
   m_frameMajorsProbe = hasExport("__riveFrameMajors");
   // Stub modules report their bump position, finer than page counts.
   m_heapUsedProbe = hasExport("__riveHeapUsed");
@@ -12603,6 +13904,10 @@ void WasmScriptingVM::joinFrameReport(
   joined += report;
 }
 
+// Boundaries between trims, and how long a free chunk sits idle before one
+// releases it.
+static constexpr uint32_t kTrimBoundaries = 64;
+
 const char* WasmScriptingVM::collectFrame()
 {
   if (!valid())
@@ -12633,6 +13938,14 @@ const char* WasmScriptingVM::collectFrame()
       // runs after the collection, never inside it. (A host that
       // skips it gets them released at the next boundary.)
       callModule("__riveFrameRelease", 0, nullptr);
+    }
+    // A spike's memory goes back to the system while the file stays open,
+    // once its chunks sat free for a whole window.
+    if (m_frameTrim && ++m_boundariesSinceTrim == kTrimBoundaries)
+    {
+      m_boundariesSinceTrim = 0;
+      uint32_t args[1] = {kTrimBoundaries};
+      callModule("__riveFrameTrim", 1, args);
     }
     if (!m_frameMinorAnnounced)
     {
@@ -12825,6 +14138,8 @@ static const char* handleTagName(WasmScriptingVM::HandleTable::Tag tag)
       return "audioSource";
     case Tag::audioSound:
       return "audioSound";
+    case Tag::audioStream:
+      return "audioStream";
     case Tag::drawable:
       return "drawable";
     case Tag::riveFile:
@@ -12858,6 +14173,31 @@ bool WasmScriptingVM::memoryLimits(uint32_t* pages, uint32_t* maxPages) const
   return true;
 }
 #endif
+
+void WasmScriptingVM::releasePages(uint32_t start, uint32_t length)
+{
+#ifndef __EMSCRIPTEN__
+  if (m_state == nullptr || m_state->instance == nullptr)
+  {
+    return;
+  }
+  wasm_memory_inst_t memory = wasm_runtime_get_default_memory(
+      m_state->instance);
+  // Another thread may be using a shared memory's pages.
+  if (memory == nullptr || wasm_memory_get_shared(memory))
+  {
+    return;
+  }
+  uint64_t size = wasm_memory_get_cur_page_count(memory) *
+                  wasm_memory_get_bytes_per_page(memory);
+  if ((uint64_t)start + length > size)
+  {
+    return;
+  }
+  auto* base = (uint8_t*)wasm_memory_get_base_address(memory);
+  releaseSystemPages(base + start, base + start + length);
+#endif
+}
 
 uint32_t WasmScriptingVM::memoryPages() const
 {
@@ -13306,6 +14646,61 @@ bool WasmScriptingVM::callPathEffectUpdate(
   {
     return false;
   }
+  // _v2 also gets a node over the shape, the Luau lane's NodeData; modules
+  // built before it get the paint alone.
+  size_t scopeStart = m_scopedNodes.size();
+  uint32_t node = m_pathEffectV2 && shape != nullptr
+                      ? mintNode(this, nullptr, shape)
+                      : 0;
+  bool ok = callPathEffectWithNode(
+      object,
+      selfRef,
+      sourcePath,
+      paint,
+      node,
+      outPath);
+  releaseScopedNodes(scopeStart);
+  return ok;
+}
+
+#ifdef WITH_RIVE_TOOLS
+bool WasmScriptingVM::callPathEffectUpdate(
+    ScriptedObject* object,
+    int selfRef,
+    const RawPath& sourcePath,
+    const PathEffectPaintWire& paint,
+    WasmNodeSource* source,
+    uint32_t shape,
+    RawPath* outPath)
+{
+  if (!valid() || outPath == nullptr)
+  {
+    return false;
+  }
+  size_t scopeStart = m_scopedNodes.size();
+  uint32_t node = m_pathEffectV2 && source != nullptr && shape != 0
+                      ? mintSourceNode(this, source, shape)
+                      : 0;
+  bool ok = callPathEffectWithNode(
+      object,
+      selfRef,
+      sourcePath,
+      paint,
+      node,
+      outPath);
+  releaseScopedNodes(scopeStart);
+  return ok;
+}
+#endif
+
+bool WasmScriptingVM::callPathEffectWithNode(
+    ScriptedObject* object,
+    int selfRef,
+    const RawPath& sourcePath,
+    const PathEffectPaintWire& paint,
+    uint32_t node,
+    RawPath* outPath)
+{
   uint32_t verbCount = (uint32_t)sourcePath.verbs().size();
   uint32_t floatCount = (uint32_t)sourcePath.points().size() * 2;
   uint32_t pointBytes = floatCount * (uint32_t)sizeof(float);
@@ -13325,15 +14720,6 @@ bool WasmScriptingVM::callPathEffectUpdate(
       sourcePath.verbs().data(),
       verbCount);
   m_pathEffectOut = outPath;
-  // _v2 also gets a node over the shape, the Luau lane's NodeData; modules
-  // built before it get the paint alone.
-  bool withNode = m_pathEffectV2;
-  size_t scopeStart = m_scopedNodes.size();
-  uint32_t nodeHandle = 0;
-  if (withNode && shape != nullptr)
-  {
-    nodeHandle = mintNode(this, nullptr, shape);
-  }
   uint32_t args[8] = {
       m_L,
       (uint32_t)selfRef,
@@ -13342,10 +14728,9 @@ bool WasmScriptingVM::callPathEffectUpdate(
       dataPtr + (uint32_t)sizeof(paint),
       floatCount,
       dataPtr,
-      nodeHandle};
-  uint32_t ok = withNode ? callModule("host_obj_path_effect_v2", 8, args)
-                         : callModule("host_obj_path_effect", 7, args);
-  releaseScopedNodes(scopeStart);
+      node};
+  uint32_t ok = m_pathEffectV2 ? callModule("host_obj_path_effect_v2", 8, args)
+                               : callModule("host_obj_path_effect", 7, args);
   m_pathEffectOut = nullptr;
   guestFree(dataPtr);
   return ok != 0;

@@ -1,7 +1,7 @@
 #ifndef _RIVE_DIRTYABLE_HPP_
 #define _RIVE_DIRTYABLE_HPP_
 
-#include "third_party/rive/include/rive/component_dirt.hpp"
+#include "rive/component_dirt.hpp"
 
 namespace rive
 {

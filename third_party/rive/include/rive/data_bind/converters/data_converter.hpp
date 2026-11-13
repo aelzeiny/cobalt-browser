@@ -1,9 +1,9 @@
 #ifndef _RIVE_DATA_CONVERTER_HPP_
 #define _RIVE_DATA_CONVERTER_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_base.hpp"
-#include "third_party/rive/include/rive/data_bind/data_values/data_value.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_container.hpp"
+#include "rive/generated/data_bind/converters/data_converter_base.hpp"
+#include "rive/data_bind/data_values/data_value.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/data_bind_container.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -30,10 +30,17 @@ public:
   void markConverterDirty();
   virtual void update();
   void copy(const DataConverter& object);
+  // Advances the converters used by this converter's own binds.
   virtual bool advance(float elapsedTime);
-  // Whether advance can do work: false for converters whose advance is the
-  // base no-op, so a bind using one never needs advancing.
-  virtual bool mayAdvance() const { return false; }
+  // Whether advance can do work. The base only advances its binds'
+  // converters, so a bind using a converter whose binds use none never
+  // needs advancing.
+  virtual bool mayAdvance() const;
+  // Whether advance would currently do nothing, for a converter that
+  // mayAdvance (see DataBindContainer::dataBindsQuietState). The base asks
+  // its binds' converters.
+  virtual AdvancingComponent::QuietState advanceQuietState() const;
+  void dataBindsChanged() override;
   void addDirtyDataBind(DataBind*) override;
   virtual void reset() {};
 

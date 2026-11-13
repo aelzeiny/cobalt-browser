@@ -1,8 +1,8 @@
 #ifndef _RIVE_SCRIPTED_DATA_CONVERTER_HPP_
 #define _RIVE_SCRIPTED_DATA_CONVERTER_HPP_
-#include "third_party/rive/include/rive/generated/scripted/scripted_data_converter_base.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_object.hpp"
+#include "rive/generated/scripted/scripted_data_converter_base.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/scripted/scripted_object.hpp"
 #include <stdio.h>
 namespace rive
 {
@@ -54,6 +54,11 @@ public:
                            AdvanceFlags::NewFrame) override;
   bool advance(float elapsedSeconds) override;
   bool mayAdvance() const override { return true; }
+  // The script's advance does work this can't see into.
+  AdvancingComponent::QuietState advanceQuietState() const override
+  {
+    return AdvancingComponent::QuietState::never;
+  }
   StatusCode import(ImportStack& importStack) override;
   void addProperty(CustomProperty* prop) override;
   Core* clone() const override;
@@ -62,6 +67,8 @@ public:
     markConverterDirty();
     return true;
   }
+  // A continuation may have changed what the script's convert returns.
+  void asyncWorkDelivered() override { markConverterDirty(); }
   ScriptProtocol scriptProtocol() override { return ScriptProtocol::converter; }
   Component* component() override { return nullptr; }
   bool addDataBindFromScriptedObject(DataBind*) override;

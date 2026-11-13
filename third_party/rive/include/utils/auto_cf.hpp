@@ -1,6 +1,6 @@
 #pragma once
 
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/rive_types.hpp"
 
 #ifdef RIVE_BUILD_FOR_APPLE
 

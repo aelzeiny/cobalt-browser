@@ -1,9 +1,9 @@
-#include "third_party/rive/include/rive/inputs/gamepad_input.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_gamepad.hpp"
-#include "third_party/rive/include/rive/generated/animation/listener_types/listener_input_type_gamepad_base.hpp"
-#include "third_party/rive/include/rive/generated/artboard_base.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/importers/listener_input_type_gamepad_importer.hpp"
+#include "rive/inputs/gamepad_input.hpp"
+#include "rive/animation/listener_types/listener_input_type_gamepad.hpp"
+#include "rive/generated/animation/listener_types/listener_input_type_gamepad_base.hpp"
+#include "rive/generated/artboard_base.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/importers/listener_input_type_gamepad_importer.hpp"
 
 using namespace rive;
 

@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/math/rectangles_to_contour.hpp"
+#include "rive/math/rectangles_to_contour.hpp"
 #include <algorithm>
 
 using namespace rive;

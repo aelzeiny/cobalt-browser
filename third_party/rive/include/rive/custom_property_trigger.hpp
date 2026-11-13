@@ -1,6 +1,6 @@
 #ifndef _RIVE_CUSTOM_PROPERTY_TRIGGER_HPP_
 #define _RIVE_CUSTOM_PROPERTY_TRIGGER_HPP_
-#include "third_party/rive/include/rive/generated/custom_property_trigger_base.hpp"
+#include "rive/generated/custom_property_trigger_base.hpp"
 #include <cstdint>
 #include <stdio.h>
 namespace rive

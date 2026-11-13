@@ -1,12 +1,12 @@
 #ifndef _RIVE_NESTED_ARTBOARD_BASE_HPP_
 #define _RIVE_NESTED_ARTBOARD_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_bool_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_bytes_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core/field_types/core_bool_type.hpp"
+#include "rive/core/field_types/core_bytes_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/drawable.hpp"
+#include "rive/span.hpp"
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/editor_field_types.hpp"
 #endif
@@ -62,6 +62,7 @@ public:
     }
     RIVE_EDITOR_CHANGING(isPausedPropertyKey, &m_IsPaused, &value);
     m_IsPaused = value;
+    RIVE_EDITOR_CHANGED(isPausedChanged());
     notifyPropertyChanged(isPausedPropertyKey);
   }
 
@@ -86,6 +87,7 @@ public:
     }
     RIVE_EDITOR_CHANGING(quantizePropertyKey, &m_Quantize, &value);
     m_Quantize = value;
+    RIVE_EDITOR_CHANGED(quantizeChanged());
     notifyPropertyChanged(quantizePropertyKey);
   }
 
@@ -143,6 +145,8 @@ public:
 
 protected:
   virtual void artboardIdChanged() {}
+  virtual void isPausedChanged() {}
+  virtual void quantizeChanged() {}
 #ifdef WITH_RIVE_EDITOR
 #include "editor_native/generated/nested_artboard_ext.inl"
 #endif

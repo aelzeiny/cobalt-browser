@@ -1,6 +1,6 @@
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text/fully_shaped_text.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
+#include "rive/text/fully_shaped_text.hpp"
+#include "rive/text/text.hpp"
 #include <algorithm>
 #include <limits>
 
@@ -162,6 +162,7 @@ void FullyShapedText::shape(
           paragraph,
           line,
           maxWidth,
+          alignment,
           ellipsisLine == lineIndex,
           isEllipsisLineLast,
           &m_ellipsisRun,

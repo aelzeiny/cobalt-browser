@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/shapes/paint/dash_path.hpp"
-#include "third_party/rive/include/rive/shapes/paint/dash.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke.hpp"
-#include "third_party/rive/include/rive/math/path_measure.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
+#include "rive/shapes/paint/dash_path.hpp"
+#include "rive/shapes/paint/dash.hpp"
+#include "rive/shapes/paint/stroke.hpp"
+#include "rive/math/path_measure.hpp"
+#include "rive/factory.hpp"
 #include <algorithm>
 
 using namespace rive;
@@ -24,7 +24,11 @@ void DashPath::sortDashesForEditor()
 }
 #endif
 
-void DashEffectPath::invalidateEffect() { m_path.rewind(); }
+void DashEffectPath::invalidateEffect()
+{
+  m_isValid = false;
+  m_path.rewind();
+}
 
 void DashEffectPath::createPathMeasure(const RawPath* source)
 {
@@ -154,11 +158,15 @@ void DashPath::updateEffect(
   {
     auto dashEffectPath = static_cast<DashEffectPath*>(effectPathIt->second);
     auto path = dashEffectPath->path();
-    if (path->hasRenderPath())
+    if (dashEffectPath->isValid())
     {
       return;
     }
     path->rewind(source->isLocal());
+    dashEffectPath->markValid();
+#ifdef TESTING
+    computeCount++;
+#endif
     // Dash is not supported on fills so it will use the source as output
     if (shapePaint->paintType() == ShapePaintType::fill)
     {

@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_PROPERTY_SYMBOL_LIST_INDEX_BASE_HPP_
 #define _RIVE_VIEW_MODEL_PROPERTY_SYMBOL_LIST_INDEX_BASE_HPP_
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_symbol.hpp"
+#include "rive/viewmodel/viewmodel_property_symbol.hpp"
 namespace rive
 {
 class ViewModelPropertySymbolListIndexBase : public ViewModelPropertySymbol

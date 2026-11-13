@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/layout/grid_item_placement.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/layout/grid_track.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_provider.hpp"
+#include "rive/layout/grid_item_placement.hpp"
+#include "rive/container_component.hpp"
+#include "rive/layout/grid_track.hpp"
+#include "rive/layout/layout_node_provider.hpp"
 
 using namespace rive;
 

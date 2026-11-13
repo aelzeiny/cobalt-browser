@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/bones/skinnable.hpp"
-#include "third_party/rive/include/rive/shapes/points_path.hpp"
-#include "third_party/rive/include/rive/shapes/mesh.hpp"
+#include "rive/bones/skinnable.hpp"
+#include "rive/shapes/points_path.hpp"
+#include "rive/shapes/mesh.hpp"
 
 using namespace rive;
 

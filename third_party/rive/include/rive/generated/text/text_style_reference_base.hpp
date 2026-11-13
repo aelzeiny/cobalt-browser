@@ -1,6 +1,6 @@
 #ifndef _RIVE_TEXT_STYLE_REFERENCE_BASE_HPP_
 #define _RIVE_TEXT_STYLE_REFERENCE_BASE_HPP_
-#include "third_party/rive/include/rive/container_component.hpp"
+#include "rive/container_component.hpp"
 namespace rive
 {
 class TextStyleReferenceBase : public ContainerComponent

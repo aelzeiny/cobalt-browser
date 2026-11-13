@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/layout/layout_node_style_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_node_style.hpp"
+#include "rive/generated/layout/layout_node_style_base.hpp"
+#include "rive/layout/layout_node_style.hpp"
 
 using namespace rive;
 

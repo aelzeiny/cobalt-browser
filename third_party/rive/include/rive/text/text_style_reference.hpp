@@ -1,7 +1,7 @@
 #ifndef _RIVE_TEXT_STYLE_REFERENCE_HPP_
 #define _RIVE_TEXT_STYLE_REFERENCE_HPP_
-#include "third_party/rive/include/rive/generated/text/text_style_reference_base.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/generated/text/text_style_reference_base.hpp"
+#include "rive/refcnt.hpp"
 #include <memory>
 namespace rive
 {
@@ -28,6 +28,9 @@ public:
   /// for all of them: hovering or pressing any of them restyles them all
   /// (see StateMachineInstance::serveTextStyle). Null when none listens.
   virtual StateMachineInstance* runStateMachine() const { return nullptr; }
+  /// The state machine of this style's instance, whether or not it listens
+  /// to the runs. Null when the style has none.
+  virtual StateMachineInstance* styleStateMachine() const { return nullptr; }
   /// The list item of the one list run drawn with this style, if any (see
   /// TextStyleInstance::listItem). Set by the Text.
   /// (By reference: the type is only declared here.)

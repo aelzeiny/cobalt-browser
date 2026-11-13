@@ -2,9 +2,9 @@
 #ifndef _RIVE_AUDIO_SOUND_HPP_
 #define _RIVE_AUDIO_SOUND_HPP_
 
-#include "third_party/rive_miniaudio/miniaudio.h"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
+#include "miniaudio.h"
+#include "rive/refcnt.hpp"
+#include "rive/audio/audio_source.hpp"
 
 namespace rive
 {

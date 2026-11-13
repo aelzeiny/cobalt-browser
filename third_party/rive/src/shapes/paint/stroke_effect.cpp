@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/stroke_effect.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/stroke_effect.hpp"
 
 using namespace rive;
 

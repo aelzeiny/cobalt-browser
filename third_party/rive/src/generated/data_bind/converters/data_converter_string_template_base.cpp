@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_string_template_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_string_template.hpp"
+#include "rive/generated/data_bind/converters/data_converter_string_template_base.hpp"
+#include "rive/data_bind/converters/data_converter_string_template.hpp"
 
 using namespace rive;
 

@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_LOG_H_
-#define THIRD_PARTY_YOGA_YOGA_LOG_H_
-
 #include <yoga/YGEnums.h>
 
 struct YGNode;
@@ -39,5 +36,3 @@ struct Log {
 } // namespace detail
 } // namespace yoga
 } // namespace facebook
-
-#endif  // THIRD_PARTY_YOGA_YOGA_LOG_H_

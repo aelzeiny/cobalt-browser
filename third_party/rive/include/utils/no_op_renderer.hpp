@@ -5,7 +5,7 @@
 #ifndef _RIVE_NOOP_RENDERER_HPP_
 #define _RIVE_NOOP_RENDERER_HPP_
 
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/renderer.hpp"
 
 namespace rive
 {

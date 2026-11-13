@@ -1,14 +1,14 @@
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_machine_base.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/layout_component.hpp"
-#include "third_party/rive/include/rive/shapes/shape.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/animation/listener_input_change.hpp"
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
-#include "third_party/rive/include/rive/viewmodel/write_attribution.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/importers/import_stack.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/generated/animation/state_machine_base.hpp"
+#include "rive/artboard.hpp"
+#include "rive/layout_component.hpp"
+#include "rive/shapes/shape.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/listener_input_change.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/viewmodel/write_attribution.hpp"
 #include <array>
 
 using namespace rive;
@@ -122,6 +122,25 @@ bool StateMachineListener::listensToButton(PointerButton button) const
     }
   }
 #endif
+  return false;
+}
+
+bool StateMachineListener::claimsPress(PointerButton button) const
+{
+  // Enter, exit and move only watch the pointer go by.
+  for (auto type :
+       {ListenerType::down,
+        ListenerType::up,
+        ListenerType::click,
+        ListenerType::drag,
+        ListenerType::dragStart,
+        ListenerType::dragEnd})
+  {
+    if (hasListener(type, button))
+    {
+      return true;
+    }
+  }
   return false;
 }
 

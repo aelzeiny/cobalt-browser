@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/importers/scripted_object_importer.hpp"
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
-#include "third_party/rive/include/rive/script_input_viewmodel_property.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_enum_custom.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_viewmodel.hpp"
-#include "third_party/rive/include/rive/custom_property_container.hpp"
+#include "rive/importers/scripted_object_importer.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
+#include "rive/script_input_viewmodel_property.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/viewmodel/viewmodel_property_enum_custom.hpp"
+#include "rive/viewmodel/viewmodel_property_viewmodel.hpp"
+#include "rive/custom_property_container.hpp"
 
 using namespace rive;
 

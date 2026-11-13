@@ -1,8 +1,8 @@
 #ifndef _RIVE_STATIC_SCENE_HPP_
 #define _RIVE_STATIC_SCENE_HPP_
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/scene.hpp"
+#include "rive/artboard.hpp"
+#include "rive/scene.hpp"
 
 namespace rive
 {

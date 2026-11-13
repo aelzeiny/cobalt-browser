@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/component.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/artboard_list_map_rule.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
+#include "rive/component.hpp"
+#include "rive/file.hpp"
+#include "rive/artboard_list_map_rule.hpp"
+#include "rive/artboard_component_list.hpp"
 
 using namespace rive;
 

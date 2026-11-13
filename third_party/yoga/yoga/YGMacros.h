@@ -7,9 +7,6 @@
 
 #pragma once
 
-#ifndef THIRD_PARTY_YOGA_YOGA_YGMACROS_H_
-#define THIRD_PARTY_YOGA_YOGA_YGMACROS_H_
-
 #ifdef __cplusplus
 #include <type_traits>
 #endif
@@ -139,5 +136,3 @@ constexpr int n() {
 #else
 #define YG_ENUM_SEQ_DECL YG_ENUM_DECL
 #endif
-
-#endif  // THIRD_PARTY_YOGA_YOGA_YGMACROS_H_

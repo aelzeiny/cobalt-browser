@@ -1,6 +1,6 @@
 #ifndef _RIVE_POINTS_COMMON_PATH_HPP_
 #define _RIVE_POINTS_COMMON_PATH_HPP_
-#include "third_party/rive/include/rive/generated/shapes/points_common_path_base.hpp"
+#include "rive/generated/shapes/points_common_path_base.hpp"
 #include <stdio.h>
 namespace rive
 {

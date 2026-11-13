@@ -1,8 +1,8 @@
 #ifndef _RIVE_BINDABLE_PROPERTY_LIST_BASE_HPP_
 #define _RIVE_BINDABLE_PROPERTY_LIST_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_id_type.hpp"
-#include "third_party/rive/include/rive/core/id.hpp"
-#include "third_party/rive/include/rive/data_bind/bindable_property.hpp"
+#include "rive/core/field_types/core_id_type.hpp"
+#include "rive/core/id.hpp"
+#include "rive/data_bind/bindable_property.hpp"
 namespace rive
 {
 class BindablePropertyListBase : public BindableProperty

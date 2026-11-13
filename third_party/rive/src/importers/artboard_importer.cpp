@@ -1,11 +1,11 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/importers/artboard_importer.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/event.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/artboard.hpp"
+#include "rive/importers/artboard_importer.hpp"
+#include "rive/animation/linear_animation.hpp"
+#include "rive/animation/state_machine.hpp"
+#include "rive/data_bind/data_bind.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/event.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

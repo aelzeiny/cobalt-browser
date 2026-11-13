@@ -1,6 +1,6 @@
 #ifndef _RIVE_ARTBOARD_LIST_MAP_RULE_HPP_
 #define _RIVE_ARTBOARD_LIST_MAP_RULE_HPP_
-#include "third_party/rive/include/rive/generated/artboard_list_map_rule_base.hpp"
+#include "rive/generated/artboard_list_map_rule_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/animation/cubic_interpolator_component.hpp"
+#include "rive/animation/cubic_interpolator_component.hpp"
 
 using namespace rive;
 

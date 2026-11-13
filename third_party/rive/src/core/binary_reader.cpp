@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/core/binary_reader.hpp"
-#include "third_party/rive/include/rive/core/reader.h"
-#include "third_party/rive/include/rive/span.hpp"
+#include "rive/core/binary_reader.hpp"
+#include "rive/core/reader.h"
+#include "rive/span.hpp"
 #include <vector>
 
 using namespace rive;

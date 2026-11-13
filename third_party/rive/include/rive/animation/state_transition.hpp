@@ -1,10 +1,10 @@
 #ifndef _RIVE_STATE_TRANSITION_HPP_
 #define _RIVE_STATE_TRANSITION_HPP_
-#include "third_party/rive/include/rive/animation/keyframe_interpolator.hpp"
-#include "third_party/rive/include/rive/animation/state_transition_flags.hpp"
-#include "third_party/rive/include/rive/generated/animation/state_transition_base.hpp"
+#include "rive/animation/keyframe_interpolator.hpp"
+#include "rive/animation/state_transition_flags.hpp"
+#include "rive/generated/animation/state_transition_base.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 #include <vector>

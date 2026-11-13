@@ -1,6 +1,6 @@
 #ifndef _RIVE_KEYBOARD_LISTENER_HPP_
 #define _RIVE_KEYBOARD_LISTENER_HPP_
-#include "third_party/rive/include/rive/input/focusable.hpp"
+#include "rive/input/focusable.hpp"
 
 namespace rive
 {
@@ -21,6 +21,18 @@ public:
 
   /// Called when the associated FocusData receives text input.
   virtual bool textInput(const std::string& text) = 0;
+
+  /// Called in the capture phase of a key event, for listeners registered
+  /// with FocusData::addCaptureKeyboardListener. Returning true claims the
+  /// key from everything deeper and from the whole bubble.
+  virtual bool captureKeyInput(
+      Key key,
+      KeyModifiers modifiers,
+      bool isPressed,
+      bool isRepeat)
+  {
+    return false;
+  }
 };
 
 } // namespace rive

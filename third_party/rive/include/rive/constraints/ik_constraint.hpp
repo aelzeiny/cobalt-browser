@@ -1,8 +1,8 @@
 #ifndef _RIVE_I_KCONSTRAINT_HPP_
 #define _RIVE_I_KCONSTRAINT_HPP_
-#include "third_party/rive/include/rive/generated/constraints/ik_constraint_base.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
+#include "rive/generated/constraints/ik_constraint_base.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/transform_components.hpp"
 #include <vector>
 
 namespace rive

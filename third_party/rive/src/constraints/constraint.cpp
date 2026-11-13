@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/constraints/constraint.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/transform_component.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/constraints/constraint.hpp"
+#include "rive/container_component.hpp"
+#include "rive/transform_component.hpp"
+#include "rive/core_context.hpp"
+#include "rive/math/mat2d.hpp"
 
 using namespace rive;
 

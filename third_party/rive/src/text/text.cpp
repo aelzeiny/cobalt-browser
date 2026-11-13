@@ -1,32 +1,32 @@
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/layout/layout_participant.hpp"
-#include "third_party/rive/include/rive/importers/import_stack.hpp"
+#include "rive/text/text.hpp"
+#include "rive/layout/layout_participant.hpp"
+#include "rive/importers/import_stack.hpp"
 using namespace rive;
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/text_engine.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/math/rectangles_to_contour.hpp"
-#include "third_party/rive/include/rive/math/transform_components.hpp"
-#include "third_party/rive/include/rive/text/text_style_background.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/text/text_value_run.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text/text_selection_controller.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/shapes/paint/blend_mode.hpp"
-#include "third_party/rive/include/rive/shapes/paint/image_sampler.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_string.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
-#include "third_party/rive/include/rive/text/text_style_global.hpp"
-#include "third_party/rive/include/rive/text/text_style_instance.hpp"
-#include "third_party/rive/include/rive/text/text_style_on_demand.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/clip_result.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
+#include "rive/text_engine.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/math/rectangles_to_contour.hpp"
+#include "rive/math/transform_components.hpp"
+#include "rive/text/text_style_background.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text/text_selection_controller.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/shapes/paint/blend_mode.hpp"
+#include "rive/shapes/paint/image_sampler.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/text/text_style_global.hpp"
+#include "rive/text/text_style_instance.hpp"
+#include "rive/text/text_style_on_demand.hpp"
+#include "rive/artboard.hpp"
+#include "rive/bindable_artboard.hpp"
+#include "rive/file.hpp"
+#include "rive/factory.hpp"
+#include "rive/clip_result.hpp"
+#include "rive/generated/core_registry.hpp"
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -193,8 +193,7 @@ void Text::controlSize(
     LayoutScaleType heightScaleType,
     LayoutDirection direction)
 {
-  if (m_layoutWidth != size.x || m_layoutHeight != size.y ||
-      m_layoutWidthScaleType != (uint8_t)widthScaleType ||
+  if (m_layoutWidthScaleType != (uint8_t)widthScaleType ||
       m_layoutHeightScaleType != (uint8_t)heightScaleType ||
       m_layoutDirection != direction)
   {
@@ -204,6 +203,13 @@ void Text::controlSize(
     m_layoutHeightScaleType = (uint8_t)heightScaleType;
     m_layoutDirection = direction;
     markShapeDirty(false);
+  }
+  else if (m_layoutWidth != size.x || m_layoutHeight != size.y)
+  {
+    // Only the slot changed size: break the lines again.
+    m_layoutWidth = size.x;
+    m_layoutHeight = size.y;
+    markLinesDirty(false);
   }
 }
 
@@ -498,6 +504,13 @@ float Text::fitFontScale(float boxWidth, float boxHeight)
   }
 
   StyledText styledText;
+  // Read before shaping: a change during it leaves the shapes stale.
+  const uint32_t fallbacks = Font::fallbackGeneration();
+  // The shape at the largest size found to fit, when it took a new shape,
+  // and the styled text it was made from. It goes to the spare: the update
+  // or measure that follows styles the text at that size.
+  StyledText bestStyled;
+  SimpleArray<Paragraph> bestShape;
 
   // Shapes and lays out the text at the given integer top size and reports
   // whether it fits the bounds. Text dimensions grow monotonically with size,
@@ -509,8 +522,15 @@ float Text::fitFontScale(float boxWidth, float boxHeight)
       // Nothing to lay out: trivially fits.
       return true;
     }
-    const auto& runs = styledText.runs();
-    auto shape = runs[0].font->shapeText(styledText.unichars(), runs);
+    SimpleArray<Paragraph> made;
+    const SimpleArray<Paragraph>* reusable = reusableShape(
+        styledText,
+        fallbacks);
+    if (reusable == nullptr)
+    {
+      made = shapeStyled(styledText, ShapeSource::fit);
+    }
+    const SimpleArray<Paragraph>& shape = reusable ? *reusable : made;
     auto lines = BreakLines(shape, boxWidth, align(), wrap(), wordBreak());
 
     float maxWidth = 0.0f;
@@ -549,7 +569,20 @@ float Text::fitFontScale(float boxWidth, float boxHeight)
 
     bool widthFits = maxWidth <= boxWidth;
     bool heightFits = y - topTrim - bottomTrim <= boxHeight;
-    return widthFits && heightFits;
+    if (widthFits && heightFits)
+    {
+      // Larger than any size that fit before it.
+      bestShape = std::move(made);
+      std::swap(bestStyled, styledText);
+      return true;
+    }
+    return false;
+  };
+  auto spareBest = [&]() {
+    if (!bestShape.empty())
+    {
+      spareShape(bestStyled, std::move(bestShape), fallbacks);
+    }
   };
 
   // Above 2^24 floats skip integers, and hi + 1 must not overflow int.
@@ -563,6 +596,7 @@ float Text::fitFontScale(float boxWidth, float boxHeight)
   // monotonic, so checking the top first returns the same size.
   if (fits(hi))
   {
+    spareBest();
     return (float)hi / maxSize;
   }
   hi--;
@@ -580,6 +614,7 @@ float Text::fitFontScale(float boxWidth, float boxHeight)
       hi = mid - 1;
     }
   }
+  spareBest();
   return (float)best / maxSize;
 }
 
@@ -656,10 +691,127 @@ LineIter Text::shouldDrawLine(
   return LineIter::drawLine;
 }
 
+void Text::reserveGlyphPaths()
+{
+  bool allOpaque = true;
+  for (TextModifierGroup* modifierGroup : m_modifierGroups)
+  {
+    if (modifierGroup->modifiesOpacity())
+    {
+      allOpaque = false;
+    }
+  }
+  // Most Texts draw a style or two. Past these, a style's paths grow as
+  // their glyphs are added.
+  constexpr size_t kMaxStyles = 8;
+  struct StyleOutlines
+  {
+    TextStylePaint* style;
+    size_t verbs;
+    size_t points;
+  };
+  StyleOutlines styles[kMaxStyles];
+  size_t styleCount = 0;
+  // Looking at an outline must not cost the draw that follows it. A font
+  // starts its cache over once full, so outlines are cached here only when
+  // every font has room for every glyph of the shape: neither this nor the
+  // draw can then start one over. Otherwise only cached outlines are read,
+  // and a glyph without one leaves the paths to grow as they're drawn.
+  size_t glyphCount = 0;
+  for (const Paragraph& paragraph : m_shape)
+  {
+    for (const GlyphRun& run : paragraph.runs)
+    {
+      glyphCount += run.glyphs.size();
+    }
+  }
+  bool mayCache = true;
+  for (const Paragraph& paragraph : m_shape)
+  {
+    for (const GlyphRun& run : paragraph.runs)
+    {
+      if (run.font->glyphPathCacheRoom() < glyphCount)
+      {
+        mayCache = false;
+      }
+    }
+  }
+  for (const Paragraph& paragraph : m_shape)
+  {
+    for (const GlyphRun& run : paragraph.runs)
+    {
+      assert(run.styleId < m_allRuns.size());
+      TextStylePaint* style = m_allRuns[run.styleId]->style();
+      if (style == nullptr)
+      {
+        continue;
+      }
+      StyleOutlines* outlines = nullptr;
+      for (size_t i = 0; i < styleCount; i++)
+      {
+        if (styles[i].style == style)
+        {
+          outlines = &styles[i];
+          break;
+        }
+      }
+      if (outlines == nullptr)
+      {
+        if (styleCount == kMaxStyles)
+        {
+          continue;
+        }
+        outlines = &styles[styleCount++];
+        *outlines = {style, 0, 0};
+      }
+      const Font* font = run.font.get();
+      for (GlyphID glyph : run.glyphs)
+      {
+        // Color glyphs draw on their own, not into the style's paths.
+        if (font->isColorGlyph(glyph))
+        {
+          continue;
+        }
+        const RawPath* path = font->cachedGlyphPath(glyph);
+        if (path == nullptr)
+        {
+          if (!mayCache)
+          {
+            return;
+          }
+          path = &font->glyphPath(glyph);
+        }
+        outlines->verbs += path->verbs().size();
+        outlines->points += path->points().size();
+      }
+    }
+  }
+  for (size_t i = 0; i < styleCount; i++)
+  {
+    const StyleOutlines& outlines = styles[i];
+    if (outlines.points == 0)
+    {
+      continue;
+    }
+    if (outlines.style->isShared())
+    {
+      sharedGeometry(outlines.style)
+          .reserve(outlines.verbs, outlines.points, allOpaque);
+    }
+    else
+    {
+      outlines.style->reservePath(outlines.verbs, outlines.points, allOpaque);
+    }
+    m_glyphPathsReserved = true;
+  }
+}
+
 void Text::buildRenderStyles()
 {
-  // Step 1: reset stuff
+  // Step 1: reset stuff. Every build lays the lines out again, so a
+  // paint-only rebuild must not append to the last build's lines.
   clearRenderStyles();
+  m_orderedLines.clear();
 
   if (m_shape.empty())
   {
@@ -744,6 +896,17 @@ void Text::buildRenderStyles()
         AABB(minX, minY, minX + bounds.width(), minY + bounds.height()));
   }
 
+  // The first build to draw every glyph of the shape (no ellipsis, and no
+  // overflow leaving lines out, see shouldDrawLine) sizes the paths it adds
+  // them to.
+  if (!m_glyphPathsReserved && ellipsisLine == -1 &&
+      !((overflow() == TextOverflow::hidden ||
+         overflow() == TextOverflow::clipped) &&
+        overflowAsFixed()))
+  {
+    reserveGlyphPaths();
+  }
+
   // Step 6: add the glyphs to render paths. Shift content up by topTrim so
   // the first line's cap-height line aligns with the (trimmed) box top.
   float curY = minY - topTrim;
@@ -775,12 +938,13 @@ void Text::buildRenderStyles()
           paragraph,
           line,
           effectiveWidth(),
+          align(),
           ellipsisLine == lineIndex,
           isEllipsisLineLast,
           &m_ellipsisRun,
           renderY));
 
-      float curX = line.startX;
+      float curX = m_orderedLines.back().startX();
       minX = std::min(curX, minX);
       for (auto glyphItr : m_orderedLines.back())
       {
@@ -855,15 +1019,15 @@ void Text::buildRenderStyles()
         }
         else
         {
-          RawPath path = font->getPath(glyphId);
-          path.transformInPlace(pathTransform);
+          // Placed as it's added: the font's own outline, not a copy.
+          const RawPath& path = font->glyphPath(glyphId);
 
           if (style->isShared())
           {
             // A paint other Texts draw too: keep this Text's
             // glyphs here, and leave the paint untouched.
             TextStyleGeometry& geometry = sharedGeometry(style);
-            if (geometry.addPath(path, opacity))
+            if (geometry.addPath(path, opacity, &pathTransform))
             {
               TextDrawCommand cmd;
               cmd.type = TextDrawCommand::kStylePath;
@@ -872,7 +1036,7 @@ void Text::buildRenderStyles()
               m_drawCommands.push_back(std::move(cmd));
             }
           }
-          else if (style->addPath(path, opacity))
+          else if (style->addPath(path, opacity, &pathTransform))
           {
             // This was the first path added to the style, so
             // let's mark it in our draw list.
@@ -1070,6 +1234,9 @@ void Text::draw(Renderer* renderer)
     renderer->clipPath(m_clipPath.renderPath(this));
   }
   auto worldTransform = shapeWorldTransform();
+  // A paint image on the styles fits the layout box, as the editor draws it,
+  // wherever the glyphs fall in it.
+  const AABB imageBounds = glyphSpaceBounds();
   // Backgrounds first so they sit behind every glyph, in style child order.
   for (TextStylePaint* style : m_textStylePaints)
   {
@@ -1097,11 +1264,12 @@ void Text::draw(Renderer* renderer)
             renderer,
             worldTransform,
             *cmd.geometry,
-            renderOpacity());
+            renderOpacity(),
+            imageBounds);
       }
       else
       {
-        cmd.style->draw(renderer, worldTransform);
+        cmd.style->draw(renderer, worldTransform, imageBounds);
       }
     }
     else
@@ -1290,6 +1458,26 @@ void Text::markShapeDirty(bool sendToLayout)
 #endif
 }
 
+void Text::markLinesDirty(bool sendToLayout)
+{
+  // The shape doesn't depend on the box, unless the font size is fitted to
+  // it or modifiers lay ranges out by line: those reshape.
+  if (overflow() == TextOverflow::fitFontSize || haveModifiers())
+  {
+    markShapeDirty(sendToLayout);
+    return;
+  }
+  m_linesDirty = true;
+  addDirt(ComponentDirt::Paint);
+  markWorldTransformDirty();
+#ifdef WITH_RIVE_LAYOUT
+  if (sendToLayout)
+  {
+    markLayoutNodeDirty();
+  }
+#endif
+}
+
 void Text::modifierShapeDirty() { addDirt(ComponentDirt::Path); }
 
 void Text::markPaintDirty() { addDirt(ComponentDirt::Paint); }
@@ -1413,11 +1601,54 @@ void Text::runStateMachines(std::vector<StateMachineInstance*>& out)
   }
 }
 
+void Text::styleStateMachines(std::vector<StateMachineInstance*>& out)
+{
+  for (auto child : children())
+  {
+    if (child->is<TextStyleReference>())
+    {
+      if (auto stateMachine = child->as<TextStyleReference>()
+                                  ->styleStateMachine())
+      {
+        out.push_back(stateMachine);
+      }
+    }
+  }
+  for (auto& style : m_onDemandStyles)
+  {
+    if (auto stateMachine = style->styleStateMachine())
+    {
+      out.push_back(stateMachine);
+    }
+  }
+}
+
 void Text::styleReferenceDidChange()
 {
   // A handle now shows a different style: list runs that matched it by
-  // style may need another handle or an on-demand style instead.
+  // style, and runs bound to one, may need another handle or an on-demand
+  // style instead.
   resolveListRunStyles();
+  for (auto run : m_runs)
+  {
+    if (run->isStyleBound())
+    {
+      run->resolveStyle();
+    }
+  }
+  pruneOnDemandStyles();
+  markShapeDirty();
+}
+
+TextStyleReference* Text::boundRunStyle(
+    ViewModelInstanceArtboard* value,
+    const TextValueRun* run)
+{
+  return globalStyleReference(value, nullptr, run);
+}
+
+void Text::runStyleChanged()
+{
   pruneOnDemandStyles();
   markShapeDirty();
 }
@@ -1459,7 +1690,8 @@ TextStyleReference* Text::resolveListRunStyle(ViewModelInstance* instance)
 
 TextStyleReference* Text::globalStyleReference(
     ViewModelInstanceArtboard* value,
-    ViewModelInstance* item)
+    ViewModelInstance* item,
+    const TextValueRun* owner)
 {
   // The style artboard the value names: a runtime-set BindableArtboard
   // (normalized to its file-owned source), else a file artboard index.
@@ -1467,15 +1699,13 @@ TextStyleReference* Text::globalStyleReference(
   rcp<const File> crossFile;
   if (value->asset() != nullptr)
   {
-    auto artboard = value->asset()->artboard();
-    if (artboard != nullptr)
+    source = value->asset()->source()->artboardSource();
+    // A bindable over a source artboard (no instance) is this file's own.
+    auto instance = value->asset()->artboard();
+    auto assetFile = instance != nullptr ? instance->file() : nullptr;
+    if (assetFile != nullptr && assetFile.get() != m_file)
     {
-      source = artboard->artboardSource();
-      auto assetFile = artboard->file();
-      if (assetFile != nullptr && assetFile.get() != m_file)
-      {
-        crossFile = assetFile;
-      }
+      crossFile = assetFile;
     }
   }
   else if (m_file != nullptr && value->propertyValue() != (uint32_t)-1)
@@ -1490,8 +1720,9 @@ TextStyleReference* Text::globalStyleReference(
   }
 
   // A style with a state machine keeps state of its own: each list item
-  // gets an instance of its own, which reads that item (see
-  // syncStyleListItems). Other styles are shared by the runs naming them.
+  // (and each run bound to it) gets an instance of its own, which reads that
+  // item (see syncStyleListItems). Other styles are shared by the runs
+  // naming them.
   TextStyleShareInfo info = crossFile == nullptr && m_file != nullptr
                                 ? m_file->textStyleShares().info(source)
                                 : TextStyleShareCache::analyze(
@@ -1499,6 +1730,7 @@ TextStyleReference* Text::globalStyleReference(
                                       crossFile.get());
   rcp<ViewModelInstance> perItem = info.hasStateMachine ? ref_rcp(item)
                                                         : nullptr;
+  const TextValueRun* perRun = info.hasStateMachine ? owner : nullptr;
 
   auto bound = value->boundViewModelInstance();
   // The values an item's own instance copies.
@@ -1514,7 +1746,7 @@ TextStyleReference* Text::globalStyleReference(
           child->as<TextStyleGlobal>()->instanceSource() == source)
       {
         auto handle = child->as<TextStyleGlobal>();
-        if (perItem == nullptr)
+        if (perItem == nullptr && perRun == nullptr)
         {
           return handle;
         }
@@ -1528,7 +1760,7 @@ TextStyleReference* Text::globalStyleReference(
   {
     if (style->source() == source &&
         style->boundViewModelInstance() == bound.get() &&
-        style->item() == perItem.get())
+        style->item() == perItem.get() && style->owner() == perRun)
     {
       return style.get();
     }
@@ -1543,7 +1775,8 @@ TextStyleReference* Text::globalStyleReference(
       host != nullptr ? host->dataContext() : nullptr,
       this,
       perItem,
-      handleValues));
+      handleValues,
+      perRun));
   return m_onDemandStyles.back().get();
 }
 
@@ -1615,6 +1848,11 @@ void Text::pruneOnDemandStyles()
     return;
   }
   std::unordered_set<const TextStyleReference*> used;
+  // Runs bound to a style draw one too.
+  for (auto run : m_runs)
+  {
+    used.insert(run->styleReference());
+  }
   for (auto listener : m_valueRunListeners)
   {
     auto run = listener->textValueRun();
@@ -1642,6 +1880,22 @@ void Text::pruneOnDemandStyles()
 bool Text::advanceComponent(float elapsedSeconds, AdvanceFlags flags)
 {
   syncStyleListItems();
+  // Inherited language shapes with the system's, which a host may change.
+  uint32_t languages = TextLanguages::generation();
+  bool reshape = languages != m_languageGeneration;
+  m_languageGeneration = languages;
+#ifdef WITH_RIVE_TEXT
+  // So may the fallback fonts, such as one a host fetched for the text's
+  // language once it was in use. Every text reshapes for them, whether or
+  // not it fell back.
+  uint32_t fallbacks = Font::fallbackFontsGeneration();
+  reshape |= fallbacks != m_fallbackFontsGeneration;
+  m_fallbackFontsGeneration = fallbacks;
+#endif
+  if (reshape)
+  {
+    markShapeDirty();
+  }
   bool keepGoing = false;
   bool changed = false;
   for (auto& style : m_onDemandStyles)
@@ -1662,6 +1916,18 @@ bool Text::advanceComponent(float elapsedSeconds, AdvanceFlags flags)
 
 AdvancingComponent::QuietState Text::quietState()
 {
+  // New system languages or fallback fonts not reshaped for yet (see
+  // advanceComponent).
+  if (TextLanguages::generation() != m_languageGeneration)
+  {
+    return QuietState::busy;
+  }
+#ifdef WITH_RIVE_TEXT
+  if (Font::fallbackFontsGeneration() != m_fallbackFontsGeneration)
+  {
+    return QuietState::busy;
+  }
+#endif
   auto state = QuietState::quiet;
   for (auto& style : m_onDemandStyles)
   {
@@ -1680,6 +1946,12 @@ AdvancingComponent::QuietState Text::quietState()
 }
 
 void Text::alignValueChanged() { markShapeDirty(); }
+
+void Text::languageChanged()
+{
+  m_languageSlot = TextLanguages::intern(language());
+  markShapeDirty();
+}
 
 void Text::sizingValueChanged() { markShapeDirty(); }
 
@@ -1707,7 +1979,7 @@ void Text::widthChanged()
 {
   if (effectiveSizing() != TextSizing::autoWidth)
   {
-    markShapeDirty();
+    markLinesDirty(true);
   }
 }
 
@@ -1733,7 +2005,7 @@ void Text::heightChanged()
 {
   if (effectiveSizing() == TextSizing::fixed)
   {
-    markShapeDirty();
+    markLinesDirty(true);
   }
 }
 
@@ -1745,13 +2017,36 @@ void StyledText::clear()
 
 bool StyledText::empty() const { return m_runs.empty(); }
 
+bool StyledText::sameAs(const StyledText& other) const
+{
+  if (m_value != other.m_value || m_runs.size() != other.m_runs.size())
+  {
+    return false;
+  }
+  for (size_t i = 0; i < m_runs.size(); i++)
+  {
+    const TextRun& a = m_runs[i];
+    const TextRun& b = other.m_runs[i];
+    if (a.font != b.font || a.size != b.size || a.lineHeight != b.lineHeight ||
+        a.letterSpacing != b.letterSpacing ||
+        a.unicharCount != b.unicharCount || a.script != b.script ||
+        a.styleId != b.styleId || a.level != b.level ||
+        a.language != b.language)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 void StyledText::append(
     rcp<Font> font,
     float size,
     float lineHeight,
     float letterSpacing,
     const std::string& text,
-    uint16_t styleId)
+    uint16_t styleId,
+    TextLanguageId language)
 {
   const uint8_t* ptr = (const uint8_t*)text.data();
   const uint8_t* end = ptr + text.size();
@@ -1767,7 +2062,15 @@ void StyledText::append(
     return;
   }
   m_runs.push_back(
-      {std::move(font), size, lineHeight, letterSpacing, n, 0, styleId});
+      {std::move(font),
+       size,
+       lineHeight,
+       letterSpacing,
+       n,
+       0,
+       styleId,
+       0,
+       language});
 }
 
 bool Text::makeStyled(
@@ -1776,6 +2079,21 @@ bool Text::makeStyled(
     float fontScale) const
 {
   styledText.clear();
+  // Room for the runs appended below, which skip a run with no font or no
+  // text. A run's UTF-8 bytes bound its characters.
+  size_t textBytes = 0;
+  size_t styledRuns = 0;
+  for (auto valueRun : m_allRuns)
+  {
+    auto style = valueRun->style();
+    if (style != nullptr && style->font() != nullptr &&
+        !valueRun->text().empty())
+    {
+      textBytes += valueRun->text().size();
+      styledRuns++;
+    }
+  }
+  styledText.reserve(textBytes, styledRuns);
   uint16_t runIndex = 0;
   for (auto valueRun : m_allRuns)
   {
@@ -1797,13 +2115,16 @@ bool Text::makeStyled(
     {
       lineHeight *= fontScale;
     }
+    // A run's own language wins over its Text's, like lang in HTML.
+    TextLanguageId language = valueRun->languageSlot();
     styledText.append(
         style->font(),
         style->fontSize() * fontScale,
         lineHeight,
         style->letterSpacing() * fontScale,
         text,
-        runIndex++);
+        runIndex++,
+        language != TextLanguages::none ? language : m_languageSlot);
   }
   if (withModifiers)
   {
@@ -1891,12 +2212,35 @@ void Text::onDirty(ComponentDirt value)
   }
 }
 
+namespace
+{
+// Where Text styles its runs to compare them with the styled text a shape
+// was made from, before it decides to shape. One per thread, and left
+// empty after each use: filled, it holds fonts.
+StyledText& comparisonScratch()
+{
+  static thread_local StyledText scratch;
+  return scratch;
+}
+} // namespace
+
 void Text::update(ComponentDirt value)
 {
   Super::update(value);
   markListenedRuns();
   syncStyleListItems();
 
+  // A new size only breaks the lines again, unless the fallback fonts
+  // changed since the shape was made: then it shapes again, as measure()
+  // does.
+  if (m_linesDirty && !m_shape.empty() &&
+      m_shapeFallbacks != Font::fallbackGeneration())
+  {
+    value |= ComponentDirt::Path;
+  }
+  // Whether m_shape or m_lines changed.
+  bool shapeChanged = false;
+  bool linesChanged = false;
   if (hasDirt(value, ComponentDirt::Path))
   {
     // We have modifiers that need shaping we'll need to compute the
@@ -1912,10 +2256,9 @@ void Text::update(ComponentDirt value)
     if (precomputeModifierCoverage &&
         makeStyled(m_modifierStyledText, false, fontScale))
     {
-      const auto& runs = m_modifierStyledText.runs();
-      m_modifierShape = runs[0].font->shapeText(
-          m_modifierStyledText.unichars(),
-          runs);
+      m_modifierShape = shapeStyled(
+          m_modifierStyledText,
+          ShapeSource::modifier);
       m_modifierLines = BreakLines(
           m_modifierShape,
           (effectiveSizing() == TextSizing::autoWidth &&
@@ -1937,22 +2280,43 @@ void Text::update(ComponentDirt value)
         group->computeCoverage(textSize);
       }
     }
-    const bool styled = makeStyled(m_styledText, true, fontScale);
+    // Styled apart from m_styledText, which stays the text m_shape was
+    // made from until the two are compared.
+    StyledText& styledText = comparisonScratch();
+    const bool styled = makeStyled(styledText, true, fontScale);
+    // Read before shaping: a change during it leaves the shape stale.
+    const uint32_t fallbacks = Font::fallbackGeneration();
+    const SimpleArray<Paragraph>* reusable = styled ? reusableShape(
+                                                          styledText,
+                                                          fallbacks)
+                                                    : nullptr;
+    // An empty text that was already empty has nothing to change.
+    if (reusable != &m_shape && (styled || !m_shape.empty()))
+    {
+      shapeChanged = true;
+      std::swap(m_styledText, styledText);
+      if (m_spare != nullptr && reusable == &m_spare->shape)
+      {
+        m_shape = std::move(m_spare->shape);
+        m_shapeFallbacks = m_spare->fallbacks;
+      }
+      else if (styled)
+      {
+        m_shape = shapeStyled(m_styledText, ShapeSource::update);
+        m_shapeFallbacks = fallbacks;
+      }
+      else
+      {
+        m_shape = SimpleArray<Paragraph>();
+      }
+    }
+    styledText.clear();
+    // Taken or stale either way.
+    m_spare = nullptr;
     m_shapedKey = measureKey(m_styledText, fontScale);
     if (styled)
     {
-      const auto& runs = m_styledText.runs();
-      m_shape = runs[0].font->shapeText(m_styledText.unichars(), runs);
-
-      m_lines = BreakLines(
-          m_shape,
-          (effectiveSizing() == TextSizing::autoWidth &&
-           !parentIsLayoutNotArtboard)
-              ? -1.0f
-              : effectiveWidth(),
-          align(),
-          wrap(),
-          wordBreak());
+      linesChanged = breakShapeLines(shapeChanged);
       if (!precomputeModifierCoverage && haveModifiers())
       {
         m_glyphLookup.compute(m_styledText.unichars(), m_shape);
@@ -1970,19 +2334,30 @@ void Text::update(ComponentDirt value)
     }
     else
     {
-      m_shape = SimpleArray<Paragraph>();
+      linesChanged = m_linesBroken;
       m_lines = SimpleArray<SimpleArray<GlyphLine>>();
+      m_linesBroken = false;
       m_glyphLookup.clear();
     }
-    m_orderedLines.clear();
     m_ellipsisRun = {};
-    m_emojiImageCache.clear();
+    if (shapeChanged)
+    {
+      m_emojiImageCache.clear();
+    }
+    m_linesDirty = false;
 
     // Immediately build render styles so dimensions get computed.
     buildRenderStyles();
   }
   else if (hasDirt(value, ComponentDirt::Paint))
   {
+    if (m_linesDirty)
+    {
+      // The box changed size: the same shape, broken at the new width.
+      m_linesDirty = false;
+      linesChanged = breakShapeLines(false);
+      m_ellipsisRun = {};
+    }
     buildRenderStyles();
   }
   else if (hasDirt(value, ComponentDirt::RenderOpacity))
@@ -2014,10 +2389,105 @@ void Text::update(ComponentDirt value)
   if (m_selectionController != nullptr &&
       hasDirt(value, ComponentDirt::Path | ComponentDirt::Paint))
   {
-    m_selectionController->textUpdated(
-        this,
-        hasDirt(value, ComponentDirt::Path));
+    m_selectionController->textUpdated(this, shapeChanged || linesChanged);
   }
+}
+
+const SimpleArray<Paragraph>* Text::reusableShape(
+    const StyledText& styled,
+    uint32_t fallbacks) const
+{
+  if (!m_shape.empty() && m_shapeFallbacks == fallbacks &&
+      styled.sameAs(m_styledText))
+  {
+    return &m_shape;
+  }
+  if (m_spare != nullptr && m_spare->fallbacks == fallbacks &&
+      styled.sameAs(m_spare->styled))
+  {
+    return &m_spare->shape;
+  }
+  return nullptr;
+}
+
+const SimpleArray<Paragraph>& Text::spareShapeFor(
+    StyledText& styled,
+    ShapeSource source)
+{
+  // Read before shaping: a change during it leaves the shape stale.
+  const uint32_t fallbacks = Font::fallbackGeneration();
+  if (const SimpleArray<Paragraph>* reusable = reusableShape(styled, fallbacks))
+  {
+    return *reusable;
+  }
+  spareShape(styled, shapeStyled(styled, source), fallbacks);
+  return m_spare->shape;
+}
+
+void Text::spareShape(
+    StyledText& styled,
+    SimpleArray<Paragraph>&& shape,
+    uint32_t fallbacks)
+{
+  if (m_spare == nullptr)
+  {
+    m_spare = std::make_unique<SpareShape>();
+  }
+  m_spare->shape = std::move(shape);
+  m_spare->fallbacks = fallbacks;
+  std::swap(m_spare->styled, styled);
+}
+
+SimpleArray<Paragraph> Text::shapeStyled(
+    const StyledText& styled,
+    ShapeSource source)
+{
+#ifdef TESTING
+  m_shapeCounts[(size_t)source]++;
+#endif
+  const auto& runs = styled.runs();
+  return runs[0].font->shapeText(styled.unichars(), runs);
+}
+
+#ifdef TESTING
+size_t Text::shapeCount() const
+{
+  size_t count = 0;
+  for (size_t shapes : m_shapeCounts)
+  {
+    count += shapes;
+  }
+  return count;
+}
+#endif
+
+bool Text::breakShapeLines(bool shapeChanged)
+{
+  bool parentIsLayoutNotArtboard = parent()->is<LayoutComponent>() &&
+                                   !parent()->is<Artboard>();
+  const float width = (effectiveSizing() == TextSizing::autoWidth &&
+                       !parentIsLayoutNotArtboard)
+                          ? -1.0f
+                          : effectiveWidth();
+  const TextAlign lineAlign = align();
+  // Compared bitwise, so NaN matches NaN.
+  if (!shapeChanged && m_linesBroken &&
+      memcmp(&width, &m_brokenWidth, sizeof(width)) == 0 &&
+      m_brokenAlign == (uint8_t)lineAlign && m_brokenWrap == (uint8_t)wrap() &&
+      m_brokenWordBreak == (uint8_t)wordBreak())
+  {
+    return false;
+  }
+  m_lines = BreakLines(m_shape, width, lineAlign, wrap(), wordBreak());
+#ifdef TESTING
+  m_lineBreakCount++;
+#endif
+  m_linesBroken = true;
+  m_brokenWidth = width;
+  m_brokenAlign = (uint8_t)lineAlign;
+  m_brokenWrap = (uint8_t)wrap();
+  m_brokenWordBreak = (uint8_t)wordBreak();
+  return true;
 }
 
 // What measure() reports depends on, as a hash: the styled text it shapes,
@@ -2050,7 +2520,7 @@ uint64_t Text::measureKey(const StyledText& styled, float fontScale) const
     mix(bits(run.size) | bits(run.lineHeight) << 32);
     mix(bits(run.letterSpacing) | (uint64_t)run.unicharCount << 32);
     mix((uint64_t)run.script | (uint64_t)run.styleId << 32 |
-        (uint64_t)run.level << 48);
+        (uint64_t)run.level << 48 | (uint64_t)run.language << 56);
   }
   const auto& unichars = styled.unichars();
   mix(unichars.size());
@@ -2105,13 +2575,24 @@ Vec2D Text::measure(Vec2D maxSize)
   {
     fontScale = fitFontScale(fitWidth, maxSize.y);
   }
-  const bool styled = makeStyled(m_styledText, true, fontScale);
-  m_measuredKey = measureKey(m_styledText, fontScale);
+  // Styled apart from m_styledText, which stays the text m_shape was shaped
+  // from. Every return leaves the scratch empty.
+  StyledText& styledText = comparisonScratch();
+  const bool styled = makeStyled(styledText, true, fontScale);
+  m_measuredKey = measureKey(styledText, fontScale);
   if (styled)
   {
+    // A fixed box measures as itself; only a baseline origin, which shifts
+    // it by the first line's baseline, needs the text shaped.
+    if (sizing() == TextSizing::fixed && textOrigin() != TextOrigin::baseline)
+    {
+      styledText.clear();
+      return Vec2D(std::min(maxSize.x, width()), std::min(maxSize.y, height()));
+    }
     const float paragraphSpace = paragraphSpacing() * fontScale;
-    const auto& runs = m_styledText.runs();
-    auto shape = runs[0].font->shapeText(m_styledText.unichars(), runs);
+    const SimpleArray<Paragraph>& shape = spareShapeFor(
+        styledText,
+        ShapeSource::measure);
     auto measuringWrap = maxSize.x == std::numeric_limits<float>::max() &&
                                  effectiveSizing() != TextSizing::autoHeight
                              ? TextWrap::noWrap
@@ -2198,8 +2679,10 @@ Vec2D Text::measure(Vec2D maxSize)
         bounds = Vec2D(width(), minY + height());
         break;
     }
+    styledText.clear();
     return Vec2D(std::min(maxSize.x, bounds.x), std::min(maxSize.y, bounds.y));
   }
+  styledText.clear();
   return Vec2D();
 }
 
@@ -2212,6 +2695,17 @@ AABB Text::localBounds() const
       m_bounds.minY - height * originY(),
       width,
       height);
+}
+
+AABB Text::glyphSpaceBounds() const
+{
+  Mat2D inverse;
+  if (!m_transform.invert(&inverse))
+  {
+    // Scaled to nothing to fit, so nothing fit to this shows.
+    return localBounds();
+  }
+  return inverse.mapBoundingBox(localBounds());
 }
 
 Core* Text::hitTest(HitInfo*, const Mat2D&)
@@ -2275,6 +2769,7 @@ AdvancingComponent::QuietState Text::quietState() { return QuietState::quiet; }
 void Text::update(ComponentDirt value) {}
 void Text::onDirty(ComponentDirt value) {}
 void Text::alignValueChanged() {}
+void Text::languageChanged() {}
 void Text::sizingValueChanged() {}
 void Text::wordBreakValueChanged() {}
 void Text::overflowValueChanged() {}
@@ -2290,6 +2785,7 @@ const TextStylePaint* Text::styleFromShaperId(uint16_t id) const
 }
 void Text::paragraphSpacingChanged() {}
 AABB Text::localBounds() const { return AABB(); }
+AABB Text::glyphSpaceBounds() const { return AABB(); }
 void Text::originValueChanged() {}
 void Text::originXChanged() {}
 void Text::originYChanged() {}
@@ -2343,7 +2839,37 @@ Core* Text::clone() const
   Text* twin = TextBase::clone()->as<Text>();
   twin->m_fileFeatures = m_fileFeatures;
   twin->m_file = m_file;
+#ifdef WITH_RIVE_TEXT
+  // Its runs add themselves one at a time once cloned.
+  twin->m_runs.reserve(m_runs.size());
+  twin->m_allRuns.reserve(m_allRuns.size());
+#endif
   return twin;
+}
+
+StatusCode Text::onAddedDirty(CoreContext* context)
+{
+  StatusCode code = Super::onAddedDirty(context);
+  if (code != StatusCode::Ok)
+  {
+    return code;
+  }
+  m_languageSlot = TextLanguages::intern(language());
+  m_languageGeneration = TextLanguages::generation();
+#ifdef WITH_RIVE_TEXT
+  m_fallbackFontsGeneration = Font::fallbackFontsGeneration();
+#endif
+  return StatusCode::Ok;
+}
+
+bool Text::deserialize(uint16_t propertyKey, BinaryReader& reader)
+{
+  if (propertyKey == languageIdPropertyKey)
+  {
+    m_Language = TextLanguages::readManifestTag(reader);
+    return true;
+  }
+  return TextBase::deserialize(propertyKey, reader);
 }
 
 Vec2D Text::layoutBaseTranslation(LayoutParticipant* participant) const

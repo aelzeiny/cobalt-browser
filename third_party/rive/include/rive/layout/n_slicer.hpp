@@ -1,7 +1,7 @@
 #ifndef _RIVE_N_SLICER_HPP_
 #define _RIVE_N_SLICER_HPP_
-#include "third_party/rive/include/rive/generated/layout/n_slicer_base.hpp"
-#include "third_party/rive/include/rive/layout/n_slicer_details.hpp"
+#include "rive/generated/layout/n_slicer_base.hpp"
+#include "rive/layout/n_slicer_details.hpp"
 #include <stdio.h>
 #include <unordered_map>
 

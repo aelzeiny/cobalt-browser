@@ -2,9 +2,9 @@
 #include <iomanip>
 #include <array>
 
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
-#include "third_party/rive/include/rive/component_dirt.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/component_dirt.hpp"
+#include "rive/refcnt.hpp"
 
 using namespace rive;
 

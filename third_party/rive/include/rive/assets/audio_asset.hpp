@@ -1,8 +1,8 @@
 #ifndef _RIVE_AUDIO_ASSET_HPP_
 #define _RIVE_AUDIO_ASSET_HPP_
-#include "third_party/rive/include/rive/generated/assets/audio_asset_base.hpp"
-#include "third_party/rive/include/rive/audio/audio_source.hpp"
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
+#include "rive/generated/assets/audio_asset_base.hpp"
+#include "rive/audio/audio_source.hpp"
+#include "rive/audio/audio_engine.hpp"
 
 namespace rive
 {

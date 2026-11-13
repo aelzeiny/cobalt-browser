@@ -1,6 +1,6 @@
-#include "third_party/rive/include/rive/text/text_variation_modifier.hpp"
-#include "third_party/rive/include/rive/text/text_modifier_group.hpp"
-#include "third_party/rive/include/rive/text_engine.hpp"
+#include "rive/text/text_variation_modifier.hpp"
+#include "rive/text/text_modifier_group.hpp"
+#include "rive/text_engine.hpp"
 
 using namespace rive;
 

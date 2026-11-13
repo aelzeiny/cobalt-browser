@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/shapes/paint/trim_path_base.hpp"
-#include "third_party/rive/include/rive/shapes/paint/trim_path.hpp"
+#include "rive/generated/shapes/paint/trim_path_base.hpp"
+#include "rive/shapes/paint/trim_path.hpp"
 
 using namespace rive;
 

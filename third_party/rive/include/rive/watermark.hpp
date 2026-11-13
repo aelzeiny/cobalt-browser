@@ -1,8 +1,8 @@
 #ifndef _RIVE_WATERMARK_HPP_
 #define _RIVE_WATERMARK_HPP_
 
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/refcnt.hpp"
 
 #include <cstdint>
 #include <memory>

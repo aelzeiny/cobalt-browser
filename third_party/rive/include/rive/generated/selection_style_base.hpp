@@ -1,8 +1,8 @@
 #ifndef _RIVE_SELECTION_STYLE_BASE_HPP_
 #define _RIVE_SELECTION_STYLE_BASE_HPP_
-#include "third_party/rive/include/rive/core.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_color_type.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_double_type.hpp"
+#include "rive/core.hpp"
+#include "rive/core/field_types/core_color_type.hpp"
+#include "rive/core/field_types/core_double_type.hpp"
 namespace rive
 {
 class SelectionStyleBase : public Core

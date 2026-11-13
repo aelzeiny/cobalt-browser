@@ -5,9 +5,9 @@
 #ifndef _RIVE_FOCUS_NODE_HPP_
 #define _RIVE_FOCUS_NODE_HPP_
 
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/refcnt.hpp"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -100,6 +100,13 @@ public:
   bool canTouch() const { return m_flags & Flag::kCanTouch; }
   void canTouch(bool value) { setFlag(Flag::kCanTouch, value); }
 
+  // Whether this node's focusable takes part in the capture phase of key
+  // events. FocusManager::keyInput only runs the capture phase when a node
+  // on the focus path says so, which keeps the plain bubble as cheap as it
+  // was for every tree without capture listeners.
+  bool capturesKeyInput() const { return m_flags & Flag::kCapturesKeys; }
+  void capturesKeyInput(bool value) { setFlag(Flag::kCapturesKeys, value); }
+
   // Included in tab traversal
   bool canTraverse() const { return m_flags & Flag::kCanTraverse; }
   void canTraverse(bool value) { setFlag(Flag::kCanTraverse, value); }
@@ -154,6 +161,22 @@ public:
   // Clear bounds (mark as unavailable)
   void clearWorldBounds() { m_worldBounds = AABB(); }
 
+#ifdef WITH_RIVE_TOOLS
+  // Only at edit time: a node whose owner lives outside the runtime (the
+  // editor's FocusData) has no Focusable to report a position, so the owner
+  // pushes one down. Directional traversal scores it as a point, the way a
+  // runtime FocusData with a non-layout parent is scored, rather than as
+  // bounds.
+  bool hasWorldPosition() const { return m_hasWorldPosition; }
+  const Vec2D& worldPosition() const { return m_worldPosition; }
+  void worldPosition(const Vec2D& position)
+  {
+    m_worldPosition = position;
+    m_hasWorldPosition = true;
+  }
+  void clearWorldPosition() { m_hasWorldPosition = false; }
+#endif
+
   // === Hierarchy ===
 
   FocusNode* parent() const { return m_parent; }
@@ -174,6 +197,18 @@ public:
   {
     return m_focusable
                ? m_focusable->keyInput(key, modifiers, isPressed, isRepeat)
+               : false;
+  }
+
+  bool captureKeyInput(
+      Key key,
+      KeyModifiers modifiers,
+      bool isPressed,
+      bool isRepeat)
+  {
+    return m_focusable
+               ? m_focusable
+                     ->captureKeyInput(key, modifiers, isPressed, isRepeat)
                : false;
   }
 
@@ -227,6 +262,7 @@ private:
     // bits 3-4: EdgeBehavior (2 bits)
     kHasFocus = 1 << 5,     // true if this node or descendant has focus
     kHadFocusable = 1 << 6, // sticky: was ever backed by a Focusable
+    kCapturesKeys = 1 << 7, // see capturesKeyInput()
   };
   static constexpr uint8_t edgeBehaviorShift = 3;
   static constexpr uint8_t edgeBehaviorMask = 0x3;
@@ -256,6 +292,8 @@ private:
   int16_t m_tabIndex = 0;
 #ifdef WITH_RIVE_TOOLS
   bool m_isCollapsed = false;
+  bool m_hasWorldPosition = false;
+  Vec2D m_worldPosition;
 #endif
 };
 

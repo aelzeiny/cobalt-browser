@@ -1,23 +1,23 @@
 #ifndef _RIVE_NESTED_ARTBOARD_HPP_
 #define _RIVE_NESTED_ARTBOARD_HPP_
 
-#include "third_party/rive/include/rive/generated/nested_artboard_base.hpp"
-#include "third_party/rive/include/rive/artboard_host.hpp"
-#include "third_party/rive/include/rive/artboard_referencer.hpp"
-#include "third_party/rive/include/rive/data_bind_path_referencer.hpp"
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_value.hpp"
-#include "third_party/rive/include/rive/hit_info.hpp"
-#include "third_party/rive/include/rive/input/focusable.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/advancing_component.hpp"
-#include "third_party/rive/include/rive/resetting_component.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_artboard.hpp"
-#include "third_party/rive/include/rive/input/focus_node.hpp"
-#include "third_party/rive/include/rive/nested_artboard_host_flags.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/file.hpp"
+#include "rive/generated/nested_artboard_base.hpp"
+#include "rive/artboard_host.hpp"
+#include "rive/artboard_referencer.hpp"
+#include "rive/data_bind_path_referencer.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/viewmodel/viewmodel_instance_value.hpp"
+#include "rive/hit_info.hpp"
+#include "rive/input/focusable.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/span.hpp"
+#include "rive/advancing_component.hpp"
+#include "rive/resetting_component.hpp"
+#include "rive/viewmodel/viewmodel_instance_artboard.hpp"
+#include "rive/input/focus_node.hpp"
+#include "rive/nested_artboard_host_flags.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/file.hpp"
 #include <stdio.h>
 
 namespace rive
@@ -77,7 +77,15 @@ private:
   // that must be unref'd by this NestedArtboard.
   bool m_ownsActiveVmi = false;
   NestedArtboardHostFlags m_hostFlags = NestedArtboardHostFlags::none;
+  // The mounted instance's changeSerial() when this host last told its layer
+  // masks about it. See syncLayerMasks.
+  uint32_t m_layerMaskSerial = 0;
+  // Something may have changed this host: wake the artboard it is in if a
+  // host had it quiet.
+  void wakeRow();
   void nest(Artboard* artboard);
+  void syncLayerMasks();
+  void invalidateLayerMasks();
   void detectArtboardDataBinding();
   bool tryScheduleBindStateful();
   void bindStateful();
@@ -149,6 +157,16 @@ public:
 #endif
   void updateArtboard(
       ViewModelInstanceArtboard* viewModelInstanceArtboard) override;
+  /// Whether remount() would bring this host back to how it was instanced:
+  /// it mounts the artboard it was authored with. One bound to an artboard
+  /// property mounts whatever that names, and a stateful one keeps view model
+  /// instances of its own.
+  bool canRemount() const { return !isArtboardDataBound() && !isStateful(); }
+  /// Replaces the mounted instance with a new one of the same artboard, and
+  /// the nested animations' instances with new ones on it, as if this host
+  /// had just been instanced. A list does this for the rows it hands to
+  /// another item, before binding them to it.
+  virtual void remount();
   int referencedArtboardId() override;
   void referencedArtboard(Artboard* artboard) override;
   size_t artboardCount() override { return 1; }
@@ -159,7 +177,9 @@ public:
   }
   BoundsFidelity paintedWorldBounds(AABB* out) override;
 
-  Artboard* sourceArtboard() { return m_referencedArtboard; }
+  /// The artboard this one nests, decoded if the import deferred its body
+  /// (Artboard::decoded; it may not have been instanced yet).
+  Artboard* sourceArtboard();
 
   // Pushes the optional ComponentOrigin child's origin (if any) onto the
   // mounted artboard instance. No-op when there is no override child, so
@@ -192,8 +212,15 @@ public:
   /// Convert a world space (relative to the artboard that this
   /// NestedArtboard is a child of) to the local space of the Artboard
   /// nested within. Returns true when the conversion succeeds, and false
-  /// when one is not possible.
-  bool worldToLocal(Vec2D world, Vec2D* local);
+  /// when one is not possible. When the artboard is drawn through a mesh
+  /// the point follows its deformation, and `offMesh` is set when it falls
+  /// past the mesh's edge. `toLocal`, when given, is set to the affine map
+  /// used there: through a mesh, that of the triangle under `world`.
+  bool worldToLocal(
+      Vec2D world,
+      Vec2D* local,
+      bool* offMesh = nullptr,
+      Mat2D* toLocal = nullptr);
   void decodeDataBindPathIds(Span<const uint8_t> value) override;
   void copyDataBindPathIds(const NestedArtboardBase& object) override;
   void bindViewModelInstance(
@@ -210,6 +237,17 @@ public:
       float elapsedSeconds,
       AdvanceFlags flags = AdvanceFlags::Animate |
                            AdvanceFlags::NewFrame) override;
+  QuietState quietState() override;
+  // Whether, collapsed and marked, this host can skip its advances (see
+  // quietState): no machine in it, or in what it hosts, reads pending
+  // changes.
+  bool skippableWhileCollapsed();
+  // The mounted instance, marked quiet with the row hosting this (see
+  // Artboard::markHostedQuiet), saw something that may change it.
+  void hostedRowWoke(Artboard* artboard, uint32_t row) override;
+  // Both change what quietState answers.
+  void isPausedChanged() override;
+  void quantizeChanged() override;
   void reset() override;
   Artboard* parentArtboard() override { return artboard(); }
   Artboard* nestingArtboard() override { return artboard(); }

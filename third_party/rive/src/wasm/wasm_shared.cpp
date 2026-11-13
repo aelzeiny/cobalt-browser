@@ -1,10 +1,10 @@
 #ifdef WITH_RIVE_SCRIPTING_WASM
 
-#include "third_party/rive/include/rive/wasm/wasm_shared.hpp"
-#include "third_party/rive/include/rive/async/compare_exchange.hpp"
-#include "third_party/rive/include/rive/async/timeouts.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_lane_policy.hpp"
-#include "third_party/rive/include/rive/wasm/wasm_processors.hpp"
+#include "rive/wasm/wasm_shared.hpp"
+#include "rive/async/compare_exchange.hpp"
+#include "rive/async/timeouts.hpp"
+#include "rive/wasm/wasm_lane_policy.hpp"
+#include "rive/wasm/wasm_processors.hpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -332,6 +332,17 @@ bool SharedRegion::lock(double timeoutSeconds)
   // deadline under TSan.
   return m_lock.try_lock_for(deadline - Clock::now());
 #else
+  // Most holders let go within microseconds, sooner than a parked wait wakes.
+  Clock::time_point spinEnd = std::min(
+      deadline,
+      Clock::now() + std::chrono::microseconds(20));
+  do
+  {
+    if (m_lock.try_lock())
+    {
+      return true;
+    }
+  } while (Clock::now() < spinEnd);
   return m_lock.try_lock_until(deadline);
 #endif
 }
@@ -841,6 +852,18 @@ void giveBack(uint64_t owner, uint64_t bytes, uint32_t objects)
 thread_local uint32_t t_heldRegion = 0;
 thread_local SharedRegion* t_heldObject = nullptr;
 
+// Regions this thread's call used lately, so an atomic skips the pin writes
+// on the registry slot every lane of the region shares.
+struct RecentRegion
+{
+  uint32_t id;
+  uint64_t owner;
+  SharedSlot* slot;
+  SharedRegion* region;
+};
+thread_local RecentRegion t_recentRegions[4] = {};
+thread_local uint32_t t_recentNext = 0;
+
 uint32_t indexOf(uint32_t id) { return (id & ~kIdBit) >> kIdSlotShift; }
 
 uint32_t idOf(uint32_t index, uint32_t state)
@@ -1094,22 +1117,39 @@ rcp<SharedObject> SharedRegistry::find(
   return found;
 }
 
+// What id names for owner, called under the table's lock; else null.
+static SharedObject* ownedObject(SharedSlot* slot, uint32_t id, uint64_t owner)
+{
+  if (slot == nullptr ||
+      !names(slot->state.load(std::memory_order_relaxed), id) ||
+      slot->owner.load(std::memory_order_relaxed) != owner)
+  {
+    return nullptr;
+  }
+  return slot->object.load(std::memory_order_relaxed);
+}
+
 bool SharedRegistry::retain(uint32_t id, uint64_t owner)
 {
   SharedTable& table = sharedTable();
   SharedSlot* slot = slotOf(table, id);
-  if (slot == nullptr)
-  {
-    return false;
-  }
   WordGuard guard(table.lock);
-  if (!names(slot->state.load(std::memory_order_relaxed), id) ||
-      slot->owner.load(std::memory_order_relaxed) != owner)
+  SharedObject* object = ownedObject(slot, id, owner);
+  if (object == nullptr)
   {
     return false;
   }
-  slot->object.load(std::memory_order_relaxed)->holds++;
+  object->holds++;
   return true;
+}
+
+uint32_t SharedRegistry::holds(uint32_t id, uint64_t owner)
+{
+  SharedTable& table = sharedTable();
+  SharedSlot* slot = slotOf(table, id);
+  WordGuard guard(table.lock);
+  SharedObject* object = ownedObject(slot, id, owner);
+  return object != nullptr ? object->holds : 0;
 }
 
 void SharedRegistry::release(uint32_t id, uint64_t owner)
@@ -1215,8 +1255,45 @@ void rive::setSharedHeldRegion(uint32_t id, rcp<SharedRegion> region)
   t_heldObject = region.release();
 }
 
+SharedRegion* rive::sharedRecentRegion(uint32_t id, uint64_t owner)
+{
+  for (RecentRegion& recent : t_recentRegions)
+  {
+    if (recent.region != nullptr && recent.id == id && recent.owner == owner)
+    {
+      // The generation wraps, so the slot must still hold this very region.
+      if (names(recent.slot->state.load(std::memory_order_acquire), id) &&
+          recent.slot->object.load(std::memory_order_relaxed) == recent.region)
+      {
+        return recent.region;
+      }
+      safe_unref(recent.region);
+      recent = {};
+    }
+  }
+  rcp<SharedRegion> found = SharedRegistry::find<SharedRegion>(id, owner);
+  if (found == nullptr)
+  {
+    return nullptr;
+  }
+  RecentRegion& recent = t_recentRegions[t_recentNext++ & 3];
+  safe_unref(recent.region);
+  recent = {id, owner, slotOf(sharedTable(), id), found.release()};
+  return recent.region;
+}
+
+void rive::forgetRecentRegions()
+{
+  for (RecentRegion& recent : t_recentRegions)
+  {
+    safe_unref(recent.region);
+    recent = {};
+  }
+}
+
 void rive::releaseTrappedRegion()
 {
+  forgetRecentRegions();
   SharedRegion* region = t_heldObject;
   if (region == nullptr)
   {

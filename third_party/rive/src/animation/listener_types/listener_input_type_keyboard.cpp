@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type_keyboard.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_listener.hpp"
-#include "third_party/rive/include/rive/inputs/keyboard_input.hpp"
-#include "third_party/rive/include/rive/rive_types.hpp"
+#include "rive/animation/listener_types/listener_input_type_keyboard.hpp"
+#include "rive/animation/state_machine_listener.hpp"
+#include "rive/inputs/keyboard_input.hpp"
+#include "rive/rive_types.hpp"
 
 #include <algorithm>
 
@@ -112,6 +112,38 @@ bool ListenerInputTypeKeyboard::keyboardListenerConstraintsMet(
     if (anyMatches)
     {
       return true;
+    }
+  }
+  return false;
+}
+
+bool ListenerInputTypeKeyboard::keyboardListenerOwnsKey(
+    const StateMachineListener* listener,
+    Key key,
+    KeyModifiers modifiers)
+{
+  if (listener == nullptr)
+  {
+    return false;
+  }
+  const uint32_t keyValue = static_cast<uint32_t>(key);
+  for (size_t i = 0; i < listener->listenerInputTypeCount(); ++i)
+  {
+    const ListenerInputType* lit = listener->listenerInputType(i);
+    if (lit == nullptr || !lit->is<ListenerInputTypeKeyboard>())
+    {
+      continue;
+    }
+    const ListenerInputTypeKeyboard*
+        litk = lit->as<ListenerInputTypeKeyboard>();
+    for (size_t j = 0; j < litk->keyboardInputCount(); ++j)
+    {
+      const KeyboardInput* ki = litk->keyboardInput(j);
+      if (ki != nullptr && ki->keyType() == keyValue &&
+          ki->modifiers() == static_cast<uint32_t>(modifiers))
+      {
+        return true;
+      }
     }
   }
   return false;

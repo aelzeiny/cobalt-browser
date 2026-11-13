@@ -1,6 +1,6 @@
 #ifndef _RIVE_SCRIPTED_LAYOUT_BASE_HPP_
 #define _RIVE_SCRIPTED_LAYOUT_BASE_HPP_
-#include "third_party/rive/include/rive/scripted/scripted_drawable.hpp"
+#include "rive/scripted/scripted_drawable.hpp"
 namespace rive
 {
 class ScriptedLayoutBase : public ScriptedDrawable

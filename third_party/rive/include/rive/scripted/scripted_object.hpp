@@ -1,13 +1,13 @@
 #ifndef _RIVE_SCRIPTED_OBJECT_HPP_
 #define _RIVE_SCRIPTED_OBJECT_HPP_
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
-#include "third_party/rive/include/rive/assets/script_asset.hpp"
-#include "third_party/rive/include/rive/custom_property.hpp"
-#include "third_party/rive/include/rive/custom_property_container.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
-#include "third_party/rive/include/rive/generated/assets/script_asset_base.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
+#include "rive/assets/script_asset.hpp"
+#include "rive/custom_property.hpp"
+#include "rive/custom_property_container.hpp"
+#include "rive/refcnt.hpp"
+#include "rive/generated/assets/script_asset_base.hpp"
 #ifdef WITH_RIVE_SCRIPTING
-#include "third_party/rive/include/rive/scripted/script_backend.hpp"
+#include "rive/scripted/script_backend.hpp"
 #endif
 #include <algorithm>
 #include <vector>
@@ -36,6 +36,12 @@ public:
   /// The backend announces display scale changes here; layouts re-run
   /// their resize callback so scripts see the new scale.
   virtual void displayScaleChanged() {}
+  /// A promise this object's backend made settled from async work (see
+  /// ScriptBackend::asyncWorkDelivered). Its continuation may have changed
+  /// script state without raising any dirt, so an object that only runs on
+  /// change (an idle advance, a cached conversion) runs again. Objects the
+  /// runtime calls whenever their owner runs need nothing.
+  virtual void asyncWorkDelivered() {}
 
 protected:
 #ifdef WITH_RIVE_SCRIPTING

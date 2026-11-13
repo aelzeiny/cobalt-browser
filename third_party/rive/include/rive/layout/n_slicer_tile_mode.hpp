@@ -1,6 +1,6 @@
 #ifndef _RIVE_N_SLICER_TILE_MODE_HPP_
 #define _RIVE_N_SLICER_TILE_MODE_HPP_
-#include "third_party/rive/include/rive/generated/layout/n_slicer_tile_mode_base.hpp"
+#include "rive/generated/layout/n_slicer_tile_mode_base.hpp"
 #include <stdio.h>
 namespace rive
 {

@@ -1,7 +1,7 @@
 #ifndef _RIVE_SCROLL_CONSTRAINT_PROXY_HPP_
 #define _RIVE_SCROLL_CONSTRAINT_PROXY_HPP_
 #include <stdio.h>
-#include "third_party/rive/include/rive/constraints/draggable_constraint.hpp"
+#include "rive/constraints/draggable_constraint.hpp"
 namespace rive
 {
 class ScrollConstraint;

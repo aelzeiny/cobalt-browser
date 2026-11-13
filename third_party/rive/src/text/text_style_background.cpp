@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/text/text_style_background.hpp"
-#include "third_party/rive/include/rive/text/text_style_paint.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/shapes/paint/feather.hpp"
-#include "third_party/rive/include/rive/shapes/paint/shape_paint.hpp"
+#include "rive/text/text_style_background.hpp"
+#include "rive/text/text_style_paint.hpp"
+#include "rive/text/text.hpp"
+#include "rive/shapes/paint/feather.hpp"
+#include "rive/shapes/paint/shape_paint.hpp"
 
 using namespace rive;
 

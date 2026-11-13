@@ -1,9 +1,9 @@
 #ifndef _RIVE_AABB_HPP_
 #define _RIVE_AABB_HPP_
 
-#include "third_party/rive/include/rive/span.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/span.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/math/math_types.hpp"
 #include <limits>
 
 namespace rive

@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/text/text_selection_path.hpp"
-#include "third_party/rive/include/rive/shapes/path.hpp"
+#include "rive/text/text_selection_path.hpp"
+#include "rive/shapes/path.hpp"
 
 using namespace rive;
 

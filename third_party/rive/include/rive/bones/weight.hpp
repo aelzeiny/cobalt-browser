@@ -1,7 +1,7 @@
 #ifndef _RIVE_WEIGHT_HPP_
 #define _RIVE_WEIGHT_HPP_
-#include "third_party/rive/include/rive/generated/bones/weight_base.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/generated/bones/weight_base.hpp"
+#include "rive/math/vec2d.hpp"
 #include <stdio.h>
 
 namespace rive

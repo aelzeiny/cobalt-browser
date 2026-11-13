@@ -1,10 +1,9 @@
 #ifndef _RIVE_LAYOUT_SIZING_STYLE_HPP_
 #define _RIVE_LAYOUT_SIZING_STYLE_HPP_
-#include "third_party/rive/include/rive/generated/layout/layout_sizing_style_base.hpp"
-#include "third_party/rive/include/rive/layout/layout_style_applier.hpp"
+#include "rive/generated/layout/layout_sizing_style_base.hpp"
+#include "rive/layout/layout_style_applier.hpp"
 #ifdef WITH_RIVE_LAYOUT
-#include "third_party/rive/google/yoga_grid_shim.hpp"
-#include "third_party/yoga/yoga/Yoga.h"
+#include "yoga/Yoga.h"
 #endif
 namespace rive
 {

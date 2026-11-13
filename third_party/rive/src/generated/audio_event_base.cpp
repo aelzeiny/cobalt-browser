@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/audio_event_base.hpp"
-#include "third_party/rive/include/rive/audio_event.hpp"
+#include "rive/generated/audio_event_base.hpp"
+#include "rive/audio_event.hpp"
 
 using namespace rive;
 

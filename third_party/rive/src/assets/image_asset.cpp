@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/assets/image_asset.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_referencer.hpp"
+#include "rive/assets/image_asset.hpp"
+#include "rive/artboard.hpp"
+#include "rive/factory.hpp"
+#include "rive/assets/file_asset_referencer.hpp"
 
 using namespace rive;
 

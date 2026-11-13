@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/data_bind/data_context.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind_path.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_viewmodel.hpp"
-#include "third_party/rive/include/rive/view_model_type.hpp"
+#include "rive/data_bind/data_context.hpp"
+#include "rive/data_bind/data_bind_path.hpp"
+#include "rive/file.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance_viewmodel.hpp"
+#include "rive/view_model_type.hpp"
 #include <algorithm>
 
 using namespace rive;
@@ -429,7 +429,7 @@ rcp<ViewModelInstance> DataContext::tryGetRelativeViewModelInstance(
 // --- Public resolution methods: iterate instances, then fall to parent ---
 
 ViewModelInstanceValue* DataContext::getViewModelProperty(
-    const std::vector<uint32_t> path) const
+    const std::vector<uint32_t>& path) const
 {
   if (path.size() == 0)
   {
@@ -451,7 +451,7 @@ ViewModelInstanceValue* DataContext::getViewModelProperty(
 }
 
 ViewModelInstanceValue* DataContext::getRelativeViewModelProperty(
-    const std::vector<uint32_t> path,
+    const std::vector<uint32_t>& path,
     DataResolver* resolver) const
 {
   if (path.size() == 0 || !resolver)
@@ -536,7 +536,7 @@ ViewModelInstanceValue* DataContext::getViewModelProperty(
 }
 
 rcp<ViewModelInstance> DataContext::getViewModelInstance(
-    const std::vector<uint32_t> path) const
+    const std::vector<uint32_t>& path) const
 {
   if (path.size() == 0)
   {
@@ -558,7 +558,7 @@ rcp<ViewModelInstance> DataContext::getViewModelInstance(
 }
 
 rcp<ViewModelInstance> DataContext::getRelativeViewModelInstance(
-    const std::vector<uint32_t> path,
+    const std::vector<uint32_t>& path,
     DataResolver* resolver) const
 {
   if (path.size() == 0 || !resolver)

@@ -1,6 +1,6 @@
 #ifndef _RIVE_SCRIPT_INPUT_STRING_BASE_HPP_
 #define _RIVE_SCRIPT_INPUT_STRING_BASE_HPP_
-#include "third_party/rive/include/rive/custom_property_string.hpp"
+#include "rive/custom_property_string.hpp"
 namespace rive
 {
 class ScriptInputStringBase : public CustomPropertyString

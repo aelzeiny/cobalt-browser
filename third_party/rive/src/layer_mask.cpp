@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/layer_mask.hpp"
+#include "rive/layer_mask.hpp"
 
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/node.hpp"
+#include "rive/artboard.hpp"
+#include "rive/drawable.hpp"
+#include "rive/node.hpp"
 #ifdef RIVE_CANVAS
-#include "third_party/rive/renderer/include/rive/renderer/render_canvas.hpp"
+#include "rive/renderer/render_canvas.hpp"
 #endif
 
 using namespace rive;
@@ -41,6 +41,17 @@ int LayerMaskProxyDrawable::emptyClipCount()
     return 0;
   }
   return m_op == LayerMaskOp::sourceStart ? 1 : -1;
+}
+
+BlendMode LayerMask::compositeBlendMode() const
+{
+  ContainerComponent* masked = parent();
+  if (masked == nullptr || !masked->is<Drawable>())
+  {
+    return BlendMode::srcOver;
+  }
+  const BlendMode mode = masked->as<Drawable>()->blendMode();
+  return mode == BlendMode::additive ? BlendMode::srcOver : mode;
 }
 
 LayerMaskProxyDrawable* LayerMask::createProxyDrawable(LayerMaskOp op)

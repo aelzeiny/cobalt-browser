@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/constraints/scale_constraint_base.hpp"
-#include "third_party/rive/include/rive/constraints/scale_constraint.hpp"
+#include "rive/generated/constraints/scale_constraint_base.hpp"
+#include "rive/constraints/scale_constraint.hpp"
 
 using namespace rive;
 

@@ -4,7 +4,7 @@
 #define MICROPROFILE_GPU_TIMERS_D3D11 1
 #define MICROPROFILE_GPU_TIMERS_D3D12 1
 #endif
-#include "third_party/rive/include/rive/profiler/microprofile_emscripten.h"
+#include "rive/profiler/microprofile_emscripten.h"
 #ifdef __EMSCRIPTEN__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"

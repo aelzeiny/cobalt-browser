@@ -1,28 +1,26 @@
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_constraint.hpp"
-#include "third_party/rive/include/rive/constraints/scrolling/scroll_physics.hpp"
-#include "third_party/rive/include/rive/core_context.hpp"
+#include "rive/constraints/scrolling/scroll_constraint.hpp"
+#include "rive/constraints/scrolling/scroll_physics.hpp"
+#include "rive/core_context.hpp"
 #include "math.h"
 
 using namespace rive;
 
+long long ScrollPhysics::clockMicros(float timeStamp)
+{
+  return File::deterministicMode ? (long long)(timeStamp * 1000000.0f)
+                                 : steadyMicros();
+}
+
+void ScrollPhysics::markTime(float timeStamp)
+{
+  m_lastTime = clockMicros(timeStamp);
+}
+
 void ScrollPhysics::accumulate(Vec2D delta, float timeStamp)
 {
-  float elapsedSeconds = 0;
-  if (File::deterministicMode)
-  {
-    auto now = timeStamp;
-    elapsedSeconds = now - m_lastTime;
-    m_lastTime = now;
-  }
-  else
-  {
-    auto now = std::chrono::high_resolution_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::microseconds>(
-                  now.time_since_epoch())
-                  .count();
-    elapsedSeconds = (float)(ms - m_lastTime) / 1000000.0f;
-    m_lastTime = ms;
-  }
+  long long now = clockMicros(timeStamp);
+  float elapsedSeconds = (float)(now - m_lastTime) / 1000000.0f;
+  m_lastTime = now;
   if (elapsedSeconds > 0)
   {
     auto lastSpeed = m_speed;
@@ -35,17 +33,7 @@ void ScrollPhysics::accumulate(Vec2D delta, float timeStamp)
 
 void ScrollPhysics::reset()
 {
-  if (File::deterministicMode)
-  {
-    m_lastTime = 0;
-  }
-  else
-  {
-    m_lastTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                     std::chrono::high_resolution_clock::now()
-                         .time_since_epoch())
-                     .count();
-  }
+  m_lastTime = File::deterministicMode ? 0 : steadyMicros();
   m_speed = Vec2D();
   m_acceleration = Vec2D();
   stop();

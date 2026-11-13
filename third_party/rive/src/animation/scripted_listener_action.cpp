@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/animation/scripted_listener_action.hpp"
-#include "third_party/rive/include/rive/animation/listener_invocation.hpp"
-#include "third_party/rive/include/rive/animation/state_machine_instance.hpp"
-#include "third_party/rive/include/rive/importers/state_machine_importer.hpp"
-#include "third_party/rive/include/rive/data_bind/data_bind.hpp"
+#include "rive/animation/scripted_listener_action.hpp"
+#include "rive/animation/listener_invocation.hpp"
+#include "rive/animation/state_machine_instance.hpp"
+#include "rive/importers/state_machine_importer.hpp"
+#include "rive/data_bind/data_bind.hpp"
 
 using namespace rive;
 

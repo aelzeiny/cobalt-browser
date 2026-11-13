@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/assets/file_asset_contents_base.hpp"
-#include "third_party/rive/include/rive/assets/file_asset_contents.hpp"
+#include "rive/generated/assets/file_asset_contents_base.hpp"
+#include "rive/assets/file_asset_contents.hpp"
 
 using namespace rive;
 

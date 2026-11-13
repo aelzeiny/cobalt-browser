@@ -5,7 +5,7 @@
 #ifndef _RIVE_RAW_PATH_UTILS_HPP_
 #define _RIVE_RAW_PATH_UTILS_HPP_
 
-#include "third_party/rive/include/rive/math/vec2d.hpp"
+#include "rive/math/vec2d.hpp"
 
 namespace rive
 {

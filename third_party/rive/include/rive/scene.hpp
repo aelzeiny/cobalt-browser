@@ -1,15 +1,15 @@
 #ifndef _RIVE_SCENE_HPP_
 #define _RIVE_SCENE_HPP_
 
-#include "third_party/rive/include/rive/animation/loop.hpp"
-#include "third_party/rive/include/rive/math/aabb.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/animation/keyed_callback_reporter.hpp"
-#include "third_party/rive/include/rive/core/field_types/core_callback_type.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/pointer_button.hpp"
-#include "third_party/rive/include/rive/scroll_event.hpp"
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/animation/loop.hpp"
+#include "rive/math/aabb.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/animation/keyed_callback_reporter.hpp"
+#include "rive/core/field_types/core_callback_type.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/pointer_button.hpp"
+#include "rive/scroll_event.hpp"
+#include "rive/refcnt.hpp"
 #include <string>
 
 namespace rive

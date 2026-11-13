@@ -6,7 +6,7 @@
 // Copyright (c) 2006-2015 International Business Machines Corporation,
 // Apple Inc., and others. All Rights Reserved.
 
-#include "third_party/rive/include/rive/text/line_break_dictionary.hpp"
+#include "rive/text/line_break_dictionary.hpp"
 
 #ifdef WITH_RIVE_TEXT_DICT_THAI
 

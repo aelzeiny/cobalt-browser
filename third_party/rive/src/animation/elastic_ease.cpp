@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/animation/elastic_ease.hpp"
-#include "third_party/rive/include/rive/math/math_types.hpp"
+#include "rive/animation/elastic_ease.hpp"
+#include "rive/math/math_types.hpp"
 #include "math.h"
 
 using namespace rive;

@@ -1,6 +1,6 @@
 #ifndef _RIVE_HOST_DATA_CONTEXT_CONSUMER_HPP_
 #define _RIVE_HOST_DATA_CONTEXT_CONSUMER_HPP_
-#include "third_party/rive/include/rive/refcnt.hpp"
+#include "rive/refcnt.hpp"
 
 namespace rive
 {

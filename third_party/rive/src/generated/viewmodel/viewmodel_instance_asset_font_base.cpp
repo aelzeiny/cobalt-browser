@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/viewmodel/viewmodel_instance_asset_font_base.hpp"
-#include "third_party/rive/include/rive/viewmodel/viewmodel_instance_asset_font.hpp"
+#include "rive/generated/viewmodel/viewmodel_instance_asset_font_base.hpp"
+#include "rive/viewmodel/viewmodel_instance_asset_font.hpp"
 
 using namespace rive;
 

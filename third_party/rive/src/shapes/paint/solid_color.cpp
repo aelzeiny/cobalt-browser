@@ -1,10 +1,10 @@
-#include "third_party/rive/include/rive/shapes/paint/solid_color.hpp"
-#include "third_party/rive/include/rive/drawable.hpp"
-#include "third_party/rive/include/rive/layer_mask.hpp"
-#include "third_party/rive/include/rive/container_component.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
-#include "third_party/rive/include/rive/shapes/paint/color.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/shapes/paint/solid_color.hpp"
+#include "rive/drawable.hpp"
+#include "rive/layer_mask.hpp"
+#include "rive/container_component.hpp"
+#include "rive/renderer.hpp"
+#include "rive/shapes/paint/color.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

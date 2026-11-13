@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_PROPERTY_ARTBOARD_BASE_HPP_
 #define _RIVE_VIEW_MODEL_PROPERTY_ARTBOARD_BASE_HPP_
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property.hpp"
+#include "rive/viewmodel/viewmodel_property.hpp"
 namespace rive
 {
 class ViewModelPropertyArtboardBase : public ViewModelProperty

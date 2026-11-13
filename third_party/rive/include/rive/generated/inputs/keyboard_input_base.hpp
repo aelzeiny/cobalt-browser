@@ -1,7 +1,7 @@
 #ifndef _RIVE_KEYBOARD_INPUT_BASE_HPP_
 #define _RIVE_KEYBOARD_INPUT_BASE_HPP_
-#include "third_party/rive/include/rive/core/field_types/core_uint_type.hpp"
-#include "third_party/rive/include/rive/inputs/user_input.hpp"
+#include "rive/core/field_types/core_uint_type.hpp"
+#include "rive/inputs/user_input.hpp"
 namespace rive
 {
 class KeyboardInputBase : public UserInput

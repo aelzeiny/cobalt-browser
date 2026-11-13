@@ -1,13 +1,13 @@
-#include "third_party/rive/include/rive/text/text_selection_controller.hpp"
+#include "rive/text/text_selection_controller.hpp"
 #ifdef WITH_RIVE_TEXT
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/nested_artboard.hpp"
-#include "third_party/rive/include/rive/artboard_component_list.hpp"
-#include "third_party/rive/include/rive/factory.hpp"
-#include "third_party/rive/include/rive/file.hpp"
-#include "third_party/rive/include/rive/text/text.hpp"
-#include "third_party/rive/include/rive/text/text_selection_path.hpp"
-#include "third_party/rive/include/rive/text/utf.hpp"
+#include "rive/artboard.hpp"
+#include "rive/nested_artboard.hpp"
+#include "rive/artboard_component_list.hpp"
+#include "rive/factory.hpp"
+#include "rive/file.hpp"
+#include "rive/text/text.hpp"
+#include "rive/text/text_selection_path.hpp"
+#include "rive/text/utf.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -57,7 +57,7 @@ static bool finite(Vec2D position)
 
 static AABB lineBounds(const OrderedLine& line)
 {
-  float x = line.glyphLine().startX;
+  float x = line.startX();
   auto bounds = AABB::forExpansion();
   for (auto glyph : line)
   {

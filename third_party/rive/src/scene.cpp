@@ -1,7 +1,7 @@
-#include "third_party/rive/include/rive/artboard.hpp"
-#include "third_party/rive/include/rive/hit_result.hpp"
-#include "third_party/rive/include/rive/scene.hpp"
-#include "third_party/rive/include/rive/generated/core_registry.hpp"
+#include "rive/artboard.hpp"
+#include "rive/hit_result.hpp"
+#include "rive/scene.hpp"
+#include "rive/generated/core_registry.hpp"
 using namespace rive;
 
 Scene::Scene(ArtboardInstance* abi) : m_artboardInstance(abi)

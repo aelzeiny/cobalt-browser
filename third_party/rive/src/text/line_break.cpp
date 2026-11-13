@@ -2,8 +2,8 @@
  * Copyright 2026 Rive
  */
 
-#include "third_party/rive/include/rive/text/line_break.hpp"
-#include "third_party/rive/include/rive/text/line_break_dictionary.hpp"
+#include "rive/text/line_break.hpp"
+#include "rive/text/line_break_dictionary.hpp"
 #include <cassert>
 #include <vector>
 

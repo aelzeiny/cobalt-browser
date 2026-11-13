@@ -1,10 +1,10 @@
 #ifndef _RIVE_TENDON_HPP_
 #define _RIVE_TENDON_HPP_
 
-#include "third_party/rive/include/rive/generated/bones/tendon_base.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/generated/bones/tendon_base.hpp"
+#include "rive/math/mat2d.hpp"
 #ifdef WITH_RIVE_EDITOR
-#include "third_party/rive/include/rive/editor/object_arena.hpp"
+#include "rive/editor/object_arena.hpp"
 #endif
 #include <stdio.h>
 

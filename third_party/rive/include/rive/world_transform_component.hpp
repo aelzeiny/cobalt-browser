@@ -1,7 +1,7 @@
 #ifndef _RIVE_WORLD_TRANSFORM_COMPONENT_HPP_
 #define _RIVE_WORLD_TRANSFORM_COMPONENT_HPP_
-#include "third_party/rive/include/rive/generated/world_transform_component_base.hpp"
-#include "third_party/rive/include/rive/math/mat2d.hpp"
+#include "rive/generated/world_transform_component_base.hpp"
+#include "rive/math/mat2d.hpp"
 
 namespace rive
 {

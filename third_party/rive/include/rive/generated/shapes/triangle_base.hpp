@@ -1,6 +1,6 @@
 #ifndef _RIVE_TRIANGLE_BASE_HPP_
 #define _RIVE_TRIANGLE_BASE_HPP_
-#include "third_party/rive/include/rive/shapes/parametric_path.hpp"
+#include "rive/shapes/parametric_path.hpp"
 namespace rive
 {
 class TriangleBase : public ParametricPath

@@ -1,7 +1,7 @@
 #ifndef _RIVE_SEMANTIC_SNAPSHOT_HPP_
 #define _RIVE_SEMANTIC_SNAPSHOT_HPP_
 
-#include "third_party/rive/include/rive/math/aabb.hpp"
+#include "rive/math/aabb.hpp"
 
 #include <cstdint>
 #include <string>

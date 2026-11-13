@@ -1,6 +1,6 @@
 #ifndef _RIVE_LISTENER_INPUT_TYPE_KEYBOARD_BASE_HPP_
 #define _RIVE_LISTENER_INPUT_TYPE_KEYBOARD_BASE_HPP_
-#include "third_party/rive/include/rive/animation/listener_types/listener_input_type.hpp"
+#include "rive/animation/listener_types/listener_input_type.hpp"
 namespace rive
 {
 class ListenerInputTypeKeyboardBase : public ListenerInputType

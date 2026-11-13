@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_CONVERTER_OPERATION_VALUE_HPP_
 #define _RIVE_DATA_CONVERTER_OPERATION_VALUE_HPP_
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_operation_value_base.hpp"
+#include "rive/generated/data_bind/converters/data_converter_operation_value_base.hpp"
 #include <stdio.h>
 namespace rive
 {

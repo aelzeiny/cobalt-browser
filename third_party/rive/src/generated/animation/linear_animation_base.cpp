@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/animation/linear_animation_base.hpp"
-#include "third_party/rive/include/rive/animation/linear_animation.hpp"
+#include "rive/generated/animation/linear_animation_base.hpp"
+#include "rive/animation/linear_animation.hpp"
 
 using namespace rive;
 

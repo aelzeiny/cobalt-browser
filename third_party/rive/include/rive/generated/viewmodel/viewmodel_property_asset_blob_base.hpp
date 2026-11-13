@@ -1,6 +1,6 @@
 #ifndef _RIVE_VIEW_MODEL_PROPERTY_ASSET_BLOB_BASE_HPP_
 #define _RIVE_VIEW_MODEL_PROPERTY_ASSET_BLOB_BASE_HPP_
-#include "third_party/rive/include/rive/viewmodel/viewmodel_property_asset.hpp"
+#include "rive/viewmodel/viewmodel_property_asset.hpp"
 namespace rive
 {
 class ViewModelPropertyAssetBlobBase : public ViewModelPropertyAsset

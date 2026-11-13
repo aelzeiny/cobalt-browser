@@ -1,9 +1,9 @@
 #ifndef _RIVE_PAINT_OUTSET_HPP_
 #define _RIVE_PAINT_OUTSET_HPP_
 
-#include "third_party/rive/include/rive/math/mat2d.hpp"
-#include "third_party/rive/include/rive/math/vec2d.hpp"
-#include "third_party/rive/include/rive/renderer.hpp"
+#include "rive/math/mat2d.hpp"
+#include "rive/math/vec2d.hpp"
+#include "rive/renderer.hpp"
 
 #include <optional>
 

@@ -1,6 +1,6 @@
 #ifndef _RIVE_DATA_CONVERTER_SYSTEM_NORMALIZER_BASE_HPP_
 #define _RIVE_DATA_CONVERTER_SYSTEM_NORMALIZER_BASE_HPP_
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_operation_value.hpp"
+#include "rive/data_bind/converters/data_converter_operation_value.hpp"
 namespace rive
 {
 class DataConverterSystemNormalizerBase : public DataConverterOperationValue

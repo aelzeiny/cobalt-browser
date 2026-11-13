@@ -1,8 +1,8 @@
-#include "third_party/rive/include/rive/audio_event.hpp"
-#include "third_party/rive/include/rive/assets/audio_asset.hpp"
-#include "third_party/rive/include/rive/audio/audio_engine.hpp"
-#include "third_party/rive/include/rive/audio/audio_sound.hpp"
-#include "third_party/rive/include/rive/artboard.hpp"
+#include "rive/audio_event.hpp"
+#include "rive/assets/audio_asset.hpp"
+#include "rive/audio/audio_engine.hpp"
+#include "rive/audio/audio_sound.hpp"
+#include "rive/artboard.hpp"
 
 using namespace rive;
 

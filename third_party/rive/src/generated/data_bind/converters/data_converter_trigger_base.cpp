@@ -1,5 +1,5 @@
-#include "third_party/rive/include/rive/generated/data_bind/converters/data_converter_trigger_base.hpp"
-#include "third_party/rive/include/rive/data_bind/converters/data_converter_trigger.hpp"
+#include "rive/generated/data_bind/converters/data_converter_trigger_base.hpp"
+#include "rive/data_bind/converters/data_converter_trigger.hpp"
 
 using namespace rive;
 

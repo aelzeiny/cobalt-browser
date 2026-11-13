@@ -1,4 +1,4 @@
-#include "third_party/rive/include/rive/bindable_artboard.hpp"
+#include "rive/bindable_artboard.hpp"
 
 using namespace rive;
 
@@ -8,3 +8,5 @@ BindableArtboard::BindableArtboard(
     : m_file(file)
     , m_artboard(std::move(artboard))
 {}
+
+BindableArtboard::BindableArtboard(Artboard* source) : m_source(source) {}
