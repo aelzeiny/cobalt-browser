@@ -1354,12 +1354,12 @@ void HTMLRiveElement::OnRiveFocusChanged() {
   if (!state_machine_) {
     return;
   }
-  // Focus and blur listeners run during advance, so make sure one happens. A
-  // paused player doesn't tick, so apply them right away.
+  // Focus and blur listeners run during advance, and layout (e.g. a scroll
+  // to the focused item) follows on the next one. Apply both now so the ring
+  // and the scroll land in the same frame, even on a slow or paused player.
   state_machine_->markNeedsAdvance();
-  if (paused_) {
-    AdvanceInternal(0.0f);
-  }
+  AdvanceInternal(0.0f);
+  AdvanceInternal(0.0f);
   ScheduleAnimationIfNeeded();
   InvalidateRivePaint();
 }
