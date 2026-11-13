@@ -297,7 +297,10 @@ class SourceBuffer final : public EventTarget,
       MediaSourceAttachmentSupplement::ExclusiveKey passkey);
 
   void LogFirstSegmentAppendDelay();
-  void ReclaimExternalAndTransitionMemory(bool is_initial_segment);
+  void ReclaimExternalAndTransitionMemory(bool is_initial_segment,
+                                          bool is_post_burst = false);
+  void SchedulePostAppendMemoryReclaim();
+  void RunPostAppendMemoryReclaim();
 
   const bool append_first_segment_synchronously_;
   bool first_segment_appended_ = false;
@@ -307,6 +310,7 @@ class SourceBuffer final : public EventTarget,
   base::TimeTicks first_segment_append_start_time_;
   base::TimeTicks last_v8_slack_trim_time_;
   size_t external_ab_post_trim_watermark_bytes_ = 8 * 1024 * 1024;
+  TaskHandle post_append_reclaim_task_handle_;
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   std::unique_ptr<WebSourceBuffer> web_source_buffer_;

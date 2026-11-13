@@ -1932,6 +1932,9 @@ bool SourceBuffer::HasPendingActivity() const {
 
 void SourceBuffer::ContextDestroyed() {
   append_buffer_async_task_handle_.Cancel();
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+  post_append_reclaim_task_handle_.Cancel();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   append_encoded_chunks_async_task_handle_.Cancel();
   pending_chunks_to_buffer_.reset();
@@ -2219,6 +2222,7 @@ void SourceBuffer::AppendBufferInternal_Locked(
   }
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
   ++successful_append_count_;
+  post_append_reclaim_task_handle_.Cancel();
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
 
   // 3. Set the updating attribute to true.
@@ -2393,8 +2397,10 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       return;
     case media::StreamParser::ParseStatus::kSuccess:
 #if BUILDFLAG(USE_STARBOARD_MEDIA)
-      ReclaimExternalAndTransitionMemory(!initial_playback_reclaim_done_ &&
-                                         first_initialization_segment_received_);
+      ReclaimExternalAndTransitionMemory(
+          !initial_playback_reclaim_done_ &&
+              first_initialization_segment_received_,
+          /*is_post_burst=*/false);
 #endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       // 3. Set the updating attribute to false.
       updating_ = false;
@@ -2408,6 +2414,9 @@ void SourceBuffer::AppendBufferAsyncPart_Locked(
       // 5. Queue a task to fire a simple event named updateend at this
       //    SourceBuffer object.
       ScheduleEvent(event_type_names::kUpdateend);
+#if BUILDFLAG(USE_STARBOARD_MEDIA)
+      SchedulePostAppendMemoryReclaim();
+#endif  // BUILDFLAG(USE_STARBOARD_MEDIA)
       break;
   }
 
@@ -2624,7 +2633,8 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   // AppendBufferAsyncPart_Locked() as is, when `parse_result` is
   // media::StreamParser::ParseStatus::kSuccess.
   ReclaimExternalAndTransitionMemory(!initial_playback_reclaim_done_ &&
-                                     first_initialization_segment_received_);
+                                         first_initialization_segment_received_,
+                                     /*is_post_burst=*/false);
 
   // 3. Set the updating attribute to false.
   updating_ = false;
@@ -2638,6 +2648,7 @@ void SourceBuffer::AppendBufferSyncPartSucceeded_Locked(
   // 5. Queue a task to fire a simple event named updateend at this
   //    SourceBuffer object.
   ScheduleEvent(event_type_names::kUpdateend);
+  SchedulePostAppendMemoryReclaim();
 }
 
 void SourceBuffer::AppendBufferSyncPartFailed() {
@@ -2683,15 +2694,37 @@ void SourceBuffer::LogFirstSegmentAppendDelay() {
   }
 }
 
-void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
+void SourceBuffer::SchedulePostAppendMemoryReclaim() {
+  ExecutionContext* ctx = GetExecutionContext();
+  if (!ctx || ctx->IsContextDestroyed()) {
+    return;
+  }
+  post_append_reclaim_task_handle_ = PostDelayedCancellableTask(
+      *ctx->GetTaskRunner(TaskType::kMediaElementEvent), FROM_HERE,
+      WTF::BindOnce(&SourceBuffer::RunPostAppendMemoryReclaim,
+                    WrapWeakPersistent(this)),
+      base::Milliseconds(250));
+}
+
+void SourceBuffer::RunPostAppendMemoryReclaim() {
+  if (IsRemoved() || updating_) {
+    return;
+  }
+  ReclaimExternalAndTransitionMemory(/*is_initial_segment=*/false,
+                                     /*is_post_burst=*/true);
+}
+
+void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
+                                                      bool is_post_burst) {
   static std::atomic<int64_t> g_last_global_reclaim_us{0};
   static std::atomic<size_t> g_post_gc_external_ab_watermark_bytes{
       6 * 1024 * 1024};
 
   constexpr size_t kMinExternalAbBaselineBytes = 6 * 1024 * 1024;
-  constexpr size_t kMaxExternalAbBaselineBytes = 10 * 1024 * 1024;
+  constexpr size_t kMaxExternalAbBaselineBytes = 9 * 1024 * 1024;
   constexpr size_t kMaxIdleJsHeapSlackBytes = 4 * 1024 * 1024;
-  constexpr size_t kExternalAbGrowthHysteresisBytes = 4 * 1024 * 1024;
+  constexpr size_t kPostBurstGrowthHysteresisBytes = 2 * 1024 * 1024;
+  constexpr size_t kMidBurstGrowthHysteresisBytes = 12 * 1024 * 1024;
 
   if (is_initial_segment) {
     initial_playback_reclaim_done_ = true;
@@ -2731,12 +2764,17 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
       const bool js_heap_slack_high =
           heap_stats.total_heap_size() >
           heap_stats.used_heap_size() + kMaxIdleJsHeapSlackBytes;
+      const size_t growth_threshold = is_post_burst
+                                          ? kPostBurstGrowthHysteresisBytes
+                                          : kMidBurstGrowthHysteresisBytes;
       const bool external_ab_growth_high =
-          external_bytes > watermark + kExternalAbGrowthHysteresisBytes;
+          external_bytes > watermark + growth_threshold;
+      const base::TimeDelta min_cooldown =
+          is_post_burst ? base::Milliseconds(800) : base::Seconds(2);
 
-      if ((is_initial_segment && elapsed >= base::Seconds(2)) ||
-          (elapsed >= base::Seconds(4) &&
-           (js_heap_slack_high || external_ab_growth_high))) {
+      if ((is_initial_segment && elapsed >= base::Seconds(1)) ||
+          (elapsed >= min_cooldown &&
+           (external_ab_growth_high || (is_post_burst && js_heap_slack_high)))) {
         g_last_global_reclaim_us.store(now_us, std::memory_order_relaxed);
         last_v8_slack_trim_time_ = now;
         did_reclaim = true;
@@ -2779,6 +2817,11 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
         g_post_gc_external_ab_watermark_bytes.store(new_watermark,
                                                     std::memory_order_relaxed);
         external_ab_post_trim_watermark_bytes_ = new_watermark;
+      } else if (is_post_burst && IsMainThread()) {
+        // Even if external ArrayBuffer growth did not exceed the GC threshold,
+        // re-park any disk-backed ParkableStrings that were briefly unparked
+        // during the completed append burst.
+        MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
       }
     }
   }
@@ -2793,7 +2836,7 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment) {
       partition_alloc::PurgeFlags::kDecommitEmptySlotSpans |
       partition_alloc::PurgeFlags::kDiscardUnusedSystemPages |
       partition_alloc::PurgeFlags::kAggressiveReclaim);
-  if (did_reclaim) {
+  if (did_reclaim || is_post_burst) {
     partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
   } else {
     partition_alloc::MemoryReclaimer::Instance()->ReclaimFast();
