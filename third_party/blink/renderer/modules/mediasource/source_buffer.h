@@ -306,6 +306,7 @@ class SourceBuffer final : public EventTarget,
   bool first_segment_appended_ = false;
   bool first_segment_appended_logged_ = false;
   bool initial_playback_reclaim_done_ = false;
+  bool post_initial_burst_reclaim_done_ = false;
   size_t successful_append_count_ = 0;
   base::TimeTicks first_segment_append_start_time_;
   base::TimeTicks last_v8_slack_trim_time_;

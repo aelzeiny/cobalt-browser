@@ -2710,8 +2710,15 @@ void SourceBuffer::RunPostAppendMemoryReclaim() {
   if (IsRemoved() || updating_) {
     return;
   }
-  ReclaimExternalAndTransitionMemory(/*is_initial_segment=*/false,
-                                     /*is_post_burst=*/true);
+  const bool force_post_initial_burst = !post_initial_burst_reclaim_done_ &&
+                                        first_initialization_segment_received_ &&
+                                        successful_append_count_ >= 2;
+  if (force_post_initial_burst) {
+    post_initial_burst_reclaim_done_ = true;
+  }
+  ReclaimExternalAndTransitionMemory(
+      /*is_initial_segment=*/force_post_initial_burst,
+      /*is_post_burst=*/true);
 }
 
 void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
@@ -2791,15 +2798,24 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
         }
 
         // 2. Now that V8 references are released, purge Blink MemoryCache,
-        // ParkableStrings, DiscardableMemory, and CC/Skia tile/image caches.
+        // ParkableStrings, DiscardableMemory, and CC/Skia/GPU caches across
+        // both Blink and cross-thread base::MemoryPressureListeners.
         if (IsMainThread()) {
           MemoryPressureListenerRegistry::Instance().OnMemoryPressure(
               base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
           MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
-          if (is_initial_segment) {
-            base::MemoryPressureListener::NotifyMemoryPressure(
-                base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
-          }
+          base::MemoryPressureListener::NotifyMemoryPressure(
+              base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL);
+          ctx->GetTaskRunner(TaskType::kMediaElementEvent)
+              ->PostDelayedTask(
+                  FROM_HERE, WTF::BindOnce([]() {
+                    if (IsMainThread()) {
+                      MemoryPressureListenerRegistry::Instance()
+                          .OnPurgeMemory();
+                    }
+                    partition_alloc::MemoryReclaimer::Instance()->ReclaimAll();
+                  }),
+                  base::Milliseconds(150));
         }
 
         size_t post_gc_ab_bytes = 0;
