@@ -175,6 +175,7 @@ constexpr size_t kMidStreamIncrementalGrowthBytes = 8 * 1024 * 1024;
 constexpr int64_t kMidStreamIncrementalCooldownUs = 2'500'000;
 
 std::atomic<size_t> g_external_ab_baseline_bytes{kMinExternalAbBaselineBytes};
+std::atomic<size_t> g_prev_post_gc_external_bytes{kMinExternalAbBaselineBytes};
 std::atomic<int64_t> g_last_external_ab_reclaim_us{0};
 std::atomic<int64_t> g_last_midstream_incremental_us{0};
 
@@ -205,6 +206,11 @@ size_t DOMArrayBuffer::ObserveExternalArrayBufferBytes(
   if (current_bytes < baseline) {
     baseline = std::max(kMinExternalAbBaselineBytes, current_bytes);
     g_external_ab_baseline_bytes.store(baseline, std::memory_order_relaxed);
+    const size_t prev_post =
+        g_prev_post_gc_external_bytes.load(std::memory_order_relaxed);
+    if (baseline < prev_post) {
+      g_prev_post_gc_external_bytes.store(baseline, std::memory_order_relaxed);
+    }
   }
   if (out_baseline_bytes) {
     *out_baseline_bytes = baseline;
@@ -216,13 +222,14 @@ size_t DOMArrayBuffer::ObserveExternalArrayBufferBytes(
 size_t DOMArrayBuffer::RecordPostGcExternalArrayBufferBaseline(
     v8::Isolate* isolate) {
   const size_t post_external = ReadCurrentExternalArrayBufferBytes(isolate);
-  // Never clamp below post_external: any external ArrayBuffers remaining right
-  // after GC (such as cc.wasm or live player buffers) are genuinely reachable,
-  // and clamping below them would trigger futile repeat GCs. Whenever JS later
-  // drops or detaches those buffers, ObserveExternalArrayBufferBytes() ratchets
-  // g_external_ab_baseline_bytes back down automatically.
-  const size_t new_baseline =
-      std::max(kMinExternalAbBaselineBytes, post_external);
+  const size_t prev_post = g_prev_post_gc_external_bytes.exchange(
+      post_external, std::memory_order_relaxed);
+  // Two-sample minimum filter: a single transient in-flight segment caught
+  // during an overlapping stream will not lock the baseline high, whereas any
+  // genuinely persistent allocation (e.g. cc.wasm or a BYOB ring) survives two
+  // consecutive sweeps and raises the baseline without an artificial cap.
+  const size_t new_baseline = std::max(kMinExternalAbBaselineBytes,
+                                       std::min(prev_post, post_external));
   g_external_ab_baseline_bytes.store(new_baseline, std::memory_order_relaxed);
   return new_baseline;
 }
