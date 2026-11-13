@@ -49,6 +49,11 @@ class RendererGL {
   // GL renderer and the interlock mode Rive Renderer picked.
   std::string Description() const;
 
+  // Points gles2_c_lib, which Rive's GL calls go through, at this renderer's
+  // context. Needed before freeing its Rive objects once another RendererGL
+  // exists (e.g. after a context loss).
+  void MakeCurrent() const;
+
   // Uploads tightly packed, premultiplied RGBA pixels.
   rive::rcp<rive::RenderImage> MakeImage(uint32_t width,
                                          uint32_t height,

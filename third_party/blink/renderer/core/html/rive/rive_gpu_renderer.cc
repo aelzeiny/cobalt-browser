@@ -9,6 +9,7 @@
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
+#include "base/time/time.h"
 #include "components/viz/common/resources/shared_image_format.h"
 #include "components/viz/common/resources/transferable_resource.h"
 #include "gpu/command_buffer/client/client_shared_image.h"
@@ -43,13 +44,23 @@ class RiveGpuContext::Impl final : public rive::Factory {
  public:
   Impl(std::unique_ptr<WebGraphicsContext3DProviderWrapper> wrapper,
        std::unique_ptr<cobalt_rive::RendererGL> renderer)
-      : wrapper_(std::move(wrapper)), renderer_(std::move(renderer)) {}
+      : wrapper_(std::move(wrapper)),
+        renderer_(std::move(renderer)),
+        shared_(SharedGpuContext::ContextProviderWrapper()),
+        had_shared_(!!shared_) {}
 
   WebGraphicsContext3DProviderWrapper* wrapper() { return wrapper_.get(); }
   gpu::gles2::GLES2Interface* gl() {
     return wrapper_->ContextProvider().ContextGL();
   }
-  bool IsLost() { return wrapper_->ContextProvider().IsContextLost(); }
+  // Also lost with Blink's shared context: when that goes (e.g. Android
+  // drops GPU contexts in the background), the shared images this context
+  // makes stop reaching the compositor even if it isn't told it was lost.
+  bool IsLost() {
+    return wrapper_->ContextProvider().IsContextLost() ||
+           (had_shared_ &&
+            (!shared_ || shared_->ContextProvider().IsContextLost()));
+  }
   cobalt_rive::RendererGL* renderer() { return renderer_.get(); }
 
   rive::rcp<rive::RenderImage> MakeImageFromBitmap(const SkBitmap& bitmap) {
@@ -126,6 +137,8 @@ class RiveGpuContext::Impl final : public rive::Factory {
 
   std::unique_ptr<WebGraphicsContext3DProviderWrapper> wrapper_;
   std::unique_ptr<cobalt_rive::RendererGL> renderer_;
+  base::WeakPtr<WebGraphicsContext3DProviderWrapper> shared_;
+  const bool had_shared_;
 };
 
 RiveGpuContext::RiveGpuContext(std::unique_ptr<Impl> impl)
@@ -140,19 +153,28 @@ RiveGpuContext* RiveGpuContext::Get() {
     return nullptr;
   }
   static RiveGpuContext* instance = nullptr;
-  static bool tried = false;
-  if (instance) {
-    // A lost context stays lost; players fall back to Skia when they next
-    // load. (The context is leaked: images in flight may still use it.)
-    return instance->impl_->IsLost() ? nullptr : instance;
+  static bool unsupported = false;
+  static bool ever_created = false;
+  static base::TimeTicks last_failure;
+  if (instance && instance->impl_->IsLost()) {
+    // E.g. Android drops GPU contexts while the app is in the background.
+    // Leaked: the old players' Rive objects are still freed against it.
+    LOG(WARNING) << "Rive Renderer: GPU context lost; making a new one.";
+    instance = nullptr;
   }
-  if (tried) {
+  if (instance) {
+    instance->MakeCurrent();
+    return instance;
+  }
+  // Retry a context that couldn't be made, but not on every paint.
+  if (unsupported || (!last_failure.is_null() &&
+                      base::TimeTicks::Now() - last_failure < base::Seconds(1))) {
     return nullptr;
   }
-  tried = true;
 
   if (!SharedGpuContext::IsGpuCompositingEnabled()) {
     LOG(WARNING) << "Rive Renderer: no GPU compositing; using Skia.";
+    unsupported = true;
     return nullptr;
   }
   Platform::ContextAttributes attributes;
@@ -165,6 +187,12 @@ RiveGpuContext* RiveGpuContext::Get() {
       !provider->ContextGL()) {
     LOG(WARNING) << "Rive Renderer: no GLES3 context ("
                  << graphics_info.error_message.Utf8() << "); using Skia.";
+    // Only a lost context is worth retrying; otherwise GLES3 isn't there.
+    if (ever_created) {
+      last_failure = base::TimeTicks::Now();
+    } else {
+      unsupported = true;
+    }
     return nullptr;
   }
   auto wrapper = std::make_unique<WebGraphicsContext3DProviderWrapper>(
@@ -173,6 +201,7 @@ RiveGpuContext* RiveGpuContext::Get() {
       cobalt_rive::RendererGL::Create(wrapper->ContextProvider().ContextGL());
   if (!renderer) {
     LOG(WARNING) << "Rive Renderer: rejected the GPU context; using Skia.";
+    unsupported = true;
     return nullptr;
   }
   LOG(INFO) << "Rive Renderer: " << renderer->Description() << " (GPU: "
@@ -180,7 +209,12 @@ RiveGpuContext* RiveGpuContext::Get() {
 
   instance = new RiveGpuContext(
       std::make_unique<Impl>(std::move(wrapper), std::move(renderer)));
+  ever_created = true;
   return instance;
+}
+
+void RiveGpuContext::MakeCurrent() {
+  impl_->renderer()->MakeCurrent();
 }
 
 rive::Factory* RiveGpuContext::factory() {
@@ -206,17 +240,23 @@ rive::rcp<rive::RenderImage> RiveGpuContext::MakeImage(
 struct RiveGpuSurface::Buffer {
   ~Buffer() { texture.reset(); }
 
+  raw_ptr<RiveGpuContext> context;
   scoped_refptr<gpu::ClientSharedImage> shared_image;
   std::unique_ptr<gpu::SharedImageTexture> texture;
   // Where the compositor's last read of the buffer ends.
   gpu::SyncToken release_sync_token;
 };
 
-RiveGpuSurface::RiveGpuSurface() = default;
+RiveGpuSurface::RiveGpuSurface(base::RepeatingClosure needs_redraw)
+    : needs_redraw_(std::move(needs_redraw)) {}
 
 RiveGpuSurface::~RiveGpuSurface() {
   if (layer_) {
     layer_->ClearClient();
+  }
+  // The target frees GL objects through whichever context is current.
+  if (context_) {
+    context_->MakeCurrent();
   }
 }
 
@@ -236,6 +276,17 @@ bool RiveGpuSurface::Draw(const gfx::Size& size,
     layer_->SetContentsOpaque(false);
     layer_->SetBlendBackgroundColor(true);
   }
+  if (context != context_) {
+    // A new context after a loss: nothing made on the old one is usable.
+    if (context_) {
+      context_->MakeCurrent();
+    }
+    target_.reset();
+    pending_.reset();
+    free_buffers_.clear();
+    context->MakeCurrent();
+    context_ = context;
+  }
   if (!target_ || size != size_) {
     free_buffers_.clear();
     pending_.reset();
@@ -254,6 +305,7 @@ bool RiveGpuSurface::Draw(const gfx::Size& size,
     gpu::SharedImageInterface* sii =
         impl->wrapper()->ContextProvider().SharedImageInterface();
     buffer = std::make_unique<Buffer>();
+    buffer->context = context;
     buffer->shared_image = sii->CreateSharedImage(
         {viz::SinglePlaneFormat::kRGBA_8888, size,
          gfx::ColorSpace::CreateSRGB(), kTopLeft_GrSurfaceOrigin,
@@ -305,7 +357,12 @@ bool RiveGpuSurface::PrepareTransferableResource(
 void RiveGpuSurface::Recycle(std::unique_ptr<Buffer> buffer,
                              const gpu::SyncToken& sync_token,
                              bool is_lost) {
-  if (is_lost || buffer->shared_image->size() != size_) {
+  if (is_lost) {
+    // The compositor can't show this frame anymore; it needs another.
+    needs_redraw_.Run();
+    return;
+  }
+  if (buffer->context != context_ || buffer->shared_image->size() != size_) {
     return;
   }
   buffer->release_sync_token = sync_token;

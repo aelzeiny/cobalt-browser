@@ -10,11 +10,13 @@
 #include <string>
 
 #include "base/containers/span.h"
+#include "base/memory/raw_ptr.h"
 #include "cc/paint/paint_canvas.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/core/loader/threadable_loader.h"
 #include "third_party/blink/renderer/core/loader/threadable_loader_client.h"
+#include "third_party/blink/renderer/core/page/page_visibility_observer.h"
 #include "third_party/blink/renderer/core/typed_arrays/dom_array_buffer.h"
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
@@ -49,11 +51,13 @@ namespace blink {
 
 class KeyboardEvent;
 class ImageResourceContent;
+class RiveGpuContext;
 class RiveGpuSurface;
 class RiveImageRequest;
 
 class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
-                                          public ThreadableLoaderClient {
+                                          public ThreadableLoaderClient,
+                                          public PageVisibilityObserver {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -178,6 +182,10 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   InsertionNotificationRequest InsertedInto(
       ContainerNode& insertion_point) override;
   void RemovedFrom(ContainerNode& insertion_point) override;
+  void DidMoveToNewDocument(Document& old_document) override;
+
+  // PageVisibilityObserver: GPU state may be gone after the page was hidden.
+  void PageVisibilityChanged() override;
   void DefaultEventHandler(Event& event) override;
   FocusableState SupportsFocus(UpdateBehavior update_behavior) const override;
   int DefaultTabIndex() const override;
@@ -216,6 +224,8 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   rive::Fit GetRiveFit() const;
   rive::Alignment GetRiveAlignment() const;
   void DrawArtboard(rive::Renderer* renderer, const gfx::SizeF& box_size);
+  void ScheduleGpuReload();
+  void ReloadOntoNewGpuContext();
   bool MapOffsetToArtboard(float offset_x,
                            float offset_y,
                            rive::Vec2D* out_point) const;
@@ -227,6 +237,11 @@ class CORE_EXPORT HTMLRiveElement final : public HTMLElement,
   rive::rcp<rive::File> rive_file_;
   // The file's paths and paints are made for one backend, picked at load.
   bool uses_rive_renderer_ = false;
+  // The Rive Renderer context the file was loaded onto, and the file, to
+  // reload it onto a new context if that one is lost.
+  raw_ptr<RiveGpuContext> gpu_context_ = nullptr;
+  Vector<uint8_t> loaded_bytes_;
+  bool gpu_reload_scheduled_ = false;
   std::unique_ptr<RiveGpuSurface> gpu_surface_;
   std::unique_ptr<rive::ArtboardInstance> artboard_;
   std::unique_ptr<rive::StateMachineInstance> state_machine_;

@@ -8,7 +8,9 @@
 #include <memory>
 
 #include "base/feature_list.h"
+#include "base/functional/callback.h"
 #include "base/functional/function_ref.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "cc/layers/texture_layer.h"
@@ -40,8 +42,14 @@ CORE_EXPORT BASE_DECLARE_FEATURE(kRiveRenderer);
 class CORE_EXPORT RiveGpuContext {
  public:
   // Null if Rive Renderer is disabled or can't run here (no GPU compositing,
-  // no GLES3 context, Rive Renderer rejects the context, or it was lost).
+  // no GLES3 context, or Rive Renderer rejects the context). After a context
+  // loss this is a new context (players must reload onto it), or null while
+  // one can't be made yet. Makes the returned context current.
   static RiveGpuContext* Get();
+
+  // Makes this context the one Rive's GL calls go to. A lost context stays
+  // alive (leaked) so its Rive objects can still be freed against it.
+  void MakeCurrent();
 
   // Makes the paths, paints and images a Rive file needs to be drawn here.
   rive::Factory* factory();
@@ -63,7 +71,9 @@ class CORE_EXPORT RiveGpuContext {
 // compositor uses them directly (no raster copy), like a WebGL canvas.
 class CORE_EXPORT RiveGpuSurface : public cc::TextureLayerClient {
  public:
-  RiveGpuSurface();
+  // `needs_redraw` runs when the compositor lost the shown frame (e.g. its
+  // context was lost in the background), so the owner draws a new one.
+  explicit RiveGpuSurface(base::RepeatingClosure needs_redraw);
   ~RiveGpuSurface() override;
 
   // Renders `draw` into a buffer of `size` for the layer to show next;
@@ -85,6 +95,9 @@ class CORE_EXPORT RiveGpuSurface : public cc::TextureLayerClient {
                const gpu::SyncToken& sync_token,
                bool is_lost);
 
+  base::RepeatingClosure needs_redraw_;
+  // The context the buffers and target belong to.
+  raw_ptr<RiveGpuContext> context_ = nullptr;
   scoped_refptr<cc::TextureLayer> layer_;
   gfx::Size size_;
   std::unique_ptr<cobalt_rive::RendererGL::Target> target_;

@@ -22,6 +22,7 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/html/rive/layout_rive.h"
 #include "third_party/blink/renderer/core/html/rive/rive_gpu_renderer.h"
+#include "third_party/blink/renderer/core/page/page.h"
 #include "third_party/blink/renderer/core/html/rive/rive_paint_canvas_renderer.h"
 #include "third_party/blink/renderer/core/html_names.h"
 #include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
@@ -185,7 +186,8 @@ std::optional<rive::Key> ToRiveKey(const String& key) {
 }  // namespace
 
 HTMLRiveElement::HTMLRiveElement(Document& document)
-    : HTMLElement(html_names::kRivePlayerTag, document, kCreateHTMLElement) {}
+    : HTMLElement(html_names::kRivePlayerTag, document, kCreateHTMLElement),
+      PageVisibilityObserver(document.GetPage()) {}
 
 // Loads one image URL for list items through Blink's image loader (sharing
 // its memory cache, no CORS needed since pixels are only drawn) and hands the
@@ -242,7 +244,12 @@ class RiveImageRequest final : public GarbageCollected<RiveImageRequest>,
       targets_;
 };
 
-HTMLRiveElement::~HTMLRiveElement() = default;
+HTMLRiveElement::~HTMLRiveElement() {
+  // Rive objects free GL resources through whichever context is current.
+  if (gpu_context_) {
+    gpu_context_->MakeCurrent();
+  }
+}
 
 String HTMLRiveElement::src() const {
   return FastGetAttribute(html_names::kSrcAttr);
@@ -792,7 +799,9 @@ void HTMLRiveElement::OnListImageLoaded(const String& url,
   cc::PaintImage paint_image = content->GetImage()->PaintImageForCurrentFrame();
   RiveGpuContext* gpu_context =
       uses_rive_renderer_ ? RiveGpuContext::Get() : nullptr;
-  if (uses_rive_renderer_ && !gpu_context) {
+  if (uses_rive_renderer_ && gpu_context != gpu_context_) {
+    // The context was lost; the reload requests images again.
+    ScheduleGpuReload();
     return;
   }
   rive::rcp<rive::RenderImage> image =
@@ -1118,10 +1127,15 @@ cc::Layer* HTMLRiveElement::PaintRiveToLayer(const gfx::Size& box_size) {
   if (!uses_rive_renderer_ || !artboard_ || box_size.IsEmpty()) {
     return nullptr;
   }
+  if (RiveGpuContext::Get() != gpu_context_) {
+    ScheduleGpuReload();
+    return nullptr;
+  }
   // Rive Renderer draws into a texture that the player's own layer shows.
   // Paint is pixel-snapped, so the box is whole device pixels.
   if (!gpu_surface_) {
-    gpu_surface_ = std::make_unique<RiveGpuSurface>();
+    gpu_surface_ = std::make_unique<RiveGpuSurface>(WTF::BindRepeating(
+        &HTMLRiveElement::InvalidateRivePaint, WrapWeakPersistent(this)));
   }
   if (!gpu_surface_->Draw(box_size, [&](rive::Renderer* renderer) {
         DrawArtboard(renderer, gfx::SizeF(box_size));
@@ -1205,6 +1219,20 @@ Node::InsertionNotificationRequest HTMLRiveElement::InsertedInto(
     }
   }
   return kInsertionDone;
+}
+
+void HTMLRiveElement::DidMoveToNewDocument(Document& old_document) {
+  SetPage(GetDocument().GetPage());
+  HTMLElement::DidMoveToNewDocument(old_document);
+}
+
+void HTMLRiveElement::PageVisibilityChanged() {
+  // Coming back from the background (e.g. Android TV's screensaver), the GPU
+  // context may have been lost while nothing drew; paint to find out (see
+  // PaintRiveToLayer) and to replace a frame the compositor lost.
+  if (uses_rive_renderer_ && GetPage() && GetPage()->IsPageVisible()) {
+    InvalidateRivePaint();
+  }
 }
 
 void HTMLRiveElement::RemovedFrom(ContainerNode& insertion_point) {
@@ -1426,7 +1454,40 @@ void HTMLRiveElement::CancelLoader() {
   pending_bytes_.clear();
 }
 
+void HTMLRiveElement::ScheduleGpuReload() {
+  if (gpu_reload_scheduled_) {
+    return;
+  }
+  gpu_reload_scheduled_ = true;
+  GetDocument()
+      .GetTaskRunner(TaskType::kInternalDefault)
+      ->PostTask(FROM_HERE,
+                 WTF::BindOnce(&HTMLRiveElement::ReloadOntoNewGpuContext,
+                               WrapWeakPersistent(this)));
+}
+
+// The GPU context the file was made for was lost (e.g. Android drops GPU
+// contexts in the background). Loads the file again onto a new one (or Skia)
+// and fires load again, so the page can restore what it set (list items,
+// values, focus), as on the first load.
+void HTMLRiveElement::ReloadOntoNewGpuContext() {
+  gpu_reload_scheduled_ = false;
+  if (!uses_rive_renderer_ || RiveGpuContext::Get() == gpu_context_) {
+    return;
+  }
+  Vector<uint8_t> bytes = loaded_bytes_;
+  if (LoadFromBytes(bytes)) {
+    DispatchEvent(*Event::Create(event_type_names::kLoad));
+  }
+  InvalidateRivePaint();
+}
+
 bool HTMLRiveElement::LoadFromBytes(base::span<const uint8_t> bytes) {
+  // Frees the current file's GPU objects against the context they were made
+  // on.
+  if (gpu_context_) {
+    gpu_context_->MakeCurrent();
+  }
   CancelScheduledAnimation();
   state_machine_.reset();
   animation_instance_.reset();
@@ -1440,12 +1501,35 @@ bool HTMLRiveElement::LoadFromBytes(base::span<const uint8_t> bytes) {
 
   // Rive Renderer if it can run here, else Skia.
   RiveGpuContext* gpu_context = RiveGpuContext::Get();
-  if (uses_rive_renderer_ != !!gpu_context) {
-    // Images made for the other backend can't be drawn by this one.
+  if (uses_rive_renderer_ != !!gpu_context || gpu_context != gpu_context_) {
+    // Images made for another backend or context can't be drawn by this one.
+    if (gpu_context_) {
+      gpu_context_->MakeCurrent();
+    }
     image_cache_.clear();
+    // Without its cached image a finished request reads as failed; forget
+    // those so the images load again for this backend.
+    Vector<String> finished_urls;
+    for (const auto& entry : image_requests_) {
+      if (entry.value->finished()) {
+        finished_urls.push_back(entry.key);
+      }
+    }
+    image_requests_.RemoveAll(finished_urls);
     gpu_surface_.reset();
+    if (gpu_context) {
+      gpu_context->MakeCurrent();
+    }
   }
   uses_rive_renderer_ = !!gpu_context;
+  gpu_context_ = gpu_context;
+  // Kept to reload onto a new context if this one is lost.
+  if (gpu_context) {
+    loaded_bytes_.clear();
+    loaded_bytes_.AppendSpan(bytes);
+  } else {
+    loaded_bytes_.clear();
+  }
   rive::Factory* factory = gpu_context
                                ? gpu_context->factory()
                                : &RivePaintCanvasFactory::Instance();
@@ -1551,6 +1635,11 @@ void HTMLRiveElement::InstantiateArtboardAndScene() {
 bool HTMLRiveElement::AdvanceInternal(float elapsed_seconds) {
   if (!artboard_) {
     return false;
+  }
+  // Advancing can make GPU objects (e.g. for text), which belong to the
+  // file's context.
+  if (gpu_context_) {
+    gpu_context_->MakeCurrent();
   }
 
   if (state_machine_) {
@@ -1711,6 +1800,7 @@ void HTMLRiveElement::Trace(Visitor* visitor) const {
   visitor->Trace(loader_);
   visitor->Trace(image_requests_);
   HTMLElement::Trace(visitor);
+  PageVisibilityObserver::Trace(visitor);
 }
 
 }  // namespace blink

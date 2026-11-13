@@ -76,6 +76,10 @@ rive::Factory* RendererGL::factory() {
   return render_context_.get();
 }
 
+void RendererGL::MakeCurrent() const {
+  gles2::SetGLContext(gl_);
+}
+
 std::string RendererGL::Description() const {
   gles2::SetGLContext(gl_);
   rive::gpu::RenderContext::FrameDescriptor frame;
