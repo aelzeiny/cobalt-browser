@@ -2792,9 +2792,9 @@ void SourceBuffer::RunPostAppendMemoryReclaim() {
 
 void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
                                                       bool is_post_burst) {
-  constexpr size_t kMaxIdleJsHeapSlackBytes = 6 * 1024 * 1024;
-  constexpr size_t kPostBurstGrowthHysteresisBytes = 6 * 1024 * 1024;
-  constexpr size_t kMidBurstGrowthHysteresisBytes = 16 * 1024 * 1024;
+  constexpr size_t kMaxIdleJsHeapSlackBytes = 5 * 1024 * 1024;
+  constexpr size_t kPostBurstGrowthHysteresisBytes = 4 * 1024 * 1024;
+  constexpr size_t kMidBurstGrowthHysteresisBytes = 14 * 1024 * 1024;
 
   if (is_initial_segment) {
     initial_playback_reclaim_done_ = true;
@@ -2822,7 +2822,7 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
       const base::TimeDelta min_cooldown =
           is_initial_segment
               ? base::Seconds(1)
-              : (is_post_burst ? base::Seconds(4) : base::Seconds(6));
+              : (is_post_burst ? base::Seconds(8) : base::Seconds(10));
       const bool wants_reclaim =
           is_initial_segment || external_ab_growth_high ||
           (is_post_burst && js_heap_slack_high);
@@ -2857,11 +2857,16 @@ void SourceBuffer::ReclaimExternalAndTransitionMemory(bool is_initial_segment,
                     base::Milliseconds(150));
           }
         } else {
-          // Steady playback: single bounded kReduceMemoryFootprint GC pass
-          // without flushing V8 compilation caches or triggering double
-          // MarkCompact stalls.
-          isolate->MemoryPressureNotification(
-              v8::MemoryPressureLevel::kCritical);
+          // Steady playback (>= 8s global cooldown): two-pass root-stabilizing
+          // sweep when external ArrayBuffers grew so two-hop V8->Oilpan
+          // DOMUint8Array -> DOMArrayBuffer wrappers release backing stores
+          // synchronously before PartitionAlloc PurgeMemory runs.
+          if (external_ab_growth_high) {
+            isolate->LowMemoryNotification();
+          } else {
+            isolate->MemoryPressureNotification(
+                v8::MemoryPressureLevel::kCritical);
+          }
           if (IsMainThread()) {
             MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
           }

@@ -568,14 +568,13 @@ void SchedulePostStreamCloseMemoryReclaim(ScriptState* script_state) {
                     DOMArrayBuffer::ObserveExternalArrayBufferBytes(
                         isolate, &baseline_bytes);
                 constexpr size_t kStreamCloseGrowthHysteresisBytes =
-                    6 * 1024 * 1024;
+                    4 * 1024 * 1024;
                 if (current_bytes >
                         baseline_bytes + kStreamCloseGrowthHysteresisBytes &&
                     DOMArrayBuffer::TryClaimExternalArrayBufferReclaimSlot(
-                        base::Seconds(4))) {
+                        base::Seconds(8))) {
                   if (isolate) {
-                    isolate->MemoryPressureNotification(
-                        v8::MemoryPressureLevel::kCritical);
+                    isolate->LowMemoryNotification();
                   }
                   if (IsMainThread()) {
                     MemoryPressureListenerRegistry::Instance().OnPurgeMemory();
