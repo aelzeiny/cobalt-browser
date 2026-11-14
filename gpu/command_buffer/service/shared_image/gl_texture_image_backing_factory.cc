@@ -13,8 +13,11 @@
 #include "gpu/command_buffer/service/shared_image/gl_texture_image_backing.h"
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_preferences.h"
+#include "ui/gl/gl_bindings.h"
+#include "ui/gl/gl_display.h"
 #include "ui/gl/gl_gl_api_implementation.h"
 #include "ui/gl/gl_implementation.h"
+#include "ui/gl/gl_utils.h"
 #include "ui/gl/progress_reporter.h"
 
 namespace gpu {
@@ -113,6 +116,23 @@ bool GLTextureImageBackingFactory::IsSupported(
   }
   if (gmb_type != gfx::EMPTY_BUFFER) {
     return false;
+  }
+
+  // With the passthrough command decoder, GLES2 command buffers use separate
+  // GLShareGroups from SharedContextState and rely on
+  // EGL_ANGLE_display_texture_share_group to share raw GL texture IDs. Without
+  // that extension (e.g. native EGL without ANGLE), raw GL textures created on
+  // SharedContextState are not visible in GLES2 contexts; fall through to
+  // EGLImageBackingFactory instead.
+  if (use_passthrough_ &&
+      usage.HasAny(SHARED_IMAGE_USAGE_GLES2_READ |
+                   SHARED_IMAGE_USAGE_GLES2_WRITE) &&
+      !usage.Has(SHARED_IMAGE_USAGE_GLES2_FOR_RASTER_ONLY)) {
+    auto* egl_display = gl::GetDefaultDisplayEGL();
+    if (egl_display &&
+        !egl_display->ext->b_EGL_ANGLE_display_texture_share_group) {
+      return false;
+    }
   }
 
   if (usage.Has(SHARED_IMAGE_USAGE_CPU_UPLOAD)) {

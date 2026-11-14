@@ -153,9 +153,11 @@ void RendererGL::Draw(Target& target,
   if (!target.checked_texture_) {
     target.checked_texture_ = true;
     GLint immutable = 0;
-    gl_->BindTexture(GL_TEXTURE_2D, texture);
-    gl_->GetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT,
-                           &immutable);
+    if (has_copy_texture_) {
+      gl_->BindTexture(GL_TEXTURE_2D, texture);
+      gl_->GetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT,
+                             &immutable);
+    }
     if (!immutable) {
       gl_->GenTextures(1, &target.offscreen_texture_);
       gl_->BindTexture(GL_TEXTURE_2D, target.offscreen_texture_);
