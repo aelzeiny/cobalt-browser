@@ -569,17 +569,17 @@ BASE_FEATURE(kCobaltStreamingSourceBufferGC,
 BASE_FEATURE_PARAM(int,
                    kCobaltStreamingSourceBufferBackHorizonMs,
                    &kCobaltStreamingSourceBufferGC,
-                   "back_horizon_ms",
+                   "CobaltStreamingSourceBufferGC:back_horizon_ms",
                    1000);
 BASE_FEATURE_PARAM(int,
                    kCobaltStreamingSourceBufferVideoRetentionFloorMB,
                    &kCobaltStreamingSourceBufferGC,
-                   "video_retention_floor_mb",
+                   "CobaltStreamingSourceBufferGC:video_retention_floor_mb",
                    12);
 BASE_FEATURE_PARAM(int,
                    kCobaltStreamingSourceBufferAudioRetentionFloorKB,
                    &kCobaltStreamingSourceBufferGC,
-                   "audio_retention_floor_kb",
+                   "CobaltStreamingSourceBufferGC:audio_retention_floor_kb",
                    1024);
 // When enabled, each feature below replaces the video buffer budget returned by
 // SbMediaGetVideoBufferBudget() for its resolution tier with the value of its
