@@ -570,7 +570,7 @@ BASE_FEATURE_PARAM(int,
                    kCobaltStreamingSourceBufferBackHorizonMs,
                    &kCobaltStreamingSourceBufferGC,
                    "back_horizon_ms",
-                   1000);
+                   6000);
 BASE_FEATURE_PARAM(int,
                    kCobaltStreamingSourceBufferVideoRetentionFloorMB,
                    &kCobaltStreamingSourceBufferGC,
