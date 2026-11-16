@@ -583,6 +583,14 @@ void V8Initializer::Initialize(IsolateHolder::ScriptMode mode,
           base::features::kCobaltV8ConcurrentMarking)) {
     SetV8Flags("--concurrent-marking");
   }
+  // LAB ONLY: exists so that a lab that pins --predictable on its launch line
+  // can run arms with V8's normal multi-threaded GC. Applied after --js-flags
+  // to undo a --predictable given there; no other flag is touched. Not
+  // intended for production configs.
+  if (!disallow_v8_feature_flag_overrides &&
+      base::FeatureList::IsEnabled(base::features::kCobaltV8NoPredictable)) {
+    SetV8Flags("--no-predictable");
+  }
 #endif
 
   v8::V8::InitializePlatform(V8Platform::Get());

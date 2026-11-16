@@ -149,6 +149,10 @@ BASE_FEATURE(kCobaltV8ConcurrentMarking,
              "CobaltV8ConcurrentMarking",
              FEATURE_DISABLED_BY_DEFAULT);
 
+BASE_FEATURE(kCobaltV8NoPredictable,
+             "CobaltV8NoPredictable",
+             FEATURE_DISABLED_BY_DEFAULT);
+
 // Enabled by default, except on Android where the upstream Chromium defaults
 // are kept until a dedicated experiment has been run there. The memory and
 // performance tradeoff of collapsing the skewport was only validated on TV
