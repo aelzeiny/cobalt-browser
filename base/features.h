@@ -73,6 +73,11 @@ BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(int, kCobaltV8InitialOldSpaceSizeMb);
 // line.
 BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltV8OptimizeForSize);
 
+// When enabled, V8 runs with --concurrent-marking even if --js-flags (or
+// Cobalt's default switches) say --no-concurrent-marking. Disabled by default,
+// which leaves the js-flags in charge.
+BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltV8ConcurrentMarking);
+
 // When enabled, overrides the compositor skewport target times, which control
 // speculative pre-rastering of offscreen tiles. When disabled, the upstream
 // Chromium defaults apply (1.0 software raster / 0.2 GPU raster). Both params

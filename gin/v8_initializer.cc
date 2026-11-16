@@ -572,6 +572,18 @@ void V8Initializer::Initialize(IsolateHolder::ScriptMode mode,
     SetFeatureFlags();
   }
   SetFlags(mode, js_command_line_flags);
+#if BUILDFLAG(IS_COBALT)
+  // Unlike the feature flags above, this is applied after --js-flags, so that
+  // enabling the feature wins over a --no-concurrent-marking given there. It
+  // cannot win over --predictable or --single-threaded-gc: V8 enforces their
+  // implications in v8::V8::Initialize() and those turn concurrent marking
+  // back off, even when it was requested explicitly.
+  if (!disallow_v8_feature_flag_overrides &&
+      base::FeatureList::IsEnabled(
+          base::features::kCobaltV8ConcurrentMarking)) {
+    SetV8Flags("--concurrent-marking");
+  }
+#endif
 
   v8::V8::InitializePlatform(V8Platform::Get());
 
