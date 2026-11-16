@@ -78,6 +78,11 @@ BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltV8OptimizeForSize);
 // which leaves the js-flags in charge.
 BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltV8ConcurrentMarking);
 
+// LAB ONLY. When enabled, V8 runs as if --predictable had not been passed in
+// --js-flags, so that a lab that pins --predictable on its launch line can run
+// arms with V8's normal multi-threaded GC. Not intended for production configs.
+BASE_EXPORT BASE_DECLARE_FEATURE(kCobaltV8NoPredictable);
+
 // When enabled, overrides the compositor skewport target times, which control
 // speculative pre-rastering of offscreen tiles. When disabled, the upstream
 // Chromium defaults apply (1.0 software raster / 0.2 GPU raster). Both params
