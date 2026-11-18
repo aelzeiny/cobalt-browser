@@ -137,8 +137,8 @@ TEST_F(H5vccWasmImportsTest, OperationsValidateHandles) {
 
 TEST_F(H5vccWasmImportsTest, BindNullUnbindsAndDiscardPagesZerosSlabs) {
   V8TestingScope scope;
-  auto* imports = MakeGarbageCollected<H5vccWasmImports>(
-      *scope.GetExecutionContext());
+  auto* imports =
+      MakeGarbageCollected<H5vccWasmImports>(*scope.GetExecutionContext());
   v8::Isolate* isolate = scope.GetIsolate();
   v8::Local<v8::Context> context = scope.GetContext();
   v8::Local<v8::Value> mem_val =
@@ -150,8 +150,8 @@ TEST_F(H5vccWasmImportsTest, BindNullUnbindsAndDiscardPagesZerosSlabs) {
           ->Run(context)
           .ToLocalChecked();
   DummyExceptionStateForTesting exception_state;
-  imports->bindMemory(scope.GetScriptState(),
-                      ScriptValue(isolate, mem_val), exception_state);
+  imports->bindMemory(scope.GetScriptState(), ScriptValue(isolate, mem_val),
+                      exception_state);
   ASSERT_FALSE(exception_state.HadException());
 
   cobalt::GuestMemory gm = imports->Memory(isolate);
@@ -167,16 +167,15 @@ TEST_F(H5vccWasmImportsTest, BindNullUnbindsAndDiscardPagesZerosSlabs) {
   EXPECT_EQ(readback.back(), 0u);
 
   imports->bindMemory(scope.GetScriptState(),
-                      ScriptValue(isolate, v8::Null(isolate)),
-                      exception_state);
+                      ScriptValue(isolate, v8::Null(isolate)), exception_state);
   ASSERT_FALSE(exception_state.HadException());
   EXPECT_FALSE(imports->discardPages(isolate, 65536, 65536));
 }
 
 TEST_F(H5vccWasmImportsTest, NetReadsDataPipeWithoutJsBuffersAndEmitsNetReady) {
   V8TestingScope scope;
-  auto* imports = MakeGarbageCollected<H5vccWasmImports>(
-      *scope.GetExecutionContext());
+  auto* imports =
+      MakeGarbageCollected<H5vccWasmImports>(*scope.GetExecutionContext());
   v8::Isolate* isolate = scope.GetIsolate();
   v8::Local<v8::Context> context = scope.GetContext();
   v8::Local<v8::Value> mem_val =
@@ -188,8 +187,8 @@ TEST_F(H5vccWasmImportsTest, NetReadsDataPipeWithoutJsBuffersAndEmitsNetReady) {
           ->Run(context)
           .ToLocalChecked();
   DummyExceptionStateForTesting exception_state;
-  imports->bindMemory(scope.GetScriptState(),
-                      ScriptValue(isolate, mem_val), exception_state);
+  imports->bindMemory(scope.GetScriptState(), ScriptValue(isolate, mem_val),
+                      exception_state);
   ASSERT_FALSE(exception_state.HadException());
 
   mojo::ScopedDataPipeProducerHandle producer;
@@ -217,9 +216,9 @@ TEST_F(H5vccWasmImportsTest, NetReadsDataPipeWithoutJsBuffersAndEmitsNetReady) {
 
   // Second adopt on the same Response fails because the body is locked/used.
   DummyExceptionStateForTesting second_exception;
-  EXPECT_EQ(net->adoptResponse(scope.GetScriptState(), response,
-                               second_exception),
-            0);
+  EXPECT_EQ(
+      net->adoptResponse(scope.GetScriptState(), response, second_exception),
+      0);
   EXPECT_TRUE(second_exception.HadException());
 
   // Opaque Response is rejected.
@@ -269,8 +268,8 @@ TEST_F(H5vccWasmImportsTest, NetReadsDataPipeWithoutJsBuffersAndEmitsNetReady) {
 
 TEST_F(H5vccWasmImportsTest, NetReportsAbortSignal) {
   V8TestingScope scope;
-  auto* imports = MakeGarbageCollected<H5vccWasmImports>(
-      *scope.GetExecutionContext());
+  auto* imports =
+      MakeGarbageCollected<H5vccWasmImports>(*scope.GetExecutionContext());
   v8::Isolate* isolate = scope.GetIsolate();
   v8::Local<v8::Context> context = scope.GetContext();
   v8::Local<v8::Value> mem_val =
@@ -282,8 +281,8 @@ TEST_F(H5vccWasmImportsTest, NetReportsAbortSignal) {
           ->Run(context)
           .ToLocalChecked();
   DummyExceptionStateForTesting exception_state;
-  imports->bindMemory(scope.GetScriptState(),
-                      ScriptValue(isolate, mem_val), exception_state);
+  imports->bindMemory(scope.GetScriptState(), ScriptValue(isolate, mem_val),
+                      exception_state);
   ASSERT_FALSE(exception_state.HadException());
 
   mojo::ScopedDataPipeProducerHandle producer;
@@ -299,9 +298,9 @@ TEST_F(H5vccWasmImportsTest, NetReportsAbortSignal) {
   auto* body_buffer = BodyStreamBuffer::Create(
       scope.GetScriptState(), bytes_consumer, abort_controller->signal(),
       /*cached_metadata_handler=*/nullptr);
-  Response* response = Response::Create(
-      scope.GetExecutionContext(),
-      FetchResponseData::CreateWithBuffer(body_buffer));
+  Response* response =
+      Response::Create(scope.GetExecutionContext(),
+                       FetchResponseData::CreateWithBuffer(body_buffer));
 
   H5vccWasmNet* net = imports->net();
   const int32_t stream_id =
@@ -319,6 +318,49 @@ TEST_F(H5vccWasmImportsTest, NetReportsAbortSignal) {
   EXPECT_EQ(ev.a, stream_id);
   EXPECT_EQ(net->read(isolate, stream_id, 0, 256), cobalt::kWasmNetAborted);
   net->close(stream_id);
+}
+
+TEST_F(H5vccWasmImportsTest, AllowsOnlyYouTubeAndLocalhostOrigins) {
+  {
+    V8TestingScope scope(KURL("https://www.youtube.com/tv"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("https://web-release-qa.youtube.com/tv"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("https://www.youtube-nocookie.com/embed/abc"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("https://www.youtubekids.com/"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("http://localhost:8080/"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("http://127.0.0.1:9222/"));
+    EXPECT_NE(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("https://evil.example/"));
+    EXPECT_EQ(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("https://notyoutube.com/"));
+    EXPECT_EQ(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("http://www.youtube.com/tv"));
+    EXPECT_EQ(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
+  {
+    V8TestingScope scope(KURL("data:text/html,hello"));
+    EXPECT_EQ(H5vccWasmImports::h5vccWasmImports(scope.GetWindow()), nullptr);
+  }
 }
 
 }  // namespace

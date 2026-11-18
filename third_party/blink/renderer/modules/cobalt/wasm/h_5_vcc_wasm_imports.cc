@@ -48,6 +48,24 @@ AtomicString WakeEventType() {
   return AtomicString("wake");
 }
 
+bool IsAllowedOrigin(const SecurityOrigin* origin) {
+  if (!origin || origin->IsOpaque()) {
+    return false;
+  }
+  const String& protocol = origin->Protocol();
+  if (origin->IsLocalhost()) {
+    return protocol == "https" || protocol == "http";
+  }
+  if (protocol != "https") {
+    return false;
+  }
+  const String& host = origin->Host();
+  return host == "youtube.com" || host.EndsWith(".youtube.com") ||
+         host == "youtube-nocookie.com" ||
+         host.EndsWith(".youtube-nocookie.com") || host == "youtubekids.com" ||
+         host.EndsWith(".youtubekids.com");
+}
+
 }  // namespace
 
 // static
@@ -55,10 +73,11 @@ const char H5vccWasmImports::kSupplementName[] = "H5vccWasmImports";
 
 // static
 H5vccWasmImports* H5vccWasmImports::h5vccWasmImports(LocalDOMWindow& window) {
-  // Only the top-level document controls the platform; embedded content
-  // (ads, third-party widgets) must not.
+  // Only a top-level YouTube or localhost document controls the platform;
+  // third-party sites and embedded content (ads, widgets) must not.
   LocalFrame* frame = window.GetFrame();
-  if (!frame || !frame->IsOutermostMainFrame()) {
+  if (!frame || !frame->IsOutermostMainFrame() ||
+      !IsAllowedOrigin(window.GetSecurityOrigin())) {
     return nullptr;
   }
   return FromContext(window.GetExecutionContext());
@@ -67,12 +86,12 @@ H5vccWasmImports* H5vccWasmImports::h5vccWasmImports(LocalDOMWindow& window) {
 // static
 H5vccWasmImports* H5vccWasmImports::h5vccWasmImports(
     DedicatedWorkerGlobalScope& worker) {
-  // A worker can't tell which frame created it, so require the top-level
-  // frame's origin: that admits workers of the main frame and excludes those
-  // of cross-origin iframes. Same-origin iframes can already script the main
-  // frame, so admitting their workers grants nothing new.
+  // A worker can't tell which frame created it, so require an allowed
+  // top-level frame origin that matches the worker's own origin: that admits
+  // YouTube/localhost main-frame workers and excludes third-party or
+  // cross-origin iframe workers.
   const SecurityOrigin* top_origin = worker.top_level_frame_security_origin();
-  if (!top_origin ||
+  if (!IsAllowedOrigin(top_origin) ||
       !top_origin->IsSameOriginWith(worker.GetSecurityOrigin())) {
     return nullptr;
   }
@@ -134,7 +153,8 @@ void H5vccWasmImports::bindMemory(ScriptState* script_state,
     exception_state.ThrowTypeError("bindMemory() expects a WebAssembly.Memory");
     return;
   }
-  v8::Local<v8::WasmMemoryObject> wasm_memory = value.As<v8::WasmMemoryObject>();
+  v8::Local<v8::WasmMemoryObject> wasm_memory =
+      value.As<v8::WasmMemoryObject>();
   std::shared_ptr<v8::BackingStore> backing_store =
       wasm_memory->Buffer()->GetBackingStore();
   if (!backing_store || backing_store->IsShared()) {
