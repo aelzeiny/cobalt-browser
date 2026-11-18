@@ -35,12 +35,20 @@
 interface H5vccWasmImports : EventTarget {
   [SameObject] readonly attribute H5vccWasmPlayer player;
   [SameObject] readonly attribute H5vccWasmSurface surface;
+  [SameObject] readonly attribute H5vccWasmNet net;
 
-  // `object` stands in for WebAssembly.Memory, which Blink IDL cannot name;
-  // bindMemory() validates the type at runtime.
-  [CallWith=ScriptState, RaisesException] undefined bindMemory(object memory);
+  // `object?` stands in for WebAssembly.Memory (which Blink IDL cannot name),
+  // or `null` to release the bound memory handle on player teardown.
+  [CallWith=ScriptState, RaisesException] undefined bindMemory(object? memory);
 
-  // Fired once after each player.requestWake(): as soon as an event is queued
-  // for player.pollEvents(), or right away if one already is.
+  // Decommits [offset, offset + size) in the bound non-shared WebAssembly.Memory
+  // via madvise(MADV_DONTNEED). Requires `size > 0` and OS page alignment on
+  // both `offset` and `size`.
+  [CallWith=Isolate, NoAllocDirectCall]
+  boolean discardPages(unsigned long offset, unsigned long size);
+
+  // Fired once after each player.requestWake() or pending net.read(): as soon
+  // as an event is queued for player.pollEvents(), or right away if one already
+  // is.
   attribute EventHandler onwake;
 };

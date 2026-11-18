@@ -35,10 +35,23 @@ void EventQueue::Push(const WasmSbEvent& event) {
   }
 }
 
+void EventQueue::PushAndWake(const WasmSbEvent& event) {
+  base::AutoLock lock(lock_);
+  events_.push_back(event);
+  PostWakeLocked();
+}
+
 void EventQueue::DropPlayer(uint32_t player) {
   base::AutoLock lock(lock_);
   base::EraseIf(events_, [player](const WasmSbEvent& event) {
-    return event.player == player;
+    return event.kind != kWasmSbEventNetReady && event.player == player;
+  });
+}
+
+void EventQueue::DropNetStream(int32_t stream_id) {
+  base::AutoLock lock(lock_);
+  base::EraseIf(events_, [stream_id](const WasmSbEvent& event) {
+    return event.kind == kWasmSbEventNetReady && event.a == stream_id;
   });
 }
 
@@ -67,10 +80,15 @@ void EventQueue::Shutdown() {
   base::AutoLock lock(lock_);
   on_wake_.Reset();
   wake_requested_ = false;
+  wake_posted_ = false;
 }
 
 void EventQueue::PostWakeLocked() {
   wake_requested_ = false;
+  if (wake_posted_ || !on_wake_) {
+    return;
+  }
+  wake_posted_ = true;
   task_runner_->PostTask(FROM_HERE, base::BindOnce(&EventQueue::RunWake,
                                                    base::WrapRefCounted(this)));
 }
@@ -79,6 +97,7 @@ void EventQueue::RunWake() {
   base::RepeatingClosure on_wake;
   {
     base::AutoLock lock(lock_);
+    wake_posted_ = false;
     on_wake = on_wake_;
   }
   if (on_wake) {

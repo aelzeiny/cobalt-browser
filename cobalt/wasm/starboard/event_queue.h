@@ -44,7 +44,11 @@ class EventQueue : public base::RefCountedThreadSafe<EventQueue> {
   EventQueue& operator=(const EventQueue&) = delete;
 
   void Push(const WasmSbEvent& event);
+  // Pushes `event` and posts a wake on `task_runner` (coalesced if a wake is
+  // already armed or in flight), even if RequestWake() was not called.
+  void PushAndWake(const WasmSbEvent& event);
   void DropPlayer(uint32_t player);
+  void DropNetStream(int32_t stream_id);
   // Moves as many events as fit into `out`, which need not be aligned;
   // returns how many.
   size_t Poll(base::span<uint8_t> out);
@@ -67,6 +71,7 @@ class EventQueue : public base::RefCountedThreadSafe<EventQueue> {
   base::RepeatingClosure on_wake_ GUARDED_BY(lock_);
   base::circular_deque<WasmSbEvent> events_ GUARDED_BY(lock_);
   bool wake_requested_ GUARDED_BY(lock_) = false;
+  bool wake_posted_ GUARDED_BY(lock_) = false;
 };
 
 }  // namespace cobalt

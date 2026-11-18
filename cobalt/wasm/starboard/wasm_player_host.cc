@@ -617,15 +617,15 @@ bool WasmPlayerHost::WriteSamples(GuestMemory& memory,
     }
   }
   ClearNeedsData(*p, type);
+  if (type == kSbMediaTypeVideo) {
+    SetSurfaceVideoSize(*p, samples.back().video_sample_info.stream_info);
+  }
   for (std::unique_ptr<SampleCopy>& copy : copies) {
     const void* buffer = copy->buffer.data();
     p->samples[buffer] = std::move(copy);
   }
   sbplayer_->WriteSamples(p->sb_player, type, samples.data(),
                           static_cast<int>(count));
-  if (type == kSbMediaTypeVideo) {
-    SetSurfaceVideoSize(*p, samples.back().video_sample_info.stream_info);
-  }
   return true;
 }
 
@@ -815,16 +815,19 @@ size_t WasmPlayerHost::SampleCopiesForTesting(uint32_t player) {
 
 void WasmPlayerHost::OnVideoGeometryChange(
     const gfx::RectF& rect,
-    gfx::OverlayTransform /*transform*/) {
+    gfx::OverlayTransform /*transform*/,
+    int32_t z_index) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   const uint32_t surface = geometry_receivers_.current_context();
   auto it = surfaces_.find(surface);
   const gfx::Rect bounds = gfx::ToEnclosedRect(rect);
   // The compositor reports the rect every frame.
-  if (it == surfaces_.end() || it->second.rect == bounds) {
+  if (it == surfaces_.end() ||
+      (it->second.rect == bounds && it->second.z_index == z_index)) {
     return;
   }
   it->second.rect = bounds;
+  it->second.z_index = z_index;
   for (auto& [id, player] : players_) {
     if (player->surface == surface) {
       ApplyBounds(*player);
@@ -858,9 +861,10 @@ void WasmPlayerHost::ApplyBounds(Player& player) {
   auto surface = surfaces_.find(player.surface);
   if (surface != surfaces_.end() && surface->second.rect) {
     const gfx::Rect& rect = *surface->second.rect;
-    sbplayer_->SetBounds(player.sb_player,
-                         player.bounds ? player.bounds->z_index : 0, rect.x(),
-                         rect.y(), rect.width(), rect.height());
+    sbplayer_->SetBounds(
+        player.sb_player,
+        player.bounds ? player.bounds->z_index : surface->second.z_index,
+        rect.x(), rect.y(), rect.width(), rect.height());
   } else if (player.bounds) {
     sbplayer_->SetBounds(player.sb_player, player.bounds->z_index,
                          player.bounds->x, player.bounds->y,

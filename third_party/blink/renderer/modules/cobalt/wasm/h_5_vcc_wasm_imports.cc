@@ -24,6 +24,7 @@
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/workers/dedicated_worker_global_scope.h"
+#include "third_party/blink/renderer/modules/cobalt/wasm/h_5_vcc_wasm_net.h"
 #include "third_party/blink/renderer/modules/cobalt/wasm/h_5_vcc_wasm_player.h"
 #include "third_party/blink/renderer/modules/cobalt/wasm/h_5_vcc_wasm_surface.h"
 #include "third_party/blink/renderer/modules/event_target_modules_names.h"
@@ -33,6 +34,7 @@
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
+#include "v8/include/v8-array-buffer.h"
 #include "v8/include/v8-value.h"
 #include "v8/include/v8-wasm.h"
 
@@ -102,7 +104,8 @@ H5vccWasmImports::H5vccWasmImports(ExecutionContext& context)
           events_,
           cobalt::WasmPlayerHost::DefaultSbPlayerInterface())),
       surface_(MakeGarbageCollected<H5vccWasmSurface>(*this)),
-      player_(MakeGarbageCollected<H5vccWasmPlayer>(*this)) {}
+      player_(MakeGarbageCollected<H5vccWasmPlayer>(*this)),
+      net_(MakeGarbageCollected<H5vccWasmNet>(*this)) {}
 
 H5vccWasmImports::~H5vccWasmImports() = default;
 
@@ -115,19 +118,41 @@ ExecutionContext* H5vccWasmImports::GetExecutionContext() const {
 }
 
 void H5vccWasmImports::bindMemory(ScriptState* script_state,
-                                  const ScriptObject& memory,
+                                  const ScriptValue& memory,
                                   ExceptionState& exception_state) {
   if (!host_) {
     exception_state.ThrowDOMException(DOMExceptionCode::kInvalidStateError,
                                       "The context is gone.");
     return;
   }
-  v8::Local<v8::Value> value = memory.V8Object();
-  if (value.IsEmpty() || !value->IsWasmMemoryObject()) {
+  v8::Local<v8::Value> value = memory.V8Value();
+  if (value.IsEmpty() || value->IsNull()) {
+    memory_.Reset();
+    return;
+  }
+  if (!value->IsWasmMemoryObject()) {
     exception_state.ThrowTypeError("bindMemory() expects a WebAssembly.Memory");
     return;
   }
-  memory_.Reset(script_state->GetIsolate(), value.As<v8::WasmMemoryObject>());
+  v8::Local<v8::WasmMemoryObject> wasm_memory = value.As<v8::WasmMemoryObject>();
+  std::shared_ptr<v8::BackingStore> backing_store =
+      wasm_memory->Buffer()->GetBackingStore();
+  if (!backing_store || backing_store->IsShared()) {
+    exception_state.ThrowTypeError(
+        "bindMemory() does not support shared WebAssembly.Memory");
+    return;
+  }
+  memory_.Reset(script_state->GetIsolate(), wasm_memory);
+}
+
+bool H5vccWasmImports::discardPages(v8::Isolate* isolate,
+                                    uint32_t offset,
+                                    uint32_t size) {
+  if (!host_) {
+    return false;
+  }
+  cobalt::GuestMemory memory = Memory(isolate);
+  return memory.DiscardPages(offset, size);
 }
 
 cobalt::GuestMemory H5vccWasmImports::Memory(v8::Isolate* isolate) const {
@@ -143,6 +168,7 @@ void H5vccWasmImports::setOnwake(EventListener* listener) {
 }
 
 void H5vccWasmImports::ContextDestroyed() {
+  net_->Shutdown();
   host_.reset();
   cobalt::WasmPlayerHost::ResetForCurrentThread();
   // Players being destroyed keep the queue alive; stop it calling back here.
@@ -157,6 +183,7 @@ void H5vccWasmImports::Trace(Visitor* visitor) const {
   EventTarget::Trace(visitor);
   visitor->Trace(surface_);
   visitor->Trace(player_);
+  visitor->Trace(net_);
 }
 
 void H5vccWasmImports::DispatchWake() {

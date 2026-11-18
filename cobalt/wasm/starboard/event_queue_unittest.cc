@@ -102,10 +102,27 @@ TEST_F(EventQueueTest, DropsEventsOfOnePlayer) {
   queue_->Push(Event(1, 0));
   queue_->Push(Event(2, 0));
   queue_->Push(Event(1, 1));
+  queue_->Push({kWasmSbEventNetReady, 0, 7, 0, 0});
+  queue_->DropPlayer(0);
   queue_->DropPlayer(1);
   const std::vector<WasmSbEvent> events = Poll(8);
-  ASSERT_EQ(events.size(), 1u);
+  ASSERT_EQ(events.size(), 2u);
   EXPECT_EQ(events[0].player, 2u);
+  EXPECT_EQ(events[1].kind, kWasmSbEventNetReady);
+  EXPECT_EQ(events[1].a, 7);
+}
+
+TEST_F(EventQueueTest, DropsEventsOfOneNetStream) {
+  queue_->Push({kWasmSbEventNetReady, 0, 3, 0, 0});
+  queue_->Push({kWasmSbEventNetReady, 0, 4, 0, 0});
+  queue_->Push(Event(3, 3));
+  queue_->DropNetStream(3);
+  const std::vector<WasmSbEvent> events = Poll(8);
+  ASSERT_EQ(events.size(), 2u);
+  EXPECT_EQ(events[0].kind, kWasmSbEventNetReady);
+  EXPECT_EQ(events[0].a, 4);
+  EXPECT_EQ(events[1].kind, kWasmSbEventPlayerStatus);
+  EXPECT_EQ(events[1].player, 3u);
 }
 
 TEST_F(EventQueueTest, NeverDropsOrCoalesces) {

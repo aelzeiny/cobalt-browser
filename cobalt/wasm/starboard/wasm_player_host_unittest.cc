@@ -273,11 +273,14 @@ class WasmPlayerHostTest : public testing::Test {
   }
 
   // Reports `rect` as the geometry of `surface`'s hole.
-  void MoveHole(uint32_t surface, const gfx::RectF& rect) {
+  void MoveHole(uint32_t surface,
+                const gfx::RectF& rect,
+                int32_t z_index = 0) {
     task_environment_.RunUntilIdle();
     auto it = geometry_.clients.find(host_->SurfaceToken(surface));
     ASSERT_NE(it, geometry_.clients.end());
-    it->second->OnVideoGeometryChange(rect, gfx::OVERLAY_TRANSFORM_NONE);
+    it->second->OnVideoGeometryChange(rect, gfx::OVERLAY_TRANSFORM_NONE,
+                                      z_index);
     task_environment_.RunUntilIdle();
   }
 

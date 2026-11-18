@@ -18,6 +18,8 @@ blink_modules_sources("wasm") {
   sources = [
     "h_5_vcc_wasm_imports.cc",
     "h_5_vcc_wasm_imports.h",
+    "h_5_vcc_wasm_net.cc",
+    "h_5_vcc_wasm_net.h",
     "h_5_vcc_wasm_player.cc",
     "h_5_vcc_wasm_player.h",
     "h_5_vcc_wasm_surface.cc",

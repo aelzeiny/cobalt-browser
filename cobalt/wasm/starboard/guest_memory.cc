@@ -14,11 +14,19 @@
 
 #include "cobalt/wasm/starboard/guest_memory.h"
 
+#include <algorithm>
 #include <limits>
+#include <memory>
 
+#include "base/memory/page_size.h"
+#include "build/build_config.h"
 #include "v8/include/v8-array-buffer.h"
 #include "v8/include/v8-local-handle.h"
 #include "v8/include/v8-wasm.h"
+
+#if BUILDFLAG(IS_POSIX)
+#include <sys/mman.h>
+#endif
 
 namespace cobalt {
 
@@ -71,6 +79,26 @@ bool GuestMemory::ReadString(uint32_t ptr, uint32_t size, std::string* out) {
   return true;
 }
 
+bool GuestMemory::DiscardPages(uint32_t offset, uint32_t size) {
+#if BUILDFLAG(IS_POSIX)
+  if (size == 0) {
+    return false;
+  }
+  const size_t page_size = std::max<size_t>(4096u, base::GetPageSize());
+  if ((offset % page_size) != 0 || (size % page_size) != 0) {
+    return false;
+  }
+  uint8_t* ptr = Bytes(offset, size);
+  if (!ptr || is_shared_ ||
+      (reinterpret_cast<uintptr_t>(ptr) % page_size) != 0) {
+    return false;
+  }
+  return madvise(ptr, size, MADV_DONTNEED) == 0;
+#else
+  return false;
+#endif
+}
+
 uint8_t* GuestMemory::Resolve(uint32_t ptr, uint64_t len) {
   if (len == 0 || !Load()) {
     return nullptr;
@@ -91,6 +119,11 @@ bool GuestMemory::Load() {
   }
   v8::HandleScope handle_scope(isolate_);
   v8::Local<v8::ArrayBuffer> buffer = memory_->Get(isolate_)->Buffer();
+  std::shared_ptr<v8::BackingStore> backing_store = buffer->GetBackingStore();
+  if (!backing_store || backing_store->IsShared()) {
+    is_shared_ = true;
+    return false;
+  }
   base_ = static_cast<uint8_t*>(buffer->Data());
   size_ = buffer->ByteLength();
   return base_ != nullptr;

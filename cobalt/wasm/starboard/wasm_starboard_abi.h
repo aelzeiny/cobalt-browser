@@ -136,7 +136,7 @@ struct WasmSbPlayerInfo {
   alignas(8) double playback_rate;
 };
 
-// One Starboard callback, as queued for H5vccWasmPlayer.pollEvents().
+// One Starboard or host callback, as queued for H5vccWasmPlayer.pollEvents().
 //   kind == kWasmSbEventDecoderStatus: a = SbMediaType,
 //       b = SbPlayerDecoderState, c = ticket.
 //   kind == kWasmSbEventPlayerStatus: a = SbPlayerState, b = ticket.
@@ -144,6 +144,9 @@ struct WasmSbPlayerInfo {
 //   kind == kWasmSbEventPlayerDestroyed: SbPlayerDestroy() has returned, so
 //       the platform resources the player held (such as a video surface) are
 //       free. This is the only event reported after destroy().
+//   kind == kWasmSbEventNetReady: an H5vccWasmNet stream whose last read()
+//       returned kWasmNetPending (0) is now readable, at EOF, errored, or
+//       aborted; player = 0, a = streamId.
 // Unused fields are 0.
 struct WasmSbEvent {
   uint32_t kind;
@@ -157,6 +160,13 @@ inline constexpr uint32_t kWasmSbEventDecoderStatus = 0;
 inline constexpr uint32_t kWasmSbEventPlayerStatus = 1;
 inline constexpr uint32_t kWasmSbEventPlayerError = 2;
 inline constexpr uint32_t kWasmSbEventPlayerDestroyed = 3;
+inline constexpr uint32_t kWasmSbEventNetReady = 4;
+
+// Return codes <= 0 from H5vccWasmNet.read(); > 0 is bytes copied.
+inline constexpr int32_t kWasmNetPending = 0;
+inline constexpr int32_t kWasmNetEof = -1;
+inline constexpr int32_t kWasmNetError = -2;
+inline constexpr int32_t kWasmNetAborted = -3;
 
 // The layouts above are wasm32's: 4-byte pointers, natural alignment, 8-byte
 // aligned int64_t and double.

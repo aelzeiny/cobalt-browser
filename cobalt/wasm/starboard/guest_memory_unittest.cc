@@ -74,6 +74,46 @@ TEST_F(GuestMemoryTest, FailsWithoutMemory) {
   v8::Global<v8::WasmMemoryObject> none;
   GuestMemory memory(instance_->isolate(), none);
   EXPECT_FALSE(memory.Bytes(0, 1));
+  EXPECT_FALSE(memory.DiscardPages(0, 4096));
+}
+
+TEST_F(GuestMemoryTest, DiscardsAlignedPagesAndZerosContents) {
+  GuestMemory memory(instance_->isolate(), memory_);
+  uint8_t* base = memory.Bytes(0, kPageSize);
+  ASSERT_TRUE(base);
+  memset(base, 0xAB, kPageSize);
+
+  EXPECT_FALSE(memory.DiscardPages(0, 0));
+  EXPECT_FALSE(memory.DiscardPages(1, 4096));
+  EXPECT_FALSE(memory.DiscardPages(4096, 4095));
+  EXPECT_FALSE(memory.DiscardPages(kPageSize, 4096));
+  EXPECT_FALSE(memory.DiscardPages(4096, kPageSize));
+
+  ASSERT_TRUE(memory.DiscardPages(0, kPageSize));
+  for (uint32_t i = 0; i < kPageSize; i += 511) {
+    EXPECT_EQ(base[i], 0u);
+  }
+}
+
+TEST_F(GuestMemoryTest, RejectsSharedWasmMemory) {
+  v8::Isolate* isolate = instance_->isolate();
+  v8::HandleScope handle_scope(isolate);
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::Local<v8::Value> shared_val =
+      v8::Script::Compile(
+          context,
+          gin::StringToV8(
+              isolate,
+              "new WebAssembly.Memory({initial: 1, maximum: 2, shared: true})"))
+          .ToLocalChecked()
+          ->Run(context)
+          .ToLocalChecked();
+  ASSERT_TRUE(shared_val->IsWasmMemoryObject());
+  v8::Global<v8::WasmMemoryObject> shared_mem(
+      isolate, shared_val.As<v8::WasmMemoryObject>());
+  GuestMemory memory(isolate, shared_mem);
+  EXPECT_FALSE(memory.Bytes(0, 4096));
+  EXPECT_FALSE(memory.DiscardPages(0, 4096));
 }
 
 }  // namespace

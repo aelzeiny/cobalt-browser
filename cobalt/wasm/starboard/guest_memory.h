@@ -63,6 +63,12 @@ class GuestMemory {
   bool ReadBytes(uint32_t ptr, uint32_t size, std::vector<uint8_t>* out);
   bool ReadString(uint32_t ptr, uint32_t size, std::string* out);
 
+  // Decommits [offset, offset + size) via madvise(MADV_DONTNEED) on POSIX so
+  // physical pages return to the OS as zero-fill-on-demand without unmapping
+  // or splitting the VMA. Requires `size > 0`, OS page alignment on both
+  // `offset` and `size`, and a non-shared bound WebAssembly.Memory.
+  bool DiscardPages(uint32_t offset, uint32_t size);
+
  private:
   uint8_t* Resolve(uint32_t ptr, uint64_t len);
   bool Load();
@@ -70,6 +76,7 @@ class GuestMemory {
   v8::Isolate* const isolate_ = nullptr;
   const v8::Global<v8::WasmMemoryObject>* const memory_ = nullptr;
   bool loaded_ = false;
+  bool is_shared_ = false;
   uint8_t* base_ = nullptr;
   size_t size_ = 0;
 };

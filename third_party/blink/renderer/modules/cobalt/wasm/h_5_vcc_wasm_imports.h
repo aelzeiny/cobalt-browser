@@ -39,6 +39,7 @@ namespace blink {
 
 class DedicatedWorkerGlobalScope;
 class ExceptionState;
+class H5vccWasmNet;
 class H5vccWasmPlayer;
 class H5vccWasmSurface;
 class LocalDOMWindow;
@@ -69,9 +70,11 @@ class MODULES_EXPORT H5vccWasmImports final
 
   H5vccWasmSurface* surface() const { return surface_.Get(); }
   H5vccWasmPlayer* player() const { return player_.Get(); }
+  H5vccWasmNet* net() const { return net_.Get(); }
   void bindMemory(ScriptState* script_state,
-                  const ScriptObject& memory,
+                  const ScriptValue& memory,
                   ExceptionState& exception_state);
+  bool discardPages(v8::Isolate* isolate, uint32_t offset, uint32_t size);
   EventListener* onwake();
   void setOnwake(EventListener* listener);
 
@@ -93,6 +96,7 @@ class MODULES_EXPORT H5vccWasmImports final
   v8::Global<v8::WasmMemoryObject> memory_;
   Member<H5vccWasmSurface> surface_;
   Member<H5vccWasmPlayer> player_;
+  Member<H5vccWasmNet> net_;
 };
 
 }  // namespace blink
