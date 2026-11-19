@@ -357,6 +357,17 @@ BASE_DECLARE_FEATURE_PARAM(int, kCobaltDynamicMojoPipeSizingMediaSize);
 // length is not known upfront keep the default capacity.
 COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
 BASE_DECLARE_FEATURE(kCobaltContentLengthAwareMojoPipeSizing);
+
+// When enabled, QUIC sessions send the connection options listed in
+// `cobalt_quic_connection_options` (comma-separated tags) unless the command
+// line or the "QUIC" field trial already set some. YouTube's video edge only
+// seeds its congestion window from the bandwidth hint when the client sends
+// BWS2 (or BWRS).
+COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
+BASE_DECLARE_FEATURE(kCobaltQuicConnectionOptions);
+
+COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
+BASE_DECLARE_FEATURE_PARAM(std::string, kCobaltQuicConnectionOptionsTags);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace network::features
