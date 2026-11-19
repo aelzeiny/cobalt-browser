@@ -579,6 +579,14 @@ void QuicSessionPool::QuicCryptoClientConfigOwner::OnMemoryPressure(
           quic::QuicWallTime::FromUNIXSeconds(now_u64));
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+#if BUILDFLAG(IS_COBALT)
+      if (base::FeatureList::IsEnabled(
+              features::kCobaltKeepTlsSessionsOnMemoryPressure)) {
+        session_cache->RemoveExpiredEntries(
+            quic::QuicWallTime::FromUNIXSeconds(now_u64));
+        break;
+      }
+#endif  // BUILDFLAG(IS_COBALT)
       session_cache->Clear();
       break;
   }
