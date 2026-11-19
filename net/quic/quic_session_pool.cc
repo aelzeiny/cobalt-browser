@@ -30,6 +30,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/values.h"
+#include "build/build_config.h"
 #include "crypto/openssl_util.h"
 #include "net/base/address_list.h"
 #include "net/base/connection_endpoint_metadata.h"
@@ -966,6 +967,13 @@ void QuicSessionPool::OnBlackholeAfterHandshakeConfirmed(
   if (ping_timeout_ > reduced_ping_timeout_) {
     ping_timeout_ = reduced_ping_timeout_;
   }
+#if BUILDFLAG(IS_COBALT)
+  // Until a handshake is confirmed again, new sessions must not carry requests
+  // before confirmation and must race TCP without delay. Otherwise the request
+  // that replaces this session stalls on a 0-RTT attempt into the same black
+  // hole.
+  set_has_quic_ever_worked_on_current_network(false);
+#endif  // BUILDFLAG(IS_COBALT)
 }
 
 void QuicSessionPool::CancelRequest(QuicSessionRequest* request) {
@@ -2290,6 +2298,16 @@ void QuicSessionPool::ProcessGoingAwaySession(
   if (!session_was_active) {
     return;
   }
+
+#if BUILDFLAG(IS_COBALT)
+  // The session carried requests before its handshake was confirmed and never
+  // heard from the peer. UDP is most likely black-holed for every host, so
+  // stop other hosts from each stalling on their own 0-RTT attempt: require
+  // confirmation, and race TCP without delay, until a handshake is confirmed.
+  if (stats.packets_received == 0) {
+    set_has_quic_ever_worked_on_current_network(false);
+  }
+#endif  // BUILDFLAG(IS_COBALT)
 
   // TODO(rch):  In the special case where the session has received no packets
   // from the peer, we should consider blocking this differently so that we
