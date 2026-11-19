@@ -96,8 +96,10 @@
 #include "net/net_buildflags.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/proxy_resolution/proxy_config.h"
+#include "net/quic/quic_context.h"
 #include "net/shared_dictionary/shared_dictionary_isolation_key.h"
 #include "net/storage_access_api/status.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_tag.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/static_http_user_agent_settings.h"
 #include "net/url_request/url_request.h"
@@ -2969,6 +2971,11 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
   }
   if (!quic_params->max_delay_for_broken_alternative_service) {
     quic_params->max_delay_for_broken_alternative_service = base::Minutes(30);
+  }
+  if (quic_params->connection_options.empty() &&
+      base::FeatureList::IsEnabled(features::kCobaltQuicConnectionOptions)) {
+    quic_params->connection_options = quic::ParseQuicTagVector(
+        features::kCobaltQuicConnectionOptionsTags.Get());
   }
 #endif
 

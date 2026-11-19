@@ -642,6 +642,16 @@ BASE_FEATURE(kCobaltContentLengthAwareMojoPipeSizing,
 #else   // BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_ANDROID)
+
+BASE_FEATURE(kCobaltQuicConnectionOptions,
+             "CobaltQuicConnectionOptions",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE_PARAM(std::string,
+                   kCobaltQuicConnectionOptionsTags,
+                   &kCobaltQuicConnectionOptions,
+                   "cobalt_quic_connection_options",
+                   "BWS2");
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace network::features
