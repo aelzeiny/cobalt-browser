@@ -2953,6 +2953,14 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
     quic_context->params()->idle_connection_timeout =
         base::Seconds(params_->quic_idle_connection_timeout_seconds.value());
   }
+#if BUILDFLAG(IS_COBALT)
+  // A request sent with 0-RTT data waits until the connection gives up on the
+  // handshake, 1 s before this limit, and only then is retried over TCP. With
+  // the default of 5 s that is a 4 s stall when UDP is dropped. The "QUIC"
+  // field trial param takes precedence.
+  quic_context->params()->max_idle_time_before_crypto_handshake =
+      base::Seconds(3);
+#endif
   network_session_configurator::ParseCommandLineAndFieldTrials(
       *base::CommandLine::ForCurrentProcess(), is_quic_force_disabled,
       &session_params, quic_context->params());
