@@ -792,6 +792,15 @@ BASE_FEATURE(kCobaltHttpCacheFontAndPassThrough,
 BASE_FEATURE(kCobaltKeepTlsSessionsOnMemoryPressure,
              "CobaltKeepTlsSessionsOnMemoryPressure",
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCobaltQuicFasterBlackholeDetection,
+             "CobaltQuicFasterBlackholeDetection",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int,
+                   kCobaltQuicBlackholeDetectionRtos,
+                   &kCobaltQuicFasterBlackholeDetection,
+                   "num_rtos",
+                   3);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace net::features

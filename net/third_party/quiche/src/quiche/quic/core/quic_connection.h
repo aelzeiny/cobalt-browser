@@ -1171,6 +1171,12 @@ class QUICHE_EXPORT QuicConnection
 
 #if BUILDFLAG(IS_COBALT)
   void set_max_retransmittable_packets_before_ack(size_t new_value);
+
+  // Number of retransmission timeouts without forward progress after which
+  // the connection is closed as black-holed.
+  void set_num_rtos_for_blackhole_detection(size_t num_rtos) {
+    num_rtos_for_blackhole_detection_ = num_rtos;
+  }
 #endif
 
   // If |defer| is true, configures the connection to defer sending packets in
