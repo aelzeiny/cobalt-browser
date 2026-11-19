@@ -937,6 +937,13 @@ bool QuicChromiumClientStream::DeliverTrailingHeaders(
 
 void QuicChromiumClientStream::NotifyHandleOfDataAvailableLater() {
   DCHECK(handle_);
+#if BUILDFLAG(IS_COBALT)
+  // One task is enough for all the packets handled before it runs.
+  if (data_available_notification_pending_) {
+    return;
+  }
+  data_available_notification_pending_ = true;
+#endif
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE,
       base::BindOnce(&QuicChromiumClientStream::NotifyHandleOfDataAvailable,
@@ -944,6 +951,9 @@ void QuicChromiumClientStream::NotifyHandleOfDataAvailableLater() {
 }
 
 void QuicChromiumClientStream::NotifyHandleOfDataAvailable() {
+#if BUILDFLAG(IS_COBALT)
+  data_available_notification_pending_ = false;
+#endif
   if (handle_)
     handle_->OnDataAvailable();
 }
