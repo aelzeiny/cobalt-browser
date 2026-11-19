@@ -17,9 +17,14 @@
 #include <vector>
 
 #include "base/base_switches.h"
+#include "base/command_line.h"
+#include "base/test/scoped_feature_list.h"
+#include "cobalt/app/cobalt_main_delegate.h"
+#include "cobalt/browser/features.h"
 #include "cobalt/browser/switches.h"
 #include "cobalt/shell/common/shell_switches.h"
 #include "cobalt_switch_defaults.h"
+#include "components/network_session_configurator/common/network_switches.h"
 #include "content/public/common/content_switches.h"
 #include "gpu/config/gpu_switches.h"
 #include "media/base/media_switches.h"
@@ -195,6 +200,28 @@ TEST(CobaltSwitchDefaultsTest, StartupURLDefault) {
   EXPECT_EQ("https://www.youtube.com/tv",
             cmd_line_pxr.get_startup_url_for_test());
   EXPECT_EQ("", GetSwitchValue(cmd_line_pxr, cobalt::switches::kInitialURL));
+}
+
+// CobaltMainDelegate::ApplyQuicGate.
+TEST(QuicGateTest, QuicDisabledByDefault) {
+  base::CommandLine command_line(base::CommandLine::NO_PROGRAM);
+  CobaltMainDelegate::ApplyQuicGate(&command_line);
+  EXPECT_TRUE(command_line.HasSwitch(::switches::kDisableQuic));
+}
+
+TEST(QuicGateTest, FeatureEnablesQuic) {
+  base::test::ScopedFeatureList feature_list(features::kCobaltEnableQuic);
+  base::CommandLine command_line(base::CommandLine::NO_PROGRAM);
+  CobaltMainDelegate::ApplyQuicGate(&command_line);
+  EXPECT_FALSE(command_line.HasSwitch(::switches::kDisableQuic));
+}
+
+TEST(QuicGateTest, ExplicitDisableSwitchWinsOverFeature) {
+  base::test::ScopedFeatureList feature_list(features::kCobaltEnableQuic);
+  base::CommandLine command_line(base::CommandLine::NO_PROGRAM);
+  command_line.AppendSwitch(::switches::kDisableQuic);
+  CobaltMainDelegate::ApplyQuicGate(&command_line);
+  EXPECT_TRUE(command_line.HasSwitch(::switches::kDisableQuic));
 }
 
 }  // namespace
