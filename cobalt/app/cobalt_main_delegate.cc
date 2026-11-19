@@ -66,6 +66,7 @@
 
 #if BUILDFLAG(IS_STARBOARD)
 #include "base/debug/dump_without_crashing.h"
+#include "components/network_session_configurator/common/network_switches.h"
 #include "starboard/extension/crash_handler.h"
 #include "starboard/system.h"
 #endif
@@ -108,6 +109,15 @@ CobaltMainDelegate::CobaltMainDelegate(std::optional<int64_t> startup_timestamp,
 CobaltMainDelegate::~CobaltMainDelegate() {
   CHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 }
+
+#if BUILDFLAG(IS_STARBOARD)
+// static
+void CobaltMainDelegate::ApplyQuicGate(base::CommandLine* command_line) {
+  if (!base::FeatureList::IsEnabled(features::kCobaltEnableQuic)) {
+    command_line->AppendSwitch(::switches::kDisableQuic);
+  }
+}
+#endif  // BUILDFLAG(IS_STARBOARD)
 
 std::optional<int> CobaltMainDelegate::BasicStartupComplete() {
   CHECK_CALLED_ON_VALID_THREAD(thread_checker_);
@@ -174,6 +184,11 @@ std::optional<int> CobaltMainDelegate::PostEarlyInitialization(
         switches::kDisableGpuShaderDiskCache);
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_STARBOARD)
+  // The FeatureList exists and the network context has not been built yet.
+  ApplyQuicGate(base::CommandLine::ForCurrentProcess());
+#endif  // BUILDFLAG(IS_STARBOARD)
 
   if (!ShouldInitializeMojo(invoked_in)) {
     content::InitializeMojoCore();

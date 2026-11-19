@@ -228,6 +228,10 @@ BASE_DECLARE_FEATURE(kCobaltStartupPreconnect);
 // not honor.
 BASE_DECLARE_FEATURE(kCobaltFlushHttpServerPropertiesOnPause);
 
+// Starboard only: QUIC (HTTP/3) is disabled unless this feature is enabled.
+// Android TV keeps its own EnableQUIC cold-config switch.
+BASE_DECLARE_FEATURE(kCobaltEnableQuic);
+
 }  // namespace features
 }  // namespace cobalt
 
