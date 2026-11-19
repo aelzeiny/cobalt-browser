@@ -247,6 +247,10 @@ BASE_FEATURE(kCobaltFlushHttpServerPropertiesOnPause,
              "CobaltFlushHttpServerPropertiesOnPause",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+BASE_FEATURE(kCobaltEnableQuic,
+             "CobaltEnableQuic",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
 BASE_FEATURE(kCobaltHttpCacheQuota,
              "CobaltHttpCacheQuota",
              base::FEATURE_DISABLED_BY_DEFAULT);

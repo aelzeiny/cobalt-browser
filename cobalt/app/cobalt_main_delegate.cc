@@ -69,6 +69,7 @@
 
 #if BUILDFLAG(IS_STARBOARD)
 #include "base/debug/dump_without_crashing.h"
+#include "components/network_session_configurator/common/network_switches.h"
 #include "starboard/extension/crash_handler.h"
 #include "starboard/system.h"
 #endif
@@ -129,6 +130,13 @@ void CobaltMainDelegate::ApplyPreloadGpuShaderDiskCache(
     command_line->AppendSwitchASCII(
         switches::kGpuDiskCacheSizeKB,
         base::NumberToString(kPreloadGrShaderDiskCacheSizeKB));
+  }
+}
+
+// static
+void CobaltMainDelegate::ApplyQuicGate(base::CommandLine* command_line) {
+  if (!base::FeatureList::IsEnabled(features::kCobaltEnableQuic)) {
+    command_line->AppendSwitch(::switches::kDisableQuic);
   }
 }
 #endif  // BUILDFLAG(IS_STARBOARD)
@@ -203,6 +211,8 @@ std::optional<int> CobaltMainDelegate::PostEarlyInitialization(
 #if BUILDFLAG(IS_STARBOARD)
   ApplyPreloadGpuShaderDiskCache(base::CommandLine::ForCurrentProcess(),
                                  is_visible_);
+  // The FeatureList exists and the network context has not been built yet.
+  ApplyQuicGate(base::CommandLine::ForCurrentProcess());
 #endif  // BUILDFLAG(IS_STARBOARD)
 
   if (!ShouldInitializeMojo(invoked_in)) {

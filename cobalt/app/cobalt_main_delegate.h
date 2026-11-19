@@ -87,6 +87,9 @@ class CobaltMainDelegate : public content::ShellMainDelegate {
   // --disable-preload-gpu-shader-disk-cache is set.
   static void ApplyPreloadGpuShaderDiskCache(base::CommandLine* command_line,
                                              bool is_visible);
+
+  // Appends --disable-quic unless features::kCobaltEnableQuic is enabled.
+  static void ApplyQuicGate(base::CommandLine* command_line);
 #endif  // BUILDFLAG(IS_STARBOARD)
 
   ~CobaltMainDelegate() override;
