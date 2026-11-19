@@ -788,6 +788,10 @@ BASE_FEATURE(kRestrictAbusePortsOnLocalhost,
 BASE_FEATURE(kCobaltHttpCacheFontAndPassThrough,
              "CobaltHttpCacheFontAndPassThrough",
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCobaltKeepTlsSessionsOnMemoryPressure,
+             "CobaltKeepTlsSessionsOnMemoryPressure",
+             base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace net::features

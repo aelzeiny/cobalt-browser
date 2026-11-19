@@ -9,8 +9,11 @@
 #include <utility>
 
 #include "base/containers/flat_set.h"
+#include "base/feature_list.h"
 #include "base/time/clock.h"
 #include "base/time/default_clock.h"
+#include "build/build_config.h"
+#include "net/base/features.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
 namespace net {
@@ -196,6 +199,13 @@ void SSLClientSessionCache::OnMemoryPressure(
       FlushExpiredSessions();
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+#if BUILDFLAG(IS_COBALT)
+      if (base::FeatureList::IsEnabled(
+              features::kCobaltKeepTlsSessionsOnMemoryPressure)) {
+        FlushExpiredSessions();
+        break;
+      }
+#endif  // BUILDFLAG(IS_COBALT)
       Flush();
       break;
   }
