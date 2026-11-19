@@ -222,6 +222,8 @@ struct NET_EXPORT QuicParams {
   // (1 << broken_count). Otherwise, the delay would be initial_delay, 5min,
   // 10min and so on.
   std::optional<bool> exponential_backoff_on_initial_delay;
+  // Upper bound on the delay for a broken alternative service. 2 days if unset.
+  std::optional<base::TimeDelta> max_delay_for_broken_alternative_service;
   // If true, delay main job even the request can be sent immediately on an
   // available SPDY session.
   bool delay_main_job_with_available_spdy_session = false;

@@ -2957,6 +2957,19 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
 
 #if BUILDFLAG(IS_COBALT)
   session_params.use_quic_for_unknown_origins = true;
+
+  // A TV stays on one network, and its QUIC failures are mostly transient
+  // (UDP dropped for a while). Retry QUIC after seconds and never stay away
+  // for more than half an hour, instead of 5 minutes doubling up to 2 days.
+  // The "QUIC" field trial params take precedence.
+  net::QuicParams* quic_params = quic_context->params();
+  if (!quic_params->initial_delay_for_broken_alternative_service) {
+    quic_params->initial_delay_for_broken_alternative_service =
+        base::Seconds(10);
+  }
+  if (!quic_params->max_delay_for_broken_alternative_service) {
+    quic_params->max_delay_for_broken_alternative_service = base::Minutes(30);
+  }
 #endif
 
   session_params.disable_idle_sockets_close_on_memory_pressure =
