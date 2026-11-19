@@ -810,6 +810,14 @@ NET_EXPORT BASE_DECLARE_FEATURE(kCobaltHttpCacheFontAndPassThrough);
 // critical pressure every time the app is concealed, which otherwise costs a
 // full handshake to every host on the next resume.
 NET_EXPORT BASE_DECLARE_FEATURE(kCobaltKeepTlsSessionsOnMemoryPressure);
+
+// Closes a QUIC connection that makes no forward progress after
+// `kCobaltQuicBlackholeDetectionRtos` retransmission timeouts instead of 5:
+// about 1.6 s instead of 6.4 s with the default of 3. Requests still waiting
+// for response headers are then retried over TCP; responses that were already
+// being read fail, so a network outage of that length is no longer survived.
+NET_EXPORT BASE_DECLARE_FEATURE(kCobaltQuicFasterBlackholeDetection);
+NET_EXPORT BASE_DECLARE_FEATURE_PARAM(int, kCobaltQuicBlackholeDetectionRtos);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace net::features
