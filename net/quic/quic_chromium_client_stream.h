@@ -366,6 +366,11 @@ class NET_EXPORT_PRIVATE QuicChromiumClientStream
   // True when initial headers have been sent.
   bool initial_headers_sent_ = false;
 
+#if BUILDFLAG(IS_COBALT)
+  // True while a NotifyHandleOfDataAvailable() task is posted.
+  bool data_available_notification_pending_ = false;
+#endif
+
   raw_ptr<quic::QuicSpdyClientSessionBase> session_;
   const quic::QuicServerId server_id_;
   quic::QuicTransportVersion quic_version_;
