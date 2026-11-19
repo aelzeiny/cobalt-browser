@@ -20,12 +20,14 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/task/single_thread_task_runner.h"
+#include "build/build_config.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "net/base/url_util.h"
 #include "net/http/http_status_code.h"
 #include "net/log/net_log_event_type.h"
 #include "net/quic/quic_chromium_client_session.h"
+#include "net/quic/quic_chromium_packet_reader.h"
 #include "net/quic/quic_http_utils.h"
 #include "net/spdy/spdy_log_util.h"
 #include "net/third_party/quiche/src/quiche/quic/core/http/quic_spdy_session.h"
@@ -796,6 +798,11 @@ void QuicChromiumClientStream::NotifyHandleOfInitialHeadersAvailableLater() {
       base::BindOnce(
           &QuicChromiumClientStream::NotifyHandleOfInitialHeadersAvailable,
           weak_factory_.GetWeakPtr()));
+#if BUILDFLAG(IS_COBALT)
+  // The request is waiting for these headers; do not make it wait for the
+  // packets that were read from the socket together with this one.
+  QuicChromiumPacketReader::YieldAfterCurrentPacket();
+#endif
 }
 
 void QuicChromiumClientStream::NotifyHandleOfInitialHeadersAvailable() {

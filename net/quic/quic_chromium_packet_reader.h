@@ -58,6 +58,14 @@ class NET_EXPORT_PRIVATE QuicChromiumPacketReader {
 
   DatagramClientSocket* socket() { return socket_.get(); }
 
+#if BUILDFLAG(IS_COBALT)
+  // Asks the reader that is delivering a batch of packets to return to the
+  // message loop after the packet it is processing. Work posted while handling
+  // that packet, such as the response headers of a waiting request, would
+  // otherwise sit behind the rest of the batch.
+  static void YieldAfterCurrentPacket();
+#endif
+
   void CloseSocket();
 
  private:
@@ -94,6 +102,12 @@ class NET_EXPORT_PRIVATE QuicChromiumPacketReader {
 
   // Results from ReadMultiplePackets.
   Socket::ReadPacketResults read_results_;
+
+  // Index of the first packet in `read_results_` not yet delivered.
+  int next_read_result_ = 0;
+
+  // Set by YieldAfterCurrentPacket(), consumed by the batch delivery loop.
+  static bool yield_after_current_packet_;
 #endif
 
   // Note: This has to remain the last member of the class.
