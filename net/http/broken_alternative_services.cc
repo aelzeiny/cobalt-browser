@@ -9,6 +9,7 @@
 #include "base/memory/singleton.h"
 #include "base/time/tick_clock.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "net/http/http_server_properties.h"
 
 namespace net {
@@ -30,7 +31,8 @@ constexpr base::TimeDelta kMaxBrokenAlternativeProtocolDelay = base::Days(2);
 base::TimeDelta ComputeBrokenAlternativeServiceExpirationDelay(
     int broken_count,
     base::TimeDelta initial_delay,
-    bool exponential_backoff_on_initial_delay) {
+    bool exponential_backoff_on_initial_delay,
+    base::TimeDelta max_delay) {
   DCHECK_GE(broken_count, 0);
   // Make sure initial delay is within [1s, 300s].
   if (initial_delay < kMinBrokenAlternativeProtocolDelay) {
@@ -52,7 +54,7 @@ base::TimeDelta ComputeBrokenAlternativeServiceExpirationDelay(
   } else {
     delay = kDefaultBrokenAlternativeProtocolDelay * (1 << (broken_count - 1));
   }
-  return std::min(delay, kMaxBrokenAlternativeProtocolDelay);
+  return std::min(delay, max_delay);
 }
 
 }  // namespace
@@ -82,7 +84,8 @@ BrokenAlternativeServices::BrokenAlternativeServices(
       clock_(clock),
       recently_broken_alternative_services_(
           max_recently_broken_alternative_service_entries),
-      initial_delay_(kDefaultBrokenAlternativeProtocolDelay) {
+      initial_delay_(kDefaultBrokenAlternativeProtocolDelay),
+      max_delay_(kMaxBrokenAlternativeProtocolDelay) {
   DCHECK(delegate_);
   DCHECK(clock_);
 }
@@ -125,6 +128,15 @@ void BrokenAlternativeServices::MarkBrokenImpl(
   DCHECK_NE(NextProto::kProtoUnknown,
             broken_alternative_service.alternative_service.protocol);
 
+#if BUILDFLAG(IS_COBALT)
+  // Requests that were racing the same alternative when it failed each report
+  // it. Count that as one failure: the expiration below would be discarded
+  // anyway, and a higher count only lengthens the next back-off.
+  if (broken_alternative_service_map_.contains(broken_alternative_service)) {
+    return;
+  }
+#endif  // BUILDFLAG(IS_COBALT)
+
   auto it =
       recently_broken_alternative_services_.Get(broken_alternative_service);
   int broken_count = 0;
@@ -136,7 +148,8 @@ void BrokenAlternativeServices::MarkBrokenImpl(
   base::TimeTicks expiration =
       clock_->NowTicks() +
       ComputeBrokenAlternativeServiceExpirationDelay(
-          broken_count, initial_delay_, exponential_backoff_on_initial_delay_);
+          broken_count, initial_delay_, exponential_backoff_on_initial_delay_,
+          max_delay_);
   // Return if alternative service is already in expiration queue.
   BrokenAlternativeServiceList::iterator list_it;
   if (!AddToBrokenListAndMap(broken_alternative_service, expiration,
@@ -294,6 +307,13 @@ void BrokenAlternativeServices::SetBrokenAndRecentlyBrokenAlternativeServices(
       recently_broken_alternative_services_.Put(broken_alternative_service, 1);
     }
 
+#if BUILDFLAG(IS_COBALT)
+    // A mark stored under a longer back-off, e.g. by an earlier build, does
+    // not outlive the current maximum.
+    list_it->second =
+        std::min(list_it->second, clock_->NowTicks() + max_delay_);
+#endif  // BUILDFLAG(IS_COBALT)
+
     ++list_it;
   }
 
@@ -316,13 +336,17 @@ void BrokenAlternativeServices::SetBrokenAndRecentlyBrokenAlternativeServices(
 
 void BrokenAlternativeServices::SetDelayParams(
     std::optional<base::TimeDelta> initial_delay,
-    std::optional<bool> exponential_backoff_on_initial_delay) {
+    std::optional<bool> exponential_backoff_on_initial_delay,
+    std::optional<base::TimeDelta> max_delay) {
   if (initial_delay.has_value()) {
     initial_delay_ = initial_delay.value();
   }
   if (exponential_backoff_on_initial_delay.has_value()) {
     exponential_backoff_on_initial_delay_ =
         exponential_backoff_on_initial_delay.value();
+  }
+  if (max_delay.has_value()) {
+    max_delay_ = max_delay.value();
   }
 }
 

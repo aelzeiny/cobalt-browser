@@ -460,6 +460,18 @@ int GetInitialDelayForBrokenAlternativeServiceSeconds(
   return 0;
 }
 
+int GetMaxDelayForBrokenAlternativeServiceSeconds(
+    const VariationParameters& quic_trial_params) {
+  int value;
+  if (base::StringToInt(
+          GetVariationParam(quic_trial_params,
+                            "max_delay_for_broken_alternative_service_seconds"),
+          &value)) {
+    return value;
+  }
+  return 0;
+}
+
 bool DelayMainJobWithAvailableSpdySession(
     const VariationParameters& quic_trial_params) {
   return base::EqualsCaseInsensitiveASCII(
@@ -702,6 +714,12 @@ void ConfigureQuicParams(const base::CommandLine& command_line,
     }
     quic_params->exponential_backoff_on_initial_delay =
         GetExponentialBackOffOnInitialDelay(quic_trial_params);
+    const int max_delay_for_broken_alternative_service_seconds =
+        GetMaxDelayForBrokenAlternativeServiceSeconds(quic_trial_params);
+    if (max_delay_for_broken_alternative_service_seconds > 0) {
+      quic_params->max_delay_for_broken_alternative_service =
+          base::Seconds(max_delay_for_broken_alternative_service_seconds);
+    }
     if (DelayMainJobWithAvailableSpdySession(quic_trial_params)) {
       quic_params->delay_main_job_with_available_spdy_session = true;
     }
