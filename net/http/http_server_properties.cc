@@ -609,9 +609,10 @@ void HttpServerProperties::SetMaxServerConfigsStoredInProperties(
 
 void HttpServerProperties::SetBrokenAlternativeServicesDelayParams(
     std::optional<base::TimeDelta> initial_delay,
-    std::optional<bool> exponential_backoff_on_initial_delay) {
+    std::optional<bool> exponential_backoff_on_initial_delay,
+    std::optional<base::TimeDelta> max_delay) {
   broken_alternative_services_.SetDelayParams(
-      initial_delay, exponential_backoff_on_initial_delay);
+      initial_delay, exponential_backoff_on_initial_delay, max_delay);
 }
 
 bool HttpServerProperties::IsInitialized() const {

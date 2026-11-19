@@ -156,11 +156,13 @@ class NET_EXPORT_PRIVATE BrokenAlternativeServices {
       std::unique_ptr<RecentlyBrokenAlternativeServices>
           recently_broken_alternative_services);
 
-  // If values are present, sets initial_delay_ and
-  // exponential_backoff_on_initial_delay_ which are used to calculate delay of
-  // broken alternative services.
-  void SetDelayParams(std::optional<base::TimeDelta> initial_delay,
-                      std::optional<bool> exponential_backoff_on_initial_delay);
+  // If values are present, sets initial_delay_,
+  // exponential_backoff_on_initial_delay_ and max_delay_ which are used to
+  // calculate delay of broken alternative services.
+  void SetDelayParams(
+      std::optional<base::TimeDelta> initial_delay,
+      std::optional<bool> exponential_backoff_on_initial_delay,
+      std::optional<base::TimeDelta> max_delay = std::nullopt);
 
   const BrokenAlternativeServiceList& broken_alternative_service_list() const;
 
@@ -231,6 +233,10 @@ class NET_EXPORT_PRIVATE BrokenAlternativeServices {
   // Otherwise, the delay would be initial_delay_for_broken_alternative_service,
   // 5min, 10min.. and so on.
   bool exponential_backoff_on_initial_delay_ = true;
+
+  // Upper bound on the delay, however many times in a row the alternative
+  // service has been marked broken.
+  base::TimeDelta max_delay_;
 
   base::WeakPtrFactory<BrokenAlternativeServices> weak_ptr_factory_{this};
 };
