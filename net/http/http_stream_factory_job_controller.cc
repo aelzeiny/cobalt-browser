@@ -1286,10 +1286,18 @@ HttpStreamFactory::JobController::GetAlternativeServiceInfoInternal(
         return AlternativeServiceInfo();
       }
 #endif
+      const AlternativeService alternative_service(
+          NextProto::kProtoQUIC, origin.host(), origin.port());
+      // Like an advertised alternative, the guess is not used while it is
+      // marked broken. Otherwise every request to a host that cannot do QUIC
+      // starts another doomed attempt and inflates its broken count.
+      if (http_server_properties.IsAlternativeServiceBroken(
+              alternative_service, request_info.network_anonymization_key)) {
+        return AlternativeServiceInfo();
+      }
       quic::ParsedQuicVersionVector versions = quic::AllSupportedVersions();
       return AlternativeServiceInfo::CreateQuicAlternativeServiceInfo(
-          AlternativeService(NextProto::kProtoQUIC, origin.host(), origin.port()),
-          base::Time::Max(), versions);
+          alternative_service, base::Time::Max(), versions);
     }
 #endif  // BUILDFLAG(IS_COBALT)
     return AlternativeServiceInfo();
