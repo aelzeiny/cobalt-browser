@@ -450,7 +450,8 @@ class NET_EXPORT HttpServerProperties
   // broken alternative services.
   void SetBrokenAlternativeServicesDelayParams(
       std::optional<base::TimeDelta> initial_delay,
-      std::optional<bool> exponential_backoff_on_initial_delay);
+      std::optional<bool> exponential_backoff_on_initial_delay,
+      std::optional<base::TimeDelta> max_delay = std::nullopt);
 
   // Returns whether HttpServerProperties is initialized.
   bool IsInitialized() const;
