@@ -237,6 +237,10 @@ BASE_DECLARE_FEATURE(kCobaltStartupPreconnect);
 // not honor.
 BASE_DECLARE_FEATURE(kCobaltFlushHttpServerPropertiesOnPause);
 
+// Starboard only: QUIC (HTTP/3) is disabled unless this feature is enabled.
+// Android TV keeps its own EnableQUIC cold-config switch.
+BASE_DECLARE_FEATURE(kCobaltEnableQuic);
+
 // Gates independent Finch/Mendel experimentation on Cobalt's on-disk HTTP cache
 // capacity (DIR_CACHE/Cache), decoupled from V8 code-cache optimizations. When
 // enabled, `cobalt_http_cache_size_bytes` (default: 12582912 bytes / 12 MiB,
