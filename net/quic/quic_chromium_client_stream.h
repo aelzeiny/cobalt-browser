@@ -18,6 +18,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
+#include "base/timer/timer.h"
+#include "build/build_config.h"
 #include "net/base/completion_once_callback.h"
 #include "net/base/idempotency.h"
 #include "net/base/ip_endpoint.h"
@@ -181,6 +183,9 @@ class NET_EXPORT_PRIVATE QuicChromiumClientStream
     void OnInitialHeadersAvailable();
     void OnTrailingHeadersAvailable();
     void OnDataAvailable();
+#if BUILDFLAG(IS_COBALT)
+    void OnReadBodyTimer();
+#endif
     void OnCanWrite();
     void OnClose();
     void OnError(int error);
@@ -211,6 +216,12 @@ class NET_EXPORT_PRIVATE QuicChromiumClientStream
     CompletionOnceCallback read_body_callback_;
     scoped_refptr<IOBuffer> read_body_buffer_;
     int read_body_buffer_len_ = 0;
+#if BUILDFLAG(IS_COBALT)
+    // Delays the completion of ReadBody while more data may arrive.
+    base::OneShotTimer read_body_timer_;
+    // True when `read_body_timer_` has fired for the pending ReadBody.
+    bool read_body_wait_done_ = false;
+#endif
 
     // Callback to be invoked when WriteStreamData or WritevStreamData completes
     // asynchronously.

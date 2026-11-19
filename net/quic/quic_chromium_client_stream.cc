@@ -114,6 +114,21 @@ void QuicChromiumClientStream::Handle::OnDataAvailable() {
   DCHECK(read_body_buffer_);
   DCHECK_GT(read_body_buffer_len_, 0);
 
+#if BUILDFLAG(IS_COBALT)
+  // Handing small chunks of data to the caller creates measurable overhead.
+  // As SpdyHttpStream does, complete the read once no more data has arrived
+  // for 1 ms, unless the data already fills the buffer or ends the body.
+  if (!read_body_wait_done_ && !stream_->fin_received() &&
+      stream_->ReadableBytes() <
+          static_cast<quic::QuicByteCount>(read_body_buffer_len_)) {
+    read_body_timer_.Start(FROM_HERE, base::Milliseconds(1), this,
+                           &Handle::OnReadBodyTimer);
+    return;
+  }
+  read_body_timer_.Stop();
+  read_body_wait_done_ = false;
+#endif
+
   int rv = stream_->Read(read_body_buffer_.get(), read_body_buffer_len_);
   if (rv == ERR_IO_PENDING)
     return;  // Spurrious, likely because of trailers?
@@ -122,6 +137,13 @@ void QuicChromiumClientStream::Handle::OnDataAvailable() {
   read_body_buffer_len_ = 0;
   ResetAndRun(std::move(read_body_callback_), rv);
 }
+
+#if BUILDFLAG(IS_COBALT)
+void QuicChromiumClientStream::Handle::OnReadBodyTimer() {
+  read_body_wait_done_ = true;
+  OnDataAvailable();
+}
+#endif
 
 void QuicChromiumClientStream::Handle::OnCanWrite() {
   if (!write_callback_)
@@ -155,6 +177,9 @@ void QuicChromiumClientStream::Handle::OnError(int error) {
   if (stream_)
     SaveState();
   stream_ = nullptr;
+#if BUILDFLAG(IS_COBALT)
+  read_body_timer_.Stop();
+#endif
 
   // Post a task to invoke the callbacks to ensure that there is no reentrancy.
   // A ScopedPacketFlusher might cause an error which closes the stream under
