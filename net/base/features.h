@@ -804,6 +804,12 @@ NET_EXPORT BASE_DECLARE_FEATURE(kRestrictAbusePortsOnLocalhost);
 // Enables web font MIME caching and ShouldPassThrough pre-entry filtering in
 // Cobalt's HTTP cache.
 NET_EXPORT BASE_DECLARE_FEATURE(kCobaltHttpCacheFontAndPassThrough);
+
+// Keeps TLS session tickets, for TCP and for QUIC (0-RTT state included), when
+// memory pressure is critical; only expired entries are dropped. Cobalt signals
+// critical pressure every time the app is concealed, which otherwise costs a
+// full handshake to every host on the next resume.
+NET_EXPORT BASE_DECLARE_FEATURE(kCobaltKeepTlsSessionsOnMemoryPressure);
 #endif  // BUILDFLAG(IS_COBALT)
 
 }  // namespace net::features
