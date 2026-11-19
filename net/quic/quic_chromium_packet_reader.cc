@@ -33,6 +33,12 @@ const size_t kReadBufferSize =
 
 #if BUILDFLAG(IS_COBALT)
 bool QuicChromiumPacketReader::try_reading_multiple_packets_{true};
+bool QuicChromiumPacketReader::yield_after_current_packet_{false};
+
+// static
+void QuicChromiumPacketReader::YieldAfterCurrentPacket() {
+  yield_after_current_packet_ = true;
+}
 #endif
 
 QuicChromiumPacketReader::QuicChromiumPacketReader(
@@ -66,6 +72,7 @@ if (read_pending_)
 
     CHECK(socket_);
     read_pending_ = true;
+    next_read_result_ = 0;
     int rv = socket_->ReadMultiplePackets(
         &read_results_, kReadBufferSize,
         base::BindOnce(&QuicChromiumPacketReader::OnReadMultiplePacketComplete,
@@ -82,8 +89,10 @@ if (read_pending_)
       return rv;
     }
 
+    // `yield_after_current_packet_` is still set here when the request came
+    // from the last packet of the previous batch.
     if (++num_packets_read_ > yield_after_packets_ ||
-        clock_->Now() > yield_after_) {
+        clock_->Now() > yield_after_ || yield_after_current_packet_) {
       num_packets_read_ = 0;
       // Data was read, process it.
       // Schedule the work through the message loop to 1) prevent infinite
@@ -136,8 +145,12 @@ bool QuicChromiumPacketReader::ProcessMultiplePacketReadResult(int result) {
       ToQuicSocketAddress(peer_address);
 
   auto self = weak_factory_.GetWeakPtr();
-  struct Socket::ReadPacketResult* read_packet = read_results_.packets;
-  for (int p = 0; p < read_results_.result; ++p, ++read_packet) {
+  // A request made before this point does not refer to a packet below.
+  yield_after_current_packet_ = false;
+  struct Socket::ReadPacketResult* read_packet =
+      read_results_.packets + next_read_result_;
+  for (int p = next_read_result_; p < read_results_.result;
+       ++p, ++read_packet) {
     if (read_packet->result <= 0) {
       continue;
     }
@@ -152,7 +165,22 @@ bool QuicChromiumPacketReader::ProcessMultiplePacketReadResult(int result) {
           self)) {
       return false;
     }
+    if (yield_after_current_packet_ && p + 1 < read_results_.result) {
+      // Deliver the rest of the batch from a posted task, so that tasks posted
+      // while handling this packet run first. A batch can hold 64 packets,
+      // several milliseconds of work on a TV SoC.
+      yield_after_current_packet_ = false;
+      next_read_result_ = p + 1;
+      read_pending_ = true;
+      base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+          FROM_HERE,
+          base::BindOnce(
+              &QuicChromiumPacketReader::OnReadMultiplePacketComplete,
+              weak_factory_.GetWeakPtr(), result));
+      return false;
+    }
   }
+  next_read_result_ = 0;
 
   return true;
 }
