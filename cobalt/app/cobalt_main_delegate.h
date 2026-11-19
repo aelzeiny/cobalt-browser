@@ -32,6 +32,10 @@
 #include "content/public/gpu/content_gpu_client.h"
 #include "content/public/renderer/content_renderer_client.h"
 
+namespace base {
+class CommandLine;
+}  // namespace base
+
 namespace content {
 class ContentUtilityClient;
 }  // namespace content
@@ -70,6 +74,11 @@ class CobaltMainDelegate : public content::ShellMainDelegate {
   void Shutdown();
 
   bool is_visible() const { return is_visible_; }
+
+#if BUILDFLAG(IS_STARBOARD)
+  // Appends --disable-quic unless features::kCobaltEnableQuic is enabled.
+  static void ApplyQuicGate(base::CommandLine* command_line);
+#endif  // BUILDFLAG(IS_STARBOARD)
 
   ~CobaltMainDelegate() override;
 
