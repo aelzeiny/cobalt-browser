@@ -1977,6 +1977,13 @@ QuicSessionPool::CreateSessionHelper(
   DVLOG(1) << "Session to " << key.destination().Serialize()
            << " has max packet length " << max_packet_length;
   connection->SetMaxPacketLength(max_packet_length);
+#if BUILDFLAG(IS_COBALT)
+  if (base::FeatureList::IsEnabled(
+          features::kCobaltQuicFasterBlackholeDetection)) {
+    connection->set_num_rtos_for_blackhole_detection(
+        std::max(1, features::kCobaltQuicBlackholeDetectionRtos.Get()));
+  }
+#endif
 
   quic::QuicConfig config = config_;
   ConfigureInitialRttEstimate(
