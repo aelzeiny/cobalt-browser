@@ -39,6 +39,11 @@
 #include "base/metrics/histogram_macros.h"
 #endif
 
+#if BUILDFLAG(IS_COBALT)
+#include "base/feature_list.h"
+#include "base/features.h"
+#endif
+
 namespace discardable_memory {
 namespace {
 
@@ -547,6 +552,15 @@ void DiscardableSharedMemoryManager::OnMemoryPressure(
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+#if BUILDFLAG(IS_COBALT)
+      if (base::FeatureList::IsEnabled(
+              base::features::kCobaltMseMemoryOptimization)) {
+        // Purge all unlocked segments on moderate pressure when MSE memory
+        // optimization is enabled.
+        ReduceMemoryUsageUntilWithinLimit(0);
+        break;
+      }
+#endif
       // Purge memory until usage is within half of |memory_limit_|.
       ReduceMemoryUsageUntilWithinLimit(memory_limit_ / 2);
       break;
